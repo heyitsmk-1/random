@@ -1,0 +1,631 @@
+<title>Days Off Over Coffee</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500;700&family=Nunito:ital,wght@0,400;0,600;0,700;1,400&display=swap">
+
+<style>
+:root{
+  --ground:#1B100B;
+  --wood-dk:#4A2614;
+  --paper:#F7E9CB;
+  --paper-edge:#D9C39B;
+  --ink:#2E1C12;
+  --ink-soft:#6B5340;
+  --amber:#F0A63C;
+  --rose:#C2543F;
+  --pix:"Pixelify Sans","Trebuchet MS",sans-serif;
+  --body:"Nunito","Segoe UI",system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;background:var(--ground);color:var(--paper);font-family:var(--body);
+  min-height:100dvh;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:12px;padding:16px;padding-block:20px;
+}
+
+/* ---------- stage ---------- */
+.stage{
+  position:relative;width:100%;max-width:900px;aspect-ratio:4/3;
+  container-type:inline-size;border-radius:6px;overflow:hidden;
+  box-shadow:0 0 0 3px var(--wood-dk),0 18px 48px rgba(0,0,0,.55);
+  background:#2a1a12;user-select:none;
+}
+/* every expression is a full plate, so the faces can never drift out of register */
+.plate{position:absolute;inset:0;width:100%;height:100%;image-rendering:pixelated;
+  display:block;opacity:0;transition:opacity .12s linear;z-index:1}
+.plate.on{opacity:1}
+
+/* spotlight: darkens everyone except whoever is talking */
+.spot{position:absolute;inset:0;z-index:2;pointer-events:none;opacity:0;transition:opacity .38s ease}
+.spot.on{opacity:1}
+#spotLinh{background:radial-gradient(ellipse 26% 34% at 41% 45%,rgba(0,0,0,0) 42%,rgba(24,12,6,.42) 100%)}
+#spotMinh{background:radial-gradient(ellipse 26% 34% at 65% 45%,rgba(0,0,0,0) 42%,rgba(24,12,6,.42) 100%)}
+#spotYou {background:radial-gradient(ellipse 60% 30% at 50% 96%,rgba(0,0,0,0) 30%,rgba(24,12,6,.40) 100%)}
+
+/* ---------- speech bubbles ---------- */
+.bubbles{
+  position:absolute;z-index:6;left:3.5%;right:3.5%;top:2.5%;
+  display:flex;flex-direction:column;gap:1.5cqi;align-items:flex-start;
+  font-size:2.05cqi;
+}
+.bubble{
+  position:relative;max-width:60%;background:var(--paper);color:var(--ink);
+  border:.45cqi solid var(--ink);border-radius:.9cqi;
+  padding:1.3cqi 1.6cqi 1.2cqi;box-shadow:.5cqi .6cqi 0 rgba(0,0,0,.34);
+  line-height:1.42;animation:pop .2s cubic-bezier(.34,1.4,.5,1) both;
+}
+.bubble.b-minh{align-self:flex-end}
+.bubble.b-you{align-self:center;max-width:74%;background:#EFF3F6;border-color:#24333D}
+.bubble.faded{opacity:.42;filter:saturate(.7)}
+@keyframes pop{from{opacity:0;transform:translateY(.7cqi) scale(.975)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.bubble{animation:none}}
+
+.bubble .who{
+  font-family:var(--pix);font-size:1.75cqi;letter-spacing:.06em;text-transform:uppercase;
+  display:block;margin-bottom:.35cqi;
+}
+.bubble.b-linh .who{color:#A8711A}
+.bubble.b-minh .who{color:#4C6634}
+.bubble.b-you  .who{color:#3B5A6B}
+
+/* downward tails, offset toward whoever is speaking */
+.bubble::before,.bubble::after{content:"";position:absolute;width:0;height:0;border:1.5cqi solid transparent}
+.bubble::before{border-width:2cqi;z-index:-1}
+.bubble.b-linh::after{left:16%;bottom:-2.55cqi;border-top-color:var(--paper);border-bottom:0}
+.bubble.b-linh::before{left:calc(16% - .5cqi);bottom:-3.6cqi;border-top-color:var(--ink);border-bottom:0}
+.bubble.b-minh::after{right:16%;bottom:-2.55cqi;border-top-color:var(--paper);border-bottom:0}
+.bubble.b-minh::before{right:calc(16% - .5cqi);bottom:-3.6cqi;border-top-color:var(--ink);border-bottom:0}
+.bubble.b-you::after{left:50%;margin-left:-1.5cqi;bottom:-2.55cqi;border-top-color:#EFF3F6;border-bottom:0}
+.bubble.b-you::before{left:50%;margin-left:-2cqi;bottom:-3.6cqi;border-top-color:#24333D;border-bottom:0}
+
+.caret{display:inline-block;width:.55em;height:1.05em;vertical-align:-.16em;
+  background:var(--ink);margin-left:.12em;animation:blink .7s steps(1,end) infinite}
+@keyframes blink{50%{opacity:0}}
+.interim{color:var(--ink-soft)}
+
+/* the repair, shown where it happened rather than on a report card */
+.fix{display:inline-flex;align-items:center;gap:.4em;background:#FBF3DF;
+  border:.28cqi solid var(--ink);border-radius:.5cqi;padding:.1em .45em;margin:.1em .1em;font-weight:700}
+.fix s{color:var(--rose);text-decoration-thickness:.11em;font-weight:400}
+.fix b{color:#3F6B2E}
+.fix .arrow{color:var(--ink-soft);font-family:var(--pix)}
+
+/* ---------- things on the table ---------- */
+.obj{position:absolute;z-index:5;transform:translate(-50%,-50%);background:none;border:0;padding:0;
+  cursor:pointer;image-rendering:pixelated;filter:drop-shadow(0 .6cqi .5cqi rgba(0,0,0,.45));
+  transition:transform .16s ease,filter .16s ease}
+.obj img{display:block;width:100%;height:auto;image-rendering:pixelated;pointer-events:none}
+.obj:hover,.obj:focus-visible{transform:translate(-50%,-54%) scale(1.06);
+  filter:drop-shadow(0 .9cqi .7cqi rgba(0,0,0,.5)) brightness(1.12)}
+.obj:focus-visible{outline:.4cqi solid var(--amber);outline-offset:.4cqi;border-radius:.4cqi}
+.obj .cap{position:absolute;left:50%;transform:translateX(-50%);top:103%;
+  font-family:var(--pix);font-size:1.75cqi;letter-spacing:.05em;color:#F6E2BB;
+  text-shadow:0 .2cqi 0 rgba(0,0,0,.7);white-space:nowrap}
+#oDict{left:14.5%;top:79.5%;width:14%}
+#oNote{left:85.5%;top:79.5%;width:15%}
+#oMic {left:50%;top:80.5%;width:11.5%}
+#oMic.live{filter:drop-shadow(0 0 1.6cqi var(--amber)) brightness(1.25)}
+#oMic.live::before{content:"";position:absolute;inset:-16%;border-radius:50%;
+  border:.5cqi solid var(--amber);animation:ring 1.1s ease-out infinite}
+@keyframes ring{from{transform:scale(.8);opacity:.9}to{transform:scale(1.35);opacity:0}}
+@media (prefers-reduced-motion:reduce){#oMic.live::before{animation:none;opacity:.5}}
+
+.badge{position:absolute;top:-8%;right:-10%;min-width:2.6cqi;height:2.6cqi;border-radius:50%;
+  background:var(--rose);color:#fff;font-family:var(--pix);font-size:1.7cqi;line-height:2.6cqi;
+  text-align:center;box-shadow:0 0 0 .3cqi var(--wood-dk)}
+.badge[hidden]{display:none!important}
+
+.hint{position:absolute;z-index:5;left:50%;transform:translateX(-50%);bottom:2.2%;
+  text-align:center;font-family:var(--pix);font-size:1.9cqi;letter-spacing:.04em;
+  color:#F6E2BB;text-shadow:0 .2cqi 0 rgba(0,0,0,.75)}
+.hint button{font:inherit;background:none;border:0;color:var(--amber);
+  text-decoration:underline;cursor:pointer;padding:0 .3em}
+.hint button:hover{color:#FFD08A}
+
+.leave{position:absolute;z-index:6;left:1.6%;bottom:2.2%;font-family:var(--pix);font-size:1.8cqi;
+  letter-spacing:.05em;background:rgba(27,16,11,.6);color:#E8CFA4;
+  border:.3cqi solid rgba(232,207,164,.38);border-radius:.6cqi;padding:.45cqi 1.1cqi;cursor:pointer}
+.leave:hover{background:rgba(27,16,11,.88);color:#fff}
+
+/* ---------- the dictionary and the notebook, opened ---------- */
+.sheet{position:absolute;inset:0;z-index:8;display:none;background:rgba(20,11,7,.74);padding:5% 6%}
+.sheet[data-open="1"]{display:flex}
+.sheet .page{position:relative;margin:auto;width:100%;max-width:86%;max-height:100%;overflow:auto;
+  background:var(--paper);color:var(--ink);border:.5cqi solid var(--ink);border-radius:.8cqi;
+  box-shadow:0 1.4cqi 3cqi rgba(0,0,0,.55);padding:2.8cqi 3.2cqi;font-size:2cqi;line-height:1.5}
+.sheet.dict .page{background:#FBF1DA}
+.sheet.note .page{background:
+  repeating-linear-gradient(to bottom,transparent 0 3.4cqi,#C9D7E4 3.4cqi 3.6cqi),#FCFAF3}
+.sheet .page h2{font-family:var(--pix);font-size:3cqi;margin:0 0 .5em;padding-right:13cqi;letter-spacing:.04em;
+  display:flex;align-items:baseline;gap:.6em;flex-wrap:wrap;text-wrap:balance}
+.sheet .page h2 span{font-family:var(--body);font-size:1.85cqi;font-weight:400;color:var(--ink-soft)}
+.entry{padding:1.3cqi 0;border-top:.2cqi solid var(--paper-edge)}
+.entry:first-of-type{border-top:0}
+.entry .term{font-family:var(--pix);font-size:2.45cqi;color:#8A4B27;letter-spacing:.03em}
+.entry .gloss,.entry .why{margin:.25em 0 0}
+.entry .why{color:var(--ink-soft)}
+.entry .said{margin:.35em 0 0;font-style:italic;color:var(--ink-soft)}
+.empty{color:var(--ink-soft);font-style:italic;margin:0}
+.closeX{position:absolute;top:1.6cqi;right:1.6cqi;font-family:var(--pix);font-size:2.3cqi;
+  background:var(--paper);color:var(--ink);border:.4cqi solid var(--ink);
+  border-radius:.5cqi;padding:.3cqi 1.1cqi;cursor:pointer}
+
+/* ---------- title card ---------- */
+.card{position:absolute;inset:0;z-index:9;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:1.8cqi;text-align:center;padding:6%;
+  background:linear-gradient(rgba(20,11,7,.5),rgba(20,11,7,.84))}
+.card[hidden]{display:none!important}
+.card h1{font-family:var(--pix);font-size:5.8cqi;margin:0;color:#FFE6B8;letter-spacing:.03em;
+  text-shadow:0 .5cqi 0 rgba(0,0,0,.5);text-wrap:balance}
+.card p{margin:0;max-width:48ch;font-size:2.15cqi;line-height:1.55;color:#EBD6B2}
+.card .topic{font-family:var(--pix);font-size:1.95cqi;letter-spacing:.22em;text-transform:uppercase;
+  color:var(--amber);margin-bottom:-1cqi}
+.btn{font-family:var(--pix);font-size:2.5cqi;letter-spacing:.05em;background:var(--amber);
+  color:#3A2208;border:.45cqi solid #7A4A12;border-radius:.7cqi;padding:1.2cqi 3cqi;cursor:pointer;
+  box-shadow:0 .7cqi 0 #7A4A12;transition:transform .1s ease,box-shadow .1s ease}
+.btn:hover{transform:translateY(.2cqi);box-shadow:0 .5cqi 0 #7A4A12}
+.btn:active{transform:translateY(.7cqi);box-shadow:0 0 0 #7A4A12}
+
+.foot{max-width:900px;width:100%;display:flex;gap:10px;flex-wrap:wrap;
+  align-items:baseline;justify-content:space-between;font-size:13px;color:#A98E70}
+.foot b{font-family:var(--pix);color:#D9BB8C;font-weight:500;letter-spacing:.04em}
+
+/* ---------- narrow: the talk moves below the picture ---------- */
+@media (max-width:700px){
+  .bubbles{position:static;width:100%;max-width:900px;font-size:15px;gap:9px;margin-top:2px;align-items:stretch}
+  .bubble,.bubble.b-you{max-width:100%;border-width:2px;border-radius:8px;padding:9px 11px;
+    box-shadow:3px 4px 0 rgba(0,0,0,.4)}
+  .bubble.b-minh{align-self:stretch}
+  .bubble .who{font-size:12px}
+  .bubble::before,.bubble::after{display:none}
+  .fix{border-width:1.5px;border-radius:5px}
+  .sheet .page{font-size:13px;max-width:100%;padding:14px}
+  .sheet .page h2{font-size:18px;padding-right:64px}.sheet .page h2 span{font-size:12px}
+  .entry .term{font-size:16px}
+  .closeX{font-size:13px;padding:4px 9px;border-width:2px}
+  .card h1{font-size:28px}.card p{font-size:13px}.card .topic{font-size:11px}
+  .btn{font-size:15px;border-width:2px;padding:9px 20px;box-shadow:0 4px 0 #7A4A12}
+  .obj .cap,.hint{font-size:10px}
+  .badge{min-width:14px;height:14px;font-size:10px;line-height:14px}
+}
+</style>
+
+<div class="stage" id="stage">
+  <img class="plate on" id="p_base"  src="assets/base.png" alt="Linh and Minh sitting across a café table from you.">
+  <img class="plate" id="p_linh_talking"    src="assets/linh_talking.png" alt="">
+  <img class="plate" id="p_linh_helping"    src="assets/linh_helping.png" alt="">
+  <img class="plate" id="p_linh_asking"     src="assets/linh_asking.png" alt="">
+  <img class="plate" id="p_minh_asking"     src="assets/minh_asking.png" alt="">
+  <img class="plate" id="p_minh_correcting" src="assets/minh_correcting.png" alt="">
+
+  <div class="spot" id="spotLinh"></div>
+  <div class="spot" id="spotMinh"></div>
+  <div class="spot" id="spotYou"></div>
+
+  <div class="bubbles" id="bubbles"></div>
+
+  <button class="obj" id="oDict" title="Dictionary — words Linh handed you">
+    <img src="assets/obj_dictionary.png" alt=""><span class="cap">Dictionary</span>
+    <span class="badge" id="bDict" hidden>0</span>
+  </button>
+  <button class="obj" id="oMic" title="Speak your answer">
+    <img src="assets/obj_mic.png" alt=""><span class="cap" id="micCap">Your turn</span>
+  </button>
+  <button class="obj" id="oNote" title="Notebook — what Minh pulled you up on">
+    <img src="assets/obj_notebook.png" alt=""><span class="cap">Notebook</span>
+    <span class="badge" id="bNote" hidden>0</span>
+  </button>
+
+  <div class="hint" id="hint"></div>
+  <button class="leave" id="leave">Leave</button>
+
+  <div class="sheet dict" id="sDict">
+    <div class="page"><button class="closeX" data-close="sDict">Close</button><h2>Dictionary <span>words Linh handed you mid-sentence</span></h2><div id="dictList"></div></div>
+  </div>
+  <div class="sheet note" id="sNote">
+    <div class="page"><button class="closeX" data-close="sNote">Close</button><h2>Notebook <span>only what would trip someone up</span></h2><div id="noteList"></div></div>
+  </div>
+
+  <div class="card" id="card">
+    <p class="topic">Topic 1 · Days off</p>
+    <h1>Days Off Over Coffee</h1>
+    <p>You're the third seat at this table. Linh and Minh are going to talk about days off — then they'll turn and ask you. Answer out loud. If you get stuck on a word, Linh will hand it to you.</p>
+    <button class="btn" id="start">Sit down</button>
+  </div>
+</div>
+
+<div class="foot">
+  <span><b>Days off</b> · question 1 · prototype</span>
+  <span id="micStatus">Checking microphone…</span>
+</div>
+
+<script>
+"use strict";
+
+/* ============================================================
+   The scripted spine of question 1
+   ============================================================ */
+const SCRIPT = [
+  { id:"minh_q", who:"minh", plate:"minh_asking",
+    text:"So — when was the last time you had a day off? A proper one." },
+  { id:"linh_model", who:"linh", plate:"linh_talking",
+    text:"Ooh, honestly? Last weekend. But it didn't feel like one — I had like three things to do. The last real one was probably Tết. I just stayed at my parents' place, ate way too much, didn't look at my phone. That was nice." },
+  { id:"linh_handoff", who:"linh", plate:"linh_asking",
+    text:"What about you — when was your last day off?" },
+  { id:"YOUR_TURN" },
+  { id:"linh_followup", who:"linh", plate:"linh_talking",
+    text:"So what did you actually do with those days?" }
+];
+
+/* Linh's rescues are pre-rendered. Generating one on demand would arrive
+   long after the moment it was needed. */
+const RESCUES = [
+  { id:"r_reunification", test:/(nation|free|liber|reunif|thirtieth|april|30\/?4)/i,
+    text:"Oh — Reunification Day? The thirtieth of April?",
+    word:{ term:"Reunification Day", gloss:"30 April. The big one in the spring — not “national freedom day”." } },
+  { id:"r_tet", test:/(t[ếe]t|lunar|new year)/i,
+    text:"Tết? Lunar New Year?",
+    word:{ term:"Tết", gloss:"Say “Tết” or “Lunar New Year” — both are normal in English." } },
+  { id:"r_hung", test:/(h[ùu]ng|king)/i,
+    text:"Hùng Kings' Festival?",
+    word:{ term:"Hùng Kings' Festival", gloss:"The 10th day of the 3rd lunar month." } },
+  { id:"r_national", test:/(septem|independen)/i,
+    text:"National Day? The second of September?",
+    word:{ term:"National Day", gloss:"2 September." } },
+  { id:"r_lambu", test:/(make.?up|l[àa]m ?b[ùu]|saturday|compensat|swap)/i,
+    text:"Oh, you mean the make-up day? Working the Saturday so you get a longer break?",
+    word:{ term:"make-up day", gloss:"làm bù — working a weekend day to earn a longer holiday. English has no neat single word for it." } },
+  { id:"r_generic", test:/./,
+    text:"Take your time. Was it a public holiday, or just a normal weekend?", word:null }
+];
+
+/* Minh's repairs, most specific first. Exactly ONE fires per turn — a turn
+   that corrects everything is just the feedback page, read aloud. */
+const REPAIRS = [
+  { id:"p_did_mistake", test:/\b(did|do|doing|done)\s+a\s+mistake\b/i,
+    text:"Oh — you said “I did a mistake”? We'd say made a mistake. Make goes with mistake, do goes with homework. Weird, I know.",
+    fix:{ wrong:"did a mistake", right:"made a mistake",
+          why:"“Make” is the verb that goes with mistake. “Do” goes with homework, the dishes, exercise." } },
+  { id:"p_correction", test:/\bmistakes?\b/i,
+    text:"Oh, you said mistake — did you mean correction? The mistake is the wrong thing you did. The correction is the fix for it.",
+    fix:{ wrong:"mistake", right:"correction",
+          why:"A mistake is the error itself. The correction is what fixes it." } },
+  { id:"p_relax", test:/\b(very|so|feel|felt|was|were|really)\s+relax\b/i,
+    text:"Small one. You said very relax — it's relaxed, with the E D. The day was relaxing, so you were relaxed.",
+    fix:{ wrong:"very relax", right:"very relaxed",
+          why:"-ed is how you feel. -ing is the thing causing it. A relaxing day leaves you relaxed." } },
+  { id:"p_go_to_home", test:/\b(go|went|going|back|come|came|return|returned)\s+to\s+home\b/i,
+    text:"Tiny thing. Go home, not go to home. Home doesn't take a “to”. No idea why.",
+    fix:{ wrong:"go to home", right:"go home",
+          why:"“Home” behaves like an adverb here, so it drops the preposition. Same with “go upstairs”." } },
+  { id:"p_past", test:/\blast\b[\s\S]{0,70}\bi\s+(go|eat|visit|stay|take|come|see|sleep|watch|meet)\b/i,
+    text:"You said I go to my hometown. Since it already happened — I went.",
+    fix:{ wrong:"I go", right:"I went",
+          why:"The question was about last time, so the whole answer stays in the past." } }
+];
+const NO_REPAIR = { id:"p_none", text:"Yeah, that sounds like a proper one." };
+
+/* A canned turn that drives the real detectors, stall and all. */
+const DEMO = [
+  { t:"Well,", d:420 },
+  { t:" the last time I had a day off", d:900 },
+  { t:" was national free", d:700 },
+  { hold:1700 },
+  { t:" yes, that one.", d:700 },
+  { t:" I went back to my hometown with my family,", d:1100 },
+  { t:" but I did a mistake", d:750 },
+  { t:" — I forgot to book the bus ticket early, so we arrived very late.", d:1500 }
+];
+
+const STALL_MS = 1100;    // groping for a word — Linh steps in
+const ENDTURN_MS = 2600;  // they're done
+
+/* ============================================================ */
+const $ = s => document.querySelector(s);
+const bubbles = $("#bubbles"), oMic = $("#oMic"), micCap = $("#micCap"), hint = $("#hint");
+const bDict = $("#bDict"), bNote = $("#bNote");
+
+const audio = {};
+const AUDIO_KEYS = ["minh_q","linh_model","linh_handoff","linh_followup",
+  "r_reunification","r_tet","r_hung","r_national","r_lambu","r_generic","r_ack",
+  "p_correction","p_did_mistake","p_relax","p_go_to_home","p_past","p_none"];
+AUDIO_KEYS.forEach(k => { const a = new Audio("audio/" + k + ".mp3"); a.preload = "auto"; audio[k] = a; });
+
+const state = {
+  running:false, listening:false, transcript:"", interim:"", lastGrowth:0,
+  rescued:false, turnClosed:false, dict:[], notes:[], demoTimers:[], recog:null,
+  stallTimer:null, resolveTurn:null
+};
+
+function plate(name){
+  document.querySelectorAll(".plate").forEach(p => p.classList.remove("on"));
+  ($("#p_" + name) || $("#p_base")).classList.add("on");
+}
+function spot(who){
+  $("#spotLinh").classList.toggle("on", who === "linh");
+  $("#spotMinh").classList.toggle("on", who === "minh");
+  $("#spotYou").classList.toggle("on", who === "you");
+}
+
+const NAMES = { linh:"Linh", minh:"Minh", you:"You" };
+
+function addBubble(who){
+  [...bubbles.children].forEach(b => b.classList.add("faded"));
+  while (bubbles.children.length >= 3) bubbles.firstElementChild.remove();
+  const el = document.createElement("div");
+  el.className = "bubble b-" + who;
+  el.innerHTML = '<span class="who">' + NAMES[who] + '</span><span class="body"></span>';
+  bubbles.append(el);
+  return el;
+}
+
+function escapeHTML(s){
+  return String(s).replace(/[&<>"]/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[c]));
+}
+
+/* Type in step with the voice, so the words land on the ear rather than ahead of it. */
+function speak(key, who, text, fixHTML){
+  return new Promise(resolve => {
+    const body = addBubble(who).querySelector(".body");
+    const a = audio[key];
+    let chars = 0, tick = null, done = false;
+    const finish = () => {
+      if (done) return; done = true;
+      if (tick) clearInterval(tick);
+      body.innerHTML = fixHTML || escapeHTML(text);
+      resolve();
+    };
+    const run = dur => {
+      const per = Math.max(12, (dur * 1000 * 0.86) / Math.max(text.length, 1));
+      tick = setInterval(() => {
+        chars++;
+        body.innerHTML = escapeHTML(text.slice(0, chars)) + '<span class="caret"></span>';
+        if (chars >= text.length){ clearInterval(tick); tick = null; body.innerHTML = fixHTML || escapeHTML(text); }
+      }, per);
+      a.addEventListener("ended", finish, { once:true });
+      setTimeout(finish, dur * 1000 + 3000);           // never strand the scene on a stuck file
+    };
+    const go = () => run(isFinite(a.duration) && a.duration > 0 ? a.duration : Math.max(2, text.length / 14));
+    try { a.currentTime = 0; } catch(_){}
+    const p = a.play();
+    if (p && p.catch) p.catch(() => {});
+    if (a.readyState >= 1) go(); else a.addEventListener("loadedmetadata", go, { once:true });
+  });
+}
+
+/* ============================================================ */
+async function play(){
+  state.running = true;
+  $("#card").hidden = true;
+  for (let i = 0; i < SCRIPT.length; i++){
+    const beat = SCRIPT[i];
+    if (!state.running) return;
+    if (beat.id === "YOUR_TURN"){ await yourTurn(); continue; }
+    plate(beat.plate); spot(beat.who);
+    await speak(beat.id, beat.who, beat.text);
+  }
+  plate("base"); spot(null);
+  hint.innerHTML = 'End of question 1. <button id="again">Run it again</button>';
+  const a = $("#again"); if (a) a.onclick = reset;
+}
+
+function yourTurn(){
+  return new Promise(resolve => {
+    state.resolveTurn = resolve;
+    state.transcript = ""; state.interim = "";
+    state.rescued = false; state.turnClosed = false;
+    plate("base"); spot("you");
+    micCap.textContent = "Your turn";
+    hint.innerHTML = 'Tap the mic and answer out loud — or <button id="demo">watch a run-through</button>';
+    const d = $("#demo"); if (d) d.onclick = runDemo;
+  });
+}
+
+function youBody(){
+  let el = bubbles.querySelector('.bubble.b-you[data-live="1"]');
+  if (!el){ el = addBubble("you"); el.dataset.live = "1"; }
+  return el.querySelector(".body");
+}
+function renderYou(){
+  youBody().innerHTML = escapeHTML(state.transcript)
+    + (state.interim ? '<span class="interim">' + escapeHTML(state.interim) + "</span>" : "")
+    + (state.listening ? '<span class="caret"></span>' : "");
+}
+function grew(){ state.lastGrowth = performance.now(); }
+
+/* A pause is only a stall if the sentence is still hanging. A beat between
+   two finished clauses is not an invitation to interrupt. */
+function looksUnfinished(s){
+  const t = s.trim();
+  if (t.split(/\s+/).length < 3) return false;
+  if (/[.!?]$/.test(t)) return false;
+  const last = t.split(/\s+/).pop();
+  return /^(um+|uh+|er+|the|a|an|is|was|were|like|and|but|my|to|of|in|on|it'?s|that'?s|because|when|national|free)$/i.test(last)
+      || last.length <= 6;
+}
+
+function startWatch(){
+  stopWatch();
+  state.stallTimer = setInterval(() => {
+    if (!state.listening || state.turnClosed) return;
+    const idle = performance.now() - state.lastGrowth;
+    const said = (state.transcript + state.interim).trim();
+    if (!said) return;
+    if (!state.rescued && idle > STALL_MS && idle < ENDTURN_MS && looksUnfinished(said)) rescue(said);
+    else if (idle >= ENDTURN_MS) closeTurn();
+  }, 140);
+}
+function stopWatch(){ if (state.stallTimer){ clearInterval(state.stallTimer); state.stallTimer = null; } }
+
+async function rescue(said){
+  state.rescued = true;
+  const tail = said.split(/\s+/).slice(-6).join(" ");
+  const r = RESCUES.find(x => x.test.test(tail)) || RESCUES[RESCUES.length - 1];
+  const live = bubbles.querySelector('.bubble.b-you[data-live="1"]');
+  if (live) live.removeAttribute("data-live");        // they resume in a fresh bubble
+
+  plate("linh_helping"); spot("linh");
+  await speak(r.id, "linh", r.text);
+  if (r.word){
+    state.dict.push({ term:r.word.term, gloss:r.word.gloss, said:r.text });
+    bDict.hidden = false; bDict.textContent = state.dict.length;
+  }
+  await speak("r_ack", "linh", "Nice, we get a few days off for that.");
+  plate("base"); spot("you");
+  grew(); renderYou();
+}
+
+async function closeTurn(){
+  if (state.turnClosed) return;
+  state.turnClosed = true;
+  stopWatch(); stopListening();
+  const said = (state.transcript + " " + state.interim).trim();
+  const live = bubbles.querySelector('.bubble.b-you[data-live="1"]');
+  if (live) live.removeAttribute("data-live");
+
+  const hit = REPAIRS.find(r => r.test.test(said));
+  const r = hit || NO_REPAIR;
+  plate(hit ? "minh_correcting" : "base"); spot("minh");
+
+  let html = null;
+  if (r.fix){
+    html = escapeHTML(r.text).replace(escapeHTML(r.fix.right),
+      '<span class="fix"><s>' + escapeHTML(r.fix.wrong) + '</s><span class="arrow">&rarr;</span><b>'
+      + escapeHTML(r.fix.right) + "</b></span>");
+    state.notes.push({ wrong:r.fix.wrong, right:r.fix.right, why:r.fix.why, said });
+    bNote.hidden = false; bNote.textContent = state.notes.length;
+  }
+  await speak(r.id, "minh", r.text, html);
+  plate("base"); spot(null);
+  micCap.textContent = "Your turn"; hint.textContent = "";
+  const f = state.resolveTurn; state.resolveTurn = null; if (f) f();
+}
+
+/* ---------- input ---------- */
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+function startListening(){
+  if (state.listening || state.turnClosed) return;
+  state.listening = true;
+  oMic.classList.add("live");
+  micCap.textContent = "Listening…";
+  hint.innerHTML = "Tap the mic again when you're done";
+  grew(); startWatch(); renderYou();
+  if (!SR) return;
+  try {
+    const rec = new SR();
+    rec.continuous = true; rec.interimResults = true; rec.lang = "en-US";
+    rec.onresult = e => {
+      let fin = "", itm = "";
+      for (let i = e.resultIndex; i < e.results.length; i++){
+        const r = e.results[i];
+        if (r.isFinal) fin += r[0].transcript; else itm += r[0].transcript;
+      }
+      if (fin) state.transcript += fin;
+      state.interim = itm;
+      grew(); renderYou();
+    };
+    rec.onerror = () => {};
+    rec.onend = () => { if (state.listening && !state.turnClosed){ try { rec.start(); } catch(_){} } };
+    rec.start();
+    state.recog = rec;
+  } catch(_){}
+}
+function stopListening(){
+  state.listening = false;
+  oMic.classList.remove("live");
+  if (state.recog){ try { state.recog.onend = null; state.recog.stop(); } catch(_){} state.recog = null; }
+}
+
+/* Typing runs the same detectors and the same stall clock. */
+window.addEventListener("keydown", e => {
+  if (!state.listening || state.turnClosed) return;
+  if (e.key === "Enter"){ e.preventDefault(); closeTurn(); return; }
+  if (e.key === "Backspace"){ e.preventDefault(); state.transcript = state.transcript.slice(0,-1); grew(); renderYou(); return; }
+  if (e.key.length === 1 && !e.metaKey && !e.ctrlKey){
+    e.preventDefault(); state.transcript += e.key; grew(); renderYou();
+  }
+});
+
+oMic.addEventListener("click", () => {
+  if (!state.running || state.turnClosed) return;
+  state.listening ? closeTurn() : startListening();
+});
+
+function runDemo(){
+  if (state.listening || state.turnClosed) return;
+  state.listening = true;
+  oMic.classList.add("live");
+  micCap.textContent = "Listening…";
+  hint.textContent = "";
+  grew(); startWatch(); renderYou();
+  let t = 0;
+  DEMO.forEach(chunk => {
+    if (chunk.hold){ t += chunk.hold; return; }   // nothing arrives — the watcher notices
+    t += chunk.d;
+    state.demoTimers.push(setTimeout(() => {
+      if (!state.listening || state.turnClosed) return;
+      state.transcript += chunk.t; grew(); renderYou();
+    }, t));
+  });
+  state.demoTimers.push(setTimeout(() => { if (!state.turnClosed) closeTurn(); }, t + ENDTURN_MS + 200));
+}
+
+/* ---------- the table ---------- */
+function openSheet(id){
+  if (id === "sDict") renderDict();
+  if (id === "sNote") renderNotes();
+  $("#" + id).dataset.open = "1";
+}
+$("#oDict").addEventListener("click", () => openSheet("sDict"));
+$("#oNote").addEventListener("click", () => openSheet("sNote"));
+document.querySelectorAll("[data-close]").forEach(b =>
+  b.addEventListener("click", () => { $("#" + b.dataset.close).dataset.open = "0"; }));
+document.querySelectorAll(".sheet").forEach(s =>
+  s.addEventListener("click", e => { if (e.target === s) s.dataset.open = "0"; }));
+window.addEventListener("keydown", e => {
+  if (e.key === "Escape") document.querySelectorAll(".sheet").forEach(s => s.dataset.open = "0");
+});
+
+function renderDict(){
+  $("#dictList").innerHTML = state.dict.length
+    ? state.dict.map(d =>
+        '<div class="entry"><div class="term">' + escapeHTML(d.term) + "</div>"
+        + '<p class="gloss">' + escapeHTML(d.gloss) + "</p>"
+        + '<p class="said">Linh: “' + escapeHTML(d.said) + '”</p></div>').join("")
+    : '<p class="empty">Nothing in here yet. When you reach for a word and it isn’t there, Linh hands it to you mid-sentence — and it gets written down here, in the sentence she used.</p>';
+}
+function renderNotes(){
+  $("#noteList").innerHTML = state.notes.length
+    ? state.notes.map(n =>
+        '<div class="entry"><div class="term"><s>' + escapeHTML(n.wrong) + "</s> &rarr; " + escapeHTML(n.right) + "</div>"
+        + '<p class="why">' + escapeHTML(n.why) + "</p>"
+        + '<p class="said">You said: “' + escapeHTML(n.said) + '”</p></div>').join("")
+    : '<p class="empty">Empty, and that’s the point. Minh writes down the one thing per answer that would actually trip someone up — not everything you got wrong.</p>';
+}
+
+/* ---------- start / reset ---------- */
+function reset(){
+  state.running = false; state.turnClosed = true;
+  stopWatch(); stopListening();
+  state.demoTimers.forEach(clearTimeout); state.demoTimers = [];
+  AUDIO_KEYS.forEach(k => { try { audio[k].pause(); audio[k].currentTime = 0; } catch(_){} });
+  bubbles.innerHTML = "";
+  state.dict = []; state.notes = [];
+  bDict.hidden = true; bNote.hidden = true;
+  plate("base"); spot(null);
+  micCap.textContent = "Your turn"; hint.textContent = "";
+  $("#card").hidden = false;
+}
+
+$("#start").addEventListener("click", () => {
+  AUDIO_KEYS.forEach(k => { const a = audio[k]; const p = a.play();
+    if (p && p.then) p.then(() => { a.pause(); a.currentTime = 0; }).catch(() => {}); });
+  play();
+});
+$("#leave").addEventListener("click", reset);
+
+$("#micStatus").textContent = SR
+  ? "Microphone ready — or just type your answer."
+  : "No speech recognition in this browser, so type your answer (it runs the same detectors).";
+</script>

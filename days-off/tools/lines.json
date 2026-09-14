@@ -1,0 +1,19 @@
+{
+ "minh_q":        ["minh", "So when was the last time you had a day off? A proper one."],
+ "linh_model":    ["linh", "Ooh, honestly? Last weekend. But it didn't feel like one, I had like three things to do. The last real one was probably Tet. I just stayed at my parents' place, ate way too much, didn't look at my phone. That was nice."],
+ "linh_handoff":  ["linh", "What about you? When was your last day off?"],
+ "r_reunification":["linh","Oh — Reunification Day? The thirtieth of April?"],
+ "r_tet":         ["linh", "Tet? Lunar New Year?"],
+ "r_national":    ["linh", "National Day? The second of September?"],
+ "r_hung":        ["linh", "Hung Kings' Festival?"],
+ "r_lambu":       ["linh", "Oh, you mean the make-up day? Working the Saturday so you get a longer break?"],
+ "r_generic":     ["linh", "Take your time. Was it a public holiday, or just a normal weekend?"],
+ "r_ack":         ["linh", "Nice, we get a few days off for that."],
+ "p_correction":  ["minh", "Oh, you said mistake — did you mean correction? The mistake is the wrong thing you did. The correction is the fix for it."],
+ "p_did_mistake": ["minh", "Oh, you said I did a mistake? We'd say made a mistake. Make goes with mistake, do goes with homework. Weird, I know."],
+ "p_relax":       ["minh", "Small one. You said very relax — it's relaxed, with the E D. The day was relaxing, so you were relaxed."],
+ "p_go_to_home":  ["minh", "Tiny thing. Go home, not go to home. Home doesn't take to. No idea why."],
+ "p_past":        ["minh", "You said I go to my hometown. Since it already happened — I went."],
+ "p_none":        ["minh", "Yeah, that sounds like a proper one."],
+ "linh_followup": ["linh", "So what did you actually do with those days?"]
+}

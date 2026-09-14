@@ -33,22 +33,66 @@ body{
 .layer{position:absolute;inset:0;width:100%;height:100%;image-rendering:pixelated;display:block}
 .layer.room{z-index:1}
 .layer.fg{z-index:3;pointer-events:none}
-/* every frame is normalised on the head inside a 200x200 canvas, so swapping
-   expressions can never shift or resize the character */
-.actor{position:absolute;z-index:2;image-rendering:pixelated;display:block}
-.actor.linh{left:1.63%;top:19.95%;width:34.16%}
-.actor.minh{left:64.83%;top:20.42%;width:33.81%}
+/* Abstract figures, built from rectangles. Every dimension is a cqi (1% of the
+   stage width), so the heads land on exact coordinates at any size and the
+   speech-bubble tails can be aimed at them arithmetically. */
+.actor{
+  position:absolute;z-index:2;top:14cqi;display:flex;flex-direction:column;align-items:center;
+  transform-origin:50% 100%;transition:transform .3s ease,filter .3s ease;
+}
+.actor.linh{left:16%;transform:translateX(-50%) rotate(3.5deg);--lean:1.5cqi;--skin:#E9BC8C;--cloth:#E0A32E}
+.actor.minh{left:84%;transform:translateX(-50%) rotate(-3.5deg);--lean:-1.5cqi;--skin:#DDAE80;--cloth:#6E8A52}
+.actor .head{
+  position:relative;z-index:2;width:12.4cqi;height:12.8cqi;border-radius:1.6cqi;
+  background:var(--skin);border:.6cqi solid var(--ink);
+}
+.actor .neck{
+  z-index:1;width:5.4cqi;height:2.6cqi;margin:-.6cqi 0;background:var(--skin);
+  border-left:.6cqi solid var(--ink);border-right:.6cqi solid var(--ink);
+}
+.actor .torso{
+  z-index:2;width:19.5cqi;height:17cqi;border-radius:2.4cqi 2.4cqi 0 0;
+  background:var(--cloth);border:.6cqi solid var(--ink);border-bottom:0;
+}
+.actor i{position:absolute;background:var(--ink);display:block}
+/* features sit off-centre toward the middle of the table: the lean reads as a
+   three-quarter turn without any drawing */
+.actor .eye{width:1.9cqi;height:2.2cqi;border-radius:.5cqi;top:4.6cqi;
+  transition:height .18s ease,top .18s ease}
+.actor .eye.l{left:calc(2.2cqi + var(--lean))}
+.actor .eye.r{left:calc(7.6cqi + var(--lean))}
+.actor .brow{width:2.6cqi;height:.75cqi;border-radius:.4cqi;top:2.6cqi;
+  transition:transform .18s ease}
+.actor .brow.l{left:calc(1.8cqi + var(--lean))}
+.actor .brow.r{left:calc(7.2cqi + var(--lean))}
+.actor .mouth{width:3.4cqi;height:.9cqi;border-radius:.45cqi;top:9.2cqi;
+  left:calc(3.6cqi + var(--lean));transition:all .18s ease}
+
+/* poses — only the mouth and brows move */
+.actor[data-pose="talking"] .mouth{height:2.6cqi;top:8.4cqi;border-radius:.6cqi}
+.actor[data-pose="asking"]  .mouth{width:2.6cqi;left:calc(4cqi + var(--lean))}
+.actor[data-pose="asking"]  .brow.r{transform:translateY(-.9cqi)}
+.actor[data-pose="asking"]  .brow.l{transform:translateY(-.4cqi)}
+.actor[data-pose="helping"] .mouth{width:3cqi;height:3cqi;border-radius:50%;top:8.2cqi;
+  left:calc(3.8cqi + var(--lean))}
+.actor[data-pose="helping"] .eye{height:3cqi;top:4.2cqi}
+.actor[data-pose="helping"] .brow{transform:translateY(-.9cqi)}
+.actor[data-pose="correcting"] .mouth{width:2.8cqi;height:1.8cqi;top:8.8cqi;
+  left:calc(3.9cqi + var(--lean))}
+.actor[data-pose="correcting"] .brow.l{transform:translateY(-1cqi)}
+.actor.speaking{filter:drop-shadow(0 0 1.4cqi rgba(240,166,60,.5))}
+@media (prefers-reduced-motion:reduce){.actor,.actor i{transition:none}}
 
 /* spotlight: darkens everyone except whoever is talking */
 .spot{position:absolute;inset:0;z-index:2;pointer-events:none;opacity:0;transition:opacity .38s ease}
 .spot.on{opacity:1}
-#spotLinh{background:radial-gradient(ellipse 24% 30% at 16% 33%,rgba(0,0,0,0) 40%,rgba(24,12,6,.44) 100%)}
-#spotMinh{background:radial-gradient(ellipse 24% 30% at 81% 33%,rgba(0,0,0,0) 40%,rgba(24,12,6,.44) 100%)}
+#spotLinh{background:radial-gradient(ellipse 22% 30% at 16% 28%,rgba(0,0,0,0) 42%,rgba(24,12,6,.46) 100%)}
+#spotMinh{background:radial-gradient(ellipse 22% 30% at 84% 28%,rgba(0,0,0,0) 42%,rgba(24,12,6,.46) 100%)}
 #spotYou {background:radial-gradient(ellipse 58% 28% at 50% 94%,rgba(0,0,0,0) 30%,rgba(24,12,6,.42) 100%)}
 
 /* ---------- speech bubbles ---------- */
 .bubbles{
-  position:absolute;z-index:6;left:27.5%;right:27.5%;top:5%;
+  position:absolute;z-index:6;left:28.5%;right:28.5%;top:5%;
   display:flex;flex-direction:column;gap:1.6cqi;align-items:stretch;
   font-size:2.05cqi;pointer-events:none;
 }
@@ -194,8 +238,16 @@ body{
 
 <div class="stage" id="stage">
   <img class="layer room" src="assets/room.png" alt="A sunlit Vietnamese coffee shop, seen from a seat at the table.">
-  <img class="actor linh" id="aLinh" src="assets/linh_listening.png" alt="Linh, sitting across the table.">
-  <img class="actor minh" id="aMinh" src="assets/minh_listening.png" alt="Minh, sitting across the table.">
+  <div class="actor linh" id="aLinh" data-pose="listening" role="img" aria-label="Linh, sitting across the table">
+    <div class="head"><i class="brow l"></i><i class="brow r"></i><i class="eye l"></i><i class="eye r"></i><i class="mouth"></i></div>
+    <div class="neck"></div>
+    <div class="torso"></div>
+  </div>
+  <div class="actor minh" id="aMinh" data-pose="listening" role="img" aria-label="Minh, sitting across the table">
+    <div class="head"><i class="brow l"></i><i class="brow r"></i><i class="eye l"></i><i class="eye r"></i><i class="mouth"></i></div>
+    <div class="neck"></div>
+    <div class="torso"></div>
+  </div>
   <img class="layer fg" src="assets/fg.png" alt="">
 
   <div class="spot" id="spotLinh"></div>
@@ -339,13 +391,13 @@ const state = {
 };
 
 function pose(who, name){
-  (who === "linh" ? aLinh : aMinh).src = "assets/" + who + "_" + name + ".png";
+  (who === "linh" ? aLinh : aMinh).dataset.pose = name;
 }
 function reset_poses(){ pose("linh","listening"); pose("minh","listening"); }
 
 /* Where each head actually sits, as a fraction of the stage. The tails are
    aimed at these, so a bubble always points at whoever is speaking. */
-const HEAD = { linh:{x:0.160,y:0.294}, minh:{x:0.811,y:0.294}, you:{x:0.5,y:0.93} };
+const HEAD = { linh:{x:0.16,y:0.272}, minh:{x:0.84,y:0.272}, you:{x:0.5,y:0.93} };
 
 function aimTail(el){
   const who = el.dataset.who;
@@ -369,6 +421,8 @@ function spot(who){
   $("#spotLinh").classList.toggle("on", who === "linh");
   $("#spotMinh").classList.toggle("on", who === "minh");
   $("#spotYou").classList.toggle("on", who === "you");
+  aLinh.classList.toggle("speaking", who === "linh");
+  aMinh.classList.toggle("speaking", who === "minh");
 }
 
 const NAMES = { linh:"Linh", minh:"Minh", you:"You" };

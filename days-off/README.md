@@ -58,23 +58,34 @@ line back into the bank. The client stays as-is.
 
 ## Art
 
-Three layers: `room.png`, the two characters, then `fg.png` (the tabletop) on
-top, so they sit *behind* the table and their cropped edge never shows.
+The room, the tabletop and the three objects are pixel art. The two characters
+are **abstract rectangles built in CSS** — head, neck, torso, plus small blocks
+for brows, eyes and mouth.
 
-Characters are generated as separate three-quarter sprites and composited, not
-baked into the room. That is deliberate, after trying the other way: ask for two
-people on the far side of a table *angled inward* and the model reliably swings
-the camera round to a side-on view of two profiles, which puts the viewer at the
-next table instead of in the third seat. Generating each one alone keeps the
-angle, the spacing and the scale under our control.
+That is a deliberate v1 choice, not a placeholder we forgot to replace.
+Alignment is the reason. With drawn sprites, every expression is a new image
+whose content sits at a slightly different place inside its canvas, so the head
+moves, and the speech-bubble tails — which have to point at that head — drift
+with it. Normalising sprites on the head helps but never quite lands. With
+rectangles the head is at a coordinate we chose, `aimTail()` can aim at it
+arithmetically, and it is exact at every window size.
 
-Every frame is normalised on the head — same scale, same head position inside a
-200×200 canvas — so swapping expressions can never make a character jump or
-resize. Linh is generated facing right and mirrored, so both face inward.
+Each figure leans a few degrees inward and its face blocks sit off-centre toward
+the middle of the table (`--lean`), which reads as a three-quarter turn without
+any drawing. Poses move only the mouth and brows:
 
-Faces use the visual-novel portrait style (`selective outline`, `medium shading`,
-`highly detailed`). Semi-realistic faces at this size land in the uncanny valley;
-the stylised ones don't.
+| pose | who | when |
+|---|---|---|
+| `listening` | both | default |
+| `talking` | Linh | her model answer, her follow-up |
+| `asking` | either | Minh's question, Linh turning to you |
+| `helping` | Linh | the mid-turn rescue — wide eyes, round mouth |
+| `correcting` | Minh | the one repair |
+
+The drawn alternative is parked in `art-wip/` with notes on swapping it back in.
+
+Layers are `room.png`, the characters, then `fg.png` (the tabletop) on top, so
+the figures sit behind the table and their cut-off bottoms never show.
 
 ## Keys
 

@@ -30,6 +30,9 @@ a mistake`, plus why). Both start empty and fill as you talk.
 - **A pause is only a stall if the sentence is still hanging.** `looksUnfinished()`
   checks the tail before Linh interrupts; a beat between two finished clauses is
   not an invitation.
+- **Bubbles point at whoever is speaking.** `HEAD` holds each character's real
+  position in the frame and `aimTail()` re-aims the tail as the bubble grows, so
+  it keeps pointing at the speaker rather than at a fixed spot.
 - **Rescues are pre-rendered.** They have to land inside about a second.
   Generating one on demand arrives long after the moment has passed.
 
@@ -55,13 +58,23 @@ line back into the bank. The client stays as-is.
 
 ## Art
 
-`tools/gen_art.py` generates the plate and the table objects (PixelLab).
-`tools/inpaint_faces.py` produces expressions by inpainting **only** the brow/eye
-and mouth bands of a face in the finished scene, then pasting the crop back — so
-every expression is a full plate and the faces can never drift out of register.
-Masking the nose, jaw or chin makes the model redraw bone structure and the
-character stops being the same person; the band coordinates in `REGION` are
-specific to this plate.
+Three layers: `room.png`, the two characters, then `fg.png` (the tabletop) on
+top, so they sit *behind* the table and their cropped edge never shows.
+
+Characters are generated as separate three-quarter sprites and composited, not
+baked into the room. That is deliberate, after trying the other way: ask for two
+people on the far side of a table *angled inward* and the model reliably swings
+the camera round to a side-on view of two profiles, which puts the viewer at the
+next table instead of in the third seat. Generating each one alone keeps the
+angle, the spacing and the scale under our control.
+
+Every frame is normalised on the head — same scale, same head position inside a
+200×200 canvas — so swapping expressions can never make a character jump or
+resize. Linh is generated facing right and mirrored, so both face inward.
+
+Faces use the visual-novel portrait style (`selective outline`, `medium shading`,
+`highly detailed`). Semi-realistic faces at this size land in the uncanny valley;
+the stylised ones don't.
 
 ## Keys
 

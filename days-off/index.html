@@ -30,32 +30,35 @@ body{
   box-shadow:0 0 0 3px var(--wood-dk),0 18px 48px rgba(0,0,0,.55);
   background:#2a1a12;user-select:none;
 }
-/* every expression is a full plate, so the faces can never drift out of register */
-.plate{position:absolute;inset:0;width:100%;height:100%;image-rendering:pixelated;
-  display:block;opacity:0;transition:opacity .12s linear;z-index:1}
-.plate.on{opacity:1}
+.layer{position:absolute;inset:0;width:100%;height:100%;image-rendering:pixelated;display:block}
+.layer.room{z-index:1}
+.layer.fg{z-index:3;pointer-events:none}
+/* every frame is normalised on the head inside a 200x200 canvas, so swapping
+   expressions can never shift or resize the character */
+.actor{position:absolute;z-index:2;image-rendering:pixelated;display:block}
+.actor.linh{left:1.63%;top:19.95%;width:34.16%}
+.actor.minh{left:64.83%;top:20.42%;width:33.81%}
 
 /* spotlight: darkens everyone except whoever is talking */
 .spot{position:absolute;inset:0;z-index:2;pointer-events:none;opacity:0;transition:opacity .38s ease}
 .spot.on{opacity:1}
-#spotLinh{background:radial-gradient(ellipse 26% 34% at 41% 45%,rgba(0,0,0,0) 42%,rgba(24,12,6,.42) 100%)}
-#spotMinh{background:radial-gradient(ellipse 26% 34% at 65% 45%,rgba(0,0,0,0) 42%,rgba(24,12,6,.42) 100%)}
-#spotYou {background:radial-gradient(ellipse 60% 30% at 50% 96%,rgba(0,0,0,0) 30%,rgba(24,12,6,.40) 100%)}
+#spotLinh{background:radial-gradient(ellipse 24% 30% at 16% 33%,rgba(0,0,0,0) 40%,rgba(24,12,6,.44) 100%)}
+#spotMinh{background:radial-gradient(ellipse 24% 30% at 81% 33%,rgba(0,0,0,0) 40%,rgba(24,12,6,.44) 100%)}
+#spotYou {background:radial-gradient(ellipse 58% 28% at 50% 94%,rgba(0,0,0,0) 30%,rgba(24,12,6,.42) 100%)}
 
 /* ---------- speech bubbles ---------- */
 .bubbles{
-  position:absolute;z-index:6;left:3.5%;right:3.5%;top:2.5%;
-  display:flex;flex-direction:column;gap:1.5cqi;align-items:flex-start;
-  font-size:2.05cqi;
+  position:absolute;z-index:6;left:27.5%;right:27.5%;top:5%;
+  display:flex;flex-direction:column;gap:1.6cqi;align-items:stretch;
+  font-size:2.05cqi;pointer-events:none;
 }
 .bubble{
-  position:relative;max-width:60%;background:var(--paper);color:var(--ink);
+  position:relative;background:var(--paper);color:var(--ink);
   border:.45cqi solid var(--ink);border-radius:.9cqi;
   padding:1.3cqi 1.6cqi 1.2cqi;box-shadow:.5cqi .6cqi 0 rgba(0,0,0,.34);
   line-height:1.42;animation:pop .2s cubic-bezier(.34,1.4,.5,1) both;
 }
-.bubble.b-minh{align-self:flex-end}
-.bubble.b-you{align-self:center;max-width:74%;background:#EFF3F6;border-color:#24333D}
+.bubble.b-you{background:#EFF3F6;border-color:#24333D}
 .bubble.faded{opacity:.42;filter:saturate(.7)}
 @keyframes pop{from{opacity:0;transform:translateY(.7cqi) scale(.975)}to{opacity:1;transform:none}}
 @media (prefers-reduced-motion:reduce){.bubble{animation:none}}
@@ -68,15 +71,15 @@ body{
 .bubble.b-minh .who{color:#4C6634}
 .bubble.b-you  .who{color:#3B5A6B}
 
-/* downward tails, offset toward whoever is speaking */
+/* tails point at the speaker's actual head; --tail is set in JS from the layout */
 .bubble::before,.bubble::after{content:"";position:absolute;width:0;height:0;border:1.5cqi solid transparent}
 .bubble::before{border-width:2cqi;z-index:-1}
-.bubble.b-linh::after{left:16%;bottom:-2.55cqi;border-top-color:var(--paper);border-bottom:0}
-.bubble.b-linh::before{left:calc(16% - .5cqi);bottom:-3.6cqi;border-top-color:var(--ink);border-bottom:0}
-.bubble.b-minh::after{right:16%;bottom:-2.55cqi;border-top-color:var(--paper);border-bottom:0}
-.bubble.b-minh::before{right:calc(16% - .5cqi);bottom:-3.6cqi;border-top-color:var(--ink);border-bottom:0}
-.bubble.b-you::after{left:50%;margin-left:-1.5cqi;bottom:-2.55cqi;border-top-color:#EFF3F6;border-bottom:0}
-.bubble.b-you::before{left:50%;margin-left:-2cqi;bottom:-3.6cqi;border-top-color:#24333D;border-bottom:0}
+.bubble.b-linh::after{left:-2.55cqi;top:var(--tail);margin-top:-1.5cqi;border-right-color:var(--paper);border-left:0}
+.bubble.b-linh::before{left:-3.6cqi;top:var(--tail);margin-top:-2cqi;border-right-color:var(--ink);border-left:0}
+.bubble.b-minh::after{right:-2.55cqi;top:var(--tail);margin-top:-1.5cqi;border-left-color:var(--paper);border-right:0}
+.bubble.b-minh::before{right:-3.6cqi;top:var(--tail);margin-top:-2cqi;border-left-color:var(--ink);border-right:0}
+.bubble.b-you::after{left:var(--tail);margin-left:-1.5cqi;bottom:-2.55cqi;border-top-color:#EFF3F6;border-bottom:0}
+.bubble.b-you::before{left:var(--tail);margin-left:-2cqi;bottom:-3.6cqi;border-top-color:#24333D;border-bottom:0}
 
 .caret{display:inline-block;width:.55em;height:1.05em;vertical-align:-.16em;
   background:var(--ink);margin-left:.12em;animation:blink .7s steps(1,end) infinite}
@@ -172,10 +175,9 @@ body{
 
 /* ---------- narrow: the talk moves below the picture ---------- */
 @media (max-width:700px){
-  .bubbles{position:static;width:100%;max-width:900px;font-size:15px;gap:9px;margin-top:2px;align-items:stretch}
-  .bubble,.bubble.b-you{max-width:100%;border-width:2px;border-radius:8px;padding:9px 11px;
+  .bubbles{position:static;width:100%;max-width:900px;font-size:15px;gap:9px;margin-top:2px;align-items:stretch;pointer-events:auto}
+  .bubble,.bubble.b-you{border-width:2px;border-radius:8px;padding:9px 11px;
     box-shadow:3px 4px 0 rgba(0,0,0,.4)}
-  .bubble.b-minh{align-self:stretch}
   .bubble .who{font-size:12px}
   .bubble::before,.bubble::after{display:none}
   .fix{border-width:1.5px;border-radius:5px}
@@ -191,12 +193,10 @@ body{
 </style>
 
 <div class="stage" id="stage">
-  <img class="plate on" id="p_base"  src="assets/base.png" alt="Linh and Minh sitting across a café table from you.">
-  <img class="plate" id="p_linh_talking"    src="assets/linh_talking.png" alt="">
-  <img class="plate" id="p_linh_helping"    src="assets/linh_helping.png" alt="">
-  <img class="plate" id="p_linh_asking"     src="assets/linh_asking.png" alt="">
-  <img class="plate" id="p_minh_asking"     src="assets/minh_asking.png" alt="">
-  <img class="plate" id="p_minh_correcting" src="assets/minh_correcting.png" alt="">
+  <img class="layer room" src="assets/room.png" alt="A sunlit Vietnamese coffee shop, seen from a seat at the table.">
+  <img class="actor linh" id="aLinh" src="assets/linh_listening.png" alt="Linh, sitting across the table.">
+  <img class="actor minh" id="aMinh" src="assets/minh_listening.png" alt="Minh, sitting across the table.">
+  <img class="layer fg" src="assets/fg.png" alt="">
 
   <div class="spot" id="spotLinh"></div>
   <div class="spot" id="spotMinh"></div>
@@ -246,14 +246,14 @@ body{
    The scripted spine of question 1
    ============================================================ */
 const SCRIPT = [
-  { id:"minh_q", who:"minh", plate:"minh_asking",
+  { id:"minh_q", who:"minh", pose:"asking",
     text:"So — when was the last time you had a day off? A proper one." },
-  { id:"linh_model", who:"linh", plate:"linh_talking",
+  { id:"linh_model", who:"linh", pose:"talking",
     text:"Ooh, honestly? Last weekend. But it didn't feel like one — I had like three things to do. The last real one was probably Tết. I just stayed at my parents' place, ate way too much, didn't look at my phone. That was nice." },
-  { id:"linh_handoff", who:"linh", plate:"linh_asking",
+  { id:"linh_handoff", who:"linh", pose:"asking",
     text:"What about you — when was your last day off?" },
   { id:"YOUR_TURN" },
-  { id:"linh_followup", who:"linh", plate:"linh_talking",
+  { id:"linh_followup", who:"linh", pose:"talking",
     text:"So what did you actually do with those days?" }
 ];
 
@@ -322,8 +322,9 @@ const ENDTURN_MS = 2600;  // they're done
 
 /* ============================================================ */
 const $ = s => document.querySelector(s);
-const bubbles = $("#bubbles"), oMic = $("#oMic"), micCap = $("#micCap"), hint = $("#hint");
+const stage = $("#stage"), bubbles = $("#bubbles"), oMic = $("#oMic"), micCap = $("#micCap"), hint = $("#hint");
 const bDict = $("#bDict"), bNote = $("#bNote");
+const aLinh = $("#aLinh"), aMinh = $("#aMinh");
 
 const audio = {};
 const AUDIO_KEYS = ["minh_q","linh_model","linh_handoff","linh_followup",
@@ -337,10 +338,33 @@ const state = {
   stallTimer:null, resolveTurn:null
 };
 
-function plate(name){
-  document.querySelectorAll(".plate").forEach(p => p.classList.remove("on"));
-  ($("#p_" + name) || $("#p_base")).classList.add("on");
+function pose(who, name){
+  (who === "linh" ? aLinh : aMinh).src = "assets/" + who + "_" + name + ".png";
 }
+function reset_poses(){ pose("linh","listening"); pose("minh","listening"); }
+
+/* Where each head actually sits, as a fraction of the stage. The tails are
+   aimed at these, so a bubble always points at whoever is speaking. */
+const HEAD = { linh:{x:0.160,y:0.294}, minh:{x:0.811,y:0.294}, you:{x:0.5,y:0.93} };
+
+function aimTail(el){
+  const who = el.dataset.who;
+  if (!who || !HEAD[who]) return;
+  if (getComputedStyle(bubbles).position === "static"){ el.style.removeProperty("--tail"); return; }
+  const s = stage.getBoundingClientRect(), b = el.getBoundingClientRect();
+  if (!b.height) return;
+  if (who === "you"){
+    const pad = Math.min(b.width * 0.22, 48);
+    const x = (s.left + s.width * HEAD.you.x) - b.left;
+    el.style.setProperty("--tail", Math.max(pad, Math.min(b.width - pad, x)) + "px");
+  } else {
+    const pad = Math.min(b.height * 0.3, 34);
+    const y = (s.top + s.height * HEAD[who].y) - b.top;
+    el.style.setProperty("--tail", Math.max(pad, Math.min(b.height - pad, y)) + "px");
+  }
+}
+function aimAll(){ bubbles.querySelectorAll(".bubble").forEach(aimTail); }
+window.addEventListener("resize", aimAll);
 function spot(who){
   $("#spotLinh").classList.toggle("on", who === "linh");
   $("#spotMinh").classList.toggle("on", who === "minh");
@@ -355,7 +379,9 @@ function addBubble(who){
   const el = document.createElement("div");
   el.className = "bubble b-" + who;
   el.innerHTML = '<span class="who">' + NAMES[who] + '</span><span class="body"></span>';
+  el.dataset.who = who;
   bubbles.append(el);
+  aimTail(el);
   return el;
 }
 
@@ -380,7 +406,8 @@ function speak(key, who, text, fixHTML){
       tick = setInterval(() => {
         chars++;
         body.innerHTML = escapeHTML(text.slice(0, chars)) + '<span class="caret"></span>';
-        if (chars >= text.length){ clearInterval(tick); tick = null; body.innerHTML = fixHTML || escapeHTML(text); }
+        aimAll();
+        if (chars >= text.length){ clearInterval(tick); tick = null; body.innerHTML = fixHTML || escapeHTML(text); aimAll(); }
       }, per);
       a.addEventListener("ended", finish, { once:true });
       setTimeout(finish, dur * 1000 + 3000);           // never strand the scene on a stuck file
@@ -401,10 +428,12 @@ async function play(){
     const beat = SCRIPT[i];
     if (!state.running) return;
     if (beat.id === "YOUR_TURN"){ await yourTurn(); continue; }
-    plate(beat.plate); spot(beat.who);
+    pose(beat.who, beat.pose);
+    pose(beat.who === "linh" ? "minh" : "linh", "listening");
+    spot(beat.who);
     await speak(beat.id, beat.who, beat.text);
   }
-  plate("base"); spot(null);
+  reset_poses(); spot(null);
   hint.innerHTML = 'End of question 1. <button id="again">Run it again</button>';
   const a = $("#again"); if (a) a.onclick = reset;
 }
@@ -414,7 +443,7 @@ function yourTurn(){
     state.resolveTurn = resolve;
     state.transcript = ""; state.interim = "";
     state.rescued = false; state.turnClosed = false;
-    plate("base"); spot("you");
+    reset_poses(); spot("you");
     micCap.textContent = "Your turn";
     hint.innerHTML = 'Tap the mic and answer out loud — or <button id="demo">watch a run-through</button>';
     const d = $("#demo"); if (d) d.onclick = runDemo;
@@ -430,6 +459,7 @@ function renderYou(){
   youBody().innerHTML = escapeHTML(state.transcript)
     + (state.interim ? '<span class="interim">' + escapeHTML(state.interim) + "</span>" : "")
     + (state.listening ? '<span class="caret"></span>' : "");
+  aimAll();
 }
 function grew(){ state.lastGrowth = performance.now(); }
 
@@ -464,14 +494,14 @@ async function rescue(said){
   const live = bubbles.querySelector('.bubble.b-you[data-live="1"]');
   if (live) live.removeAttribute("data-live");        // they resume in a fresh bubble
 
-  plate("linh_helping"); spot("linh");
+  pose("linh","helping"); spot("linh");
   await speak(r.id, "linh", r.text);
   if (r.word){
     state.dict.push({ term:r.word.term, gloss:r.word.gloss, said:r.text });
     bDict.hidden = false; bDict.textContent = state.dict.length;
   }
   await speak("r_ack", "linh", "Nice, we get a few days off for that.");
-  plate("base"); spot("you");
+  pose("linh","listening"); spot("you");
   grew(); renderYou();
 }
 
@@ -479,13 +509,14 @@ async function closeTurn(){
   if (state.turnClosed) return;
   state.turnClosed = true;
   stopWatch(); stopListening();
+  micCap.textContent = "Your turn"; hint.textContent = "";
   const said = (state.transcript + " " + state.interim).trim();
   const live = bubbles.querySelector('.bubble.b-you[data-live="1"]');
   if (live) live.removeAttribute("data-live");
 
   const hit = REPAIRS.find(r => r.test.test(said));
   const r = hit || NO_REPAIR;
-  plate(hit ? "minh_correcting" : "base"); spot("minh");
+  pose("minh", hit ? "correcting" : "listening"); spot("minh");
 
   let html = null;
   if (r.fix){
@@ -496,7 +527,7 @@ async function closeTurn(){
     bNote.hidden = false; bNote.textContent = state.notes.length;
   }
   await speak(r.id, "minh", r.text, html);
-  plate("base"); spot(null);
+  reset_poses(); spot(null);
   micCap.textContent = "Your turn"; hint.textContent = "";
   const f = state.resolveTurn; state.resolveTurn = null; if (f) f();
 }
@@ -613,7 +644,7 @@ function reset(){
   bubbles.innerHTML = "";
   state.dict = []; state.notes = [];
   bDict.hidden = true; bNote.hidden = true;
-  plate("base"); spot(null);
+  reset_poses(); spot(null);
   micCap.textContent = "Your turn"; hint.textContent = "";
   $("#card").hidden = false;
 }

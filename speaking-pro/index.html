@@ -1,0 +1,700 @@
+<title>Speaking PRO</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Be+Vietnam+Pro:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap">
+
+<style>
+/* ============================================================
+   RESTYLE HERE — everything downstream reads these tokens.
+   Swap these values to match Speaking Intensive and the whole
+   page follows; nothing below hardcodes a colour or a face.
+   ============================================================ */
+:root{
+  --ground:#F3F6F2;
+  --surface:#FFFFFF;
+  --surface-2:#EAEFE9;
+  --ink:#14201C;
+  --ink-2:#3B4C45;
+  --muted:#64776F;
+  --line:#D8E0D9;
+  --jade:#0E7C6B;
+  --jade-soft:#DCEFEA;
+  --coral:#D8503A;
+  --coral-soft:#FBE6E1;
+  --sand:#F0E4C9;
+  --sand-line:#DDCCA6;
+  --display:"Bricolage Grotesque","Trebuchet MS",sans-serif;
+  --body:"Be Vietnam Pro","Segoe UI",system-ui,sans-serif;
+  --r:14px;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --ground:#0E1512;--surface:#18211D;--surface-2:#202B26;
+    --ink:#E8F0EB;--ink-2:#B5C6BE;--muted:#8CA098;--line:#2C3B34;
+    --jade:#3BC0A8;--jade-soft:#123029;--coral:#F0755E;--coral-soft:#35201B;
+    --sand:#2E2919;--sand-line:#4A4128;
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#0E1512;--surface:#18211D;--surface-2:#202B26;
+  --ink:#E8F0EB;--ink-2:#B5C6BE;--muted:#8CA098;--line:#2C3B34;
+  --jade:#3BC0A8;--jade-soft:#123029;--coral:#F0755E;--coral-soft:#35201B;
+  --sand:#2E2919;--sand-line:#4A4128;
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0;background:var(--ground);color:var(--ink);
+  font-family:var(--body);font-size:15px;line-height:1.55;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:880px;margin:0 auto;padding:0 20px;padding-block:28px 56px}
+h1,h2,h3{font-family:var(--display);margin:0;text-wrap:balance;letter-spacing:-.01em}
+p{margin:0}
+.vi{color:var(--muted);font-style:italic}
+.num{font-variant-numeric:tabular-nums}
+
+/* ---------- top bar ---------- */
+.top{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:26px}
+.brand{font-family:var(--display);font-weight:800;font-size:19px;letter-spacing:-.02em;
+  display:flex;align-items:center;gap:9px}
+.brand .dot{width:9px;height:9px;border-radius:50%;background:var(--jade)}
+.brand small{font-weight:500;font-size:10px;letter-spacing:.16em;color:var(--jade);
+  border:1px solid var(--jade);border-radius:4px;padding:1px 5px;margin-left:2px}
+.streak{display:flex;align-items:center;gap:7px;font-weight:600;font-size:13px;
+  background:var(--coral-soft);color:var(--coral);border-radius:999px;padding:5px 12px}
+
+/* ---------- greeting ---------- */
+.hello{margin-bottom:24px}
+.hello h1{font-size:clamp(25px,4.4vw,34px);font-weight:800;line-height:1.15}
+.hello p{margin-top:6px;font-size:16px;color:var(--ink-2)}
+
+/* ---------- today's focus ---------- */
+.focus{
+  background:var(--sand);border:1px solid var(--sand-line);border-radius:var(--r);
+  padding:20px 22px;margin-bottom:12px;
+}
+.eyebrow{font-family:var(--display);font-size:10.5px;font-weight:700;letter-spacing:.17em;
+  text-transform:uppercase;color:var(--muted);margin-bottom:9px}
+.focus h2{font-size:21px;font-weight:700;margin-bottom:5px}
+.focus .why{color:var(--ink-2);font-size:14px;max-width:62ch}
+.focus .why b{color:var(--ink);font-weight:600}
+.focus .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:15px}
+
+.btn{font-family:var(--body);font-weight:600;font-size:14px;cursor:pointer;
+  border-radius:9px;padding:9px 17px;border:1px solid transparent;
+  background:var(--jade);color:#fff;transition:filter .15s ease,transform .1s ease}
+.btn:hover{filter:brightness(1.08)}
+.btn:active{transform:translateY(1px)}
+.btn.ghost{background:transparent;color:var(--ink-2);border-color:var(--line)}
+.btn.ghost:hover{border-color:var(--ink-2);color:var(--ink);filter:none}
+.btn:focus-visible{outline:2px solid var(--jade);outline-offset:2px}
+
+/* ---------- the three parts ---------- */
+.parts{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:30px}
+.part{
+  text-align:left;font:inherit;cursor:pointer;background:var(--surface);
+  border:1px solid var(--line);border-radius:var(--r);padding:15px 16px;
+  display:flex;flex-direction:column;gap:5px;transition:border-color .15s ease,transform .1s ease}
+.part:hover{border-color:var(--jade);transform:translateY(-1px)}
+.part:focus-visible{outline:2px solid var(--jade);outline-offset:2px}
+.part .n{font-family:var(--display);font-weight:700;font-size:15px}
+.part .vi{font-size:12.5px}
+.part .d{font-size:12.5px;color:var(--muted);line-height:1.45}
+.part .len{margin-top:auto;padding-top:7px;font-size:11px;font-weight:600;color:var(--jade);
+  font-variant-numeric:tabular-nums}
+
+/* ---------- section heads ---------- */
+.head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;
+  margin-bottom:12px;flex-wrap:wrap}
+.head h3{font-size:16px;font-weight:700}
+.head .sub{font-size:12.5px;color:var(--muted)}
+
+/* ---------- daily goals ---------- */
+.goals{display:flex;flex-direction:column;gap:2px;margin-bottom:30px;
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.goal{display:grid;grid-template-columns:1fr auto;gap:4px 14px;align-items:center;
+  padding:13px 16px;border-top:1px solid var(--line)}
+.goal:first-child{border-top:0}
+.goal .t{font-weight:500;font-size:14px}
+.goal .t .vi{font-style:normal;font-size:12.5px;display:block;color:var(--muted)}
+.goal .v{font-weight:700;font-size:14px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.goal.done .v{color:var(--jade)}
+.bar{grid-column:1/-1;height:5px;border-radius:3px;background:var(--surface-2);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--jade);border-radius:3px;
+  transition:width .5s cubic-bezier(.2,.8,.3,1)}
+.goal.done .bar i{background:var(--jade)}
+
+/* ---------- community ---------- */
+.comm{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);
+  padding:18px 20px;margin-bottom:26px}
+.comm .cgoal{padding:14px 0;border-top:1px solid var(--line)}
+.comm .cgoal:first-of-type{border-top:0;padding-top:4px}
+.comm .cline{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.comm .label{font-weight:600;font-size:14px}
+.comm .label span{font-weight:400;color:var(--muted);font-size:12.5px}
+.comm .count{font-family:var(--display);font-weight:700;font-size:19px;
+  font-variant-numeric:tabular-nums;color:var(--jade)}
+.comm .count small{font-weight:500;font-size:12.5px;color:var(--muted);font-family:var(--body)}
+.comm .bar{margin-top:8px;height:7px}
+.comm .mine{margin-top:9px;font-size:12.5px;color:var(--muted)}
+.comm .mine b{color:var(--coral);font-weight:700;font-variant-numeric:tabular-nums}
+.live{display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--muted);font-weight:500}
+.live i{width:6px;height:6px;border-radius:50%;background:var(--muted);display:block}
+.live.on i{background:var(--jade);animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.35}}
+@media (prefers-reduced-motion:reduce){.live.on i{animation:none}}
+
+.note{font-size:12.5px;color:var(--muted);line-height:1.6;max-width:70ch}
+.note code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11.5px;
+  background:var(--surface-2);padding:1px 5px;border-radius:4px}
+
+/* ============================================================
+   PRACTICE
+   ============================================================ */
+.practice{display:none}
+body[data-view="practice"] .hub{display:none}
+body[data-view="practice"] .practice{display:block}
+
+.pbar{display:flex;align-items:center;justify-content:space-between;gap:14px;
+  margin-bottom:20px;flex-wrap:wrap}
+.pbar .what{font-family:var(--display);font-weight:700;font-size:16px}
+.pbar .what span{font-family:var(--body);font-weight:500;font-size:13px;color:var(--muted);
+  display:block;margin-top:1px}
+.pips{display:flex;gap:5px}
+.pips i{width:20px;height:4px;border-radius:2px;background:var(--line);display:block}
+.pips i.done{background:var(--jade)}
+.pips i.now{background:var(--coral)}
+
+.qcard{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);
+  padding:22px 24px;margin-bottom:14px}
+.qcard .eyebrow{margin-bottom:10px}
+.qcard .q{font-family:var(--display);font-size:clamp(19px,3vw,23px);font-weight:700;line-height:1.3}
+.qcard .qrow{display:flex;gap:10px;align-items:center;margin-top:14px;flex-wrap:wrap}
+
+.answer{width:100%;font:inherit;font-size:15px;color:var(--ink);background:var(--surface);
+  border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;min-height:96px;
+  resize:vertical;line-height:1.6}
+.answer:focus{outline:2px solid var(--jade);outline-offset:-1px;border-color:var(--jade)}
+.answer::placeholder{color:var(--muted)}
+
+.arow{display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin-top:11px}
+.mic{display:inline-flex;align-items:center;gap:8px}
+.mic.live .btn{background:var(--coral)}
+
+/* the socratic turn — a question back, never a verdict */
+.nudge{background:var(--jade-soft);border:1px solid var(--jade);border-radius:var(--r);
+  padding:16px 18px;margin-top:14px}
+.nudge .eyebrow{color:var(--jade)}
+.nudge .say{font-family:var(--display);font-size:17px;font-weight:700;line-height:1.35}
+.nudge .hintrow{margin-top:12px;display:flex;gap:9px;flex-wrap:wrap;align-items:center}
+.nudge .reveal{font-size:13.5px;color:var(--ink-2);margin-top:10px}
+.nudge .reveal b{color:var(--jade)}
+
+.landed{background:var(--surface);border:1px solid var(--jade);border-radius:var(--r);
+  padding:16px 18px;margin-top:14px}
+.landed .say{font-family:var(--display);font-size:17px;font-weight:700;color:var(--jade)}
+.landed .earned{margin-top:9px;display:flex;gap:7px;flex-wrap:wrap}
+.chip{font-size:12px;font-weight:600;border-radius:999px;padding:4px 11px;
+  background:var(--jade-soft);color:var(--jade);border:1px solid var(--jade);
+  font-variant-numeric:tabular-nums}
+.chip.self{background:var(--coral-soft);color:var(--coral);border-color:var(--coral)}
+
+/* the ledger: every event the session produced */
+.ledger{margin-top:26px;background:var(--surface);border:1px solid var(--line);
+  border-radius:var(--r);padding:16px 18px}
+.ledger .rows{display:flex;flex-direction:column;gap:0;margin-top:4px}
+.lrow{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:baseline;
+  padding:8px 0;border-top:1px solid var(--line);font-size:13.5px}
+.lrow:first-child{border-top:0}
+.lrow .k{font-weight:600}
+.lrow .x{color:var(--muted);font-size:12.5px}
+.lrow .v{font-weight:700;font-variant-numeric:tabular-nums;color:var(--jade)}
+.lrow .v.self{color:var(--coral)}
+.ledger .empty{color:var(--muted);font-style:italic;font-size:13.5px;margin-top:6px}
+
+@media (max-width:640px){
+  .parts{grid-template-columns:1fr}
+  .wrap{padding-block:20px 44px}
+}
+</style>
+
+<div class="wrap">
+
+  <div class="top">
+    <div class="brand"><span class="dot"></span>Speaking<small>PRO</small></div>
+    <div class="streak">🔥 <span class="num">12</span> ngày liên tiếp</div>
+  </div>
+
+  <!-- ========================= HUB ========================= -->
+  <div class="hub">
+
+    <div class="hello">
+      <h1>Heyy there — welcome back!</h1>
+      <p>Hôm nay mình cùng nhau luyện gì đây? 😄</p>
+    </div>
+
+    <div class="focus">
+      <p class="eyebrow">Gợi ý hôm nay · today's focus</p>
+      <h2>Past simple endings</h2>
+      <p class="why">Tuần trước bạn bỏ mất đuôi <b>-ed</b> ở <b>11 trên 34</b> động từ quá khứ — hầu hết ở Part 1, khi kể chuyện đã xảy ra.
+        <br><span class="vi" style="font-style:normal">You dropped the past ending on 11 of 34 verbs last week, almost all of them in Part&nbsp;1 while telling me about something that had already happened.</span></p>
+      <div class="row">
+        <button class="btn" id="startFocus">Luyện cái này · Part 1 &rarr;</button>
+        <button class="btn ghost" id="otherFocus">Cho mình cái khác</button>
+      </div>
+    </div>
+
+    <p class="note" style="margin-bottom:22px">Hoặc tự chọn phần muốn luyện:</p>
+
+    <div class="parts">
+      <button class="part" data-part="1">
+        <span class="n">Part 1</span>
+        <span class="vi">Câu hỏi quen thuộc</span>
+        <span class="d">Short questions about you, your home, your week. Warm-up pace.</span>
+        <span class="len">4–5 phút</span>
+      </button>
+      <button class="part" data-part="2">
+        <span class="n">Part 2</span>
+        <span class="vi">Lượt nói dài</span>
+        <span class="d">One cue card. Two minutes, no interruptions, no rescue.</span>
+        <span class="len">3–4 phút</span>
+      </button>
+      <button class="part" data-part="3">
+        <span class="n">Part 3</span>
+        <span class="vi">Thảo luận</span>
+        <span class="d">Abstract discussion — opinions, reasons, what-ifs.</span>
+        <span class="len">4–5 phút</span>
+      </button>
+    </div>
+
+    <div class="head">
+      <h3>Mục tiêu hôm nay <span class="sub">· của riêng bạn</span></h3>
+      <span class="sub">reset lúc nửa đêm</span>
+    </div>
+    <div class="goals" id="goals"></div>
+
+    <div class="head">
+      <h3>Cả lớp đang xây <span class="sub">· everyone, together</span></h3>
+      <span class="live" id="live"><i></i><span>đang kết nối…</span></span>
+    </div>
+    <div class="comm" id="comm"></div>
+
+    <p class="note">
+      Mục tiêu tuần và tháng là <b>của chung</b> — mỗi câu bạn nói đúng đều cộng vào con số đó, và ai mở trang này cũng thấy nó nhích lên.
+      Số cá nhân lưu trên máy bạn; số cộng đồng lưu chung.
+      <br><br>
+      <b>Đếm cái gì:</b> prototype này đếm <code>ngữ pháp</code> từ transcript — past simple, đuôi -s ngôi thứ ba, số nhiều.
+      Đếm <i>âm</i> /s/ thì cần chấm phoneme trên audio, là một pipeline khác hẳn.
+    </p>
+  </div>
+
+  <!-- ====================== PRACTICE ====================== -->
+  <div class="practice">
+
+    <div class="pbar">
+      <div class="what">Part 1 · Days off<span id="focusLine">Đang soi: past simple endings</span></div>
+      <div class="pips" id="pips"></div>
+    </div>
+
+    <div class="qcard">
+      <p class="eyebrow">Câu hỏi <span class="num" id="qn">1</span>/5</p>
+      <p class="q" id="q">…</p>
+      <div class="qrow">
+        <button class="btn ghost" id="replay">🔊 Nghe lại</button>
+        <button class="btn ghost" id="sample">Dùng câu trả lời mẫu</button>
+      </div>
+    </div>
+
+    <textarea class="answer" id="ans" placeholder="Trả lời ra tiếng — hoặc gõ vào đây. Cả hai đều chạy cùng một bộ luật."></textarea>
+    <div class="arow">
+      <span class="mic" id="micWrap"><button class="btn ghost" id="mic">🎙️ Nói</button></span>
+      <button class="btn" id="send">Xong · gửi</button>
+      <button class="btn ghost" id="quit">← Về trang chính</button>
+    </div>
+
+    <div id="react"></div>
+
+    <div class="ledger">
+      <div class="head" style="margin-bottom:2px">
+        <h3>Buổi này ghi được</h3>
+        <span class="sub">mỗi việc đúng là một dòng</span>
+      </div>
+      <div class="rows" id="rows"><p class="empty">Chưa có gì. Trả lời câu đầu tiên đi.</p></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+"use strict";
+
+/* ============================================================
+   THE LEDGER IDEA
+   Every correct thing a student says becomes a typed event.
+   Daily goals, the community counters and the session summary are
+   all just queries over that one stream — nothing counts anything
+   twice, and a new goal is a new query, not new plumbing.
+   ============================================================ */
+const KINDS = {
+  past_simple : { label:"Past simple đúng",      en:"correct past simple" },
+  third_s     : { label:"Đuôi -s ngôi thứ ba",   en:"third-person -s" },
+  plural_s    : { label:"Số nhiều -s",           en:"plural -s" },
+  answered    : { label:"Câu đã trả lời",        en:"questions answered" },
+  self_fix    : { label:"Tự sửa được",           en:"self-corrected" }
+};
+
+/* Socratic repairs: hand back a question, never a verdict. The point is
+   that the student produces the right form themselves — a self-correction
+   is worth more than being told, so it scores double. */
+const IRREG = { go:"went", eat:"ate", take:"took", see:"saw", come:"came", have:"had",
+  do:"did", get:"got", meet:"met", buy:"bought", spend:"spent", sleep:"slept",
+  wake:"woke", drink:"drank", swim:"swam", ride:"rode", win:"won", leave:"left",
+  make:"made", say:"said", sit:"sat", run:"ran", feel:"felt", think:"thought" };
+const REG = ["stay","watch","visit","cook","relax","travel","call","walk","help",
+  "study","play","work","clean","finish","start","talk","listen","rest"];
+
+const PAST_MARKER = /\b(last (night|week|weekend|month|year|summer|time)|yesterday|\d+ (days?|weeks?|months?|years?) ago|when i was|back then)\b/i;
+
+const RULES = [
+  {
+    id:"past_ed",
+    find(t){
+      if (!PAST_MARKER.test(t)) return null;
+      const verbs = Object.keys(IRREG).concat(REG).join("|");
+      const m = t.match(new RegExp("\\b(i|we|they|he|she)\\s+(" + verbs + ")\\b", "i"));
+      if (!m) return null;
+      const v = m[2].toLowerCase();
+      return { wrong:m[0], verb:v, right:IRREG[v] || (v.endsWith("e") ? v+"d" : v+"ed"), kind:"past_simple" };
+    },
+    ask: h => `Bạn nói “${h.wrong}”. Nhưng chuyện đó xong rồi mà — nó đang xảy ra, hay đã xong?`,
+    hint: h => `Thử lại riêng chỗ đó thôi: “${h.wrong.split(/\s+/)[0]} …?”`
+  },
+  {
+    id:"third_s",
+    find(t){
+      const m = t.match(/\b(he|she|it|my (?:mum|mom|mother|dad|father|brother|sister|friend|boss))\s+(go|like|have|want|work|live|make|take|do|say|get|watch|cook)\b/i);
+      if (!m) return null;
+      const v = m[2].toLowerCase();
+      const right = v === "have" ? "has" : v === "do" ? "does" : v === "go" ? "goes" :
+                    v === "watch" ? "watches" : v + "s";
+      return { wrong:m[0], verb:v, right, kind:"third_s" };
+    },
+    ask: h => `“${h.wrong}” — một người thôi đúng không? Vậy động từ phải thế nào?`,
+    hint: h => `Chỉ thêm một âm ở cuối “${h.verb}”.`
+  },
+  {
+    id:"plural_s",
+    find(t){
+      const m = t.match(/\b(two|three|four|five|six|several|many|a few|a lot of)\s+(day|year|hour|week|month|time|friend|place|thing|person)\b(?!s)/i);
+      if (!m) return null;
+      const n = m[2].toLowerCase();
+      return { wrong:m[0], verb:n, right:(n === "person" ? "people" : n + "s"), kind:"plural_s" };
+    },
+    ask: h => `“${h.wrong}” — nhiều hơn một, đúng không? Vậy chữ “${h.verb}” đổi thế nào?`,
+    hint: h => `Số nhiều. “${h.verb}” → …?`
+  },
+  {
+    id:"adj_ed",
+    find(t){
+      const m = t.match(/\b(very|so|really|felt|feel|was|were|am)\s+(relax|bore|tire|interest|excite|surprise)\b/i);
+      if (!m) return null;
+      return { wrong:m[0], verb:m[2].toLowerCase(), right:m[1]+" "+m[2].toLowerCase()+(m[2].toLowerCase().endsWith("e")?"d":"ed"), kind:"past_simple" };
+    },
+    ask: h => `Bạn nói “${h.wrong}”. Cảm giác của bạn thì đuôi là gì nhỉ — “-ing” hay “-ed”?`,
+    hint: () => `Ngày đó làm bạn thấy thế nào → bạn cảm thấy …`
+  }
+];
+
+/* Counting what went RIGHT — the ledger needs credits, not just debits. */
+function credits(t){
+  const out = {};
+  const add = (k,n) => { if (n) out[k] = (out[k]||0) + n; };
+  const past = (t.match(new RegExp("\\b(" + Object.values(IRREG).join("|") + ")\\b","gi")) || []).length
+             + (t.match(/\b\w{3,}ed\b/gi) || []).length;
+  add("past_simple", PAST_MARKER.test(t) ? past : Math.min(past, 2));
+  add("third_s", (t.match(/\b(he|she|it)\s+\w+(s|es)\b/gi) || []).length);
+  add("plural_s", (t.match(/\b(two|three|four|five|several|many|a few|a lot of)\s+\w+s\b/gi) || []).length);
+  return out;
+}
+
+/* ============================================================
+   CONTENT — one focused set. Part 2 and 3 are stubs on purpose.
+   ============================================================ */
+const SET = {
+  title:"Part 1 · Days off",
+  focus:"past simple endings",
+  questions:[
+    "When was the last time you had a day off?",
+    "What did you do on your last day off?",
+    "Did you go anywhere, or did you stay at home?",
+    "Who did you spend it with?",
+    "Was it a good one? Why?"
+  ],
+  samples:[
+    "The last time I had a day off was last weekend. I stay at home and I watch three films.",
+    "Last weekend I visit my grandmother and we cook together. It was very relax.",
+    "I stay at home because the weather was bad. My brother go out but I don't.",
+    "I spend it with my family. We eat a lot and we talk for two hour.",
+    "Yeah it was good. I sleep until noon and I don't look at my phone."
+  ]
+};
+
+/* ============================================================
+   PERSONAL STATE — per viewer, kept on their own device
+   ============================================================ */
+const TARGETS = [
+  { kind:"answered",    goal:10, label:"Trả lời 10 câu Part 1",   en:"answer 10 Part 1 questions" },
+  { kind:"past_simple", goal:15, label:"15 lần past simple đúng", en:"15 correct past simple" },
+  { kind:"self_fix",    goal:3,  label:"Tự sửa 3 lỗi",            en:"self-correct 3 times" }
+];
+
+const today = () => new Date().toISOString().slice(0,10);
+let mine = { date:today(), counts:{} };
+try {
+  const raw = localStorage.getItem("spro");
+  if (raw){ const p = JSON.parse(raw); if (p && p.date === today()) mine = p; }
+} catch(_){}
+function saveMine(){ try { localStorage.setItem("spro", JSON.stringify(mine)); } catch(_){} }
+
+const $ = s => document.querySelector(s);
+const fmt = n => (n||0).toLocaleString("en-US");
+
+function renderGoals(){
+  $("#goals").innerHTML = TARGETS.map(t => {
+    const v = mine.counts[t.kind] || 0;
+    const pct = Math.min(100, Math.round(v / t.goal * 100));
+    return '<div class="goal' + (v >= t.goal ? " done" : "") + '">' +
+      '<div class="t">' + t.label + '<span class="vi">' + t.en + '</span></div>' +
+      '<div class="v">' + v + " / " + t.goal + (v >= t.goal ? " ✓" : "") + "</div>" +
+      '<div class="bar"><i style="width:' + pct + '%"></i></div></div>';
+  }).join("");
+}
+
+/* ============================================================
+   COMMUNITY — genuinely shared. Each viewer writes only their own
+   contribution row; the page sums the collection. That sidesteps
+   lost updates entirely, which a single shared counter would not
+   survive (the store is last-writer-wins, no transactions).
+   ============================================================ */
+const COMMUNITY = [
+  { id:"weekly",  kind:"third_s",     target:120000, label:"Tuần này",  en:"third-person -s, said right" },
+  { id:"monthly", kind:"past_simple", target:500000, label:"Tháng này", en:"past simple, said right" }
+];
+let baseline = { third_s:0, past_simple:0 };
+let others   = { third_s:0, past_simple:0 };
+
+function renderComm(){
+  $("#comm").innerHTML = COMMUNITY.map(c => {
+    const mineN  = mine.counts[c.kind] || 0;
+    const total  = (baseline[c.kind]||0) + (others[c.kind]||0) + mineN;
+    const pct    = Math.min(100, total / c.target * 100);
+    return '<div class="cgoal"><div class="cline">' +
+      '<div class="label">' + c.label + " <span>· " + c.en + "</span></div>" +
+      '<div class="count">' + fmt(total) + ' <small>/ ' + fmt(c.target) + "</small></div>" +
+      '</div><div class="bar"><i style="width:' + pct.toFixed(2) + '%"></i></div>' +
+      '<p class="mine">Hôm nay bạn góp <b>' + mineN + "</b></p></div>";
+  }).join("");
+}
+
+let db = null, clientId = null;
+(async () => {
+  try {
+    clientId = localStorage.getItem("spro_id");
+    if (!clientId){ clientId = "c" + Math.random().toString(36).slice(2,10); localStorage.setItem("spro_id", clientId); }
+  } catch(_){ clientId = "c" + Math.random().toString(36).slice(2,10); }
+
+  db = await (window.claude && window.claude.use ? window.claude.use("db") : Promise.resolve(null));
+  const live = $("#live");
+  if (!db){                                   // works alone, lights up when it can
+    live.innerHTML = '<i></i><span>offline — số của riêng bạn thôi</span>';
+    return;
+  }
+  live.className = "live on";
+  live.innerHTML = "<i></i><span>đang cập nhật trực tiếp</span>";
+  const dead = () => { live.className = "live"; live.innerHTML = '<i></i><span>mất kết nối</span>'; };
+  try {
+    db.doc("community/baseline").onSnapshot(snap => {
+      const v = (snap.exists && snap.data()) || {};
+      baseline = { third_s:v.third_s || 0, past_simple:v.past_simple || 0 };
+      renderComm();
+    }, dead);
+    db.collection("contribs").onSnapshot(snap => {
+      const sum = { third_s:0, past_simple:0 };
+      snap.docs.forEach(doc => {
+        if (doc.id === clientId) return;      // ours is counted live from `mine`
+        const d = doc.data() || {};
+        sum.third_s     += d.third_s     || 0;
+        sum.past_simple += d.past_simple || 0;
+      });
+      others = sum;
+      renderComm();
+    }, dead);
+  } catch(_){ dead(); }
+})();
+
+let pushTimer = null, pushing = false, pushAgain = false;
+function pushContribution(){       // batched, and one write at a time per document
+  if (!db || !clientId) return;
+  clearTimeout(pushTimer);
+  pushTimer = setTimeout(async () => {
+    if (pushing){ pushAgain = true; return; }
+    pushing = true;
+    try {
+      await db.doc("contribs/" + clientId).set({
+        third_s: mine.counts.third_s || 0,
+        past_simple: mine.counts.past_simple || 0,
+        day: today()
+      });
+    } catch(_){}
+    pushing = false;
+    if (pushAgain){ pushAgain = false; pushContribution(); }
+  }, 1200);
+}
+
+/* ============================================================
+   PRACTICE LOOP
+   ============================================================ */
+let qi = 0, hit = null, session = [];
+
+function go(view){ document.body.dataset.view = view; window.scrollTo({ top:0, behavior:"smooth" }); }
+
+function renderPips(){
+  $("#pips").innerHTML = SET.questions.map((_,i) =>
+    '<i class="' + (i < qi ? "done" : i === qi ? "now" : "") + '"></i>').join("");
+}
+
+function say(text){
+  try {
+    if (!window.speechSynthesis) return;
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = "en-GB"; u.rate = 0.98;
+    speechSynthesis.speak(u);
+  } catch(_){}
+}
+
+function askQuestion(){
+  if (qi >= SET.questions.length){ finish(); return; }
+  $("#qn").textContent = qi + 1;
+  $("#q").textContent = SET.questions[qi];
+  $("#ans").value = ""; $("#react").innerHTML = ""; hit = null;
+  renderPips(); say(SET.questions[qi]);
+}
+
+function award(kind, n){
+  if (!n) return;
+  mine.counts[kind] = (mine.counts[kind] || 0) + n;
+  session.push({ kind, n });
+  saveMine(); renderGoals(); renderComm(); pushContribution();
+}
+
+function renderRows(){
+  const roll = {};
+  session.forEach(e => roll[e.kind] = (roll[e.kind] || 0) + e.n);
+  const keys = Object.keys(roll);
+  $("#rows").innerHTML = keys.length
+    ? keys.map(k => '<div class="lrow"><span class="k">' + KINDS[k].label + "</span>" +
+        '<span class="x">' + KINDS[k].en + "</span>" +
+        '<span class="v' + (k === "self_fix" ? " self" : "") + '">+' + roll[k] + "</span></div>").join("")
+    : '<p class="empty">Chưa có gì. Trả lời câu đầu tiên đi.</p>';
+}
+
+/* One repair per answer. Correcting everything turns a conversation back
+   into a marked-up script, which is the thing we are trying not to build. */
+function submit(){
+  const t = $("#ans").value.trim();
+  if (!t) return;
+
+  if (hit){                                   // this is a retry of a flagged bit
+    const fixed = new RegExp("\\b" + hit.right.replace(/[.*+?^${}()|[\]\\]/g,"\\$&") + "\\b","i").test(t);
+    if (fixed){
+      award(hit.kind, 1); award("self_fix", 1);
+      $("#react").innerHTML = '<div class="landed"><p class="say">Đúng rồi đó. 👌</p>' +
+        '<div class="earned"><span class="chip">+1 ' + KINDS[hit.kind].label + "</span>" +
+        '<span class="chip self">+1 tự sửa</span></div></div>';
+      hit = null; renderRows();
+      setTimeout(() => { qi++; award("answered",1); renderRows(); askQuestion(); }, 1500);
+      return;
+    }
+    $("#react").querySelector(".reveal").hidden = false;
+    return;
+  }
+
+  const found = RULES.map(r => { const h = r.find(t); return h ? { r, h } : null; }).filter(Boolean)[0];
+  const cr = credits(t);
+  Object.keys(cr).forEach(k => award(k, cr[k]));
+
+  if (!found){
+    award("answered", 1); qi++; renderRows();
+    $("#react").innerHTML = '<div class="landed"><p class="say">Nghe tự nhiên đó. Câu tiếp nhé.</p></div>';
+    setTimeout(askQuestion, 1200);
+    return;
+  }
+
+  hit = found.h;
+  renderRows();
+  $("#react").innerHTML = '<div class="nudge"><p class="eyebrow">Minh hỏi lại</p>' +
+    '<p class="say">' + found.r.ask(found.h) + "</p>" +
+    '<p class="reveal" hidden>Ý mình là: <b>' + found.h.right + "</b> — thử nói lại cả câu xem.</p>" +
+    '<div class="hintrow"><button class="btn ghost" id="hintBtn">Gợi ý</button>' +
+    '<span class="note" style="margin:0">' + found.r.hint(found.h) + "</span></div></div>";
+  $("#hintBtn").onclick = () => { $("#react").querySelector(".reveal").hidden = false; };
+  $("#ans").focus();
+}
+
+function finish(){
+  const total = session.reduce((a,e) => a + e.n, 0);
+  $("#react").innerHTML = '<div class="landed"><p class="say">Xong buổi này — ' + total + " điều đúng ghi lại được.</p>" +
+    '<p class="note" style="margin-top:8px">Tất cả đã cộng vào mục tiêu hôm nay và vào con số của cả lớp.</p></div>';
+  renderPips();
+  setTimeout(() => go("hub"), 2200);
+}
+
+/* ---------- speech in, if the browser has it ---------- */
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+let rec = null;
+$("#mic").onclick = () => {
+  if (!SR){ $("#ans").focus(); return; }
+  if (rec){ rec.stop(); rec = null; $("#micWrap").classList.remove("live"); $("#mic").textContent = "🎙️ Nói"; return; }
+  try {
+    rec = new SR(); rec.continuous = true; rec.interimResults = true; rec.lang = "en-US";
+    let base = $("#ans").value;
+    rec.onresult = e => {
+      let s = "";
+      for (let i = 0; i < e.results.length; i++) s += e.results[i][0].transcript;
+      $("#ans").value = (base ? base + " " : "") + s;
+    };
+    rec.onend = () => { if (rec){ try { rec.start(); } catch(_){} } };
+    rec.start();
+    $("#micWrap").classList.add("live"); $("#mic").textContent = "⏹ Dừng";
+  } catch(_){ $("#ans").focus(); }
+};
+
+/* ---------- wiring ---------- */
+$("#startFocus").onclick = () => { qi = 0; session = []; renderRows(); go("practice"); askQuestion(); };
+document.querySelectorAll(".part").forEach(b => b.onclick = () => {
+  const p = b.dataset.part;
+  if (p !== "1"){
+    b.querySelector(".d").textContent = "Chưa có trong prototype — Part 1 đã chạy được rồi, thử cái đó nhé.";
+    return;
+  }
+  $("#startFocus").click();
+});
+$("#otherFocus").onclick = () => {
+  const f = $(".focus");
+  f.querySelector("h2").textContent = "Đuôi -s ngôi thứ ba";
+  f.querySelector(".why").innerHTML = 'Bạn đúng <b>62%</b> khi nói về người khác — “my brother <b>go</b>” thay vì “goes”. ' +
+    'Cái này cũng là mục tiêu chung của cả lớp tuần này.<br><span style="color:var(--muted)">You get third-person -s right 62% of the time. It is also what everyone is working on this week.</span>';
+};
+$("#replay").onclick = () => say(SET.questions[qi]);
+$("#sample").onclick = () => { $("#ans").value = SET.samples[qi] || ""; $("#ans").focus(); };
+$("#send").onclick = submit;
+$("#quit").onclick = () => { if (rec){ try { rec.stop(); } catch(_){} rec = null; } go("hub"); };
+$("#ans").addEventListener("keydown", e => {
+  if (e.key === "Enter" && (e.metaKey || e.ctrlKey)){ e.preventDefault(); submit(); }
+});
+
+document.body.dataset.view = "hub";
+renderGoals(); renderComm(); renderPips(); renderRows();
+</script>

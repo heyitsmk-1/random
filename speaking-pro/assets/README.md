@@ -1,20 +1,23 @@
-`splash.png` — the onboarding background. A desk by a window in the morning:
-coffee, an open book, headphones waiting. PixelLab, 400×240, `image-rendering:
-pixelated`, anchored bottom so the desk stays in frame.
+`splash.png` — a quiet room with morning light through a curtain. PixelLab,
+400×240, `image-rendering: pixelated`. Used by both the loading screen and as the
+app's fixed backdrop, so menu and splash are the same place.
 
-**Why this one.** The first two rounds were chosen on a layout test — "where does
-the headline fit" — which produced calm landscapes and then a desert. A desert
-says emptiness and dryness, and says nothing about speaking English or about the
-person opening the app.
+**Why this one.** Three rounds of picking on layout ("where does the headline
+fit") gave calm landscapes, then a desert, then a desk that was warm but busy.
+This round the brief was *chill*, and the constraint that mattered was: the left
+half must stay quiet and low-contrast, because the menu column lives there. Cool
+lilac also makes the warm `#FF6D3A` accent pop instead of fighting it.
 
-The test that produced this one is different: *what does a student want to see
-in the moment before they talk out loud, alone, in a language they are not
-confident in?* Not aspiration — aspiration is pressure, and they already feel
-it. Something familiar and low-stakes: their own desk, morning light, the
-headphones they are about to put on. The next five minutes of their life, made
-inviting. The headphones are the only prop that names the product.
+Legibility is handled in CSS, not by washing the art flat: the menu column and
+the briefing each sit on their own soft radial ground, so the room stays visible
+at ~0.5 scrim while the type keeps its contrast.
 
-`_options.png` is the labelled sheet of all eight, in three groups:
+`_options.png` is the labelled sheet of the chill batch. Alternates:
+`c1_wall` (empty wall at dawn), `c4_mist` (mist over water — softest of all),
+`c6_shelf` (sage corner with plants), `c3_lamp` (one lamp at night, the only dark
+option — would need light type).
+
+Earlier batches, in three groups:
 
 - **your own morning** — `splash` (desk), `window` (their city waking up), `rooftop`
 - **a conversation about to happen** — `twocups` (two cups, nobody there yet), `cafe`

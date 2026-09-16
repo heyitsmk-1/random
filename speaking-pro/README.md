@@ -9,31 +9,43 @@ what to work on and why, you practise, and what you did counts toward something.
 your own device. The weekly and monthly targets are genuinely shared: every
 viewer's correct instances are summed into one live number.
 
-**2. A game menu, not a dashboard.** Loading screen, then a main menu — a column
-of modes and a quest panel, and nothing else:
+**2. Walked through, not clicked through.** The design rule: it should feel like
+someone is taking you somewhere, not like you are picking buttons off a screen.
+
+Loading screen → menu → **briefing** → practice. Three rows on the menu, not five:
 
 ```
-TIẾP TỤC   [gợi ý]        │  NHIỆM VỤ
-past simple — đuôi -ed    │  Ngày · Tuần · Tháng
-                          │
-PART 1                    │  Trả lời 10 câu     6/10
-PART 2                    │  15 past simple     9/15
-PART 3                    │  Tự sửa 3 lỗi       1/3
-THƯ VIỆN LỖI  4 đang mở   │
+BUỔI HỌC HÔM NAY  [đã chọn sẵn]     │  NHIỆM VỤ
+Kể một chuyện đã xảy ra mà           │  Ngày · Tuần · Tháng
+không rơi mất đuôi -ed               │
+                                     │  Trả lời 10 câu     6/10
+LUYỆN TỰ DO                          │  15 past simple     9/15
+THƯ VIỆN LỖI   4 đang mở             │  Tự sửa 3 lỗi       1/3
 ```
 
-One row is coloured — the recommendation, with its reason always on screen.
-The rest sit at 55% until you reach them. **Exactly one press is obvious**, which
-is the thing the previous hub got wrong: it had five competing calls to action
-and no answer to "what do I press". Arrow keys and Enter work, as a menu should.
+Part 1 / 2 / 3 are no longer top-level. Offering three Parts as modes *is*
+"clicking random buttons" — a part is a format, not a reason to practise. The
+real split is **guided** (chosen for you, one outcome) versus **free** (you pick,
+no agenda), and free practice opens its Parts underneath its own row.
 
-**Thư viện lỗi** is the fourth mode and the one that is not IELTS furniture: every
-mistake ever made, `did a mistake → made a mistake`, with why, how many times,
-which lesson, and whether it is still open or actually fixed. A repair made in
-practice lands here. It is the notebook promoted to a destination.
+**The briefing is the transition.** Choosing the guided session does not cut to a
+question. It goes to a short screen that names the one thing this session is for
+— stated as something you will be able to do, not a grammar label — the evidence
+behind it, and what is about to happen:
 
-The quest panel is idea #1 exactly: **Ngày** is yours and local, **Tuần** and
-**Tháng** are the whole class and genuinely shared.
+> **Kể một chuyện đã xảy ra mà không rơi mất đuôi -ed**
+> Tuần trước bạn bỏ mất đuôi -ed ở 11 trên 34 động từ quá khứ.
+> ① 5 câu hỏi Part 1, chủ đề Days off
+> ② Mỗi câu mình chỉ soi đúng một lỗi — không sửa lung tung
+> ③ Khoảng 6 phút
+> **Bắt đầu**
+
+`SESSION` holds that outcome and everything downstream reads it, so a session
+cannot quietly become about five things. The practice header carries the outcome,
+not the grammar point.
+
+Screens cross-fade and the briefing's lines stagger in, so the walk-in has a pace.
+All of it collapses to a cut under `prefers-reduced-motion`.
 
 **3. Socratic repair.** A flagged error hands back a question, never a verdict:
 *"You said 'I stay'. But that's finished, isn't it — happening, or done?"*

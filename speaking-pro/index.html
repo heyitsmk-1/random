@@ -20,7 +20,7 @@
   --shadow:0 4px 8px -2px rgba(16,24,40,.10),0 2px 4px -2px rgba(16,24,40,.06);
   --shadow-lg:0 12px 24px -6px rgba(16,24,40,.12),0 4px 8px -4px rgba(16,24,40,.06);
   --shadow-warm:0 8px 32px rgba(255,109,58,.18);
-  --ink-menu:#241C14;
+  --ink-menu:#1C1726;
 }
 *{box-sizing:border-box}
 html,body{height:100%}
@@ -44,7 +44,7 @@ p{margin:0}
 /* ============================================================
    LOADING SCREEN
    ============================================================ */
-.splash{position:fixed;inset:0;z-index:60;overflow:hidden;background:#F7EFE6;
+.splash{position:fixed;inset:0;z-index:60;overflow:hidden;background:#BDB1C1;
   display:grid;place-items:center;padding:28px;align-content:center;
   transition:opacity 520ms ease,visibility 520ms}
 .splash.gone{opacity:0;visibility:hidden;pointer-events:none}
@@ -53,8 +53,8 @@ p{margin:0}
   image-rendering:pixelated;animation:breathe 48s ease-in-out infinite alternate}
 @keyframes breathe{from{transform:scale(1)}to{transform:scale(1.07)}}
 .splash .wash{position:absolute;inset:0;pointer-events:none;
-  background:linear-gradient(to bottom,rgba(250,244,236,.94) 0%,rgba(250,244,236,.88) 26%,
-    rgba(250,244,236,.55) 46%,rgba(250,244,236,0) 66%)}
+  background:linear-gradient(to bottom,rgba(247,244,249,.90) 0%,rgba(247,244,249,.80) 28%,
+    rgba(247,244,249,.46) 50%,rgba(247,244,249,0) 72%)}
 .sp-in{position:relative;z-index:1;width:100%;max-width:820px;text-align:center;margin-top:-20vh}
 .sp-a,.sp-b{transition:opacity 340ms ease,transform 460ms cubic-bezier(.2,.8,.3,1)}
 .sp-b{position:absolute;inset:0;display:grid;place-items:center;opacity:0;
@@ -62,9 +62,9 @@ p{margin:0}
 .splash.stage2 .sp-a{opacity:0;transform:translateY(-16px);pointer-events:none}
 .splash.stage2 .sp-b{opacity:1;transform:none}
 .sp-mark{font-family:"Montserrat",sans-serif;font-weight:700;font-size:11px;
-  letter-spacing:.3em;text-transform:uppercase;color:#8A7B63;display:block;margin-bottom:30px}
+  letter-spacing:.3em;text-transform:uppercase;color:#6E6480;display:block;margin-bottom:30px}
 .sp-big{font-family:"Montserrat",sans-serif;font-weight:700;
-  font-size:clamp(42px,8.4vw,86px);line-height:1.04;letter-spacing:-.035em;margin:0;color:#2A2118}
+  font-size:clamp(42px,8.4vw,86px);line-height:1.04;letter-spacing:-.035em;margin:0;color:#241E2C}
 .sp-btn{margin-top:40px;font-size:16px;font-weight:700;padding:15px 36px;border-radius:999px}
 @media (prefers-reduced-motion:reduce){.splash .plate{animation:none}}
 body.locked{overflow:hidden}
@@ -76,7 +76,7 @@ body.locked{overflow:hidden}
   background:url("assets/splash.png") center bottom / cover no-repeat fixed;
   image-rendering:pixelated}
 .app::before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
-  background:linear-gradient(to bottom,rgba(250,245,238,.93),rgba(250,245,238,.80) 52%,rgba(250,245,238,.93))}
+  background:linear-gradient(to bottom,rgba(248,246,250,.62),rgba(248,246,250,.44) 48%,rgba(248,246,250,.70))}
 .hud,.screen{position:relative;z-index:1}
 
 .hud{display:flex;align-items:center;justify-content:space-between;gap:14px;
@@ -92,28 +92,36 @@ body.locked{overflow:hidden}
 .mtoggle{display:none}
 
 .screen{flex:1;display:none;padding:0 clamp(18px,4vw,44px) 40px}
+.screen[data-open]{animation:screenin 380ms cubic-bezier(.2,.8,.3,1) both}
+.screen.out{animation:screenout 240ms ease both}
+@keyframes screenin{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes screenout{from{opacity:1}to{opacity:0;transform:translateY(-8px)}}
 body[data-view="menu"] #vMenu{display:block}
+body[data-view="brief"] #vBrief{display:block}
 body[data-view="gallery"] #vGallery{display:block}
 body[data-view="practice"] #vPractice{display:block}
 
 /* ============================================================
    MAIN MENU — a column of modes, and a quest panel
    ============================================================ */
-.menuwrap{max-width:1120px;margin:0 auto;display:grid;
+.menuwrap{max-width:1120px;margin:0 auto;display:grid;position:relative;
   grid-template-columns:minmax(0,1fr) 322px;gap:clamp(24px,5vw,64px);align-items:start;
   padding-top:clamp(12px,4vh,48px)}
 
-.modes{display:flex;flex-direction:column;gap:2px;max-width:600px}
+/* the menu column sits on its own soft ground so the type never fights the art */
+.modes{display:flex;flex-direction:column;gap:2px;max-width:620px;position:relative;
+  padding:18px 20px 8px;margin-left:-20px;border-radius:20px;
+  background:radial-gradient(118% 110% at 6% 44%,rgba(252,251,253,.96) 0%,rgba(252,251,253,.86) 46%,rgba(252,251,253,0) 100%)}
 .mode{
   display:block;width:100%;text-align:left;font:inherit;cursor:pointer;
   background:none;border:none;border-left:3px solid transparent;
   padding:13px 0 13px 18px;color:var(--ink-menu);
   transition:border-color 140ms ease,transform 160ms cubic-bezier(.2,.8,.3,1),opacity 140ms ease;
-  opacity:.55;
+  opacity:.72;
 }
 .mode .t{font-family:"Montserrat",sans-serif;font-weight:800;
   font-size:clamp(25px,3.6vw,38px);line-height:1.05;letter-spacing:-.025em;display:block}
-.mode .s{font-size:13.5px;font-weight:600;color:var(--muted-strong);
+.mode .s{font-size:13.5px;font-weight:600;color:#4B4458;
   display:block;margin-top:3px;opacity:0;max-height:0;overflow:hidden;
   transition:opacity 160ms ease,max-height 200ms ease}
 .mode:hover,.mode.on{opacity:1;border-left-color:var(--accent);transform:translateX(7px)}
@@ -164,9 +172,50 @@ body[data-view="practice"] #vPractice{display:block}
 @keyframes pulse{50%{opacity:.35}}
 
 /* ============================================================
+   BRIEFING — the walk-in. One outcome, what will happen, then go.
+   ============================================================ */
+.briefwrap{max-width:620px;margin:0 auto;padding:clamp(22px,7vh,68px) clamp(20px,4vw,40px) 40px;
+  border-radius:24px;background:radial-gradient(100% 90% at 50% 40%,rgba(252,251,253,.96) 0%,
+    rgba(252,251,253,.84) 58%,rgba(252,251,253,.4) 100%)}
+.briefwrap > *{animation:briefin 520ms cubic-bezier(.2,.8,.3,1) both}
+.briefwrap > *:nth-child(2){animation-delay:70ms}
+.briefwrap > *:nth-child(3){animation-delay:140ms}
+.briefwrap > *:nth-child(4){animation-delay:210ms}
+.briefwrap > *:nth-child(5){animation-delay:300ms}
+@keyframes briefin{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.beyebrow{font-family:"Montserrat",sans-serif;font-size:11px;font-weight:700;
+  letter-spacing:.2em;text-transform:uppercase;color:var(--accent-dark);margin-bottom:14px}
+.boutcome{font-size:clamp(26px,4.4vw,42px);line-height:1.15;letter-spacing:-.025em;color:var(--ink-menu)}
+.bwhy{margin-top:14px;font-size:15px;color:var(--muted-strong);max-width:46ch}
+.bsteps{margin:26px 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:1px;
+  background:var(--border);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden}
+.bsteps li{background:rgba(255,255,255,.94);padding:13px 16px;font-size:14px;font-weight:600;
+  display:flex;align-items:baseline;gap:12px}
+.bsteps li::before{content:counter(s);counter-increment:s;font-family:"Montserrat",sans-serif;
+  font-size:11px;font-weight:800;color:var(--accent);flex:none;
+  width:20px;height:20px;line-height:20px;text-align:center;border-radius:50%;
+  background:var(--accent-soft);align-self:center}
+.bsteps{counter-reset:s}
+.brow{display:flex;gap:10px;flex-wrap:wrap;margin-top:28px}
+.bgo{font-size:16px;padding:14px 34px;border-radius:999px}
+
+/* ---------- free practice, revealed under its row ---------- */
+.freelist{margin:2px 0 10px 21px;display:flex;flex-direction:column;gap:6px;
+  animation:briefin 300ms cubic-bezier(.2,.8,.3,1) both}
+.freeitem{text-align:left;font:inherit;font-weight:800;font-size:15px;cursor:pointer;
+  background:rgba(255,255,255,.94);border:1.5px solid var(--border);border-radius:var(--radius);
+  padding:10px 14px;color:var(--text2);max-width:330px;
+  transition:border-color 120ms ease,transform 120ms ease}
+.freeitem span{display:block;font-weight:600;font-size:12.5px;color:var(--muted)}
+.freeitem:hover{border-color:var(--accent);transform:translateX(4px)}
+.freeitem:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.freenote{font-size:12.5px;color:var(--accent-dark);font-weight:700;margin-top:2px}
+
+/* ============================================================
    GALLERY — every mistake, kept
    ============================================================ */
 .gwrap{max-width:1000px;margin:0 auto;padding-top:clamp(12px,4vh,40px)}
+.gtop h1,.gtop p{text-shadow:0 1px 0 rgba(255,255,255,.7)}
 .gtop{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;
   flex-wrap:wrap;margin-bottom:6px}
 .gtop h1{font-size:clamp(26px,4vw,38px);letter-spacing:-.025em;color:var(--ink-menu)}
@@ -314,6 +363,20 @@ body[data-view="practice"] #vPractice{display:block}
     </div>
   </div>
 
+  <!-- ===================== BRIEFING ====================== -->
+  <div class="screen" id="vBrief">
+    <div class="briefwrap">
+      <p class="beyebrow">Buổi học hôm nay</p>
+      <h1 class="boutcome" id="bOutcome">…</h1>
+      <p class="bwhy" id="bWhy"></p>
+      <ol class="bsteps" id="bSteps"></ol>
+      <div class="brow">
+        <button class="btn bgo" id="bGo">Bắt đầu</button>
+        <button class="btn sec" id="bBack">← Menu</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ====================== GALLERY ====================== -->
   <div class="screen" id="vGallery">
     <div class="gwrap">
@@ -377,7 +440,25 @@ const today = () => new Date().toISOString().slice(0,10);
 const esc = s => String(s).replace(/[&<>]/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;" }[c]));
 const md = s => esc(s).replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
 const words = s => (s.trim().match(/\S+/g) || []).length;
-const go = v => { document.body.dataset.view = v; window.scrollTo({ top:0, behavior:"smooth" }); };
+let leaving = false;
+function go(v){
+  if (leaving || document.body.dataset.view === v) { document.body.dataset.view = v; return; }
+  const cur = document.querySelector(".screen[data-open]");
+  const quick = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const swap = () => {
+    if (cur) cur.removeAttribute("data-open");
+    document.body.dataset.view = v;
+    const next = { menu:"#vMenu", brief:"#vBrief", gallery:"#vGallery", practice:"#vPractice" }[v];
+    const el = document.querySelector(next);
+    if (el){ el.setAttribute("data-open",""); }
+    window.scrollTo({ top:0, behavior:"auto" });
+    leaving = false;
+  };
+  if (!cur || quick){ swap(); return; }
+  leaving = true;
+  cur.classList.add("out");
+  setTimeout(() => { cur.classList.remove("out"); swap(); }, 240);
+}
 
 let mine = { date:today(), counts:{} };
 try { const r = localStorage.getItem("spro"); if (r){ const p = JSON.parse(r); if (p && p.date === today()) mine = p; } } catch(_){}
@@ -395,18 +476,55 @@ const FOCI = {
 };
 let focusKey = "past_ed";
 
+/* Two ways in, not five. A guided session has one learning outcome and is
+   chosen for you; free practice is you picking. Everything else is a place to
+   look at, not a mode to be in. */
 const MODES = [
-  { id:"continue", primary:true, t:"TIẾP TỤC", pill:"gợi ý",
-    s:() => FOCI[focusKey].title + " · " + FOCI[focusKey].why, go:() => begin() },
-  { id:"p1", t:"PART 1", s:() => "Câu hỏi quen thuộc · tối thiểu 25 từ mỗi câu", go:() => begin() },
-  { id:"p2", t:"PART 2", s:() => "Lượt nói dài · một cue card, 2 phút, không ai ngắt", go:() => soon("Part 2") },
-  { id:"p3", t:"PART 3", s:() => "Thảo luận · quan điểm, lý do, giả định", go:() => soon("Part 3") },
-  { id:"gal", t:"THƯ VIỆN LỖI", s:() => "Mọi lỗi bạn từng mắc, và cái nào đã sửa được",
-    count:() => GALLERY.filter(g => !g.fixed).length + " đang mở", go:() => { renderGallery(); go("gallery"); } }
+  { id:"guided", primary:true, t:"BUỔI HỌC HÔM NAY", pill:"đã chọn sẵn",
+    s:() => SESSION.outcome, go:() => brief() },
+  { id:"free", t:"LUYỆN TỰ DO",
+    s:() => "Bạn chọn phần, không có mục tiêu nào cả", go:() => toggleFree() },
+  { id:"gal", t:"THƯ VIỆN LỖI",
+    s:() => "Mọi lỗi bạn từng mắc, và cái nào đã sửa được",
+    count:() => GALLERY.filter(g => !g.fixed).length + " đang mở",
+    go:() => { renderGallery(); go("gallery"); } }
 ];
+
+/* One session, one outcome. Everything downstream reads this. */
+const SESSION = {
+  outcome:"Kể một chuyện đã xảy ra mà không rơi mất đuôi -ed",
+  focus:"past_ed",
+  part:"Part 1 · Days off",
+  steps:[
+    "5 câu hỏi Part 1, chủ đề Days off",
+    "Mỗi câu mình chỉ soi đúng một lỗi — không sửa lung tung",
+    "Khoảng 6 phút"
+  ],
+  why:"Tuần trước bạn bỏ mất đuôi -ed ở 11 trên 34 động từ quá khứ."
+};
+
+let freeOpen = false;
+function toggleFree(){
+  freeOpen = !freeOpen;
+  renderModes();
+  if (freeOpen) $("#freeList").querySelector(".freeitem").focus();
+}
+function pickPart(n){
+  if (n !== 1){
+    $("#freeNote").textContent = "Part " + n + " chưa có trong bản thử này — Part 1 chạy đầy đủ rồi.";
+    return;
+  }
+  SESSION.free = true;
+  $("#focusLine").textContent = "Luyện tự do — không soi lỗi nào riêng";
+  begin();
+}
 let cursor = 0;
 
 function renderModes(){
+  const free = freeOpen ? '<div class="freelist" id="freeList">' +
+      [1,2,3].map(n => '<button class="freeitem" data-n="' + n + '">Part ' + n +
+        '<span>' + ["Câu hỏi quen thuộc","Lượt nói dài","Thảo luận"][n-1] + "</span></button>").join("") +
+      '<p class="freenote" id="freeNote"></p></div>' : "";
   $("#modes").innerHTML = MODES.map((m,i) =>
     '<button class="mode' + (m.primary ? " primary" : "") + (i === cursor ? " on" : "") + '" data-i="' + i + '">' +
       '<span class="t">' + m.t +
@@ -414,8 +532,10 @@ function renderModes(){
         (m.count ? '<span class="count">' + m.count() + "</span>" : "") +
       "</span>" +
       '<span class="s">' + esc(m.s()) + "</span>" +
-    "</button>").join("") +
+    "</button>" + (m.id === "free" ? free : "")).join("") +
     '<p class="modehint"><kbd>↑</kbd><kbd>↓</kbd> chọn · <kbd>Enter</kbd> vào</p>';
+  $("#modes").querySelectorAll(".freeitem").forEach(b =>
+    b.onclick = e => { e.stopPropagation(); pickPart(+b.dataset.n); });
   $("#modes").querySelectorAll(".mode").forEach(b => {
     const i = +b.dataset.i;
     b.onclick = () => { cursor = i; MODES[i].go(); };
@@ -524,6 +644,8 @@ $("#gFilters").querySelectorAll(".gf").forEach(b => b.onclick = () => {
   renderGallery();
 });
 $("#gBack").onclick = () => go("menu");
+$("#bBack").onclick = () => go("menu");
+$("#bGo").onclick = () => begin();
 
 /* the gallery is the notebook: a repair made in practice lands here */
 function logMistake(h, cat, why){
@@ -875,8 +997,20 @@ function push(){
 
 /* ---------- practice session state ---------- */
 let qi = 0, hit = null, session = [], asked = false, fixedThisQ = 0;
+
+/* The briefing is the walk-in: it names the one outcome, says what is about to
+   happen, and only then starts. It is also the transition — the menu does not
+   cut to a question, it hands over. */
+function brief(){
+  SESSION.free = false;
+  $("#bOutcome").textContent = SESSION.outcome;
+  $("#bWhy").textContent = SESSION.why;
+  $("#bSteps").innerHTML = SESSION.steps.map(t => "<li>" + esc(t) + "</li>").join("");
+  go("brief");
+}
 function begin(){
-  $("#focusLine").textContent = "Đang soi: " + FOCI[focusKey].title;
+  if (!SESSION.free) $("#focusLine").textContent = "Mục tiêu: " + SESSION.outcome;
+  $(".pbar .what").childNodes[0].nodeValue = SESSION.free ? "Luyện tự do · Part 1" : SESSION.part;
   qi = 0; session = []; renderRows();
   go("practice"); ask();
 }
@@ -908,6 +1042,7 @@ $("#ans").addEventListener("keydown", e => {
 });
 
 document.body.dataset.view = "menu";
+$("#vMenu").setAttribute("data-open","");
 document.body.classList.add("locked");
 renderModes(); renderQuests(); renderGallery(); pips(); renderRows(); updateWc();
 </script>

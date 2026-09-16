@@ -152,15 +152,14 @@ body[data-view="report"] #vReport{display:block}
 .mode.primary{opacity:1}
 .mode.primary .t{color:var(--accent-dark)}
 .mode.primary .s{opacity:1;max-height:3em}
-.mode.primary .pill{display:inline-block;vertical-align:.32em;margin-left:12px;
+/* any mode may carry a pill; only the primary one shouts */
+.mode .pill{display:inline-block;vertical-align:.32em;margin-left:12px;
   font-family:"Nunito",sans-serif;font-size:11px;font-weight:800;letter-spacing:.12em;
-  text-transform:uppercase;color:#fff;background:var(--accent);border-radius:999px;padding:3px 9px}
+  text-transform:uppercase;border-radius:999px;padding:3px 9px;
+  color:var(--accent-dark);background:var(--accent-soft)}
+.mode.primary .pill{color:#fff;background:var(--accent)}
 .mode .count{font-family:"Nunito",sans-serif;font-size:13px;font-weight:800;
   color:var(--accent-dark);margin-left:10px;vertical-align:.4em}
-.modehint{margin-top:26px;padding-left:21px;font-size:11.5px;color:var(--muted);font-weight:700;opacity:.8}
-.modehint kbd{font-family:inherit;font-weight:800;background:var(--panel);
-  border:1px solid var(--border-strong);border-bottom-width:2px;
-  border-radius:5px;padding:1px 6px;font-size:11px}
 
 /* ---------- quest panel ---------- */
 .quests{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius-lg);
@@ -312,8 +311,22 @@ body[data-view="topics"] .mtoggle,
 body[data-view="runend"] .mtoggle,
 body[data-view="report"] .mtoggle{display:none}
 body[data-view="lesson"] .brand:hover{background:var(--accent-soft)}
-.lesson-grid{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) 380px;
+.lesson-grid{flex:1;min-height:0;display:grid;
+  grid-template-columns:minmax(320px,1fr) 7px var(--pane,380px);
   background:var(--panel)}
+
+/* drag it to give either side more room */
+.splitter{position:relative;border:none;padding:0;cursor:col-resize;touch-action:none;
+  background:var(--border);transition:background 140ms ease}
+.splitter::before{content:"";position:absolute;top:0;bottom:0;left:-6px;right:-6px}
+.splitter::after{content:"";position:absolute;left:50%;top:50%;width:2px;height:34px;
+  margin:-17px 0 0 -1px;border-radius:2px;background:var(--border-strong);
+  transition:background 140ms ease}
+.splitter:hover,.splitter.drag{background:var(--accent)}
+.splitter:hover::after,.splitter.drag::after{background:#fff}
+.splitter:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+body.dragging{cursor:col-resize;user-select:none}
+body.dragging .material,body.dragging .pane{pointer-events:none}
 
 .material{min-width:0;display:flex;flex-direction:column;overflow-y:auto;
   background:var(--bg-warm);border-right:1px solid var(--border);padding:22px clamp(18px,3vw,34px) 34px}
@@ -427,6 +440,13 @@ body[data-view="lesson"] .brand:hover{background:var(--accent-soft)}
 .mic-big .lab{font-size:12px;font-weight:700}
 .mic-big.live{background:var(--bad);animation:mic-pulse 1.3s ease-out infinite}
 @keyframes mic-pulse{0%{box-shadow:0 0 0 0 rgba(255,59,48,.45)}100%{box-shadow:0 0 0 22px rgba(255,59,48,0)}}
+.michint{font-size:12.5px;font-weight:700;color:var(--muted)}
+.michint.live{color:var(--bad)}
+.heard{width:100%;max-height:96px;overflow-y:auto;font-size:14px;line-height:1.55;
+  color:var(--text2);background:var(--panel-warm);border-radius:var(--radius);
+  padding:9px 12px;text-align:left}
+.heard:empty{display:none}
+.heard .dim{color:var(--muted)}
 .input-bar{display:flex;gap:8px;align-items:flex-end;width:100%}
 .input-bar textarea{flex:1 1 auto;min-width:0;resize:none;font:inherit;font-size:14px;line-height:1.4;
   padding:10px 14px;border:1px solid var(--border);border-radius:20px;background:var(--bg-warm);
@@ -452,6 +472,7 @@ body[data-view="lesson"] .brand:hover{background:var(--accent-soft)}
   border-radius:999px;padding:3px 9px}
 
 @media (max-width:900px){
+  .splitter{display:none}
   .lesson-grid{grid-template-columns:1fr;grid-template-rows:minmax(0,38vh) minmax(0,1fr)}
   .material{border-right:none;border-bottom:1px solid var(--border)}
   .mic-big{width:58px;height:58px}
@@ -689,7 +710,6 @@ body[data-view="lesson"] .brand:hover{background:var(--accent-soft)}
     border:1.5px solid var(--border-strong);border-radius:999px;padding:6px 13px}
   .mode .s{opacity:1;max-height:3em}
   .mode{opacity:1}
-  .modehint{display:none}
   .app{background-attachment:scroll}
   .bubble{max-width:88%}
 }
@@ -838,6 +858,9 @@ body[data-view="lesson"] .brand:hover{background:var(--accent-soft)}
         <div class="mbody" id="mBody"></div>
       </div>
 
+      <button class="splitter" id="splitter" title="Kéo để chia lại"
+              aria-label="Kéo để chia lại hai cột"></button>
+
       <!-- Đậu -->
       <div class="pane">
         <div class="ptop">
@@ -855,8 +878,10 @@ body[data-view="lesson"] .brand:hover{background:var(--accent-soft)}
         <div class="answer-zone" id="inputZone">
           <div class="assist" id="assist"></div>
           <div class="mic-row"><button class="mic-big" id="mic"><span class="glyph">🎤</span><span class="lab">Nói</span></button></div>
-          <div class="input-bar">
-            <textarea id="ans" placeholder="…hoặc gõ câu trả lời ở đây"></textarea>
+          <p class="michint" id="micHint">Chạm để nói</p>
+          <div class="heard" id="heard" hidden></div>
+          <div class="input-bar" id="typeBar" hidden>
+            <textarea id="ans" placeholder="…gõ câu trả lời ở đây"></textarea>
             <button class="send" id="send">Gửi</button>
           </div>
           <div class="status wcbar" id="wc"><span>0 từ</span></div>
@@ -1003,8 +1028,7 @@ function renderModes(){
         (m.count ? '<span class="count">' + m.count() + "</span>" : "") +
       "</span>" +
       '<span class="s">' + esc(m.s()) + "</span>" +
-    "</button>" + (m.id === "free" ? free : "")).join("") +
-    '<p class="modehint"><kbd>↑</kbd><kbd>↓</kbd> chọn · <kbd>Enter</kbd> vào</p>';
+    "</button>" + (m.id === "free" ? free : "")).join("");
   $("#modes").querySelectorAll(".freeitem").forEach(b =>
     b.onclick = e => { e.stopPropagation(); pickPart(+b.dataset.n); });
   $("#modes").querySelectorAll(".mode").forEach(b => {
@@ -1815,7 +1839,11 @@ function armHint(){
   }, 5000);
 }
 function clearHint(){ clearTimeout(hintTimer); const a = $("#assist"); if (a) a.innerHTML = ""; }
-function showInput(){ $("#chipsHost").innerHTML = ""; $("#inputZone").style.display = ""; }
+function showInput(){
+  $("#chipsHost").innerHTML = ""; $("#inputZone").style.display = "";
+  $("#heard").hidden = true; $("#heard").innerHTML = "";
+  micIdle();
+}
 
 function sendAnswer(){
   const t = $("#ans").value.trim();
@@ -2125,25 +2153,124 @@ function runEnd(){
   go("runend");
 }
 
-/* ---------- speech ---------- */
+/* ---------- speech: the mic is the way in ----------
+   This is a speaking app, so there is no typing box. Tap to talk, tap
+   again to send. The typed fallback only appears where the browser has
+   no speech recognition at all, because a student on Firefox still has
+   to be able to practise. */
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 let rec = null;
+
+function micIdle(){
+  const m = $("#mic");
+  m.classList.remove("live");
+  m.innerHTML = '<span class="glyph">🎤</span><span class="lab">Nói</span>';
+  $("#micHint").textContent = SR ? "Chạm để nói" : "Trình duyệt này chưa nghe được — gõ tạm nhé";
+  $("#micHint").classList.remove("live");
+}
+function micLive(){
+  const m = $("#mic");
+  m.classList.add("live");
+  m.innerHTML = '<span class="glyph">⏹</span><span class="lab">Xong</span>';
+  $("#micHint").textContent = "Đang nghe… chạm lạn nữa để gửi";
+  $("#micHint").classList.add("live");
+}
+/* a blocked mic, a dead mic, or a browser that only pretends to listen —
+   the student still has to be able to answer */
+let deafTimer = null;
+function fallback(msg){
+  $("#typeBar").hidden = false;
+  $("#micHint").textContent = msg;
+  $("#micHint").classList.remove("live");
+  try { $("#ans").focus(); } catch(_){}
+}
+function stopMic(send){
+  clearTimeout(deafTimer);
+  if (!rec) return;
+  try { rec.onend = null; rec.stop(); } catch(_){}
+  rec = null;
+  micIdle();
+  $("#heard").hidden = true; $("#heard").innerHTML = "";
+  if (send && $("#ans").value.trim()) sendAnswer();
+}
+
 $("#mic").onclick = () => {
-  if (!SR){ $("#ans").focus(); return; }
-  if (rec){ try { rec.onend = null; rec.stop(); } catch(_){} rec = null;
-    $("#mic").classList.remove("live"); $("#mic").textContent = "🎤 Nói"; return; }
+  if (!SR){ $("#typeBar").hidden = false; $("#ans").focus(); return; }
+  if (rec) return stopMic(true);
   try {
     rec = new SR(); rec.continuous = true; rec.interimResults = true; rec.lang = "en-US";
     const base = $("#ans").value;
     rec.onresult = e => {
-      let s = ""; for (let i = 0; i < e.results.length; i++) s += e.results[i][0].transcript;
-      $("#ans").value = (base ? base + " " : "") + s; updateWc();
+      let done = "", live = "";
+      for (let i = 0; i < e.results.length; i++)
+        (e.results[i].isFinal ? done += e.results[i][0].transcript
+                              : live += e.results[i][0].transcript);
+      $("#ans").value = (base ? base + " " : "") + done + live;
+      $("#heard").hidden = false;
+      $("#heard").innerHTML = esc(done) + '<span class="dim">' + esc(live) + "</span>";
+      $("#heard").scrollTop = $("#heard").scrollHeight;
+      updateWc();
+    };
+    rec.onerror = ev => {
+      const why = ev && ev.error;
+      stopMic(false);
+      if (why === "no-speech") return;                 // just silence; let them retry
+      fallback("Kh\u00f4ng nghe \u0111\u01b0\u1ee3c \u2014 g\u00f5 t\u1ea1m nh\u00e9");
     };
     rec.onend = () => { if (rec){ try { rec.start(); } catch(_){} } };
     rec.start();
-    $("#mic").classList.add("live"); $("#mic").textContent = "⏹ Dừng";
-  } catch(_){ $("#ans").focus(); }
+    micLive();
+    $("#heard").hidden = false;
+    $("#heard").innerHTML = '<span class="dim">…</span>';
+    // eight seconds of hearing nothing and we stop pretending to listen
+    clearTimeout(deafTimer);
+    deafTimer = setTimeout(() => {
+      if (rec && !$("#ans").value.trim())
+        fallback("Chưa nghe thấy gì — gõ tạm cũng được");
+    }, 8000);
+  } catch(_){ rec = null; fallback("Không mở được mic — gõ tạm nhé"); }
 };
+if (!SR) setTimeout(() => { $("#typeBar").hidden = false; micIdle(); }, 0);
+
+/* ---------- the parting line ----------
+   Students read the material at different widths; let them decide. */
+const PANE_MIN = 300, PANE_MAX = 640, PANE_DEF = 380;
+function paneNow(){
+  return parseInt(getComputedStyle(document.documentElement).getPropertyValue("--pane")) || PANE_DEF;
+}
+function setPane(px){
+  const cap = Math.max(PANE_MIN, Math.min(PANE_MAX, window.innerWidth - 360));
+  const v = Math.round(Math.max(PANE_MIN, Math.min(px, cap)));
+  document.documentElement.style.setProperty("--pane", v + "px");
+  try { localStorage.setItem("spro_pane", v); } catch(_){}
+}
+try { const saved = +localStorage.getItem("spro_pane"); if (saved) setPane(saved); } catch(_){}
+
+(() => {
+  const sp = $("#splitter"); if (!sp) return;
+  let on = false;
+  sp.addEventListener("pointerdown", e => {
+    on = true; sp.setPointerCapture(e.pointerId);
+    sp.classList.add("drag"); document.body.classList.add("dragging");
+    e.preventDefault();
+  });
+  sp.addEventListener("pointermove", e => { if (on) setPane(window.innerWidth - e.clientX); });
+  const up = e => {
+    if (!on) return;
+    on = false;
+    try { sp.releasePointerCapture(e.pointerId); } catch(_){}
+    sp.classList.remove("drag"); document.body.classList.remove("dragging");
+  };
+  sp.addEventListener("pointerup", up);
+  sp.addEventListener("pointercancel", up);
+  sp.addEventListener("dblclick", () => setPane(PANE_DEF));
+  sp.addEventListener("keydown", e => {
+    if (e.key === "ArrowLeft"){ setPane(paneNow() + 24); e.preventDefault(); }
+    if (e.key === "ArrowRight"){ setPane(paneNow() - 24); e.preventDefault(); }
+    if (e.key === "Home"){ setPane(PANE_DEF); e.preventDefault(); }
+  });
+  window.addEventListener("resize", () => setPane(paneNow()));
+})();
 
 /* ============================================================
    COMMUNITY — each viewer writes only their own row and the page
@@ -2231,7 +2358,7 @@ function enter(){
 
 /* ---------- wiring ---------- */
 $("#spGo").onclick = enter;
-$("#goHome").onclick = () => { if (rec){ try { rec.onend = null; rec.stop(); } catch(_){} rec = null; }
+$("#goHome").onclick = () => { stopMic(false);
   clearHint(); clearTimeout(helloTimer); RUN = null; MODE = "guided";
   document.body.dataset.mode = "guided";
   if (coachOn){ coachOn = false; $("#coach").classList.remove("on"); $("#coach").hidden = true; }

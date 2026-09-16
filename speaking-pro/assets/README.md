@@ -3,9 +3,17 @@
 (`#FBFAE0`) upward, so a taller viewport reads as more sky rather than a
 letterbox.
 
-The other plates are the rest of that batch, kept as alternates: `a_hills`
-(big sun over hills), `b_clouds` (mountains under an open sky), `c_water`
-(mirror lake), `d_bands`/`splash-alt` (layered haze), `e_arch` (one small tree
-in an empty sky). Swapping one in is a single line in `.splash .plate`.
+`_options.png` is the labelled contact sheet of all twelve generated so far.
+Alternates kept here, any of them a one-line swap in `.splash .plate`:
+
+- `w1_sea` — a sea of clouds seen from above, cream and pale gold
+- `t3_stars` — dusk gradient, indigo into rose, one low hill (needs light type)
+- `t4_isles` — two small islands drifting in a lilac sky
+- `t1_moon` — a large moon over still water, deep violet (needs light type)
+- `a_hills`, `c_water`, `splash-alt` — from the first batch
+
+Two picked the same way both times: the plate has to leave its top two thirds
+nearly empty, because that is where the headline goes. Several of the prettiest
+(a big sun dead centre, a mirror lake) fail on exactly that.
 
 Prompts that produced them are in `tools/gen_splash.py`.

@@ -138,18 +138,18 @@ body[data-view="practice"] .practice{display:block}
 /* ---------- onboarding: a full page before the app ---------- */
 /* The plate is 400x240 pixel art; the page background continues its sky colour
    upward so any taller viewport reads as more sky rather than a letterbox. */
-.splash{position:fixed;inset:0;z-index:60;overflow:hidden;background:#FBFAE0;
+.splash{position:fixed;inset:0;z-index:60;overflow:hidden;background:#FCF9D9;
   display:grid;place-items:center;padding:28px;align-content:center;
   transition:opacity 520ms ease,visibility 520ms}
 .splash .plate{position:absolute;inset:0;pointer-events:none;
-  background:url("assets/splash.png") center 92% / cover no-repeat;
+  background:url("assets/splash.png") center bottom / cover no-repeat;
   image-rendering:pixelated;
   animation:breathe 48s ease-in-out infinite alternate}
 @keyframes breathe{from{transform:scale(1)}to{transform:scale(1.07)}}
 @media (prefers-reduced-motion:reduce){.splash .plate{animation:none}}
 .splash.gone{opacity:0;visibility:hidden;pointer-events:none}
 .sp-in{position:relative;z-index:1;width:100%;max-width:820px;text-align:center;
-  margin-top:-17vh}
+  margin-top:-14vh}
 .sp-a,.sp-b{transition:opacity 340ms ease,transform 460ms cubic-bezier(.2,.8,.3,1)}
 .sp-b{position:absolute;inset:0;display:grid;place-items:center;
   opacity:0;transform:translateY(16px);pointer-events:none}

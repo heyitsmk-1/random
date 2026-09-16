@@ -35,7 +35,7 @@ new plumbing. This is the piece worth keeping whatever happens to the UI.
 | Counting | real — derived from the transcript |
 | Community counters | real and shared, seeded with a starting number so the bars aren't empty |
 | Daily goals / streak | real, but `localStorage`, so per-device |
-| "Last week you dropped -ed 11 times" | **staged** — needs history from the real backend |
+| "Last week you dropped -ed 11 times" | **staged** — the real source is the report card behind `/api/recap`, the same one the players read for "🔁 Bài trước bạn mắc lỗi …" |
 | Part 2 and Part 3 | **stubs** — only Part 1 runs |
 
 ## Honest limit on the metrics
@@ -45,11 +45,32 @@ Counting **grammar** from a transcript is easy and is what this does. Counting
 phoneme-level scoring on the audio, not text. The community metrics here are
 grammar-based and labelled as such in the UI.
 
-## Styling
+## Styling — matched to Speaking Intensive
 
-Every colour and typeface is a token in the block at the top of `index.html`,
-marked `RESTYLE HERE`. Nothing below it hardcodes a colour. Dropping in Speaking
-Intensive's palette and faces is one edit.
+Tokens are lifted verbatim from `engine_v1.html` so PRO sits next to the lesson
+players instead of looking like a different product: Nunito + Montserrat,
+`--accent #FF6D3A`, the iOS-ish grey ramp, the 6/10/14 radii and the three
+shadows. Components follow the players' idioms too — orange student bubble on
+the right with the clipped top-right corner, white TA bubbles on the left, and
+pill chips with a 1.5px accent border.
+
+The practice view is the players' **chat**, not a form. Repairs use chips exactly
+as BRANCH C does: quote the phrase, one line of why, two or three complete fixes
+plus a "Mình không chắc" escape. That matters pedagogically — the student picks
+the right form instead of being handed it — and practically, because chips are
+how the real engine avoids making students type.
+
+Also carried over from the engine, because they are decisions and not details:
+
+- **Priority order** Structure → Vocab → Grammar, exactly one drilled per turn.
+- **The 25-word Part 1 floor** is checked *before* grading. A six-word answer is
+  not a Part 1 answer, and correcting its grammar teaches the wrong lesson.
+- **The re-record interlock** — "nói lại cả câu?" is offered at most once per
+  question, never forced.
+- **Mastery lines** `✅ Bạn đã nắm được: …` after each repair.
+- **No intensifiers.** "Ổn rồi" and move on; praise names what was good.
+
+Reference copies of the handoff docs are in `reference/`.
 
 ## Not wired up
 

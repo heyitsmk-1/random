@@ -10,8 +10,9 @@ your own device. The weekly and monthly targets are genuinely shared: every
 viewer's correct instances are summed into one live number.
 
 **2. A curated arrival.** Opening PRO lands on an onboarding page, not the app:
-a full screen, big type, **Welcome back!** and one button — *Bắt đầu học*. Pressing
-it transitions to **Hôm nay mình luyện gì nè bạn? 😄**, held large for a beat, and
+a full screen of pixel-art dunes fading into a pale sky, **Welcome back** set
+large and quiet, and one button — *Bắt đầu học*. No emoji, no subtitle, no stats.
+Pressing it transitions to **Hôm nay mình luyện gì nè bạn?**, held large for a beat, and
 that question hands over to the hub, where it is the heading. The hub then offers
 one recommendation with its evidence — *"tuần trước bạn bỏ mất -ed ở 11 trên 34
 động từ"* — with Part 1 / 2 / 3 underneath as the format to take it in.

@@ -117,9 +117,8 @@ body.locked{overflow:hidden}
 @keyframes screenout{from{opacity:1}to{opacity:0;transform:translateY(-8px)}}
 body[data-view="menu"] #vMenu{display:block}
 body[data-view="gallery"] #vGallery{display:block}
-body[data-view="teach"] #vTeach{display:block}
+body[data-view="lesson"] #vLesson{display:flex}
 body[data-view="report"] #vReport{display:block}
-body[data-view="practice"] #vPractice{display:block}
 
 /* ============================================================
    MAIN MENU — a column of modes, and a quest panel
@@ -244,24 +243,33 @@ body[data-view="practice"] #vPractice{display:block}
 .freenote{font-size:12.5px;color:var(--accent-dark);font-weight:700;margin-top:2px}
 
 /* ============================================================
-   TEACH — Đậu says hello, then floats the framework up
+   LESSON — the lesson player's own layout: material on the left
+   where the video lives, Đậu's chat on the right.
    ============================================================ */
-.teachwrap{max-width:660px;margin:0 auto;padding:clamp(20px,6vh,56px) clamp(18px,4vw,34px) 40px;
-  border-radius:24px;background:radial-gradient(100% 90% at 50% 35%,rgba(252,251,253,.96) 0%,
-    rgba(252,251,253,.86) 60%,rgba(252,251,253,.42) 100%)}
-.tchat{display:flex;flex-direction:column;gap:10px;align-items:flex-start;min-height:96px}
-.tchat .line{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius-lg);
-  border-top-left-radius:4px;padding:12px 16px;font-size:15.5px;box-shadow:var(--shadow-sm);
-  animation:tin 420ms cubic-bezier(.2,.8,.3,1) both;max-width:92%}
-.tchat .line.big{font-family:"Montserrat",sans-serif;font-weight:800;font-size:clamp(20px,3.2vw,26px)}
-@keyframes tin{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
-.theory{margin-top:20px;animation:tin 560ms cubic-bezier(.2,.8,.3,1) both}
-.theory h2{font-size:17px;margin-bottom:12px}
+body[data-view="lesson"] .screen{padding:0}
+/* the lesson is a workspace, not a vista — put the art away */
+body[data-view="lesson"] .app{background-image:none;background-color:var(--panel)}
+body[data-view="lesson"] .app::before{display:none}
+body[data-view="lesson"] .hud{padding-top:12px;padding-bottom:12px;
+  background:var(--panel);border-bottom:1px solid var(--border)}
+body[data-view="lesson"] .brand{background:var(--panel2)}
+body[data-view="lesson"] .mtoggle,
+body[data-view="report"] .mtoggle{display:none}
+body[data-view="lesson"] .brand:hover{background:var(--accent-soft)}
+.lesson-grid{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) 380px;
+  background:var(--panel)}
+
+.material{min-width:0;display:flex;flex-direction:column;overflow-y:auto;
+  background:var(--bg-warm);border-right:1px solid var(--border);padding:22px clamp(18px,3vw,34px) 34px}
+.mhead{margin-bottom:16px}
+.mhead h1{font-size:clamp(20px,2.6vw,27px);letter-spacing:-.02em;color:var(--ink-menu)}
+.mbody{max-width:720px}
 .step{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius-lg);
   padding:15px 17px;margin-bottom:10px;box-shadow:var(--shadow-sm);
   animation:tin 520ms cubic-bezier(.2,.8,.3,1) both}
-.step:nth-of-type(2){animation-delay:140ms}
-.step:nth-of-type(3){animation-delay:280ms}
+.step:nth-of-type(2){animation-delay:130ms}
+.step:nth-of-type(3){animation-delay:260ms}
+@keyframes tin{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
 .step .h{font-family:"Montserrat",sans-serif;font-weight:800;font-size:14.5px;color:var(--accent-dark);
   display:flex;align-items:center;gap:8px;margin-bottom:6px}
 .step .h em{font-style:normal;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
@@ -271,25 +279,100 @@ body[data-view="practice"] #vPractice{display:block}
   background:var(--panel-warm);border-radius:0 var(--radius) var(--radius) 0;
   font-size:13.5px;line-height:1.6;font-style:italic;color:var(--muted-strong)}
 .ex b{font-style:normal;font-weight:800;color:var(--accent-dark)}
-.trow{margin-top:22px;animation:tin 420ms cubic-bezier(.2,.8,.3,1) both}
-.skip{display:block;margin:18px auto 0;font:inherit;font-size:12.5px;font-weight:700;
-  background:none;border:none;color:var(--muted);cursor:pointer;text-decoration:underline}
-.skip:hover{color:var(--accent-dark)}
+.mwait{color:var(--muted);font-size:14px;font-style:italic}
+
+/* ---------- Đậu's panel ---------- */
+.pane{display:flex;flex-direction:column;min-width:0;min-height:0;overflow:hidden;background:var(--panel)}
+.ptop{position:relative;display:flex;align-items:center;gap:9px;padding:8px 14px;min-height:46px;
+  background:var(--panel2);border-bottom:1px solid var(--border);flex:0 0 auto}
+.ptitle{font-family:"Montserrat",sans-serif;font-weight:700;font-size:15px;letter-spacing:.16em;
+  color:var(--accent-dark)}
+.ptop .pips{margin-left:auto;display:flex;gap:4px}
+.ptop .pips i{width:16px;height:4px;border-radius:2px;background:var(--border-strong)}
+.ptop .pips i.done{background:var(--good)}
+.ptop .pips i.now{background:var(--accent)}
+.mascot{position:relative;width:30px;height:30px;border-radius:50%;flex:0 0 auto;
+  background:radial-gradient(circle at 32% 28%,#FFC089,var(--accent));
+  box-shadow:0 2px 7px rgba(232,124,42,.30),inset 0 -2px 5px rgba(0,0,0,.10)}
+.mascot i{position:absolute;background:#3A2412;display:block}
+.mascot .m-eye{top:11px;width:4px;height:4px;border-radius:50%;animation:m-blink 4.2s ease-in-out infinite}
+.mascot .m-eye-l{left:8px} .mascot .m-eye-r{right:8px}
+.mascot .m-mouth{left:50%;top:18px;transform:translateX(-50%);width:8px;height:4px;
+  border-radius:0 0 5px 5px;transition:all .12s ease}
+.mascot.talking .m-mouth{animation:m-talk .42s ease-in-out infinite}
+@keyframes m-blink{0%,92%,100%{transform:scaleY(1)}96%{transform:scaleY(.15)}}
+@keyframes m-talk{0%,100%{height:4px}50%{height:8px;width:10px}}
+
+.qcard{flex:0 0 auto;margin:8px 12px 0;padding:8px 12px;background:var(--accent-soft);
+  border-radius:var(--radius);position:relative}
+.qcard .q-label{font-size:10px;font-weight:700;color:var(--accent-dark);
+  text-transform:uppercase;letter-spacing:.05em}
+.qcard h2{margin:2px 26px 0 0;font-size:14.5px;font-weight:800;color:var(--text);line-height:1.35}
+.qcard .replay{position:absolute;right:8px;top:8px;width:26px;height:26px;border-radius:50%;
+  border:none;background:rgba(255,255,255,.7);cursor:pointer;font-size:12px}
+.qcard .replay:hover{background:#fff}
+
+.chat-log{flex:1 1 auto;min-height:0;overflow-y:auto;padding:12px 14px;
+  display:flex;flex-direction:column;gap:7px}
+.bubble{max-width:88%;padding:10px 14px;border-radius:var(--radius-lg);font-size:14.5px;
+  line-height:1.5;word-wrap:break-word;animation:bubble-in 200ms ease both}
+@keyframes bubble-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.bubble strong{font-weight:800}
+.bubble.ta{align-self:flex-start;background:var(--panel2);border-top-left-radius:4px}
+.bubble.ta.big{font-family:"Montserrat",sans-serif;font-weight:800;font-size:19px}
+.bubble.student{align-self:flex-end;background:var(--accent);color:#fff;
+  border-top-right-radius:4px;font-weight:600}
+.bubble.mastery{align-self:flex-start;background:var(--good-soft);border:1px solid var(--good);
+  color:var(--muted-strong);font-weight:700;font-size:13px}
+.choice-bar{flex:0 0 auto;display:flex;flex-wrap:wrap;gap:8px;padding:0 14px 8px}
+.chip{font:inherit;font-size:13.5px;font-weight:700;padding:8px 15px;border-radius:999px;cursor:pointer;
+  background:var(--panel2);border:1px solid var(--border);color:var(--text)}
+.chip:hover{border-color:var(--accent);background:var(--accent-soft)}
+.chip.escape{background:transparent;color:var(--muted)}
+.chip:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.answer-zone{flex:0 0 auto;border-top:1px solid var(--border);padding:12px 14px 14px;
+  background:var(--panel);display:flex;flex-direction:column;align-items:center;gap:9px}
+.assist{min-height:0}
+.mic-big{width:84px;height:84px;border-radius:50%;border:none;cursor:pointer;flex:0 0 auto;
+  background:var(--accent);color:#fff;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:1px;box-shadow:0 8px 22px rgba(232,124,42,.40);
+  transition:transform .15s ease,box-shadow .15s ease,background .15s ease}
+.mic-big:hover{transform:translateY(-2px);box-shadow:0 12px 28px rgba(232,124,42,.5)}
+.mic-big .glyph{font-size:30px;line-height:1}
+.mic-big .lab{font-size:12px;font-weight:700}
+.mic-big.live{background:var(--bad);animation:mic-pulse 1.3s ease-out infinite}
+@keyframes mic-pulse{0%{box-shadow:0 0 0 0 rgba(255,59,48,.45)}100%{box-shadow:0 0 0 22px rgba(255,59,48,0)}}
+.input-bar{display:flex;gap:8px;align-items:flex-end;width:100%}
+.input-bar textarea{flex:1 1 auto;min-width:0;resize:none;font:inherit;font-size:14px;line-height:1.4;
+  padding:10px 14px;border:1px solid var(--border);border-radius:20px;background:var(--bg-warm);
+  color:var(--text);min-height:42px;max-height:110px}
+.input-bar textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.input-bar .send{flex:0 0 auto;padding:0 16px;height:42px;border-radius:20px;border:none;cursor:pointer;
+  background:var(--accent);color:#fff;font-weight:700;font-size:14px}
+.input-bar .send:hover{background:var(--accent-dark)}
+.status{font-size:11.5px;color:var(--muted);min-height:14px;font-variant-numeric:tabular-nums}
+.status.short{color:var(--bad)} .status.ok{color:var(--good)}
 
 /* ---------- the 5s hint ---------- */
-.hintbar{margin-top:10px;animation:tin 320ms ease both}
-.hintbtn{font:inherit;font-weight:800;font-size:13px;cursor:pointer;background:var(--warn-soft);
-  color:#8A6A12;border:1.5px solid var(--warn);border-radius:999px;padding:7px 15px}
-.hintbtn:hover{background:#FFEFC8}
-.hintcard{margin-top:9px;background:var(--panel);border:1px solid var(--border);
-  border-left:3px solid var(--warn);border-radius:var(--radius-lg);padding:13px 15px;
-  animation:tin 320ms ease both}
-.hintcard h4{font-family:"Montserrat",sans-serif;font-size:11px;letter-spacing:.12em;
-  text-transform:uppercase;color:var(--muted);margin:0 0 5px}
-.hintcard p{font-size:13.5px;margin-bottom:9px}
-.hintcard .vocab{display:flex;flex-wrap:wrap;gap:6px}
-.hintcard .vocab span{font-size:12.5px;font-weight:700;background:var(--panel2);
-  border-radius:999px;padding:4px 10px;color:var(--text2)}
+.hintbtn{font:inherit;font-weight:700;font-size:12px;cursor:pointer;background:none;
+  border:1px dashed var(--border-strong);color:var(--muted-strong);border-radius:999px;padding:5px 13px}
+.hintbtn:hover{color:var(--accent-dark);border-color:var(--accent);background:var(--accent-soft)}
+.hintcard{background:var(--warn-soft);border:1px solid var(--warn);border-radius:var(--radius);
+  padding:10px 12px;margin-top:2px;text-align:left;animation:bubble-in 300ms ease both}
+.hintcard h4{font-family:"Montserrat",sans-serif;font-size:10px;letter-spacing:.12em;
+  text-transform:uppercase;color:#8A6A12;margin:0 0 4px}
+.hintcard p{font-size:13px;margin-bottom:7px}
+.hintcard .vocab{display:flex;flex-wrap:wrap;gap:5px}
+.hintcard .vocab span{font-size:12px;font-weight:700;background:rgba(255,255,255,.75);
+  border-radius:999px;padding:3px 9px}
+
+@media (max-width:900px){
+  .lesson-grid{grid-template-columns:1fr;grid-template-rows:minmax(0,38vh) minmax(0,1fr)}
+  .material{border-right:none;border-bottom:1px solid var(--border)}
+  .mic-big{width:58px;height:58px}
+  .mic-big .glyph{font-size:22px} .mic-big .lab{display:none}
+}
 
 /* ---------- report card ---------- */
 .repwrap{max-width:640px;margin:0 auto;padding:clamp(22px,7vh,64px) clamp(20px,4vw,36px) 40px;
@@ -351,15 +434,7 @@ body[data-view="practice"] #vPractice{display:block}
    PRACTICE — the lesson player's chat, unchanged
    ============================================================ */
 .pwrap{max-width:820px;margin:0 auto;padding-top:clamp(10px,3vh,28px)}
-.pbar{display:flex;align-items:center;justify-content:space-between;gap:12px;
-  margin-bottom:14px;flex-wrap:wrap}
-.pbar .what{font-family:"Montserrat",sans-serif;font-weight:700;font-size:15px;color:var(--ink-menu)}
-.pbar .what span{display:block;font-family:"Nunito",sans-serif;font-weight:600;
   font-size:12.5px;color:var(--muted);margin-top:1px}
-.pips{display:flex;gap:4px}
-.pips i{width:22px;height:4px;border-radius:2px;background:var(--border-strong)}
-.pips i.done{background:var(--good)}
-.pips i.now{background:var(--accent)}
 .qcard{background:var(--panel);border:1.5px solid var(--accent-soft);
   border-radius:var(--radius-lg);padding:16px 18px;margin-bottom:14px;box-shadow:var(--shadow-sm)}
 .eyebrow{font-family:"Montserrat",sans-serif;font-size:10px;font-weight:700;
@@ -503,13 +578,43 @@ body[data-view="practice"] #vPractice{display:block}
     </div>
   </div>
 
-  <!-- ================== TEACH (the walk-in) ================== -->
-  <div class="screen" id="vTeach">
-    <div class="teachwrap">
-      <div class="tchat" id="tChat"></div>
-      <div class="theory" id="tTheory" hidden></div>
-      <div class="trow" id="tRow" hidden><button class="btn bgo" id="tGo">Oke, mình thử nè</button></div>
-      <button class="skip" id="tSkip">Bỏ qua phần giải thích →</button>
+  <!-- ===================== LESSON ====================== -->
+  <div class="screen" id="vLesson">
+    <div class="lesson-grid">
+
+      <!-- where the video sits in a lesson player: the material -->
+      <div class="material" id="material">
+        <div class="mhead">
+          <p class="eyebrow">Buổi học hôm nay</p>
+          <h1 id="mTitle">Trả lời theo Example</h1>
+        </div>
+        <div class="mbody" id="mBody"></div>
+      </div>
+
+      <!-- Đậu -->
+      <div class="pane">
+        <div class="ptop">
+          <span class="mascot" id="mascot"><i class="m-eye m-eye-l"></i><i class="m-eye m-eye-r"></i><i class="m-mouth"></i></span>
+          <span class="ptitle">ĐẬU</span>
+          <span class="pips" id="pips"></span>
+        </div>
+        <div class="qcard" id="qWrap" hidden>
+          <span class="q-label">Câu hỏi <b id="qn">1</b>/6</span>
+          <h2 id="q">…</h2>
+          <button class="replay" id="replay" title="Nghe lại">🔊</button>
+        </div>
+        <div class="chat-log" id="chat"></div>
+        <div class="choice-bar" id="chipsHost"></div>
+        <div class="answer-zone" id="inputZone">
+          <div class="assist" id="assist"></div>
+          <div class="mic-row"><button class="mic-big" id="mic"><span class="glyph">🎤</span><span class="lab">Nói</span></button></div>
+          <div class="input-bar">
+            <textarea id="ans" placeholder="…hoặc gõ câu trả lời ở đây"></textarea>
+            <button class="send" id="send">Gửi</button>
+          </div>
+          <div class="status" id="wc">0 từ</div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -528,34 +633,7 @@ body[data-view="practice"] #vPractice{display:block}
     </div>
   </div>
 
-  <!-- ===================== PRACTICE ====================== -->
-  <div class="screen" id="vPractice">
-    <div class="pwrap">
-      <div class="pbar">
-        <div class="what">Part 1 · Days off<span id="focusLine">Đang soi: past simple — đuôi -ed</span></div>
-        <div class="pips" id="pips"></div>
-      </div>
-      <div class="qcard">
-        <p class="eyebrow">Câu hỏi <span class="num" id="qn">1</span>/5</p>
-        <p class="q" id="q">…</p>
-        <div class="qr">
-          <button class="btn sec" id="replay">🔊 Nghe lại</button>
-          <button class="btn sec" id="sample">Dùng câu mẫu</button>
-          <button class="btn sec" id="quit">← Menu</button>
-        </div>
-      </div>
-      <div class="chat" id="chat"></div>
-      <div id="chipsHost"></div>
-      <div id="inputZone">
-        <textarea class="answer" id="ans" placeholder="Bấm 🎤 và nói — direct answer, rồi một ví dụ thật."></textarea>
-        <div class="arow">
-          <button class="btn" id="mic">🎤 Nói</button>
-          <button class="btn sec" id="send">Gửi</button>
-          <span class="wc" id="wc">0 từ</span>
-        </div>
-      </div>
-    </div>
-  </div>
+</div>
 </div>
 
 <script>
@@ -647,9 +725,11 @@ function pickPart(n){
     $("#freeNote").textContent = "Part " + n + " chưa có trong bản thử này — Part 1 chạy đầy đủ rồi.";
     return;
   }
-  wave(() => { $(".pbar .what").childNodes[0].nodeValue = "Luyện tự do · Part 1";
-    $("#focusLine").textContent = "Không soi mục tiêu nào — cứ nói thoải mái";
-    LQ = 0; marks = []; stage = "answer"; go("practice"); askQ(); });
+  wave(() => {
+    $("#mTitle").textContent = "Luy\u1ec7n t\u1ef1 do";
+    $("#mBody").innerHTML = '<p class="mwait">Kh\u00f4ng c\u00f3 m\u1ee5c ti\u00eau n\u00e0o \u2014 c\u1ee9 n\u00f3i tho\u1ea3i m\u00e1i.</p>';
+    go("lesson"); startLesson();
+  });
 }
 let cursor = 0;
 
@@ -1043,28 +1123,30 @@ const BEATS = {
 /* ---------- run of play ---------- */
 let LQ = 0, marks = [], stage = "answer", pending = null, hintTimer = null, hintShown = false;
 
+let teachTimers = [];
+function talk(ms){
+  const m = $("#mascot"); if (!m) return;
+  m.classList.add("talking");
+  setTimeout(() => m.classList.remove("talking"), ms || 1400);
+}
 function teach(){
-  go("teach");
-  const chat = $("#tChat"); chat.innerHTML = "";
-  $("#tTheory").hidden = true; $("#tRow").hidden = true; $("#tSkip").hidden = false;
+  go("lesson");
+  $("#chat").innerHTML = ""; $("#chipsHost").innerHTML = "";
+  $("#qWrap").hidden = true; $("#inputZone").style.display = "none";
+  $("#pips").innerHTML = ""; $("#mTitle").textContent = "Tr\u1ea3 l\u1eddi theo Example";
+  $("#mBody").innerHTML = '<p class="mwait">\u0110\u1eadu \u0111ang gi\u1ea3i th\u00edch b\u00ean ph\u1ea3i\u2026</p>';
   let t = 0; teachTimers.forEach(clearTimeout); teachTimers = [];
   LESSON.hello.forEach(l => {
-    teachTimers.push(setTimeout(() => {
-      const el = document.createElement("div");
-      el.className = "line" + (l.big ? " big" : "");
-      el.innerHTML = l.t; chat.append(el);
-    }, t));
+    teachTimers.push(setTimeout(() => { bubble("ta" + (l.big ? " big" : ""), l.t); talk(1600); }, t));
     t += l.wait;
   });
   teachTimers.push(setTimeout(showTheory, t));
 }
-let teachTimers = [];
 
 function showTheory(){
   teachTimers.forEach(clearTimeout); teachTimers = [];
-  $("#tTheory").hidden = false; $("#tRow").hidden = false; $("#tSkip").hidden = true;
-  $("#tTheory").innerHTML =
-    '<h2>Framework đưa ví dụ của mình như sau:</h2>' +
+  bubble("ta", "Framework m\u00ecnh \u0111\u1ec3 b\u00ean tr\u00e1i nhen \u2014 c\u1ee9 xem b\u1ea5t c\u1ee9 l\u00fac n\u00e0o \ud83d\udc48"); talk(1500);
+  $("#mBody").innerHTML =
     '<div class="step"><div class="h"><em>1</em> Direct answer</div>' +
       '<p>Trả lời thẳng câu hỏi của giám khảo, một câu thôi.</p>' +
       '<div class="ex">What&rsquo;s your favourite season to travel in?<br>' +
@@ -1078,13 +1160,18 @@ function showTheory(){
       '<div class="ex">Well, I love travelling in the summer. <b>For example, last year, when my summer vacation started, ' +
       'I spent an entire week visiting my relatives in Da Nang. Not only did I get to spend quality time with them, ' +
       'I was also able to go to the beach and play in the sea with my cousins. It was a great time!</b></div></div>';
+  teachTimers.push(setTimeout(() => {
+    bubble("ta", "Oke, \u0111\u1ebfn l\u01b0\u1ee3t b\u1ea1n n\u00e8 \ud83d\ude04"); talk(1400);
+    chips(["M\u00ecnh th\u1eed n\u00e8 \ud83c\udfa4"], () => startLesson());
+  }, 1200));
 }
 
 function startLesson(){
   LQ = 0; marks = []; stage = "answer"; pending = null;
-  $(".pbar .what").childNodes[0].nodeValue = "Buổi học · Example";
-  $("#focusLine").textContent = "Mục tiêu: " + LESSON.outcome;
-  go("practice"); askQ();
+  teachTimers.forEach(clearTimeout); teachTimers = [];
+  $("#chat").innerHTML = ""; $("#chipsHost").innerHTML = "";
+  if (document.body.dataset.view !== "lesson") go("lesson");
+  askQ();
 }
 
 function askQ(){
@@ -1096,7 +1183,8 @@ function askQ(){
   $("#q").textContent = q.q;
   $("#chat").innerHTML = ""; $("#ans").value = ""; updateWc();
   stage = "answer"; pending = null; hintShown = false;
-  showInput(); say(q.q);
+  $("#qWrap").hidden = false;
+  showInput(); say(q.q); talk(2200);
   armHint();
 }
 
@@ -1107,10 +1195,8 @@ function armHint(){
     if (hintShown || stage !== "answer" || LQ >= LESSON.questions.length) return;
     if ($("#ans").value.trim()) return;
     hintShown = true;
-    const bar = document.createElement("div");
-    bar.className = "hintbar";
-    bar.innerHTML = '<button class="hintbtn" id="hintBtn">💡 Bí quá? Gợi ý ý tưởng &amp; từ vựng</button>';
-    $("#inputZone").append(bar);
+    const bar = $("#assist");
+    bar.innerHTML = '<button class="hintbtn" id="hintBtn">\ud83d\udca1 B\u00ed qu\u00e1? G\u1ee3i \u00fd</button>';
     $("#hintBtn").onclick = () => {
       const q = LESSON.questions[LQ];
       bar.innerHTML = '<div class="hintcard"><h4>Ý tưởng</h4><p>' + esc(q.idea) + "</p>" +
@@ -1119,10 +1205,7 @@ function armHint(){
     };
   }, 5000);
 }
-function clearHint(){
-  clearTimeout(hintTimer);
-  $("#inputZone").querySelectorAll(".hintbar").forEach(b => b.remove());
-}
+function clearHint(){ clearTimeout(hintTimer); const a = $("#assist"); if (a) a.innerHTML = ""; }
 function showInput(){ $("#chipsHost").innerHTML = ""; $("#inputZone").style.display = ""; }
 
 function sendAnswer(){
@@ -1150,7 +1233,7 @@ function sendAnswer(){
   const beat = pick(r, t);
   if (!beat) return closeQ(r);
   pending = beat;
-  beat.lines.forEach(l => bubble("ta", l));
+  beat.lines.forEach(l => bubble("ta", l)); talk(1900);
   const list = beat.chips(q);
   chips(list, p => onChip(p, r));
 }
@@ -1335,16 +1418,14 @@ function enter(){
 
 /* ---------- wiring ---------- */
 $("#spGo").onclick = enter;
-$("#goHome").onclick = () => go("menu");
-$("#replay").onclick = () => say(LESSON.questions[LQ].q);
+$("#goHome").onclick = () => { if (rec){ try { rec.onend = null; rec.stop(); } catch(_){} rec = null; }
+  clearHint(); teachTimers.forEach(clearTimeout); wave(() => go("menu")); };
+$("#replay").onclick = () => { say(LESSON.questions[LQ].q); talk(2200); };
 
 $("#send").onclick = sendAnswer;
-$("#quit").onclick = () => { if (rec){ try { rec.onend = null; rec.stop(); } catch(_){} rec = null; }
-  clearHint(); wave(() => go("menu")); };
-$("#tGo").onclick = startLesson;
-$("#tSkip").onclick = showTheory;
+
 $("#rMenu").onclick = () => wave(() => go("menu"));
-$("#rAgain").onclick = () => wave(() => startLesson());
+$("#rAgain").onclick = () => wave(() => teach());
 $("#ans").addEventListener("input", updateWc);
 $("#ans").addEventListener("keydown", e => {
   if (e.key === "Enter" && (e.metaKey || e.ctrlKey)){ e.preventDefault(); sendAnswer(); }

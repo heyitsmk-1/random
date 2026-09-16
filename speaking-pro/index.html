@@ -131,9 +131,23 @@ p{margin:0}
 /* ============================================================
    PRACTICE — the lesson player's chat, with its idioms
    ============================================================ */
-.practice{display:none}
-body[data-view="practice"] .hub{display:none}
+.welcome,.hub,.practice{display:none}
+body[data-view="welcome"] .welcome{display:block}
+body[data-view="hub"] .hub{display:block}
 body[data-view="practice"] .practice{display:block}
+
+/* the greeting is its own screen: the TA opens the conversation */
+.welcome{padding-top:5vh;min-height:62vh}
+.wchat{display:flex;flex-direction:column;gap:10px;min-height:190px;margin-bottom:6px}
+.wchat .bubble{max-width:76%}
+.wchat .bubble.hi{font-family:"Montserrat",sans-serif;font-weight:800;
+  font-size:clamp(20px,3.6vw,26px);line-height:1.25;background:var(--panel-warm);
+  border-color:var(--accent-soft)}
+.wchat .chips-row,#wchips .chips-row{justify-content:flex-start;margin-top:14px}
+.wfoot{margin-top:26px;font-size:12.5px;color:var(--muted)}
+.wfoot button{font:inherit;font-weight:700;background:none;border:none;color:var(--accent);
+  cursor:pointer;padding:0;text-decoration:underline}
+.backrow{margin-bottom:16px}
 
 .pbar{display:flex;align-items:center;justify-content:space-between;gap:12px;
   margin-bottom:14px;flex-wrap:wrap}
@@ -215,12 +229,16 @@ body[data-view="practice"] .practice{display:block}
     <div class="streak">🔥 <span class="num">12</span> ngày liên tiếp</div>
   </div>
 
+  <!-- ===================== WELCOME ===================== -->
+  <div class="welcome" id="welcome">
+    <div class="wchat" id="wchat"></div>
+    <div id="wchips"></div>
+    <p class="wfoot">Hoặc <button id="toHub">xem tiến độ hôm nay 📊</button></p>
+  </div>
+
   <!-- ======================= HUB ======================= -->
   <div class="hub">
-    <div class="hello">
-      <h1>Heyy there — welcome back!</h1>
-      <p>Hôm nay mình cùng nhau luyện gì đây? 😄</p>
-    </div>
+    <div class="backrow"><button class="btn sec" id="toWelcome">← Quay lại</button></div>
 
     <div class="focus" id="focusCard">
       <p class="eyebrow">Gợi ý hôm nay</p>
@@ -530,32 +548,110 @@ function push(){
 }
 
 /* ============================================================
+   WELCOME — the greeting is its own screen, and it is a
+   conversation, not a header. Same bubbles and chips as a lesson.
+   ============================================================ */
+const FOCI = {
+  past_ed:{
+    title:"past simple \u2014 \u0111u\u00f4i -ed",
+    lines:[
+      "M\u00ecnh v\u1eeba xem l\u1ea1i report card c\u1ee7a b\u1ea1n n\u00e8.",
+      "Tu\u1ea7n tr\u01b0\u1edbc b\u1ea1n b\u1ecf m\u1ea5t \u0111u\u00f4i <strong>-ed</strong> \u1edf <strong>11 tr\u00ean 34</strong> \u0111\u1ed9ng t\u1eeb qu\u00e1 kh\u1ee9 \u2014 h\u1ea7u h\u1ebft \u1edf Part 1, l\u00fac k\u1ec3 chuy\u1ec7n \u0111\u00e3 x\u1ea3y ra.",
+      "Hay h\u00f4m nay m\u00ecnh s\u1eeda \u0111\u00fang c\u00e1i \u0111\u00f3 nh\u00e9?"
+    ],
+    yes:"\u1eea, luy\u1ec7n past simple \ud83c\udfaf"
+  },
+  third_s:{
+    title:"\u0111u\u00f4i -s ng\u00f4i th\u1ee9 ba",
+    lines:[
+      "Ok, \u0111\u1ec3 m\u00ecnh t\u00ecm c\u00e1i kh\u00e1c \ud83e\udd14",
+      "B\u1ea1n \u0111\u00fang <strong>62%</strong> khi n\u00f3i v\u1ec1 ng\u01b0\u1eddi kh\u00e1c \u2014 hay ra \u201cmy brother <strong>go</strong>\u201d thay v\u00ec \u201cgoes\u201d.",
+      "C\u00e1i n\u00e0y tu\u1ea7n n\u00e0y c\u1ea3 l\u1edbp c\u0169ng \u0111ang x\u00e2y lu\u00f4n, n\u00ean m\u1ed7i c\u00e2u \u0111\u00fang c\u1ee7a b\u1ea1n c\u1ed9ng v\u00e0o \u0111\u00f3."
+    ],
+    yes:"\u1eea, luy\u1ec7n c\u00e1i n\u00e0y \ud83c\udfaf"
+  }
+};
+const PICK_PART = "M\u00ecnh t\u1ef1 ch\u1ecdn ph\u1ea7n";
+let focusKey = "past_ed";
+
+const wait = ms => new Promise(r => setTimeout(r, ms));
+async function reveal(lines){
+  for (const l of lines){ bubble("ta", l, "#wchat"); await wait(820); }
+}
+
+async function welcome(){
+  go("welcome");
+  $("#wchat").innerHTML = ""; $("#wchips").innerHTML = "";
+  bubble("ta hi", "Heyy there \u2014 welcome back! \ud83d\udc4b", "#wchat");
+  await wait(900);
+  bubble("ta", "H\u00f4m nay m\u00ecnh c\u00f9ng nhau luy\u1ec7n g\u00ec \u0111\u00e2y? \ud83d\ude04", "#wchat");
+  await wait(950);
+  await offer("past_ed");
+}
+
+async function offer(key){
+  focusKey = key;
+  const f = FOCI[key];
+  await reveal(f.lines);
+  const alt = key === "past_ed" ? ["Cho m\u00ecnh c\u00e1i kh\u00e1c"] : [];
+  chips([f.yes].concat(alt, [PICK_PART]), async pick => {
+    if (pick === f.yes) return begin();
+    if (pick === PICK_PART) return choosePart();
+    await offer("third_s");
+  }, { host:"#wchips", into:"#wchat" });
+}
+
+async function choosePart(){
+  bubble("ta", "Ok \u2014 b\u1ea1n mu\u1ed1n luy\u1ec7n ph\u1ea7n n\u00e0o?", "#wchat");
+  await wait(600);
+  chips(["Part 1 \u00b7 C\u00e2u h\u1ecfi quen thu\u1ed9c","Part 2 \u00b7 L\u01b0\u1ee3t n\u00f3i d\u00e0i","Part 3 \u00b7 Th\u1ea3o lu\u1eadn"], async pick => {
+    if (pick.indexOf("Part 1") === 0) return begin();
+    bubble("ta", "Ph\u1ea7n \u0111\u00f3 m\u00ecnh ch\u01b0a d\u1ef1ng trong b\u1ea3n th\u1eed n\u00e0y \ud83d\ude05", "#wchat");
+    await wait(700);
+    bubble("ta", "Part 1 ch\u1ea1y \u0111\u1ea7y \u0111\u1ee7 r\u1ed3i \u2014 m\u00ecnh b\u1eaft \u0111\u1ea7u \u1edf \u0111\u00f3 nh\u00e9?", "#wchat");
+    await wait(500);
+    chips(["Ok, Part 1 \ud83d\udc4d"], () => begin(), { host:"#wchips", into:"#wchat" });
+  }, { host:"#wchips", into:"#wchat" });
+}
+
+function begin(){
+  $("#focusLine").textContent = "\u0110ang soi: " + FOCI[focusKey].title;
+  qi = 0; session = []; renderRows();
+  go("practice"); ask();
+}
+
+/* ============================================================
    PRACTICE
    ============================================================ */
 let qi = 0, hit = null, session = [], asked = false, fixedThisQ = 0;
 
 const go = v => { document.body.dataset.view = v; window.scrollTo({ top:0, behavior:"smooth" }); };
 
-function bubble(kind, html){
+function bubble(kind, html, into){
   const el = document.createElement("div");
   el.className = "bubble " + kind;
   el.innerHTML = html;
-  $("#chat").append(el);
+  $(into || "#chat").append(el);
   el.scrollIntoView({ block:"nearest", behavior:"smooth" });
   return el;
 }
-function chips(list, onPick){
-  const host = $("#chipsHost");
+function chips(list, onPick, opt){
+  opt = opt || {};
+  const host = $(opt.host || "#chipsHost");
   host.innerHTML = '<div class="chips-row"></div>';
   const row = host.firstElementChild;
   list.forEach(text => {
     const b = document.createElement("button");
     b.className = "chip" + (text === ESCAPE ? " escape" : "");
     b.textContent = text;
-    b.onclick = () => { host.innerHTML = ""; bubble("student", esc(text)); onPick(text); };
+    b.onclick = () => {
+      host.innerHTML = "";
+      bubble("student", esc(text), opt.into);
+      onPick(text);
+    };
     row.append(b);
   });
-  $("#inputZone").style.display = "none";
+  if (!opt.host) $("#inputZone").style.display = "none";
 }
 function showInput(){ $("#chipsHost").innerHTML = ""; $("#inputZone").style.display = ""; }
 
@@ -703,7 +799,9 @@ $("#mic").onclick = () => {
 };
 
 /* ---------- wiring ---------- */
-$("#startFocus").onclick = () => { qi = 0; session = []; renderRows(); go("practice"); ask(); };
+$("#startFocus").onclick = () => begin();
+$("#toHub").onclick = () => go("hub");
+$("#toWelcome").onclick = () => welcome();
 document.querySelectorAll(".part").forEach(b => b.onclick = () => {
   if (b.dataset.part !== "1"){
     b.querySelector(".d").textContent = "Chưa có trong prototype — Part 1 chạy được rồi, thử cái đó nhé.";
@@ -712,20 +810,20 @@ document.querySelectorAll(".part").forEach(b => b.onclick = () => {
   $("#startFocus").click();
 });
 $("#otherFocus").onclick = () => {
+  focusKey = "third_s";
   $("#fTitle").textContent = "Đuôi -s ngôi thứ ba";
   $("#fWhy").innerHTML = 'Bạn đúng <b>62%</b> khi nói về người khác — “my brother <b>go</b>” thay vì “goes”.' +
     '<span class="en">Cũng là mục tiêu chung của cả lớp tuần này, nên mỗi câu đúng cộng đôi.</span>';
-  $("#focusLine").textContent = "Đang soi: đuôi -s ngôi thứ ba";
 };
 $("#replay").onclick = () => say(SET.questions[qi]);
 $("#sample").onclick = () => { $("#ans").value = SET.samples[qi] || ""; updateWc(); $("#ans").focus(); };
 $("#send").onclick = submit;
-$("#quit").onclick = () => { if (rec){ try { rec.onend = null; rec.stop(); } catch(_){} rec = null; } go("hub"); };
+$("#quit").onclick = () => { if (rec){ try { rec.onend = null; rec.stop(); } catch(_){} rec = null; } welcome(); };
 $("#ans").addEventListener("input", updateWc);
 $("#ans").addEventListener("keydown", e => {
   if (e.key === "Enter" && (e.metaKey || e.ctrlKey)){ e.preventDefault(); submit(); }
 });
 
-document.body.dataset.view = "hub";
 renderGoals(); renderComm(); pips(); renderRows(); updateWc();
+welcome();
 </script>

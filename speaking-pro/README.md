@@ -9,11 +9,24 @@ what to work on and why, you practise, and what you did counts toward something.
 your own device. The weekly and monthly targets are genuinely shared: every
 viewer's correct instances are summed into one live number.
 
-**2. A curated arrival.** The entry point is not a menu. It opens with one
-recommendation and the reason for it — *"you dropped -ed on 11 of 34 past-tense
-verbs last week"* — with the three Parts underneath as the format you'd take it
-in. A menu of three buttons is a choice; a recommendation with evidence is
-curation.
+**2. A curated arrival — its own screen, and a conversation.** Opening PRO does
+not land you on a dashboard. The TA greets you and *asks*, in bubbles and chips,
+exactly as in a lesson:
+
+> Heyy there — welcome back! 👋
+> Hôm nay mình cùng nhau luyện gì đây? 😄
+> Mình vừa xem lại report card của bạn nè.
+> Tuần trước bạn bỏ mất đuôi **-ed** ở **11 trên 34** động từ quá khứ…
+> Hay hôm nay mình sửa đúng cái đó nhé?
+>
+> `Ừ, luyện past simple 🎯`  `Cho mình cái khác`  `Mình tự chọn phần`
+
+"Cho mình cái khác" makes the TA find a second focus; "Mình tự chọn phần" opens
+Part 1 / 2 / 3. Three screens in total — **welcome → practice → progress** — and
+the goals and community counters live on progress, which is also where a finished
+session lands, so the numbers you moved are the payoff rather than the lobby.
+
+A menu of three buttons is a choice. Being asked, with a reason, is curation.
 
 **3. Socratic repair.** A flagged error hands back a question, never a verdict:
 *"You said 'I stay'. But that's finished, isn't it — happening, or done?"*

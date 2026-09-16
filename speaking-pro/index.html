@@ -112,6 +112,7 @@ body.locked{overflow:hidden}
 
 .screen{flex:1;display:none;padding:0 clamp(18px,4vw,44px) 40px}
 .screen[data-open]{animation:screenin 380ms cubic-bezier(.2,.8,.3,1) both}
+.screen.noin[data-open]{animation:none}
 .screen.out{animation:screenout 240ms ease both}
 @keyframes screenin{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 @keyframes screenout{from{opacity:1}to{opacity:0;transform:translateY(-8px)}}
@@ -939,26 +940,32 @@ const today = () => new Date().toISOString().slice(0,10);
 const esc = s => String(s).replace(/[&<>]/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;" }[c]));
 const md = s => esc(s).replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
 const words = s => (s.trim().match(/\S+/g) || []).length;
+/* The wave IS the transition. Anything the screen does on its own under
+   the crest lands after the crest has passed, which reads as the page
+   popping in late — so go() swaps instantly while `waving` is set. */
+let waving = false;
 function wave(then){
   const w = $("#wave");
   if (window.matchMedia("(prefers-reduced-motion: reduce)").matches){ then(); return; }
   w.classList.remove("run"); void w.offsetWidth; w.classList.add("run");
-  setTimeout(then, 430);                       // swap while the crest covers the screen
+  waving = true; document.body.classList.add("waving");
+  setTimeout(then, 420);                       // swap while the crest covers the screen
+  setTimeout(() => { waving = false; document.body.classList.remove("waving"); }, 560);
   setTimeout(() => w.classList.remove("run"), 960);
 }
 let leaving = false;
 function go(v){
   if (leaving || document.body.dataset.view === v) { document.body.dataset.view = v; return; }
   const cur = document.querySelector(".screen[data-open]");
-  const quick = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const quick = waving || window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const swap = () => {
-    if (cur) cur.removeAttribute("data-open");
+    if (cur){ cur.removeAttribute("data-open"); cur.classList.remove("noin"); }
     document.body.dataset.view = v;
     const next = { menu:"#vMenu", gallery:"#vGallery", topics:"#vTopics",
                    hello:"#vHello", lesson:"#vLesson",
                    report:"#vReport", runend:"#vRunEnd" }[v];
     const el = document.querySelector(next);
-    if (el){ el.setAttribute("data-open",""); }
+    if (el){ el.classList.toggle("noin", waving); el.setAttribute("data-open",""); }
     window.scrollTo({ top:0, behavior:"auto" });
     leaving = false;
   };

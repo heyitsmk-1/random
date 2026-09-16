@@ -117,6 +117,7 @@ body.locked{overflow:hidden}
 @keyframes screenout{from{opacity:1}to{opacity:0;transform:translateY(-8px)}}
 body[data-view="menu"] #vMenu{display:block}
 body[data-view="gallery"] #vGallery{display:block}
+body[data-view="hello"] #vHello{display:flex}
 body[data-view="lesson"] #vLesson{display:flex}
 body[data-view="report"] #vReport{display:block}
 
@@ -243,6 +244,32 @@ body[data-view="report"] #vReport{display:block}
 .freenote{font-size:12.5px;color:var(--accent-dark);font-weight:700;margin-top:2px}
 
 /* ============================================================
+   HELLO — Đậu says two things, full screen, one at a time.
+   No chrome: the session opens the way the app opens.
+   ============================================================ */
+body[data-view="hello"] .screen{padding:0}
+body[data-view="hello"] .mtoggle{display:none}
+#vHello{align-items:center;justify-content:center;cursor:pointer}
+.hellowrap{width:100%;max-width:760px;padding:0 clamp(20px,5vw,40px) 8vh;text-align:center;
+  transition:opacity 340ms ease,transform 340ms ease}
+.hellowrap.gone{opacity:0;transform:translateY(-14px)}
+.hmascot{width:80px;height:80px;display:grid;place-items:center;margin:0 auto 30px}
+.hmascot .mascot{transform:scale(2.6)}
+.lineslot{font-size:clamp(28px,5.4vw,50px);min-height:2.7em;
+  display:flex;align-items:center;justify-content:center}
+.bigline{display:block;font-family:"Montserrat",sans-serif;font-weight:800;
+  color:var(--ink-menu);font-size:1em;line-height:1.22;letter-spacing:-.03em;
+  text-wrap:balance}
+.bigline strong{color:var(--accent-dark)}
+.bigline.in{animation:lineIn 520ms cubic-bezier(.2,.8,.3,1) both}
+.bigline.out{animation:lineOut 300ms ease both}
+@keyframes lineIn{from{opacity:0;transform:translateY(16px);filter:blur(5px)}
+  to{opacity:1;transform:none;filter:none}}
+@keyframes lineOut{from{opacity:1}to{opacity:0;transform:translateY(-12px);filter:blur(4px)}}
+.hskip{margin-top:34px;font-size:12.5px;font-weight:700;letter-spacing:.06em;
+  color:var(--muted);opacity:.85}
+
+/* ============================================================
    LESSON — the lesson player's own layout: material on the left
    where the video lives, Đậu's chat on the right.
    ============================================================ */
@@ -267,9 +294,29 @@ body[data-view="lesson"] .brand:hover{background:var(--accent-soft)}
 .step{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius-lg);
   padding:15px 17px;margin-bottom:10px;box-shadow:var(--shadow-sm);
   animation:tin 520ms cubic-bezier(.2,.8,.3,1) both}
-.step:nth-of-type(2){animation-delay:130ms}
-.step:nth-of-type(3){animation-delay:260ms}
 @keyframes tin{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+/* one card at a time, and the way forward is impossible to miss */
+.reveal{display:flex;align-items:center;justify-content:center;gap:10px;
+  width:100%;max-width:720px;margin:14px 0 0;padding:15px 18px;cursor:pointer;
+  font:inherit;font-family:"Montserrat",sans-serif;font-weight:800;font-size:15px;
+  color:#fff;background:var(--accent);border:none;border-radius:var(--radius-lg);
+  box-shadow:0 7px 20px rgba(255,109,58,.34);
+  animation:revealPop 420ms cubic-bezier(.2,.8,.3,1) both}
+.reveal:hover{background:var(--accent-dark);box-shadow:0 10px 26px rgba(255,109,58,.42)}
+.reveal:focus-visible{outline:3px solid var(--accent-dark);outline-offset:3px}
+.reveal .chev{font-size:17px;line-height:1;animation:nudge 1.5s ease-in-out infinite}
+.reveal.go{background:var(--good);box-shadow:0 7px 20px rgba(19,166,46,.30)}
+.reveal.go:hover{background:#0F8C26;box-shadow:0 10px 26px rgba(19,166,46,.38)}
+@keyframes revealPop{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:none}}
+@keyframes nudge{0%,100%{transform:translateY(-2px)}50%{transform:translateY(3px)}}
+/* the next card, still shut — so the button has a visible destination */
+.ghost{max-width:720px;margin-top:10px;padding:15px 17px;border-radius:var(--radius-lg);
+  border:1.5px dashed var(--border-strong);background:transparent;opacity:.6}
+.ghost .h{font-family:"Montserrat",sans-serif;font-weight:800;font-size:14.5px;
+  color:var(--muted);display:flex;align-items:center;gap:8px}
+.ghost .h em{font-style:normal;font-size:11px;font-weight:700;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--muted);background:var(--panel2);
+  border:1px solid var(--border-strong);border-radius:999px;padding:2px 8px}
 .step .h{font-family:"Montserrat",sans-serif;font-weight:800;font-size:14.5px;color:var(--accent-dark);
   display:flex;align-items:center;gap:8px;margin-bottom:6px}
 .step .h em{font-style:normal;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
@@ -578,6 +625,17 @@ body[data-view="lesson"] .brand:hover{background:var(--accent-soft)}
     </div>
   </div>
 
+  <!-- ===================== HELLO ======================= -->
+  <div class="screen" id="vHello">
+    <div class="hellowrap" id="helloWrap">
+      <div class="hmascot">
+        <span class="mascot" id="hMascot"><i class="m-eye m-eye-l"></i><i class="m-eye m-eye-r"></i><i class="m-mouth"></i></span>
+      </div>
+      <div class="lineslot"><p class="bigline" id="hLine"></p></div>
+      <p class="hskip">Chạm để tiếp tục</p>
+    </div>
+  </div>
+
   <!-- ===================== LESSON ====================== -->
   <div class="screen" id="vLesson">
     <div class="lesson-grid">
@@ -659,7 +717,8 @@ function go(v){
   const swap = () => {
     if (cur) cur.removeAttribute("data-open");
     document.body.dataset.view = v;
-    const next = { menu:"#vMenu", brief:"#vBrief", gallery:"#vGallery", practice:"#vPractice" }[v];
+    const next = { menu:"#vMenu", gallery:"#vGallery",
+                   hello:"#vHello", lesson:"#vLesson", report:"#vReport" }[v];
     const el = document.querySelector(next);
     if (el){ el.setAttribute("data-open",""); }
     window.scrollTo({ top:0, behavior:"auto" });
@@ -690,6 +749,13 @@ let focusKey = "past_ed";
 /* Two ways in, not five. A guided session has one learning outcome and is
    chosen for you; free practice is you picking. Everything else is a place to
    look at, not a mode to be in. */
+$("#vHello").onclick = nextHello;
+document.addEventListener("keydown", e => {
+  if (document.body.dataset.view === "hello" && (e.key === " " || e.key === "Enter")){
+    e.preventDefault(); nextHello();
+  }
+});
+
 const MODES = [
   { id:"guided", primary:true, t:"BUỔI HỌC HÔM NAY", pill:"đã chọn sẵn",
     s:() => LESSON.outcome, go:() => wave(() => teach()) },
@@ -1123,52 +1189,130 @@ const BEATS = {
 /* ---------- run of play ---------- */
 let LQ = 0, marks = [], stage = "answer", pending = null, hintTimer = null, hintShown = false;
 
-let teachTimers = [];
 function talk(ms){
-  const m = $("#mascot"); if (!m) return;
-  m.classList.add("talking");
-  setTimeout(() => m.classList.remove("talking"), ms || 1400);
-}
-function teach(){
-  go("lesson");
-  $("#chat").innerHTML = ""; $("#chipsHost").innerHTML = "";
-  $("#qWrap").hidden = true; $("#inputZone").style.display = "none";
-  $("#pips").innerHTML = ""; $("#mTitle").textContent = "Tr\u1ea3 l\u1eddi theo Example";
-  $("#mBody").innerHTML = '<p class="mwait">\u0110\u1eadu \u0111ang gi\u1ea3i th\u00edch b\u00ean ph\u1ea3i\u2026</p>';
-  let t = 0; teachTimers.forEach(clearTimeout); teachTimers = [];
-  LESSON.hello.forEach(l => {
-    teachTimers.push(setTimeout(() => { bubble("ta" + (l.big ? " big" : ""), l.t); talk(1600); }, t));
-    t += l.wait;
+  document.querySelectorAll(".mascot").forEach(m => {
+    m.classList.add("talking");
+    setTimeout(() => m.classList.remove("talking"), ms || 1400);
   });
-  teachTimers.push(setTimeout(showTheory, t));
 }
 
-function showTheory(){
-  teachTimers.forEach(clearTimeout); teachTimers = [];
-  bubble("ta", "Framework m\u00ecnh \u0111\u1ec3 b\u00ean tr\u00e1i nhen \u2014 c\u1ee9 xem b\u1ea5t c\u1ee9 l\u00fac n\u00e0o \ud83d\udc48"); talk(1500);
-  $("#mBody").innerHTML =
-    '<div class="step"><div class="h"><em>1</em> Direct answer</div>' +
-      '<p>Trả lời thẳng câu hỏi của giám khảo, một câu thôi.</p>' +
-      '<div class="ex">What&rsquo;s your favourite season to travel in?<br>' +
-      '→ <b>Well, I love travelling in the summer.</b></div></div>' +
-    '<div class="step"><div class="h"><em>2a</em> General example</div>' +
-      '<p>Nói chung chung về việc đó — nhiều lựa chọn, dễ nói.</p>' +
-      '<div class="ex">Well, I love travelling in the summer, because there are so many options. ' +
-      '<b>For example, I can go to the beach, I can go on a picnic, or I can visit famous tourist destinations.</b></div></div>' +
-    '<div class="step"><div class="h"><em>2b</em> Specific example</div>' +
-      '<p>Kể lại một lần thật — một chuyến, một nơi, một chuyện. Cái này ăn điểm hơn.</p>' +
-      '<div class="ex">Well, I love travelling in the summer. <b>For example, last year, when my summer vacation started, ' +
-      'I spent an entire week visiting my relatives in Da Nang. Not only did I get to spend quality time with them, ' +
-      'I was also able to go to the beach and play in the sea with my cousins. It was a great time!</b></div></div>';
-  teachTimers.push(setTimeout(() => {
-    bubble("ta", "Oke, \u0111\u1ebfn l\u01b0\u1ee3t b\u1ea1n n\u00e8 \ud83d\ude04"); talk(1400);
-    chips(["M\u00ecnh th\u1eed n\u00e8 \ud83c\udfa4"], () => startLesson());
-  }, 1200));
+/* ------------------------------------------------------------------
+   HELLO — Đậu's two lines, full screen, one at a time. The lesson
+   chrome does not exist yet; there is nothing to read but the line.
+   ------------------------------------------------------------------ */
+let helloIx = 0, helloTimer = null, helloBusy = false;
+
+function teach(){
+  clearTimeout(helloTimer); helloBusy = false; helloIx = 0;
+  $("#helloWrap").classList.remove("gone");
+  $("#hLine").textContent = "";
+  go("hello");
+  setTimeout(sayHello, 120);
+}
+
+function sayHello(){
+  const l = LESSON.hello[helloIx];
+  if (!l) return endHello();
+  const el = $("#hLine");
+  el.className = "bigline";
+  void el.offsetWidth;
+  el.innerHTML = l.t;
+  el.classList.add("in");
+  talk(Math.min(l.wait - 800, 2400));
+  clearTimeout(helloTimer);
+  helloTimer = setTimeout(nextHello, l.wait);
+}
+
+/* a tap anywhere moves it along — nobody should have to wait out a line
+   they have already read */
+function nextHello(){
+  if (helloBusy) return;
+  clearTimeout(helloTimer);
+  helloIx++;
+  if (helloIx >= LESSON.hello.length) return endHello();
+  helloBusy = true;
+  const el = $("#hLine");
+  el.classList.remove("in"); el.classList.add("out");
+  setTimeout(() => { helloBusy = false; sayHello(); }, 300);
+}
+
+function endHello(){
+  if (helloBusy) return;
+  helloBusy = true;
+  clearTimeout(helloTimer);
+  $("#helloWrap").classList.add("gone");
+  setTimeout(() => { helloBusy = false; go("lesson"); openFramework(); }, 360);
+}
+
+/* ------------------------------------------------------------------
+   THE FRAMEWORK — three cards, revealed one press at a time. The next
+   one sits there as a dashed outline so the button has a destination.
+   ------------------------------------------------------------------ */
+const STEPS = [
+  { tag:"1", name:"Direct answer",
+    body:'<p>Trả lời thẳng câu hỏi của giám khảo, một câu thôi.</p>' +
+         '<div class="ex">What&rsquo;s your favourite season to travel in?<br>' +
+         '→ <b>Well, I love travelling in the summer.</b></div>',
+    say:"Bước 1: trả lời thẳng. <strong>Một câu</strong> thôi, đừng vòng vo 👈" },
+
+  { tag:"2a", name:"General example",
+    body:'<p>Nói chung chung về việc đó — nhiều lựa chọn, dễ nói.</p>' +
+         '<div class="ex">Well, I love travelling in the summer, because there are so many options. ' +
+         '<b>For example, I can go to the beach, I can go on a picnic, or I can visit famous tourist destinations.</b></div>',
+    say:"Bước 2a: ví dụ <strong>chung chung</strong>. Dễ nói, an toàn — ai cũng làm được." },
+
+  { tag:"2b", name:"Specific example",
+    body:'<p>Kể lại một lần thật — một chuyến, một nơi, một chuyện. Cái này ăn điểm hơn.</p>' +
+         '<div class="ex">Well, I love travelling in the summer. <b>For example, last year, when my summer vacation started, ' +
+         'I spent an entire week visiting my relatives in Da Nang. Not only did I get to spend quality time with them, ' +
+         'I was also able to go to the beach and play in the sea with my cousins. It was a great time!</b></div>',
+    say:"Bước 2b: ví dụ <strong>cụ thể</strong> — một lần thật của bạn. Cái này ăn điểm hơn hẳn." }
+];
+
+let stepIx = 0;
+
+function openFramework(){
+  stepIx = 0;
+  $("#mTitle").textContent = "Trả lời theo Example";
+  $("#mBody").innerHTML = '<div id="mSteps"></div><div id="mNext"></div>';
+  $("#chat").innerHTML = ""; $("#chipsHost").innerHTML = "";
+  $("#qWrap").hidden = true; $("#inputZone").style.display = "none";
+  $("#pips").innerHTML = "";
+  bubble("ta", "Framework có 2 bước thôi à — mình đi từng bước một nhen 👈"); talk(1700);
+  setTimeout(revealStep, 700);
+}
+
+function revealStep(){
+  const s = STEPS[stepIx]; if (!s) return;
+  const d = document.createElement("div");
+  d.className = "step";
+  d.innerHTML = '<div class="h"><em>' + s.tag + '</em> ' + s.name + '</div>' + s.body;
+  $("#mSteps").appendChild(d);
+  setTimeout(() => { bubble("ta", s.say); talk(1800); }, 380);
+  stepIx++;
+  paintNext();
+}
+
+function paintNext(){
+  const host = $("#mNext"); if (!host) return;
+  const nx = STEPS[stepIx];
+  if (nx){
+    host.innerHTML =
+      '<button class="reveal" id="mBtn">Tiếp theo<span class="chev">▾</span></button>' +
+      '<div class="ghost"><div class="h"><em>' + nx.tag + '</em> ' + nx.name + '</div></div>';
+    $("#mBtn").onclick = revealStep;
+  } else {
+    host.innerHTML = '<button class="reveal go" id="mBtn">Mình thử nè 🎤</button>';
+    $("#mBtn").onclick = () => startLesson();
+    setTimeout(() => { bubble("ta", "Oke, đến lượt bạn nè 😄"); talk(1500); }, 1600);
+  }
+  setTimeout(() => { host.scrollIntoView({ behavior:"smooth", block:"nearest" }); }, 420);
 }
 
 function startLesson(){
   LQ = 0; marks = []; stage = "answer"; pending = null;
-  teachTimers.forEach(clearTimeout); teachTimers = [];
+  clearTimeout(helloTimer);
+  const nx = $("#mNext"); if (nx) nx.innerHTML = "";   // the framework stays, the button is spent
   $("#chat").innerHTML = ""; $("#chipsHost").innerHTML = "";
   if (document.body.dataset.view !== "lesson") go("lesson");
   askQ();
@@ -1419,7 +1563,7 @@ function enter(){
 /* ---------- wiring ---------- */
 $("#spGo").onclick = enter;
 $("#goHome").onclick = () => { if (rec){ try { rec.onend = null; rec.stop(); } catch(_){} rec = null; }
-  clearHint(); teachTimers.forEach(clearTimeout); wave(() => go("menu")); };
+  clearHint(); clearTimeout(helloTimer); wave(() => go("menu")); };
 $("#replay").onclick = () => { say(LESSON.questions[LQ].q); talk(2200); };
 
 $("#send").onclick = sendAnswer;

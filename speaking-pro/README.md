@@ -9,19 +9,31 @@ what to work on and why, you practise, and what you did counts toward something.
 your own device. The weekly and monthly targets are genuinely shared: every
 viewer's correct instances are summed into one live number.
 
-**2. A curated arrival.** Opening PRO lands on an onboarding page, not the app:
-a full screen of pixel-art dunes fading into a pale sky, **Welcome back** set
-large and quiet, and one button — *Bắt đầu học*. No emoji, no subtitle, no stats.
-Pressing it transitions to **Hôm nay mình luyện gì nè bạn?**, held large for a beat, and
-that question hands over to the hub, where it is the heading. The hub then offers
-one recommendation with its evidence — *"tuần trước bạn bỏ mất -ed ở 11 trên 34
-động từ"* — with Part 1 / 2 / 3 underneath as the format to take it in.
+**2. A game menu, not a dashboard.** Loading screen, then a main menu — a column
+of modes and a quest panel, and nothing else:
 
-The three screens are **onboarding → hub → practice**, and a finished session
-returns to the hub, so the goals and community numbers you just moved are the
-payoff rather than the lobby.
+```
+TIẾP TỤC   [gợi ý]        │  NHIỆM VỤ
+past simple — đuôi -ed    │  Ngày · Tuần · Tháng
+                          │
+PART 1                    │  Trả lời 10 câu     6/10
+PART 2                    │  15 past simple     9/15
+PART 3                    │  Tự sửa 3 lỗi       1/3
+THƯ VIỆN LỖI  4 đang mở   │
+```
 
-A menu of three buttons is a choice. Being asked, with a reason, is curation.
+One row is coloured — the recommendation, with its reason always on screen.
+The rest sit at 55% until you reach them. **Exactly one press is obvious**, which
+is the thing the previous hub got wrong: it had five competing calls to action
+and no answer to "what do I press". Arrow keys and Enter work, as a menu should.
+
+**Thư viện lỗi** is the fourth mode and the one that is not IELTS furniture: every
+mistake ever made, `did a mistake → made a mistake`, with why, how many times,
+which lesson, and whether it is still open or actually fixed. A repair made in
+practice lands here. It is the notebook promoted to a destination.
+
+The quest panel is idea #1 exactly: **Ngày** is yours and local, **Tuần** and
+**Tháng** are the whole class and genuinely shared.
 
 **3. Socratic repair.** A flagged error hands back a question, never a verdict:
 *"You said 'I stay'. But that's finished, isn't it — happening, or done?"*

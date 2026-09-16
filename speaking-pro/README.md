@@ -9,22 +9,16 @@ what to work on and why, you practise, and what you did counts toward something.
 your own device. The weekly and monthly targets are genuinely shared: every
 viewer's correct instances are summed into one live number.
 
-**2. A curated arrival — its own screen, and a conversation.** Opening PRO does
-not land you on a dashboard. The TA greets you and *asks*, in bubbles and chips,
-exactly as in a lesson:
+**2. A curated arrival.** Opening PRO lands on an onboarding page, not the app:
+a full screen, big type, **Welcome back!** and one button — *Bắt đầu học*. Pressing
+it transitions to **Hôm nay mình luyện gì nè bạn? 😄**, held large for a beat, and
+that question hands over to the hub, where it is the heading. The hub then offers
+one recommendation with its evidence — *"tuần trước bạn bỏ mất -ed ở 11 trên 34
+động từ"* — with Part 1 / 2 / 3 underneath as the format to take it in.
 
-> Heyy there — welcome back! 👋
-> Hôm nay mình cùng nhau luyện gì đây? 😄
-> Mình vừa xem lại report card của bạn nè.
-> Tuần trước bạn bỏ mất đuôi **-ed** ở **11 trên 34** động từ quá khứ…
-> Hay hôm nay mình sửa đúng cái đó nhé?
->
-> `Ừ, luyện past simple 🎯`  `Cho mình cái khác`  `Mình tự chọn phần`
-
-"Cho mình cái khác" makes the TA find a second focus; "Mình tự chọn phần" opens
-Part 1 / 2 / 3. Three screens in total — **welcome → practice → progress** — and
-the goals and community counters live on progress, which is also where a finished
-session lands, so the numbers you moved are the payoff rather than the lobby.
+The three screens are **onboarding → hub → practice**, and a finished session
+returns to the hub, so the goals and community numbers you just moved are the
+payoff rather than the lobby.
 
 A menu of three buttons is a choice. Being asked, with a reason, is curation.
 

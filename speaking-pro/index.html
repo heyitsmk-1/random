@@ -131,23 +131,35 @@ p{margin:0}
 /* ============================================================
    PRACTICE — the lesson player's chat, with its idioms
    ============================================================ */
-.welcome,.hub,.practice{display:none}
-body[data-view="welcome"] .welcome{display:block}
+.hub,.practice{display:none}
 body[data-view="hub"] .hub{display:block}
 body[data-view="practice"] .practice{display:block}
 
-/* the greeting is its own screen: the TA opens the conversation */
-.welcome{padding-top:5vh;min-height:62vh}
-.wchat{display:flex;flex-direction:column;gap:10px;min-height:190px;margin-bottom:6px}
-.wchat .bubble{max-width:76%}
-.wchat .bubble.hi{font-family:"Montserrat",sans-serif;font-weight:800;
-  font-size:clamp(20px,3.6vw,26px);line-height:1.25;background:var(--panel-warm);
-  border-color:var(--accent-soft)}
-.wchat .chips-row,#wchips .chips-row{justify-content:flex-start;margin-top:14px}
-.wfoot{margin-top:26px;font-size:12.5px;color:var(--muted)}
-.wfoot button{font:inherit;font-weight:700;background:none;border:none;color:var(--accent);
-  cursor:pointer;padding:0;text-decoration:underline}
-.backrow{margin-bottom:16px}
+/* ---------- onboarding: a full page before the app ---------- */
+.splash{position:fixed;inset:0;z-index:60;background:var(--bg-warm);
+  display:grid;place-items:center;padding:28px;
+  transition:opacity 520ms ease,visibility 520ms}
+.splash.gone{opacity:0;visibility:hidden;pointer-events:none}
+.sp-in{position:relative;width:100%;max-width:760px;text-align:center}
+.sp-a,.sp-b{transition:opacity 340ms ease,transform 460ms cubic-bezier(.2,.8,.3,1)}
+.sp-b{position:absolute;inset:0;display:grid;place-items:center;
+  opacity:0;transform:translateY(16px);pointer-events:none}
+.splash.stage2 .sp-a{opacity:0;transform:translateY(-16px);pointer-events:none}
+.splash.stage2 .sp-b{opacity:1;transform:none}
+.sp-mark{display:inline-flex;align-items:center;gap:8px;font-family:"Montserrat",sans-serif;
+  font-weight:800;font-size:15px;color:var(--muted-strong);margin-bottom:26px}
+.sp-mark .dot{width:9px;height:9px;border-radius:50%;background:var(--accent)}
+.sp-mark .tag{font-size:10px;font-weight:700;letter-spacing:.14em;color:var(--accent);
+  border:1.5px solid var(--accent);border-radius:var(--radius-sm);padding:1px 6px}
+.sp-big{font-family:"Montserrat",sans-serif;font-weight:800;
+  font-size:clamp(36px,7.6vw,68px);line-height:1.06;letter-spacing:-.025em;margin:0}
+.sp-sub{margin-top:16px;font-size:clamp(16px,2.2vw,19px);color:var(--muted-strong);
+  max-width:34ch;margin-inline:auto}
+.sp-btn{margin-top:30px;font-size:17px;padding:15px 34px;border-radius:12px}
+.sp-streak{margin-top:20px;font-size:13px;font-weight:700;color:var(--muted)}
+.hub.in{animation:rise 520ms cubic-bezier(.2,.8,.3,1) both}
+@keyframes rise{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+body.locked{overflow:hidden}
 
 .pbar{display:flex;align-items:center;justify-content:space-between;gap:12px;
   margin-bottom:14px;flex-wrap:wrap}
@@ -222,6 +234,21 @@ body[data-view="practice"] .practice{display:block}
 }
 </style>
 
+<div class="splash" id="splash">
+  <div class="sp-in">
+    <div class="sp-a" id="spA">
+      <span class="sp-mark"><span class="dot"></span>Speaking <span class="tag">PRO</span></span>
+      <h1 class="sp-big">Welcome back!</h1>
+      <p class="sp-sub">Mừng bạn quay lại 👋 Mình luyện nói tiếp nhé.</p>
+      <button class="btn sp-btn" id="spGo">Bắt đầu học →</button>
+      <p class="sp-streak">🔥 12 ngày liên tiếp — đừng để đứt nha</p>
+    </div>
+    <div class="sp-b">
+      <h1 class="sp-big">Hôm nay mình luyện gì nè bạn? 😄</h1>
+    </div>
+  </div>
+</div>
+
 <div class="wrap">
 
   <div class="topbar">
@@ -229,16 +256,12 @@ body[data-view="practice"] .practice{display:block}
     <div class="streak">🔥 <span class="num">12</span> ngày liên tiếp</div>
   </div>
 
-  <!-- ===================== WELCOME ===================== -->
-  <div class="welcome" id="welcome">
-    <div class="wchat" id="wchat"></div>
-    <div id="wchips"></div>
-    <p class="wfoot">Hoặc <button id="toHub">xem tiến độ hôm nay 📊</button></p>
-  </div>
-
   <!-- ======================= HUB ======================= -->
-  <div class="hub">
-    <div class="backrow"><button class="btn sec" id="toWelcome">← Quay lại</button></div>
+  <div class="hub" id="hub">
+    <div class="hello">
+      <h1 id="helloLine">Hôm nay mình luyện gì nè bạn? 😄</h1>
+      <p>Mình gợi ý một thứ bên dưới — hoặc bạn tự chọn phần cũng được.</p>
+    </div>
 
     <div class="focus" id="focusCard">
       <p class="eyebrow">Gợi ý hôm nay</p>
@@ -574,50 +597,25 @@ const FOCI = {
 const PICK_PART = "M\u00ecnh t\u1ef1 ch\u1ecdn ph\u1ea7n";
 let focusKey = "past_ed";
 
-const wait = ms => new Promise(r => setTimeout(r, ms));
-async function reveal(lines){
-  for (const l of lines){ bubble("ta", l, "#wchat"); await wait(820); }
-}
-
-async function welcome(){
-  go("welcome");
-  $("#wchat").innerHTML = ""; $("#wchips").innerHTML = "";
-  bubble("ta hi", "Heyy there \u2014 welcome back! \ud83d\udc4b", "#wchat");
-  await wait(900);
-  bubble("ta", "H\u00f4m nay m\u00ecnh c\u00f9ng nhau luy\u1ec7n g\u00ec \u0111\u00e2y? \ud83d\ude04", "#wchat");
-  await wait(950);
-  await offer("past_ed");
-}
-
-async function offer(key){
-  focusKey = key;
-  const f = FOCI[key];
-  await reveal(f.lines);
-  const alt = key === "past_ed" ? ["Cho m\u00ecnh c\u00e1i kh\u00e1c"] : [];
-  chips([f.yes].concat(alt, [PICK_PART]), async pick => {
-    if (pick === f.yes) return begin();
-    if (pick === PICK_PART) return choosePart();
-    await offer("third_s");
-  }, { host:"#wchips", into:"#wchat" });
-}
-
-async function choosePart(){
-  bubble("ta", "Ok \u2014 b\u1ea1n mu\u1ed1n luy\u1ec7n ph\u1ea7n n\u00e0o?", "#wchat");
-  await wait(600);
-  chips(["Part 1 \u00b7 C\u00e2u h\u1ecfi quen thu\u1ed9c","Part 2 \u00b7 L\u01b0\u1ee3t n\u00f3i d\u00e0i","Part 3 \u00b7 Th\u1ea3o lu\u1eadn"], async pick => {
-    if (pick.indexOf("Part 1") === 0) return begin();
-    bubble("ta", "Ph\u1ea7n \u0111\u00f3 m\u00ecnh ch\u01b0a d\u1ef1ng trong b\u1ea3n th\u1eed n\u00e0y \ud83d\ude05", "#wchat");
-    await wait(700);
-    bubble("ta", "Part 1 ch\u1ea1y \u0111\u1ea7y \u0111\u1ee7 r\u1ed3i \u2014 m\u00ecnh b\u1eaft \u0111\u1ea7u \u1edf \u0111\u00f3 nh\u00e9?", "#wchat");
-    await wait(500);
-    chips(["Ok, Part 1 \ud83d\udc4d"], () => begin(), { host:"#wchips", into:"#wchat" });
-  }, { host:"#wchips", into:"#wchat" });
-}
-
 function begin(){
   $("#focusLine").textContent = "\u0110ang soi: " + FOCI[focusKey].title;
   qi = 0; session = []; renderRows();
   go("practice"); ask();
+}
+
+/* ---------- onboarding: welcome back -> the question -> the app ---------- */
+function enter(){
+  const sp = $("#splash");
+  if (sp.dataset.done) return;
+  sp.dataset.done = "1";
+  const quick = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  sp.classList.add("stage2");                 // "Welcome back!" out, the question in
+  setTimeout(() => {
+    sp.classList.add("gone");
+    document.body.classList.remove("locked");
+    $("#hub").classList.add("in");
+    setTimeout(() => sp.remove(), 600);
+  }, quick ? 250 : 1500);                     // the question holds, then hands over
 }
 
 /* ============================================================
@@ -800,8 +798,6 @@ $("#mic").onclick = () => {
 
 /* ---------- wiring ---------- */
 $("#startFocus").onclick = () => begin();
-$("#toHub").onclick = () => go("hub");
-$("#toWelcome").onclick = () => welcome();
 document.querySelectorAll(".part").forEach(b => b.onclick = () => {
   if (b.dataset.part !== "1"){
     b.querySelector(".d").textContent = "Chưa có trong prototype — Part 1 chạy được rồi, thử cái đó nhé.";
@@ -810,7 +806,13 @@ document.querySelectorAll(".part").forEach(b => b.onclick = () => {
   $("#startFocus").click();
 });
 $("#otherFocus").onclick = () => {
-  focusKey = "third_s";
+  focusKey = focusKey === "third_s" ? "past_ed" : "third_s";
+  if (focusKey === "past_ed"){
+    $("#fTitle").textContent = "Past simple \u2014 \u0111u\u00f4i -ed";
+    $("#fWhy").innerHTML = 'Tu\u1ea7n tr\u01b0\u1edbc b\u1ea1n b\u1ecf m\u1ea5t \u0111u\u00f4i <b>-ed</b> \u1edf <b>11 tr\u00ean 34</b> \u0111\u1ed9ng t\u1eeb qu\u00e1 kh\u1ee9, h\u1ea7u h\u1ebft \u1edf Part 1 l\u00fac k\u1ec3 chuy\u1ec7n \u0111\u00e3 x\u1ea3y ra.' +
+      '<span class="en">L\u1ea5y t\u1eeb report card c\u1ee7a b\u1ea1n.</span>';
+    return;
+  }
   $("#fTitle").textContent = "Đuôi -s ngôi thứ ba";
   $("#fWhy").innerHTML = 'Bạn đúng <b>62%</b> khi nói về người khác — “my brother <b>go</b>” thay vì “goes”.' +
     '<span class="en">Cũng là mục tiêu chung của cả lớp tuần này, nên mỗi câu đúng cộng đôi.</span>';
@@ -818,12 +820,14 @@ $("#otherFocus").onclick = () => {
 $("#replay").onclick = () => say(SET.questions[qi]);
 $("#sample").onclick = () => { $("#ans").value = SET.samples[qi] || ""; updateWc(); $("#ans").focus(); };
 $("#send").onclick = submit;
-$("#quit").onclick = () => { if (rec){ try { rec.onend = null; rec.stop(); } catch(_){} rec = null; } welcome(); };
+$("#quit").onclick = () => { if (rec){ try { rec.onend = null; rec.stop(); } catch(_){} rec = null; } go("hub"); };
 $("#ans").addEventListener("input", updateWc);
 $("#ans").addEventListener("keydown", e => {
   if (e.key === "Enter" && (e.metaKey || e.ctrlKey)){ e.preventDefault(); submit(); }
 });
 
+document.body.dataset.view = "hub";
+document.body.classList.add("locked");
 renderGoals(); renderComm(); pips(); renderRows(); updateWc();
-welcome();
+$("#spGo").onclick = enter;
 </script>

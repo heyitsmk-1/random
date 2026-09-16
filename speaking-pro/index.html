@@ -117,6 +117,8 @@ body.locked{overflow:hidden}
 @keyframes screenout{from{opacity:1}to{opacity:0;transform:translateY(-8px)}}
 body[data-view="menu"] #vMenu{display:block}
 body[data-view="gallery"] #vGallery{display:block}
+body[data-view="topics"] #vTopics{display:block}
+body[data-view="runend"] #vRunEnd{display:block}
 body[data-view="hello"] #vHello{display:flex}
 body[data-view="lesson"] #vLesson{display:flex}
 body[data-view="report"] #vReport{display:block}
@@ -304,7 +306,10 @@ body[data-view="lesson"] .app::before{display:none}
 body[data-view="lesson"] .hud{padding-top:12px;padding-bottom:12px;
   background:var(--panel);border-bottom:1px solid var(--border)}
 body[data-view="lesson"] .brand{background:var(--panel2)}
+body[data-mode="free"] #qWrap{display:none}
 body[data-view="lesson"] .mtoggle,
+body[data-view="topics"] .mtoggle,
+body[data-view="runend"] .mtoggle,
 body[data-view="report"] .mtoggle{display:none}
 body[data-view="lesson"] .brand:hover{background:var(--accent-soft)}
 .lesson-grid{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) 380px;
@@ -452,6 +457,122 @@ body[data-view="lesson"] .brand:hover{background:var(--accent-soft)}
   .mic-big{width:58px;height:58px}
   .mic-big .glyph{font-size:22px} .mic-big .lab{display:none}
 }
+
+/* ============================================================
+   TOPIC SELECT — a level select, not an inventory. One press is
+   obviously right; everything else is a shelf behind it.
+   ============================================================ */
+.topwrap{max-width:1000px;margin:0 auto;padding:clamp(10px,3vh,26px) clamp(14px,2vw,22px) 46px;
+  border-radius:22px;
+  background:linear-gradient(180deg,rgba(252,251,253,.95) 0%,
+    rgba(252,251,253,.90) 72%,rgba(252,251,253,.64) 100%)}
+.tophead{margin-bottom:18px}
+.tophead h1{font-size:clamp(23px,3.4vw,34px);letter-spacing:-.025em;color:var(--ink-menu)}
+.shelf{margin-top:26px}
+.shelf>h2{font-family:"Montserrat",sans-serif;font-size:11.5px;font-weight:800;
+  letter-spacing:.13em;text-transform:uppercase;color:var(--muted-strong);margin-bottom:10px}
+.shelf>h2 em{font-style:normal;font-weight:700;letter-spacing:.02em;text-transform:none;
+  color:var(--muted);margin-left:8px;font-size:12px}
+.grid{display:grid;gap:11px;grid-template-columns:repeat(auto-fill,minmax(258px,1fr))}
+
+.hero{display:block;width:100%;text-align:left;cursor:pointer;font:inherit;
+  background:var(--panel);border:2px solid var(--accent);border-radius:var(--radius-lg);
+  padding:18px 20px;box-shadow:0 10px 30px rgba(255,109,58,.18);
+  transition:transform 160ms cubic-bezier(.2,.8,.3,1),box-shadow 160ms ease}
+.hero:hover{transform:translateY(-2px);box-shadow:0 14px 36px rgba(255,109,58,.26)}
+.hero:focus-visible{outline:3px solid var(--accent-dark);outline-offset:3px}
+.hero .hrow{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.hero h3{font-size:clamp(19px,2.4vw,25px);letter-spacing:-.02em;color:var(--ink-menu)}
+.hero .samp{margin-top:7px;font-size:14px;font-style:italic;color:var(--muted-strong)}
+.hero .hfoot{display:flex;align-items:center;justify-content:space-between;gap:12px;
+  margin-top:14px;flex-wrap:wrap}
+.hero .meta{font-size:13px;font-weight:700;color:var(--muted)}
+.hero .cta{display:inline-flex;align-items:center;gap:8px;background:var(--accent);color:#fff;
+  font-family:"Montserrat",sans-serif;font-weight:800;font-size:14.5px;
+  border-radius:999px;padding:11px 20px}
+.hero:hover .cta{background:var(--accent-dark)}
+
+.tcard{display:block;width:100%;text-align:left;cursor:pointer;font:inherit;
+  background:var(--panel);border:1.5px solid var(--border);border-radius:var(--radius-lg);
+  padding:13px 15px;transition:border-color 140ms ease,transform 140ms ease,box-shadow 140ms ease}
+.tcard:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:var(--shadow-sm)}
+.tcard:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.tcard.done{background:var(--panel2)}
+.tcard h3{font-size:15.5px;letter-spacing:-.01em;color:var(--ink-menu);margin-bottom:5px}
+.tcard .samp{font-size:12.5px;font-style:italic;color:var(--muted);line-height:1.45;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.tcard .tfoot{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:10px}
+.tcard .meta{font-size:12px;font-weight:700;color:var(--muted)}
+
+/* what you did, never what you owe */
+.dots{display:flex;gap:4px}
+.dots i{width:7px;height:7px;border-radius:50%;background:var(--border-strong);display:block}
+.dots i.on{background:var(--accent)}
+.badge{font-family:"Montserrat",sans-serif;font-size:10px;font-weight:800;letter-spacing:.09em;
+  text-transform:uppercase;border-radius:999px;padding:3px 9px;white-space:nowrap}
+.badge.must{background:var(--ink-menu);color:#fff}
+.badge.hot{background:var(--accent-soft);color:var(--accent-dark)}
+.badge.ok{background:#E2F5E6;color:var(--good)}
+
+/* ============================================================
+   WORKSHEET — free practice puts the student's own work in the
+   left column. Feedback is an edit to something visible, not prose.
+   ============================================================ */
+.wstop{margin-bottom:13px}
+.wsn{font-family:"Montserrat",sans-serif;font-size:11px;font-weight:800;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--muted)}
+.wsq{display:flex;align-items:flex-start;gap:10px;margin-top:4px}
+.wsq h2{font-size:clamp(18px,2.3vw,24px);letter-spacing:-.02em;color:var(--ink-menu);line-height:1.25}
+.wsplay{flex:none;width:30px;height:30px;margin-top:2px;border-radius:50%;border:none;cursor:pointer;
+  background:var(--accent-soft);color:var(--accent-dark);font-size:13px}
+.wsplay:hover{background:var(--accent);color:#fff}
+
+/* the target, before the mic — never after */
+.goal{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius-lg);
+  padding:13px 15px;margin-bottom:11px;box-shadow:var(--shadow-sm);max-width:720px}
+.goal .gt{font-family:"Montserrat",sans-serif;font-size:10.5px;font-weight:800;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--muted);margin-bottom:9px}
+.grow{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.grow+.grow{margin-top:10px;padding-top:10px;border-top:1px dashed var(--border)}
+.glab{font-size:12.5px;font-weight:700;color:var(--muted-strong);flex:none;width:64px}
+.meter{flex:1 1 120px;height:7px;min-width:90px;border-radius:999px;background:var(--panel2);overflow:hidden}
+.meter i{display:block;height:100%;width:0;border-radius:999px;background:var(--accent);
+  transition:width 320ms cubic-bezier(.2,.8,.3,1),background 320ms ease}
+.meter i.hit{background:var(--good)}
+.gnum{font-size:12.5px;font-weight:800;color:var(--muted);flex:none;font-variant-numeric:tabular-nums}
+.gnum.hit{color:var(--good)}
+.phr{display:flex;flex-wrap:wrap;gap:6px;flex:1 1 200px}
+.ph{font-size:12.5px;font-weight:700;color:var(--muted-strong);background:var(--panel2);
+  border:1px solid var(--border);border-radius:999px;padding:4px 11px;
+  transition:background 240ms ease,color 240ms ease,border-color 240ms ease}
+.ph.used{background:#E2F5E6;border-color:#B7E3C1;color:var(--good)}
+.ph.used::before{content:"\2713\00a0"}
+
+/* every attempt is kept, so improving is something you can see */
+.take{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius-lg);
+  padding:13px 15px;margin-bottom:10px;box-shadow:var(--shadow-sm);max-width:720px;
+  animation:tin 460ms cubic-bezier(.2,.8,.3,1) both}
+.take.best{border-color:#B7E3C1;background:linear-gradient(180deg,#FBFFFC,var(--panel))}
+.take .th{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:7px}
+.take .th b{font-family:"Montserrat",sans-serif;font-size:12.5px;font-weight:800;color:var(--accent-dark)}
+.take .th .delta{font-size:11.5px;font-weight:800;color:var(--good)}
+.take .tt{font-size:14.5px;line-height:1.65;color:var(--text2)}
+.take .tt mark{background:none;padding:0}
+.take .tt mark.mk-good{background:#E2F5E6;border-radius:4px;padding:1px 3px;color:#0E7C23;font-weight:700}
+.take .tt mark.mk-bad{background:#FFEDEA;border-radius:4px;padding:1px 3px;color:var(--bad);
+  text-decoration:line-through;text-decoration-thickness:1.5px}
+.take .tt mark.mk-add{background:#E2F5E6;border-radius:4px;padding:1px 3px;color:#0E7C23}
+.score{display:flex;flex-wrap:wrap;gap:5px;margin-top:10px}
+.sp{font-size:11.5px;font-weight:700;border-radius:999px;padding:3px 10px;
+  background:var(--panel2);color:var(--muted);border:1px solid var(--border)}
+.sp.good{background:#E2F5E6;border-color:#B7E3C1;color:var(--good)}
+.sp.good::before{content:"\2713\00a0"}
+.sp.bad{background:#FFEDEA;border-color:#FFD4CC;color:var(--bad)}
+.sp.bad::before{content:"\00d7\00a0"}
+
+/* the input meter, so "too short" is never a verdict after the fact */
+.wcbar{display:flex;align-items:center;gap:8px;justify-content:center}
+.wcbar .meter{flex:0 0 86px;height:5px;min-width:0}
 
 /* ---------- report card ---------- */
 .repwrap{max-width:640px;margin:0 auto;padding:clamp(22px,7vh,64px) clamp(20px,4vw,36px) 40px;
@@ -665,6 +786,35 @@ body[data-view="lesson"] .brand:hover{background:var(--accent-soft)}
     </div>
   </div>
 
+  <!-- ===================== TOPICS ====================== -->
+  <div class="screen" id="vTopics">
+    <div class="topwrap">
+      <div class="tophead">
+        <p class="eyebrow">Luyện tự do</p>
+        <h1>Hôm nay mình nói về gì?</h1>
+      </div>
+      <div id="topHero"></div>
+      <div id="topShelves"></div>
+    </div>
+  </div>
+
+  <!-- =================== RUN RESULTS =================== -->
+  <div class="screen" id="vRunEnd">
+    <div class="repwrap">
+      <p class="beyebrow">Xong lượt này</p>
+      <h1 class="rtitle" id="uTitle">—</h1>
+      <div class="rscore"><div class="rring" id="uRing"><b id="uNum">0</b><span id="uDen">/ 9</span></div>
+        <p class="rsay" id="uSay"></p></div>
+      <div class="rrows" id="uRows"></div>
+      <div id="uBook"></div>
+      <div class="brow">
+        <button class="btn bgo" id="uNext">Luyện tiếp</button>
+        <button class="btn sec" id="uTopics">Chủ đề khác</button>
+        <button class="btn sec" id="uMenu">← Menu</button>
+      </div>
+    </div>
+  </div>
+
   <!-- the dim + spotlight that introduces the left column -->
   <div class="coach" id="coach" hidden>
     <div class="spot" id="spot"></div>
@@ -682,7 +832,7 @@ body[data-view="lesson"] .brand:hover{background:var(--accent-soft)}
       <!-- where the video sits in a lesson player: the material -->
       <div class="material" id="material">
         <div class="mhead">
-          <p class="eyebrow">Buổi học hôm nay</p>
+          <p class="eyebrow" id="mKind">Buổi học hôm nay</p>
           <h1 id="mTitle">Trả lời theo Example</h1>
         </div>
         <div class="mbody" id="mBody"></div>
@@ -696,7 +846,7 @@ body[data-view="lesson"] .brand:hover{background:var(--accent-soft)}
           <span class="pips" id="pips"></span>
         </div>
         <div class="qcard" id="qWrap" hidden>
-          <span class="q-label">Câu hỏi <b id="qn">1</b>/6</span>
+          <span class="q-label">Câu hỏi <b id="qn">1</b>/<b id="qtot">6</b></span>
           <h2 id="q">…</h2>
           <button class="replay" id="replay" title="Nghe lại">🔊</button>
         </div>
@@ -709,7 +859,7 @@ body[data-view="lesson"] .brand:hover{background:var(--accent-soft)}
             <textarea id="ans" placeholder="…hoặc gõ câu trả lời ở đây"></textarea>
             <button class="send" id="send">Gửi</button>
           </div>
-          <div class="status" id="wc">0 từ</div>
+          <div class="status wcbar" id="wc"><span>0 từ</span></div>
         </div>
       </div>
     </div>
@@ -756,8 +906,9 @@ function go(v){
   const swap = () => {
     if (cur) cur.removeAttribute("data-open");
     document.body.dataset.view = v;
-    const next = { menu:"#vMenu", gallery:"#vGallery",
-                   hello:"#vHello", lesson:"#vLesson", report:"#vReport" }[v];
+    const next = { menu:"#vMenu", gallery:"#vGallery", topics:"#vTopics",
+                   hello:"#vHello", lesson:"#vLesson",
+                   report:"#vReport", runend:"#vRunEnd" }[v];
     const el = document.querySelector(next);
     if (el){ el.setAttribute("data-open",""); }
     window.scrollTo({ top:0, behavior:"auto" });
@@ -799,8 +950,9 @@ document.addEventListener("keydown", e => {
 const MODES = [
   { id:"guided", primary:true, t:"BUỔI HỌC HÔM NAY", pill:"đã chọn sẵn",
     s:() => LESSON.outcome, go:() => wave(() => teach()) },
-  { id:"free", t:"LUYỆN TỰ DO",
-    s:() => "Bạn chọn phần, không có mục tiêu nào cả", go:() => toggleFree() },
+  { id:"free", t:"LUYỆN TỰ DO", pill:"Part 1",
+    s:() => "Chọn chủ đề · ba câu một lượt · ~6 phút",
+    go:() => wave(() => { renderTopics(); go("topics"); }) },
   { id:"gal", t:"THƯ VIỆN LỖI",
     s:() => "Mọi lỗi bạn từng mắc, và cái nào đã sửa được",
     count:() => GALLERY.filter(g => !g.fixed).length + " đang mở",
@@ -1117,10 +1269,12 @@ function say(t){
 }
 
 function updateWc(){
-  const n = words($("#ans").value);
-  const el = $("#wc");
-  el.textContent = n + " từ";
-  el.className = "wc" + (n === 0 ? "" : n < 40 ? " short" : " ok");   // examples want room
+  const n = words($("#ans").value), el = $("#wc");
+  const pct = Math.min(100, Math.round(n / MINW * 100));
+  el.className = "status wcbar" + (n === 0 ? "" : n < MINW ? " short" : " ok");
+  el.innerHTML = '<span class="meter"><i class="' + (n >= MINW ? "hit" : "") +
+    '" style="width:' + pct + '%"></i></span><span>' + n + " / " + MINW + " t\u1eeb</span>";
+  if (MODE === "free" && RUN && $("#goal")) drawGoal();
 }
 
 
@@ -1226,8 +1380,210 @@ const BEATS = {
   })
 };
 
+
+/* ============================================================
+   TOPICS — Part 1 has a real shape: three topics every candidate
+   is asked, a forecast set for the quarter, and the rest. That is
+   the grouping, not invented worlds.
+   A topic is not a list of 27. A topic is a world; a RUN of three
+   questions is the level, and a level has to be finishable.
+   ============================================================ */
+const RUNLEN = 3;
+const TOPICS = [
+  { id:"work", t:"Work or Studies", tag:"must", qs:[
+    { q:"Are you a student or do you work now?", cues:["student","work","studying","job","university","school"],
+      phrases:["I'm currently","a full-time student","on the side"] },
+    { q:"What subjects are you studying?", cues:["business","english","engineering","economics","it","marketing","law","medicine","design"],
+      phrases:["I'm majoring in","my main subject","what got me into it"] },
+    { q:"Do you like your subject?", cues:["yes","love","like","enjoy","not really","so-so","kind of"],
+      phrases:["what I enjoy most","to be honest","it grew on me"] },
+    { q:"Why did you choose that subject?", cues:["because","interested","parents","job","career","always","since"],
+      phrases:["the main reason","back then","it turned out"] },
+    { q:"Is there anything you dislike about your studies?", cues:["yes","no","deadline","exam","boring","workload","early","group"],
+      phrases:["the one thing","I'd say","it can get"] },
+    { q:"What do you want to do after you graduate?", cues:["work","study","master","abroad","job","start","company"],
+      phrases:["I'm hoping to","in the long run","if all goes well"] }
+  ]},
+  { id:"hometown", t:"Hometown", tag:"must", qs:[
+    { q:"Where is your hometown?", cues:["ha noi","hanoi","saigon","ho chi minh","da nang","hue","can tho","province","north","south","central","near"],
+      phrases:["I'm originally from","about two hours from","a small town"] },
+    { q:"Do you like your hometown?", cues:["yes","love","like","not really","mixed","of course"],
+      phrases:["what I love about it","to be fair","I've grown to"] },
+    { q:"Do you often visit your hometown?", cues:["yes","no","often","sometimes","tet","holiday","month","year","weekend"],
+      phrases:["whenever I can","the last time I went","at least once"] },
+    { q:"What is your hometown famous for?", cues:["food","beach","river","market","festival","coffee","bridge","temple","noodle"],
+      phrases:["it's known for","people come for","what really stands out"] },
+    { q:"Has your hometown changed much?", cues:["yes","no","changed","building","road","bigger","crowded","new"],
+      phrases:["compared to","these days","back when I was"] },
+    { q:"Would you like to live there in the future?", cues:["yes","no","maybe","probably","someday","depends"],
+      phrases:["I could see myself","for now","down the line"] }
+  ]},
+  { id:"home", t:"Home & Accommodation", tag:"must", qs:[
+    { q:"Do you live in a house or an apartment?", cues:["house","apartment","flat","dorm","room","building"],
+      phrases:["at the moment","it's just","on the top floor"] },
+    { q:"Who do you live with?", cues:["family","parents","alone","friend","roommate","brother","sister","grandma"],
+      phrases:["I share with","the four of us","ever since"] },
+    { q:"What is your favourite room in your home?", cues:["kitchen","bedroom","living","balcony","room","study"],
+      phrases:["I spend most of","that's where I","it's the one place"] },
+    { q:"Would you like to change anything about your home?", cues:["yes","no","bigger","light","window","kitchen","paint","space"],
+      phrases:["if I could","the one thing I'd change","it would be nice to"] },
+    { q:"How long have you lived there?", cues:["year","month","since","born","moved","about"],
+      phrases:["we moved in","coming up on","before that"] },
+    { q:"Is it a good place to live?", cues:["yes","no","quiet","noisy","convenient","close","safe"],
+      phrases:["what makes it","the downside is","for the most part"] }
+  ]},
+  { id:"area", t:"The area you live in", tag:"hot", qs:[
+    { q:"Do you like the area that you live in?", cues:["yes","no","like","love","quiet","busy","fine"],
+      phrases:["the best thing about","I'd say so","it suits me"] },
+    { q:"Where do you like to go in that area?", cues:["park","cafe","market","lake","gym","mall","street","river"],
+      phrases:["there's this","I usually end up","a place called"] },
+    { q:"Do you know any famous people in your area?", cues:["yes","no","singer","actor","owner","teacher","famous","youtuber"],
+      phrases:["not really, but","everyone knows","apparently"] },
+    { q:"Has the area changed recently?", cues:["yes","no","new","built","changed","opened","metro"],
+      phrases:["they've just","up until last year","it used to be"] },
+    { q:"What do you dislike about your area?", cues:["traffic","noise","crowded","parking","flood","hot","dust"],
+      phrases:["the one problem","especially during","it gets pretty"] },
+    { q:"Would you recommend your area to a friend?", cues:["yes","no","definitely","maybe","depends","sure"],
+      phrases:["it depends on","I'd tell them","if you're into"] }
+  ]},
+  { id:"travel", t:"Travelling", tag:"hot", qs:[
+    { q:"Do you prefer to sit by the window when you travel?", cues:["window","aisle","yes","no","prefer","either"],
+      phrases:["I always go for","the reason is","unless"] },
+    { q:"What's your favourite season to travel in?", cues:["summer","winter","spring","autumn","fall","rainy","dry"],
+      phrases:["I love travelling in","for example, last","it was a great"] },
+    { q:"Do you prefer travelling alone or with others?", cues:["alone","friend","family","group","others","myself"],
+      phrases:["it depends","when I went to","the good thing about"] },
+    { q:"How do you usually plan a trip?", cues:["google","friend","app","book","plan","ask","tiktok","map"],
+      phrases:["the first thing I do","I tend to","last time I"] },
+    { q:"What's the longest trip you've taken?", cues:["day","week","month","hour","train","flight","bus"],
+      phrases:["the longest was","we spent","by the end of it"] },
+    { q:"Would you like to travel abroad?", cues:["yes","no","japan","korea","europe","thailand","abroad","china"],
+      phrases:["I've always wanted to","if I had the chance","top of my list"] }
+  ]},
+  { id:"tired", t:"Tiredness", tag:"hot", qs:[
+    { q:"Do you often feel tired?", cues:["yes","no","often","sometimes","always","rarely","pretty"],
+      phrases:["to be honest","especially when","more than I'd like"] },
+    { q:"What time of day do you feel most tired?", cues:["afternoon","morning","night","evening","noon","lunch"],
+      phrases:["usually around","that's when","it hits me"] },
+    { q:"What do you do when you feel tired?", cues:["sleep","nap","coffee","walk","music","shower","rest","tea"],
+      phrases:["the first thing I do","it usually helps","there was this one time"] },
+    { q:"Do you think people today are more tired than before?", cues:["yes","no","more","phone","work","busy","less"],
+      phrases:["I'd say","compared to","a lot of people I know"] },
+    { q:"How many hours do you sleep?", cues:["hour","six","seven","eight","five","sleep","around"],
+      phrases:["on a good night","during the week","I know I should"] },
+    { q:"Is it good to take a nap?", cues:["yes","no","good","short","minute","depends","definitely"],
+      phrases:["as long as","in my case","I find that"] }
+  ]},
+  { id:"food", t:"Food & Cooking", tag:"", qs:[
+    { q:"Is there a dish you always order when you eat out?", cues:["pho","phở","bun","com","rice","noodle","chicken","hotpot","pizza","banh"],
+      phrases:["my go-to","there's a place near","every single time"] },
+    { q:"Do you cook at home?", cues:["yes","no","sometimes","cook","mother","rarely","often","weekend"],
+      phrases:["I'm not much of a cook","I can manage","the last thing I made"] },
+    { q:"Has your diet changed in recent years?", cues:["yes","no","more","less","healthy","vegetable","changed","meat"],
+      phrases:["these days","I used to","ever since"] }
+  ]},
+  { id:"freetime", t:"Free time", tag:"", qs:[
+    { q:"How do you usually spend a free evening?", cues:["read","cook","walk","watch","game","gym","friend","family","music","sleep"],
+      phrases:["most nights","if I'm honest","last Friday"] },
+    { q:"Do you prefer to spend free time alone or with friends?", cues:["alone","friend","both","depends","myself"],
+      phrases:["it really depends","when I'm with","I recharge by"] },
+    { q:"Have your hobbies changed since you were a child?", cues:["yes","no","used","changed","still","same"],
+      phrases:["back when I was","these days","I've picked up"] }
+  ]},
+  { id:"weather", t:"Weather & Seasons", tag:"", qs:[
+    { q:"What's the weather like in your hometown?", cues:["hot","cold","rain","humid","dry","sunny","season","warm"],
+      phrases:["most of the year","around this time","it can get"] },
+    { q:"Do you prefer hot or cold weather?", cues:["hot","cold","warm","cool","prefer","neither"],
+      phrases:["I'd go for","the thing about","I remember one"] },
+    { q:"Does the weather affect your mood?", cues:["yes","no","sometimes","rain","sunny","mood","definitely"],
+      phrases:["definitely","on a rainy day","there was a week"] }
+  ]},
+  { id:"music", t:"Music", tag:"", qs:[
+    { q:"What kind of music do you like?", cues:["pop","rap","rock","ballad","vpop","kpop","indie","classical","edm","acoustic"],
+      phrases:["I'm mostly into","lately I've been","depends on my mood"] },
+    { q:"Do you listen to music while you work?", cues:["yes","no","sometimes","work","study","focus","lofi"],
+      phrases:["when I need to focus","I find that","the other day"] },
+    { q:"Have you ever been to a live concert?", cues:["yes","no","concert","show","festival","never","once"],
+      phrases:["I went to","the atmosphere was","I'd love to"] }
+  ]}
+];
+
+const SHELVES = [
+  { tag:"must", t:"Bắt buộc", note:"câu nào cũng phải trả lời được" },
+  { tag:"hot",  t:"Dễ ra kỳ T09–12/26", note:"theo forecast quý này" },
+  { tag:"",     t:"Còn lại", note:"" }
+];
+
+const T = id => TOPICS.find(x => x.id === id);
+const tDone = id => (mine.topics && mine.topics[id]) || 0;     // questions finished, ever
+const tRuns = t => Math.ceil(t.qs.length / RUNLEN);
+const tFilled = t => Math.floor(tDone(t.id) / RUNLEN);
+const tOver = t => tDone(t.id) >= t.qs.length;
+
+function bumpTopic(id, n){
+  mine.topics = mine.topics || {};
+  mine.topics[id] = (mine.topics[id] || 0) + n;
+  saveMine();
+}
+
+/* the one press that is obviously right: an unfinished compulsory
+   topic, else an unfinished forecast topic, else anything left */
+function heroTopic(){
+  const open = TOPICS.filter(t => !tOver(t));
+  return open.find(t => t.tag === "must") || open.find(t => t.tag === "hot") || open[0] || TOPICS[0];
+}
+
+function runOf(t){
+  const from = tOver(t) ? 0 : tDone(t.id);
+  return t.qs.slice(from, from + RUNLEN);
+}
+
+function badgeOf(t){
+  if (tOver(t)) return '<span class="badge ok">Đã xong</span>';
+  if (t.tag === "must") return '<span class="badge must">Bắt buộc</span>';
+  if (t.tag === "hot") return '<span class="badge hot">Dễ ra kỳ này</span>';
+  return "";
+}
+function dotsOf(t){
+  const n = tRuns(t), on = tFilled(t);
+  return '<span class="dots">' + Array.from({length:n}, (_,i) =>
+    '<i class="' + (i < on ? "on" : "") + '"></i>').join("") + "</span>";
+}
+const runMeta = t => RUNLEN + " câu · ~6 phút";
+
+function renderTopics(){
+  const h = heroTopic(), sample = runOf(h)[0];
+  $("#topHero").innerHTML =
+    '<p class="eyebrow">Hôm nay Đậu chọn cho bạn</p>' +
+    '<button class="hero" data-id="' + h.id + '">' +
+      '<span class="hrow"><h3>' + esc(h.t) + "</h3>" + badgeOf(h) + "</span>" +
+      '<p class="samp">“' + esc(sample ? sample.q : "") + '”</p>' +
+      '<span class="hfoot"><span class="meta">' + runMeta(h) + " · " +
+        (tDone(h.id) ? "đã luyện " + tDone(h.id) + " câu" : "chưa luyện") +
+      '</span><span class="cta">Bắt đầu →</span></span>' +
+    "</button>";
+
+  $("#topShelves").innerHTML = SHELVES.map(sh => {
+    const list = TOPICS.filter(t => t.tag === sh.tag);
+    if (!list.length) return "";
+    return '<div class="shelf"><h2>' + sh.t + (sh.note ? " <em>· " + sh.note + "</em>" : "") + "</h2>" +
+      '<div class="grid">' + list.map(t => {
+        const s = runOf(t)[0];
+        return '<button class="tcard' + (tOver(t) ? " done" : "") + '" data-id="' + t.id + '">' +
+          "<h3>" + esc(t.t) + (tOver(t) ? ' <span class="badge ok">\u0110\u00e3 xong</span>' : "") + "</h3>" +
+          '<p class="samp">“' + esc(s ? s.q : t.qs[0].q) + '”</p>' +
+          '<span class="tfoot"><span class="meta">' + runMeta(t) + "</span>" + dotsOf(t) + "</span>" +
+        "</button>";
+      }).join("") + "</div></div>";
+  }).join("");
+
+  $("#vTopics").querySelectorAll("[data-id]").forEach(b =>
+    b.onclick = () => startRun(b.dataset.id));
+}
+
 /* ---------- run of play ---------- */
 let LQ = 0, marks = [], stage = "answer", pending = null, hintTimer = null, hintShown = false;
+let QS = [], MODE = "guided";      // whichever question set is in play, and why
 
 function talk(ms){
   document.querySelectorAll(".mascot").forEach(m => {
@@ -1316,6 +1672,7 @@ let stepIx = 0;
 
 function openFramework(){
   stepIx = 0;
+  $("#mKind").textContent = "Buổi học hôm nay";
   $("#mTitle").textContent = "Trả lời theo Example";
   $("#mBody").innerHTML =
     '<div class="intro">' +
@@ -1413,6 +1770,7 @@ function paintNext(){
 }
 
 function startLesson(){
+  QS = LESSON.questions; MODE = "guided"; document.body.dataset.mode = "guided";
   LQ = 0; marks = []; stage = "answer"; pending = null;
   clearTimeout(helloTimer);
   const nx = $("#mNext"); if (nx) nx.innerHTML = "";   // the framework stays, the button is spent
@@ -1422,16 +1780,20 @@ function startLesson(){
 }
 
 function askQ(){
-  if (LQ >= LESSON.questions.length) return report();
-  const q = LESSON.questions[LQ];
+  if (LQ >= QS.length) return MODE === "free" ? runEnd() : report();
+  const q = QS[LQ];
   $("#qn").textContent = LQ + 1;
-  $("#pips").innerHTML = LESSON.questions.map((_,i) =>
+  $("#qtot").textContent = QS.length;
+  $("#pips").innerHTML = QS.map((_,i) =>
     '<i class="' + (i < LQ ? "done" : i === LQ ? "now" : "") + '"></i>').join("");
   $("#q").textContent = q.q;
-  $("#chat").innerHTML = ""; $("#ans").value = ""; updateWc();
+  $("#chat").innerHTML = ""; $("#ans").value = "";
   stage = "answer"; pending = null; hintShown = false;
   $("#qWrap").hidden = false;
+  if (MODE === "free") drawWorksheet();
+  updateWc();
   showInput(); say(q.q); talk(2200);
+  if (MODE === "free") bubble("ta", "Nghe k\u1ef9 r\u1ed3i tr\u1ea3 l\u1eddi nhen \u2014 m\u1ee5c ti\u00eau \u1edf b\u00ean tr\u00e1i \ud83d\udc48");
   armHint();
 }
 
@@ -1439,13 +1801,13 @@ function askQ(){
 function armHint(){
   clearTimeout(hintTimer);
   hintTimer = setTimeout(() => {
-    if (hintShown || stage !== "answer" || LQ >= LESSON.questions.length) return;
+    if (hintShown || stage !== "answer" || LQ >= QS.length) return;
     if ($("#ans").value.trim()) return;
     hintShown = true;
     const bar = $("#assist");
     bar.innerHTML = '<button class="hintbtn" id="hintBtn">\ud83d\udca1 B\u00ed qu\u00e1? G\u1ee3i \u00fd</button>';
     $("#hintBtn").onclick = () => {
-      const q = LESSON.questions[LQ];
+      const q = QS[LQ];
       bar.innerHTML = '<div class="hintcard"><h4>Ý tưởng</h4><p>' + esc(q.idea) + "</p>" +
         '<h4>Từ vựng gợi ý</h4><div class="vocab">' +
         q.vocab.map(v => "<span>" + esc(v) + "</span>").join("") + "</div></div>";
@@ -1457,11 +1819,17 @@ function showInput(){ $("#chipsHost").innerHTML = ""; $("#inputZone").style.disp
 
 function sendAnswer(){
   const t = $("#ans").value.trim();
-  if (!t || LQ >= LESSON.questions.length) return;
+  if (!t || LQ >= QS.length) return;
   clearHint();
   bubble("student", esc(t));
-  $("#ans").value = ""; updateWc();
-  const q = LESSON.questions[LQ], r = look(t, q);
+  $("#ans").value = "";
+  const q = QS[LQ], r = look(t, q);
+  if (MODE === "free"){
+    RUN.takes[LQ] = RUN.takes[LQ] || [];
+    RUN.takes[LQ].push(t);
+    drawTakes();
+  }
+  updateWc();
 
   if (stage === "answer"){
     marks[LQ] = { direct:r.direct, example:r.example, specific:r.specific, q:q.q };
@@ -1480,7 +1848,8 @@ function sendAnswer(){
   const beat = pick(r, t);
   if (!beat) return closeQ(r);
   pending = beat;
-  beat.lines.forEach(l => bubble("ta", l)); talk(1900);
+  // a wall of text is an engine problem, not a copy problem: cap it
+  beat.lines.slice(0, MODE === "free" ? 2 : 3).forEach(l => bubble("ta", l)); talk(1900);
   const list = beat.chips(q);
   chips(list, p => onChip(p, r));
 }
@@ -1493,7 +1862,7 @@ function pick(r, t){
   if (!r.direct)                 return mk("no_direct",    BEATS.no_direct(r));
   if (!r.example)                return mk("no_example",   BEATS.no_example(r));
   if (r.example && !r.specific)  return mk("general_only", BEATS.general_only(r));
-  if (r.words < 40)              return mk("thin",         BEATS.thin(r));
+  if (r.words < MINW)            return mk("thin",         BEATS.thin(r));
   if (r.fillers >= 4)            return mk("fillers",      BEATS.fillers(r));
   const g = RULES.map(x => { const h = x.find(t); return h ? { x, h } : null; }).filter(Boolean)[0];
   if (g) return mk("grammar", {
@@ -1530,13 +1899,13 @@ function closeQ(r){
   bubble("mastery", "✅ Câu này bạn có: <strong>" + (won.join(" + ") || "—") + "</strong>");
   award("answered", 1); renderQuests();
   LQ++; stage = "answer";
-  setTimeout(askQ, 1300);
+  setTimeout(() => (LQ >= QS.length && MODE === "free") ? runEnd() : askQ(), 1300);
 }
 
 /* ---------- report card ---------- */
 function report(){
   const got = marks.reduce((a,m) => a + (m.direct?1:0) + (m.example?1:0) + (m.specific?1:0), 0);
-  const max = LESSON.questions.length * 3;
+  const max = QS.length * 3;
   const pct = Math.round(got / max * 100);
   const stories = marks.filter(m => m.specific).length;
   $("#rTitle").textContent = stories >= 4 ? "Bạn kể chuyện thật khá đều tay rồi."
@@ -1544,7 +1913,7 @@ function report(){
     : "Ví dụ còn chung chung — đây là chỗ để luyện tiếp.";
   $("#rNum").textContent = got;
   $("#rRing").style.setProperty("--p", pct + "%");
-  $("#rSay").innerHTML = "Bạn kể được <strong>" + stories + "/" + LESSON.questions.length +
+  $("#rSay").innerHTML = "Bạn kể được <strong>" + stories + "/" + QS.length +
     "</strong> câu chuyện cụ thể. Ví dụ cụ thể là thứ giám khảo chấm cao nhất ở phần phát triển ý — " +
     (stories >= 4 ? "giữ nhịp này nhé." : "buổi sau mình sẽ quay lại đúng kỹ năng này.");
   $("#rRows").innerHTML = marks.map((m,i) =>
@@ -1555,8 +1924,205 @@ function report(){
       '<span class="m' + (m.specific ? " got" : "") + '" title="Chuyện cụ thể">CT</span>' +
     "</span></div>").join("") +
     '<div class="rrow"><span class="rlegend">DA = direct answer · VD = có ví dụ · CT = chuyện cụ thể</span><span></span></div>';
-  try { mine.exampleRate = Math.round(stories / LESSON.questions.length * 100); saveMine(); } catch(_){}
+  try { mine.exampleRate = Math.round(stories / QS.length * 100); saveMine(); } catch(_){}
   go("report");
+}
+
+
+/* ============================================================
+   FREE PRACTICE — the loop is target → attempt → instant marks →
+   revision → visible improvement. The left column holds the
+   student's own work, so feedback can be an edit to something
+   they can see instead of a paragraph about it.
+   ============================================================ */
+const MINW = 35;                          // the length floor, stated up front
+let RUN = null;                           // { topic, qs, ix, takes:[[..]], marks:[] }
+
+const FILLER_G = /\b(um+|uh+|er+|erm|like|you know|actually|basically|i mean|sort of|kind of)\b/gi;
+
+function wordsOf(t){ return (t.trim().match(/\S+/g) || []).length; }
+
+/* spans we can actually point at: target phrases used, and fillers.
+   Anything we cannot locate we do not pretend to underline. */
+function ranges(t, q){
+  const out = [];
+  (q.phrases || []).forEach(p => {
+    const re = new RegExp(p.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "ig");
+    let m; while ((m = re.exec(t))) out.push({ a:m.index, b:m.index + m[0].length, k:"good" });
+  });
+  let m; FILLER_G.lastIndex = 0;
+  while ((m = FILLER_G.exec(t))) out.push({ a:m.index, b:m.index + m[0].length, k:"bad" });
+  out.sort((x,y) => x.a - y.a || (x.k === "good" ? -1 : 1));
+  const keep = []; let end = -1;
+  out.forEach(r => { if (r.a >= end){ keep.push(r); end = r.b; } });
+  return keep;
+}
+
+function markup(t, q, adds){
+  const rs = ranges(t, q);
+  let h = "", at = 0;
+  rs.forEach(r => { h += esc(t.slice(at, r.a)) + '<mark class="mk-' + r.k + '">' +
+    esc(t.slice(r.a, r.b)) + "</mark>"; at = r.b; });
+  h += esc(t.slice(at));
+  return adds ? h : h;
+}
+
+/* what changed between two takes — the point of a second take is
+   seeing it, not being told about it */
+function diffHtml(prev, now){
+  const A = (prev.toLowerCase().match(/\S+/g) || []).slice(0,300);
+  const Braw = (now.match(/\S+/g) || []).slice(0,300);
+  const B = Braw.map(w => w.toLowerCase());
+  const n = A.length, m = B.length;
+  const dp = Array.from({ length:n+1 }, () => new Uint16Array(m+1));
+  for (let i = n-1; i >= 0; i--)
+    for (let j = m-1; j >= 0; j--)
+      dp[i][j] = A[i] === B[j] ? dp[i+1][j+1] + 1 : Math.max(dp[i+1][j], dp[i][j+1]);
+  let out = "", i = 0, j = 0;
+  const push = (w, add) => { out += (out ? " " : "") +
+    (add ? '<mark class="mk-add">' + esc(w) + "</mark>" : esc(w)); };
+  while (i < n && j < m){
+    if (A[i] === B[j]){ push(Braw[j], false); i++; j++; }
+    else if (dp[i+1][j] >= dp[i][j+1]) i++;
+    else { push(Braw[j], true); j++; }
+  }
+  while (j < m){ push(Braw[j], true); j++; }
+  return out;
+}
+
+function phraseHits(t, q){
+  const low = t.toLowerCase();
+  return (q.phrases || []).map(p => low.indexOf(p.toLowerCase()) >= 0);
+}
+
+function scoreRow(t, q){
+  const r = look(t, q), w = wordsOf(t), hits = phraseHits(t, q).filter(Boolean).length;
+  const pill = (ok, on, off) => '<span class="sp ' + (ok ? "good" : "bad") + '">' + (ok ? on : off) + "</span>";
+  return '<div class="score">' +
+    pill(w >= MINW, "Đủ dài " + w + " từ", "Mới " + w + "/" + MINW + " từ") +
+    pill(r.direct, "Trả lời thẳng", "Chưa trả lời thẳng") +
+    pill(r.example, "Có ví dụ", "Chưa có ví dụ") +
+    pill(r.specific, "Chuyện cụ thể", "Chưa cụ thể") +
+    '<span class="sp">Từ đệm ' + r.fillers + "</span>" +
+    '<span class="sp">Cụm ' + hits + "/" + (q.phrases || []).length + "</span>" +
+  "</div>";
+}
+
+/* ---- the worksheet ---- */
+function drawGoal(){
+  const q = QS[LQ]; if (!q) return;
+  const draft = $("#ans").value.trim();
+  const src = draft || lastText();        // the draft wins while they type
+  const hits = phraseHits(src, q), live = wordsOf(src);
+  const pct = Math.min(100, Math.round(live / MINW * 100));
+  const el = $("#goal"); if (!el) return;
+  el.innerHTML =
+    '<div class="gt">Mục tiêu câu này</div>' +
+    '<div class="grow"><span class="glab">Độ dài</span>' +
+      '<span class="meter"><i class="' + (live >= MINW ? "hit" : "") + '" style="width:' + pct + '%"></i></span>' +
+      '<span class="gnum ' + (live >= MINW ? "hit" : "") + '">' + live + " / " + MINW + " từ</span></div>" +
+    '<div class="grow"><span class="glab">Thử dùng</span><span class="phr">' +
+      (q.phrases || []).map((p,i) => '<span class="ph' + (hits[i] ? " used" : "") + '">' + esc(p) + "</span>").join("") +
+    "</span></div>";
+}
+function lastText(){
+  const ts = RUN && RUN.takes[LQ];
+  return ts && ts.length ? ts[ts.length-1] : "";
+}
+
+function drawWorksheet(){
+  const q = QS[LQ]; if (!q) return;
+  $("#mKind").textContent = "Luyện tự do · Part 1";
+  $("#mTitle").textContent = RUN.topic.t;
+  $("#mBody").innerHTML =
+    '<div class="wstop">' +
+      '<span class="wsn">Câu ' + (LQ+1) + " / " + QS.length + "</span>" +
+      '<span class="wsq"><h2>' + esc(q.q) + '</h2>' +
+      '<button class="wsplay" id="wsPlay" title="Nghe lại">🔊</button></span>' +
+    "</div>" +
+    '<div class="goal" id="goal"></div>' +
+    '<div id="takes"></div>';
+  $("#wsPlay").onclick = () => { say(q.q); talk(2200); };
+  drawGoal();
+  drawTakes();
+}
+
+function drawTakes(){
+  const host = $("#takes"); if (!host) return;
+  const q = QS[LQ]; if (!q || !RUN) return;
+  const ts = (RUN.takes[LQ] || []);
+  host.innerHTML = ts.map((t,i) => {
+    const prev = i ? ts[i-1] : null;
+    const grew = prev ? wordsOf(t) - wordsOf(prev) : 0;
+    return '<div class="take' + (i === ts.length-1 && ts.length > 1 ? " best" : "") + '">' +
+      '<div class="th"><b>Lần ' + (i+1) + "</b>" +
+        (prev && grew > 0 ? '<span class="delta">+' + grew + " từ</span>" : "") + "</div>" +
+      '<p class="tt">' + (prev ? diffHtml(prev, t) : markup(t, q)) + "</p>" +
+      scoreRow(t, q) +
+    "</div>";
+  }).join("");
+  // on a phone the material pane is short — bring the newest take into view
+  const last = host.lastElementChild;
+  if (last && ts.length) setTimeout(() =>
+    last.scrollIntoView({ behavior:"smooth", block:"nearest" }), 120);
+}
+
+/* ---- run of play ---- */
+function startRun(id){
+  const t = T(id), qs = runOf(t);
+  if (!qs.length) return;
+  RUN = { topic:t, from:tOver(t) ? 0 : tDone(t.id), takes:[], marks:[] };
+  if (tOver(t)) mine.topics[t.id] = 0, saveMine();
+  QS = qs; MODE = "free";
+  LQ = 0; marks = []; stage = "answer"; pending = null;
+  wave(() => {
+    document.body.dataset.mode = "free";
+    $("#chat").innerHTML = ""; $("#chipsHost").innerHTML = "";
+    go("lesson");
+    drawWorksheet();
+    bubble("ta", "Chủ đề <strong>" + esc(t.t) + "</strong> — ba câu thôi nhen."); talk(1600);
+    setTimeout(() => askQ(), 900);
+  });
+}
+
+function runEnd(){
+  const t = RUN.topic;
+  bumpTopic(t.id, QS.length);
+  const got = marks.reduce((a,m) => a + (m.direct?1:0) + (m.example?1:0) + (m.specific?1:0), 0);
+  const max = QS.length * 3;
+  const grew = RUN.takes.reduce((a,ts) =>
+    a + (ts && ts.length > 1 ? Math.max(0, wordsOf(ts[ts.length-1]) - wordsOf(ts[0])) : 0), 0);
+  const learned = [];
+  QS.forEach((q,i) => {
+    const txt = (RUN.takes[i] || []).join(" ");
+    phraseHits(txt, q).forEach((h,j) => { if (h) learned.push(q.phrases[j]); });
+  });
+
+  $("#uTitle").textContent = got >= max - 2 ? "Ba câu, ba câu chuyện thật."
+    : got >= max / 2 ? "Đi đúng hướng rồi đó."
+    : "Còn chung chung — nhưng biết chung chung ở đâu rồi.";
+  $("#uNum").textContent = got;
+  $("#uDen").textContent = "/ " + max;
+  $("#uRing").style.setProperty("--p", Math.round(got / max * 100) + "%");
+  $("#uSay").innerHTML = "Chủ đề <strong>" + esc(t.t) + "</strong>." +
+    (grew ? " Nói lại xong bạn thêm được <strong>" + grew + " từ</strong>." : "") +
+    (learned.length ? " Dùng được <strong>" + learned.length + "</strong> cụm mục tiêu." : "");
+  $("#uRows").innerHTML = marks.map((m,i) =>
+    '<div class="rrow"><span class="q">' + (i+1) + ". " + esc(m.q) + "</span>" +
+    '<span class="marks">' +
+      '<span class="m' + (m.direct ? " got" : "") + '">DA</span>' +
+      '<span class="m' + (m.example ? " got" : "") + '">VD</span>' +
+      '<span class="m' + (m.specific ? " got" : "") + '">CT</span>' +
+    "</span></div>").join("");
+  $("#uBook").innerHTML = learned.length
+    ? '<div class="shelf"><h2>Sổ tay hôm nay</h2><div class="phr">' +
+        [...new Set(learned)].map(p => '<span class="ph used">' + esc(p) + "</span>").join("") +
+      "</div></div>" : "";
+
+  const left = !tOver(t);
+  $("#uNext").textContent = left ? "Luyện tiếp · " + t.t : "Chủ đề khác";
+  $("#uNext").onclick = () => left ? startRun(t.id) : wave(() => { renderTopics(); go("topics"); });
+  go("runend");
 }
 
 /* ---------- speech ---------- */
@@ -1666,14 +2232,17 @@ function enter(){
 /* ---------- wiring ---------- */
 $("#spGo").onclick = enter;
 $("#goHome").onclick = () => { if (rec){ try { rec.onend = null; rec.stop(); } catch(_){} rec = null; }
-  clearHint(); clearTimeout(helloTimer);
+  clearHint(); clearTimeout(helloTimer); RUN = null; MODE = "guided";
+  document.body.dataset.mode = "guided";
   if (coachOn){ coachOn = false; $("#coach").classList.remove("on"); $("#coach").hidden = true; }
   wave(() => go("menu")); };
-$("#replay").onclick = () => { say(LESSON.questions[LQ].q); talk(2200); };
+$("#replay").onclick = () => { say(QS[LQ].q); talk(2200); };
 
 $("#send").onclick = sendAnswer;
 
 $("#rMenu").onclick = () => wave(() => go("menu"));
+$("#uMenu").onclick = () => wave(() => go("menu"));
+$("#uTopics").onclick = () => wave(() => { renderTopics(); go("topics"); });
 $("#rAgain").onclick = () => wave(() => teach());
 $("#ans").addEventListener("input", updateWc);
 $("#ans").addEventListener("keydown", e => {

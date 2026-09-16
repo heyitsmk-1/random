@@ -11,6 +11,8 @@ viewer's correct instances are summed into one live number.
 
 **2. Walked through, not clicked through.** The design rule: it should feel like
 someone is taking you somewhere, not like you are picking buttons off a screen.
+Choosing the session runs a wave wipe right to left, and the screen changes
+behind the crest rather than cutting.
 
 Loading screen → menu → **briefing** → practice. Three rows on the menu, not five:
 
@@ -46,6 +48,38 @@ not the grammar point.
 
 Screens cross-fade and the briefing's lines stagger in, so the walk-in has a pace.
 All of it collapses to a cut under `prefers-reduced-motion`.
+
+**3. The lesson: answering with examples.** One outcome — *trả lời có ví dụ thật
+của riêng bạn, không nói chung chung* — over six questions on six different
+topics, so six different stories are needed and none can be reused.
+
+Đậu says hello (3s), says what today is about (5s), then the framework floats up:
+direct answer → general example → specific example, each with the worked example
+from the brief. Then six questions.
+
+**Priority order is IDEA → FLUENCY → VOCAB → GRAMMAR**, one drilled per turn.
+Idea comes first here because the lesson is about *what* you say: a clean sentence
+with no example still fails the thing being taught.
+
+Detection is of an *absence*, which is the interesting part. An answer counts as
+having an example when it carries a signal phrase (*for example, once, I remember*)
+or a concrete time marker (*last year, when I was, the other day*); it counts as
+**specific** when that lands alongside two or more past-tense narrative verbs.
+Generic present-tense breadth — "I can go to the beach, I can go on a picnic" —
+reads as a general example and gets pushed one step further, not marked wrong.
+
+Every beat hands back a question:
+
+> Direct answer ổn rồi 👌 Nhưng mình vẫn đang hình dung chung chung.
+> **Lần gần nhất** chuyện đó xảy ra là khi nào?
+> `Năm ngoái`  `Hè vừa rồi`  `Hồi mình còn đi học`  `Mới gần đây thôi`
+
+**Five seconds of silence and a hint offers itself** — ideas and vocabulary for
+that question, on a button rather than pushed at them, so it stays their choice.
+
+**The report card** scores three marks a question: DA (direct answer), VD (có ví
+dụ), CT (chuyện cụ thể) — 18 total. It stores `exampleRate`, which is what lets
+the recommender bring this lesson back when the rate is low.
 
 **3. Socratic repair.** A flagged error hands back a question, never a verdict:
 *"You said 'I stay'. But that's finished, isn't it — happening, or done?"*

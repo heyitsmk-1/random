@@ -69,6 +69,20 @@ p{margin:0}
 @media (prefers-reduced-motion:reduce){.splash .plate{animation:none}}
 body.locked{overflow:hidden}
 
+/* a soft wave wipes right to left and the screen changes behind it */
+.wave{position:fixed;inset:0;z-index:70;pointer-events:none;
+  transform:translateX(110%);visibility:hidden}
+.wave i{position:absolute;top:-4%;bottom:-4%;left:0;right:-16vw;display:block;
+  background:linear-gradient(100deg,#FFE8DD 0%,#FDF7F2 42%,#F4F0F7 100%);
+  border-top-left-radius:58% 52%;border-bottom-left-radius:58% 52%;
+  box-shadow:-18px 0 42px rgba(90,70,60,.10)}
+.wave.run{visibility:visible;animation:wave 900ms cubic-bezier(.62,.02,.38,1) both}
+@keyframes wave{
+  0%{transform:translateX(110%)}
+  48%{transform:translateX(0)}
+  100%{transform:translateX(-118%)}
+}
+
 /* ============================================================
    THE SHELL — one HUD, then whichever screen is open
    ============================================================ */
@@ -81,9 +95,14 @@ body.locked{overflow:hidden}
 
 .hud{display:flex;align-items:center;justify-content:space-between;gap:14px;
   padding:16px clamp(18px,4vw,44px);flex-wrap:wrap}
-.brand{font-family:"Montserrat",sans-serif;font-weight:800;font-size:17px;
-  display:flex;align-items:center;gap:8px;letter-spacing:-.01em;color:var(--ink-menu)}
-.brand .dot{width:9px;height:9px;border-radius:50%;background:var(--accent)}
+.brand{font-family:"Montserrat",sans-serif;font-weight:800;font-size:17px;cursor:pointer;
+  display:flex;align-items:center;gap:9px;letter-spacing:-.01em;color:var(--ink-menu);
+  background:rgba(255,255,255,.55);border:1.5px solid transparent;border-radius:999px;
+  padding:6px 14px 6px 10px;transition:background 140ms ease,border-color 140ms ease}
+.brand:hover{background:#fff;border-color:var(--accent-soft)}
+.brand:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.brand .home{width:17px;height:17px;fill:var(--accent);flex:none}
+.brand:hover .home{fill:var(--accent-dark)}
 .brand .tag{font-size:10px;font-weight:700;letter-spacing:.14em;color:var(--accent);
   border:1.5px solid var(--accent);border-radius:var(--radius-sm);padding:1px 6px}
 .hud .right{display:flex;align-items:center;gap:10px}
@@ -97,8 +116,9 @@ body.locked{overflow:hidden}
 @keyframes screenin{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 @keyframes screenout{from{opacity:1}to{opacity:0;transform:translateY(-8px)}}
 body[data-view="menu"] #vMenu{display:block}
-body[data-view="brief"] #vBrief{display:block}
 body[data-view="gallery"] #vGallery{display:block}
+body[data-view="teach"] #vTeach{display:block}
+body[data-view="report"] #vReport{display:block}
 body[data-view="practice"] #vPractice{display:block}
 
 /* ============================================================
@@ -200,8 +220,20 @@ body[data-view="practice"] #vPractice{display:block}
 .bgo{font-size:16px;padding:14px 34px;border-radius:999px}
 
 /* ---------- free practice, revealed under its row ---------- */
+/* the list opens the space first, then each Part arrives from the right and
+   settles downward — the rows below glide instead of snapping */
 .freelist{margin:2px 0 10px 21px;display:flex;flex-direction:column;gap:6px;
-  animation:briefin 300ms cubic-bezier(.2,.8,.3,1) both}
+  overflow:hidden;animation:freeopen 380ms cubic-bezier(.2,.8,.3,1) both}
+@keyframes freeopen{from{max-height:0;opacity:0}to{max-height:260px;opacity:1}}
+.freeitem{animation:freedrop 420ms cubic-bezier(.22,1.1,.36,1) both}
+.freeitem:nth-child(1){animation-delay:90ms}
+.freeitem:nth-child(2){animation-delay:180ms}
+.freeitem:nth-child(3){animation-delay:270ms}
+@keyframes freedrop{
+  0%{opacity:0;transform:translate(26px,-14px)}
+  60%{opacity:1;transform:translate(0,3px)}
+  100%{opacity:1;transform:none}
+}
 .freeitem{text-align:left;font:inherit;font-weight:800;font-size:15px;cursor:pointer;
   background:rgba(255,255,255,.94);border:1.5px solid var(--border);border-radius:var(--radius);
   padding:10px 14px;color:var(--text2);max-width:330px;
@@ -210,6 +242,80 @@ body[data-view="practice"] #vPractice{display:block}
 .freeitem:hover{border-color:var(--accent);transform:translateX(4px)}
 .freeitem:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .freenote{font-size:12.5px;color:var(--accent-dark);font-weight:700;margin-top:2px}
+
+/* ============================================================
+   TEACH — Đậu says hello, then floats the framework up
+   ============================================================ */
+.teachwrap{max-width:660px;margin:0 auto;padding:clamp(20px,6vh,56px) clamp(18px,4vw,34px) 40px;
+  border-radius:24px;background:radial-gradient(100% 90% at 50% 35%,rgba(252,251,253,.96) 0%,
+    rgba(252,251,253,.86) 60%,rgba(252,251,253,.42) 100%)}
+.tchat{display:flex;flex-direction:column;gap:10px;align-items:flex-start;min-height:96px}
+.tchat .line{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius-lg);
+  border-top-left-radius:4px;padding:12px 16px;font-size:15.5px;box-shadow:var(--shadow-sm);
+  animation:tin 420ms cubic-bezier(.2,.8,.3,1) both;max-width:92%}
+.tchat .line.big{font-family:"Montserrat",sans-serif;font-weight:800;font-size:clamp(20px,3.2vw,26px)}
+@keyframes tin{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+.theory{margin-top:20px;animation:tin 560ms cubic-bezier(.2,.8,.3,1) both}
+.theory h2{font-size:17px;margin-bottom:12px}
+.step{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius-lg);
+  padding:15px 17px;margin-bottom:10px;box-shadow:var(--shadow-sm);
+  animation:tin 520ms cubic-bezier(.2,.8,.3,1) both}
+.step:nth-of-type(2){animation-delay:140ms}
+.step:nth-of-type(3){animation-delay:280ms}
+.step .h{font-family:"Montserrat",sans-serif;font-weight:800;font-size:14.5px;color:var(--accent-dark);
+  display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.step .h em{font-style:normal;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  color:#fff;background:var(--accent);border-radius:999px;padding:2px 8px}
+.step p{font-size:14px;color:var(--text2)}
+.ex{margin-top:9px;padding:10px 13px;border-left:3px solid var(--accent-soft);
+  background:var(--panel-warm);border-radius:0 var(--radius) var(--radius) 0;
+  font-size:13.5px;line-height:1.6;font-style:italic;color:var(--muted-strong)}
+.ex b{font-style:normal;font-weight:800;color:var(--accent-dark)}
+.trow{margin-top:22px;animation:tin 420ms cubic-bezier(.2,.8,.3,1) both}
+.skip{display:block;margin:18px auto 0;font:inherit;font-size:12.5px;font-weight:700;
+  background:none;border:none;color:var(--muted);cursor:pointer;text-decoration:underline}
+.skip:hover{color:var(--accent-dark)}
+
+/* ---------- the 5s hint ---------- */
+.hintbar{margin-top:10px;animation:tin 320ms ease both}
+.hintbtn{font:inherit;font-weight:800;font-size:13px;cursor:pointer;background:var(--warn-soft);
+  color:#8A6A12;border:1.5px solid var(--warn);border-radius:999px;padding:7px 15px}
+.hintbtn:hover{background:#FFEFC8}
+.hintcard{margin-top:9px;background:var(--panel);border:1px solid var(--border);
+  border-left:3px solid var(--warn);border-radius:var(--radius-lg);padding:13px 15px;
+  animation:tin 320ms ease both}
+.hintcard h4{font-family:"Montserrat",sans-serif;font-size:11px;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--muted);margin:0 0 5px}
+.hintcard p{font-size:13.5px;margin-bottom:9px}
+.hintcard .vocab{display:flex;flex-wrap:wrap;gap:6px}
+.hintcard .vocab span{font-size:12.5px;font-weight:700;background:var(--panel2);
+  border-radius:999px;padding:4px 10px;color:var(--text2)}
+
+/* ---------- report card ---------- */
+.repwrap{max-width:640px;margin:0 auto;padding:clamp(22px,7vh,64px) clamp(20px,4vw,36px) 40px;
+  border-radius:24px;background:radial-gradient(100% 90% at 50% 34%,rgba(252,251,253,.96) 0%,
+    rgba(252,251,253,.86) 58%,rgba(252,251,253,.42) 100%)}
+.rtitle{font-size:clamp(24px,4vw,36px);line-height:1.15;letter-spacing:-.025em;color:var(--ink-menu)}
+.rscore{display:flex;align-items:center;gap:20px;margin:22px 0 6px;flex-wrap:wrap}
+.rring{width:104px;height:104px;border-radius:50%;flex:none;display:grid;place-content:center;
+  text-align:center;background:conic-gradient(var(--accent) var(--p,0%),var(--panel2) 0);
+  position:relative}
+.rring::after{content:"";position:absolute;inset:9px;border-radius:50%;background:var(--panel)}
+.rring b,.rring span{position:relative;z-index:1}
+.rring b{font-family:"Montserrat",sans-serif;font-size:30px;color:var(--accent-dark);display:block;
+  font-variant-numeric:tabular-nums}
+.rring span{font-size:11.5px;font-weight:700;color:var(--muted)}
+.rsay{flex:1;min-width:200px;font-size:15px;color:var(--text2)}
+.rrows{margin-top:18px;border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden}
+.rrow{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;
+  padding:11px 15px;border-top:1px solid var(--border);background:rgba(255,255,255,.92);font-size:13.5px}
+.rrow:first-child{border-top:0}
+.rrow .q{font-weight:700}
+.rrow .marks{display:flex;gap:5px;flex:none}
+.rrow .m{width:22px;height:22px;border-radius:50%;display:grid;place-content:center;
+  font-size:10px;font-weight:800;background:var(--panel2);color:var(--muted)}
+.rrow .m.got{background:var(--good-soft);color:var(--good)}
+.rlegend{margin-top:10px;font-size:12px;color:var(--muted)}
 
 /* ============================================================
    GALLERY — every mistake, kept
@@ -291,10 +397,6 @@ body[data-view="practice"] #vPractice{display:block}
 .wc{font-size:12px;font-weight:700;color:var(--muted);font-variant-numeric:tabular-nums}
 .wc.short{color:var(--bad)} .wc.ok{color:var(--good)}
 #mic.live{background:var(--bad)}
-.ledger{margin-top:22px;background:var(--panel);border:1px solid var(--border);
-  border-radius:var(--radius-lg);padding:15px 17px;box-shadow:var(--shadow-sm)}
-.ledger h3{font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted-strong)}
-.lrow{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:baseline;
   padding:8px 0;border-top:1px solid var(--border);font-size:13.5px}
 .lrow:first-child{border-top:0}
 .lrow .k{font-weight:800} .lrow .x{color:var(--muted);font-size:12.5px}
@@ -332,10 +434,13 @@ body[data-view="practice"] #vPractice{display:block}
   </div>
 </div>
 
+<div class="wave" id="wave" aria-hidden="true"><i></i></div>
+
 <div class="app">
   <div class="hud">
-    <button class="brand" id="goHome" style="cursor:pointer;background:none;border:none">
-      <span class="dot"></span>Speaking <span class="tag">PRO</span>
+    <button class="brand" id="goHome" title="Về menu">
+      <svg class="home" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11.2 12 4l9 7.2V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>
+      Speaking <span class="tag">PRO</span>
     </button>
     <div class="right">
       <span class="streak">🔥 <span class="num">12</span> ngày</span>
@@ -398,6 +503,31 @@ body[data-view="practice"] #vPractice{display:block}
     </div>
   </div>
 
+  <!-- ================== TEACH (the walk-in) ================== -->
+  <div class="screen" id="vTeach">
+    <div class="teachwrap">
+      <div class="tchat" id="tChat"></div>
+      <div class="theory" id="tTheory" hidden></div>
+      <div class="trow" id="tRow" hidden><button class="btn bgo" id="tGo">Oke, mình thử nè</button></div>
+      <button class="skip" id="tSkip">Bỏ qua phần giải thích →</button>
+    </div>
+  </div>
+
+  <!-- ===================== REPORT ====================== -->
+  <div class="screen" id="vReport">
+    <div class="repwrap">
+      <p class="beyebrow">Kết quả buổi học</p>
+      <h1 class="rtitle" id="rTitle">…</h1>
+      <div class="rscore"><div class="rring" id="rRing"><b id="rNum">0</b><span>/ 18</span></div>
+        <p class="rsay" id="rSay"></p></div>
+      <div class="rrows" id="rRows"></div>
+      <div class="brow">
+        <button class="btn bgo" id="rAgain">Luyện lại</button>
+        <button class="btn sec" id="rMenu">← Menu</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ===================== PRACTICE ====================== -->
   <div class="screen" id="vPractice">
     <div class="pwrap">
@@ -417,16 +547,12 @@ body[data-view="practice"] #vPractice{display:block}
       <div class="chat" id="chat"></div>
       <div id="chipsHost"></div>
       <div id="inputZone">
-        <textarea class="answer" id="ans" placeholder="Bấm 🎤 và nói — hoặc gõ vào đây."></textarea>
+        <textarea class="answer" id="ans" placeholder="Bấm 🎤 và nói — direct answer, rồi một ví dụ thật."></textarea>
         <div class="arow">
           <button class="btn" id="mic">🎤 Nói</button>
           <button class="btn sec" id="send">Gửi</button>
           <span class="wc" id="wc">0 từ</span>
         </div>
-      </div>
-      <div class="ledger">
-        <h3>Buổi này ghi được</h3>
-        <div id="rows"><p class="empty">Chưa có gì. Trả lời câu đầu tiên đi.</p></div>
       </div>
     </div>
   </div>
@@ -440,6 +566,13 @@ const today = () => new Date().toISOString().slice(0,10);
 const esc = s => String(s).replace(/[&<>]/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;" }[c]));
 const md = s => esc(s).replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
 const words = s => (s.trim().match(/\S+/g) || []).length;
+function wave(then){
+  const w = $("#wave");
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches){ then(); return; }
+  w.classList.remove("run"); void w.offsetWidth; w.classList.add("run");
+  setTimeout(then, 430);                       // swap while the crest covers the screen
+  setTimeout(() => w.classList.remove("run"), 960);
+}
 let leaving = false;
 function go(v){
   if (leaving || document.body.dataset.view === v) { document.body.dataset.view = v; return; }
@@ -481,7 +614,7 @@ let focusKey = "past_ed";
    look at, not a mode to be in. */
 const MODES = [
   { id:"guided", primary:true, t:"BUỔI HỌC HÔM NAY", pill:"đã chọn sẵn",
-    s:() => SESSION.outcome, go:() => brief() },
+    s:() => LESSON.outcome, go:() => wave(() => teach()) },
   { id:"free", t:"LUYỆN TỰ DO",
     s:() => "Bạn chọn phần, không có mục tiêu nào cả", go:() => toggleFree() },
   { id:"gal", t:"THƯ VIỆN LỖI",
@@ -514,9 +647,9 @@ function pickPart(n){
     $("#freeNote").textContent = "Part " + n + " chưa có trong bản thử này — Part 1 chạy đầy đủ rồi.";
     return;
   }
-  SESSION.free = true;
-  $("#focusLine").textContent = "Luyện tự do — không soi lỗi nào riêng";
-  begin();
+  wave(() => { $(".pbar .what").childNodes[0].nodeValue = "Luyện tự do · Part 1";
+    $("#focusLine").textContent = "Không soi mục tiêu nào — cứ nói thoải mái";
+    LQ = 0; marks = []; stage = "answer"; go("practice"); askQ(); });
 }
 let cursor = 0;
 
@@ -754,24 +887,6 @@ function credits(t){
 }
 
 /* ============================================================ */
-const SET = {
-  minWords:25,                                   // Part 1 threshold, as in the players
-  questions:[
-    "When was the last time you had a day off?",
-    "What did you do on your last day off?",
-    "Did you go anywhere, or did you stay at home?",
-    "Who did you spend it with?",
-    "Was it a good one? Why?"
-  ],
-  samples:[
-    "The last time I had a day off was last weekend, and honestly I stay at home the whole day because the weather was really bad outside.",
-    "Last weekend I visit my grandmother in the countryside and we cook together for the whole afternoon, which was very relax for me.",
-    "I stay at home mostly. My brother go out with his friends but I wanted a quiet day for myself after a long week at work.",
-    "I spend it with my family, my parents and my younger sister. We eat a lot of food and we talk for about two hour in the kitchen.",
-    "Yeah it was a good one. I sleep until noon and I have fun time with my cousins in the afternoon, so I felt much better after."
-  ]
-};
-
 function bubble(kind, html, into){
   const el = document.createElement("div");
   el.className = "bubble " + kind;
@@ -780,6 +895,7 @@ function bubble(kind, html, into){
   el.scrollIntoView({ block:"nearest", behavior:"smooth" });
   return el;
 }
+
 function chips(list, onPick, opt){
   opt = opt || {};
   const host = $(opt.host || "#chipsHost");
@@ -798,7 +914,6 @@ function chips(list, onPick, opt){
   });
   if (!opt.host) $("#inputZone").style.display = "none";
 }
-function showInput(){ $("#chipsHost").innerHTML = ""; $("#inputZone").style.display = ""; }
 
 function award(kind, n){
   if (!n) return;
@@ -806,18 +921,6 @@ function award(kind, n){
   session.push({ kind, n });
   saveMine(); renderGoals(); renderComm(); push();
 }
-function renderRows(){
-  const roll = {};
-  session.forEach(e => roll[e.kind] = (roll[e.kind] || 0) + e.n);
-  const ks = Object.keys(roll);
-  $("#rows").innerHTML = ks.length
-    ? ks.map(k => '<div class="lrow"><span class="k">' + KINDS[k].vi + "</span>" +
-        '<span class="x">' + KINDS[k].en + "</span>" +
-        '<span class="v' + (k === "self_fix" ? " self" : "") + '">+' + roll[k] + "</span></div>").join("")
-    : '<p class="empty">Chưa có gì. Trả lời câu đầu tiên đi.</p>';
-}
-const pips = () => $("#pips").innerHTML = SET.questions.map((_,i) =>
-  '<i class="' + (i < qi ? "done" : i === qi ? "now" : "") + '"></i>').join("");
 
 function say(t){
   try { if (!window.speechSynthesis) return;
@@ -827,102 +930,303 @@ function say(t){
   } catch(_){}
 }
 
-function ask(){
-  if (qi >= SET.questions.length) return finish();
-  $("#qn").textContent = qi + 1;
-  $("#q").textContent = SET.questions[qi];
-  $("#chat").innerHTML = ""; $("#ans").value = ""; updateWc();
-  hit = null; asked = false; fixedThisQ = 0;
-  showInput(); pips(); say(SET.questions[qi]);
-}
-
-function submit(){
-  const t = $("#ans").value.trim();
-  if (!t) return;
-  bubble("student", esc(t));
-  $("#ans").value = ""; updateWc();
-
-  /* The players enforce a floor before grading — a 6-word answer is not a
-     Part 1 answer, and correcting it teaches the wrong lesson. */
-  if (words(t) < SET.minWords && !fixedThisQ){
-    bubble("sys", "⚠️ Part 1 cần tối thiểu " + SET.minWords + " từ · bạn vừa nói " + words(t));
-    bubble("ta", "Câu này hơi ngắn so với Part 1. <strong>Nói thêm một hai ý nữa</strong> rồi gửi lại nhé — lý do, hoặc một chi tiết cụ thể.");
-    return;
-  }
-
-  const cr = credits(t);
-  Object.keys(cr).forEach(k => award(k, cr[k]));
-  renderRows();
-
-  const found = RULES.map(r => { const h = r.find(t); return h ? { r, h } : null; }).filter(Boolean)[0];
-  if (!found) return pass();
-
-  hit = found;
-  bubble("ta", md(found.r.quote(found.h)));
-  bubble("ta", md(found.r.why(found.h)));
-  bubble("ta", "Theo bạn thì nói thế nào mới đúng?");
-  const list = found.h.chips.slice(0,3).sort(() => Math.random() - .5).concat([ESCAPE]);
-  chips(list, pick => resolve(pick));
-}
-
-function resolve(pick){
-  const h = hit.h;
-  if (pick === ESCAPE){
-    bubble("ta", md(`Không sao. Đáp án là **"${h.right}"**.`));
-    bubble("ta", md(hit.r.why(h)));
-    award(hit.r.kind, 1);
-    logMistake(h, hit.r.cat, hit.r.why(h));
-    return done(h, false);
-  }
-  if (pick.toLowerCase() === h.right.toLowerCase()){
-    bubble("ta", md(hit.r.ok(h)));
-    award(hit.r.kind, 1); award("self_fix", 1);
-    logMistake(h, hit.r.cat, hit.r.why(h));
-    return done(h, true);
-  }
-  bubble("ta", "Chưa phải. Gợi ý: mốc thời gian trong câu quyết định dạng động từ.");
-  chips([h.right, ESCAPE], p => resolve(p));
-}
-
-function done(h, self){
-  fixedThisQ++;
-  bubble("mastery", "✅ Bạn đã nắm được: <strong>" + esc(h.right) + "</strong>" + (self ? " — và bạn tự tìm ra 👌" : ""));
-  renderRows();
-  /* INTERLOCK: the re-record invitation is offered at most once per question. */
-  if (asked) return next();
-  asked = true;
-  bubble("ta", "Bạn muốn <strong>nói lại cả câu</strong> áp dụng chỗ vừa sửa, hay <strong>đi tiếp</strong> luôn?");
-  chips(["Nói lại cả câu 🎤","Đi tiếp ➡️"], p => {
-    if (p.indexOf("Nói lại") === 0){
-      bubble("ta", "<strong>Bấm 🎤 và nói lại cả câu nhé.</strong>");
-      showInput(); hit = null;
-    } else next();
-  });
-}
-
-function pass(){
-  bubble("ta", fixedThisQ ? "Ổn rồi — lần này bạn dùng đúng chỗ vừa sửa." : "Ổn rồi, câu này dùng đúng thì.");
-  next();
-}
-function next(){
-  award("answered", 1); renderRows(); qi++;
-  setTimeout(ask, 900);
-}
-function finish(){
-  const total = session.reduce((a,e) => a + e.n, 0);
-  $("#chat").innerHTML = ""; $("#chipsHost").innerHTML = "";
-  $("#inputZone").style.display = "none";
-  bubble("ta", "Xong buổi này — <strong>" + total + "</strong> điều đúng ghi lại được.");
-  bubble("ta", "Tất cả đã cộng vào mục tiêu hôm nay và vào con số của cả lớp.");
-  pips();
-  setTimeout(() => { renderModes(); go("menu"); }, 2400);
-}
-
 function updateWc(){
   const n = words($("#ans").value);
   const el = $("#wc");
   el.textContent = n + " từ";
-  el.className = "wc" + (n === 0 ? "" : n < SET.minWords ? " short" : " ok");
+  el.className = "wc" + (n === 0 ? "" : n < 40 ? " short" : " ok");   // examples want room
+}
+
+
+/* ============================================================
+   THE LESSON — answering with examples.
+   Priority order, drilled one at a time, most severe first:
+      IDEA → FLUENCY → VOCAB → GRAMMAR
+   Idea comes first because this lesson is about what you say, not
+   how cleanly you say it. A perfect sentence with no example still
+   fails the thing we are teaching.
+   ============================================================ */
+const LESSON = {
+  outcome:"Trả lời có ví dụ thật của riêng bạn, không nói chung chung",
+  hello:[
+    { t:"Hii bạn 👋", big:true, wait:3000 },
+    { t:"Hôm nay Đậu hướng dẫn bạn về cách trả lời theo <strong>Example</strong> nhen.", wait:5000 }
+  ],
+  questions:[
+    { q:"What's your favourite season to travel in?",
+      cues:["summer","winter","spring","autumn","fall","rainy","dry"],
+      idea:"Chọn một mùa, rồi kể một chuyến đi thật vào mùa đó — đi đâu, với ai, chuyện gì vui.",
+      vocab:["peak season","off-season","a road trip","humid","breezy","get away"] },
+    { q:"Is there a dish you always order when you eat out?",
+      cues:["phở","pho","bún","com","rice","noodle","chicken","hotpot","pizza","bánh"],
+      idea:"Nói tên món, rồi kể một lần cụ thể bạn ăn món đó — quán nào, đi với ai.",
+      vocab:["my go-to dish","comfort food","a hole-in-the-wall place","order the same thing","craving"] },
+    { q:"When do you usually get your best work done?",
+      cues:["morning","night","afternoon","evening","dawn","midnight","early","late"],
+      idea:"Chọn một khung giờ, rồi kể một hôm bạn làm việc cực kỳ hiệu quả vào giờ đó.",
+      vocab:["an early bird","a night owl","in one sitting","get in the zone","focus best"] },
+    { q:"What do you show people when they visit your hometown?",
+      cues:["market","temple","street","lake","river","beach","food","bridge","park","old"],
+      idea:"Chọn một chỗ, rồi kể lần gần nhất bạn dẫn ai đó tới đó.",
+      vocab:["show someone around","a local spot","off the tourist trail","worth a visit"] },
+    { q:"How do you usually spend a free evening?",
+      cues:["read","cook","walk","watch","game","gym","friends","family","music","sleep"],
+      idea:"Nói bạn hay làm gì, rồi kể một buổi tối cụ thể gần đây.",
+      vocab:["wind down","unwind","have a quiet one","catch up on","nothing in particular"] },
+    { q:"Is there an app you use every single day?",
+      cues:["zalo","messenger","youtube","tiktok","spotify","maps","note","duolingo","instagram","facebook"],
+      idea:"Nói tên app, rồi kể một lần nó thật sự có ích cho bạn.",
+      vocab:["I'm on it constantly","a lifesaver","check it first thing","scroll through"] }
+  ]
+};
+
+const SIGNAL = /\b(for example|for instance|like when|one time|once|i remember|there was this|such as)\b/i;
+const TIMEMARK = /\b(last (year|summer|week|month|night|time|weekend)|yesterday|when i was|back (in|when)|a few (days|weeks|months|years) ago|\d+ (days|weeks|months|years) ago|this morning|the other day)\b/i;
+const PASTV = /\b(went|was|were|had|did|saw|ate|took|got|came|met|spent|stayed|made|said|felt|bought|drove|flew|walked|visited|cooked|played|watched|studied|worked|talked|tried|\w{4,}ed)\b/gi;
+const FILLER = /\b(um+|uh+|erm+|like|you know|kind of|sort of)\b/gi;
+
+function look(t, q){
+  const w = words(t);
+  const past = (t.match(PASTV) || []).length;
+  const hasSignal = SIGNAL.test(t), hasTime = TIMEMARK.test(t);
+  return {
+    words:w,
+    direct: q.cues.some(c => new RegExp("\\b" + c, "i").test(t.split(/[.!?]/)[0] || t)),
+    example: hasSignal || hasTime,
+    specific: (hasTime || hasSignal) && past >= 2,
+    fillers: (t.match(FILLER) || []).length,
+    past
+  };
+}
+
+/* Each beat hands back a question, never a verdict. */
+const BEATS = {
+  no_direct: r => ({
+    cat:"idea",
+    lines:["Khoan — giám khảo hỏi thẳng, mình trả lời thẳng trước đã.",
+           "Câu trả lời <strong>một câu</strong> của bạn là gì?"],
+    chips: q => q.cues.slice(0,3).map(c => c[0].toUpperCase() + c.slice(1)).concat(["Mình có ý khác"]),
+    after:"Chuẩn — đó là Direct Answer. Giờ tới ví dụ."
+  }),
+  no_example: r => ({
+    cat:"idea",
+    lines:["Direct answer ổn rồi 👌",
+           "Nhưng mình vẫn đang hình dung chung chung — chưa thấy chuyện gì thật cả.",
+           "<strong>Lần gần nhất</strong> chuyện đó xảy ra là khi nào?"],
+    chips: () => ["Năm ngoái","Hè vừa rồi","Hồi mình còn đi học","Mới gần đây thôi"],
+    after:"Ngon. Giờ kể lại cả câu, có luôn cái lần đó vào nhé 🎤"
+  }),
+  general_only: r => ({
+    cat:"idea",
+    lines:["Ví dụ chung chung của bạn ổn đó — kiểu “I can go to the beach, I can…”.",
+           "Nhưng ví dụ <strong>cụ thể</strong> thì ăn điểm hơn nhiều: một lần, một nơi, một chuyện.",
+           "Bạn có một lần như vậy không?"],
+    chips: () => ["Có, để mình kể 🎤","Thôi, đi tiếp"],
+    after:"Đúng kiểu rồi đó — một lần cụ thể luôn nhớ lâu hơn."
+  }),
+  thin: r => ({
+    cat:"fluency",
+    lines:["Ý đúng rồi, nhưng hơi ngắn — mới <strong>" + r.words + " từ</strong>.",
+           "Thêm một chi tiết nữa thôi: bạn đi với ai, hoặc chuyện gì xảy ra sau đó?"],
+    chips: () => ["Để mình nói thêm 🎤","Vậy là đủ rồi"],
+    after:"Đủ dài rồi đó."
+  }),
+  fillers: r => ({
+    cat:"fluency",
+    lines:["Bạn dùng khá nhiều từ đệm (um, like…) — <strong>" + r.fillers + " lần</strong>.",
+           "Thử nói lại đoạn đó chậm hơn một chút, bỏ bớt đi xem?"],
+    chips: () => ["Nói lại 🎤","Đi tiếp"],
+    after:"Nghe gọn hơn hẳn."
+  })
+};
+
+/* ---------- run of play ---------- */
+let LQ = 0, marks = [], stage = "answer", pending = null, hintTimer = null, hintShown = false;
+
+function teach(){
+  go("teach");
+  const chat = $("#tChat"); chat.innerHTML = "";
+  $("#tTheory").hidden = true; $("#tRow").hidden = true; $("#tSkip").hidden = false;
+  let t = 0; teachTimers.forEach(clearTimeout); teachTimers = [];
+  LESSON.hello.forEach(l => {
+    teachTimers.push(setTimeout(() => {
+      const el = document.createElement("div");
+      el.className = "line" + (l.big ? " big" : "");
+      el.innerHTML = l.t; chat.append(el);
+    }, t));
+    t += l.wait;
+  });
+  teachTimers.push(setTimeout(showTheory, t));
+}
+let teachTimers = [];
+
+function showTheory(){
+  teachTimers.forEach(clearTimeout); teachTimers = [];
+  $("#tTheory").hidden = false; $("#tRow").hidden = false; $("#tSkip").hidden = true;
+  $("#tTheory").innerHTML =
+    '<h2>Framework đưa ví dụ của mình như sau:</h2>' +
+    '<div class="step"><div class="h"><em>1</em> Direct answer</div>' +
+      '<p>Trả lời thẳng câu hỏi của giám khảo, một câu thôi.</p>' +
+      '<div class="ex">What&rsquo;s your favourite season to travel in?<br>' +
+      '→ <b>Well, I love travelling in the summer.</b></div></div>' +
+    '<div class="step"><div class="h"><em>2a</em> General example</div>' +
+      '<p>Nói chung chung về việc đó — nhiều lựa chọn, dễ nói.</p>' +
+      '<div class="ex">Well, I love travelling in the summer, because there are so many options. ' +
+      '<b>For example, I can go to the beach, I can go on a picnic, or I can visit famous tourist destinations.</b></div></div>' +
+    '<div class="step"><div class="h"><em>2b</em> Specific example</div>' +
+      '<p>Kể lại một lần thật — một chuyến, một nơi, một chuyện. Cái này ăn điểm hơn.</p>' +
+      '<div class="ex">Well, I love travelling in the summer. <b>For example, last year, when my summer vacation started, ' +
+      'I spent an entire week visiting my relatives in Da Nang. Not only did I get to spend quality time with them, ' +
+      'I was also able to go to the beach and play in the sea with my cousins. It was a great time!</b></div></div>';
+}
+
+function startLesson(){
+  LQ = 0; marks = []; stage = "answer"; pending = null;
+  $(".pbar .what").childNodes[0].nodeValue = "Buổi học · Example";
+  $("#focusLine").textContent = "Mục tiêu: " + LESSON.outcome;
+  go("practice"); askQ();
+}
+
+function askQ(){
+  if (LQ >= LESSON.questions.length) return report();
+  const q = LESSON.questions[LQ];
+  $("#qn").textContent = LQ + 1;
+  $("#pips").innerHTML = LESSON.questions.map((_,i) =>
+    '<i class="' + (i < LQ ? "done" : i === LQ ? "now" : "") + '"></i>').join("");
+  $("#q").textContent = q.q;
+  $("#chat").innerHTML = ""; $("#ans").value = ""; updateWc();
+  stage = "answer"; pending = null; hintShown = false;
+  showInput(); say(q.q);
+  armHint();
+}
+
+/* five seconds of nothing and the hint offers itself */
+function armHint(){
+  clearTimeout(hintTimer);
+  hintTimer = setTimeout(() => {
+    if (hintShown || stage !== "answer" || LQ >= LESSON.questions.length) return;
+    if ($("#ans").value.trim()) return;
+    hintShown = true;
+    const bar = document.createElement("div");
+    bar.className = "hintbar";
+    bar.innerHTML = '<button class="hintbtn" id="hintBtn">💡 Bí quá? Gợi ý ý tưởng &amp; từ vựng</button>';
+    $("#inputZone").append(bar);
+    $("#hintBtn").onclick = () => {
+      const q = LESSON.questions[LQ];
+      bar.innerHTML = '<div class="hintcard"><h4>Ý tưởng</h4><p>' + esc(q.idea) + "</p>" +
+        '<h4>Từ vựng gợi ý</h4><div class="vocab">' +
+        q.vocab.map(v => "<span>" + esc(v) + "</span>").join("") + "</div></div>";
+    };
+  }, 5000);
+}
+function clearHint(){
+  clearTimeout(hintTimer);
+  $("#inputZone").querySelectorAll(".hintbar").forEach(b => b.remove());
+}
+function showInput(){ $("#chipsHost").innerHTML = ""; $("#inputZone").style.display = ""; }
+
+function sendAnswer(){
+  const t = $("#ans").value.trim();
+  if (!t || LQ >= LESSON.questions.length) return;
+  clearHint();
+  bubble("student", esc(t));
+  $("#ans").value = ""; updateWc();
+  const q = LESSON.questions[LQ], r = look(t, q);
+
+  if (stage === "answer"){
+    marks[LQ] = { direct:r.direct, example:r.example, specific:r.specific, q:q.q };
+    if (r.direct) award("direct_answer", 1);
+    if (r.example) award("example_given", 1);
+    if (r.specific) award("story_told", 1);
+  } else {
+    // a retry: let it upgrade the marks for this question
+    const m = marks[LQ];
+    if (r.direct && !m.direct){ m.direct = true; award("direct_answer", 1); }
+    if (r.example && !m.example){ m.example = true; award("example_given", 1); }
+    if (r.specific && !m.specific){ m.specific = true; award("story_told", 1); }
+  }
+  renderQuests();
+
+  const beat = pick(r, t);
+  if (!beat) return closeQ(r);
+  pending = beat;
+  beat.lines.forEach(l => bubble("ta", l));
+  const list = beat.chips(q);
+  chips(list, p => onChip(p, r));
+}
+
+/* IDEA → FLUENCY → VOCAB → GRAMMAR, one per turn, and never the same
+   beat twice on one question. */
+function pick(r, t){
+  const m = marks[LQ];
+  const mk = (id, b) => (m["did_" + id] ? null : Object.assign({ id }, b));
+  if (!r.direct)                 return mk("no_direct",    BEATS.no_direct(r));
+  if (!r.example)                return mk("no_example",   BEATS.no_example(r));
+  if (r.example && !r.specific)  return mk("general_only", BEATS.general_only(r));
+  if (r.words < 40)              return mk("thin",         BEATS.thin(r));
+  if (r.fillers >= 4)            return mk("fillers",      BEATS.fillers(r));
+  const g = RULES.map(x => { const h = x.find(t); return h ? { x, h } : null; }).filter(Boolean)[0];
+  if (g) return mk("grammar", {
+    cat:"grammar",
+    lines:[md(g.x.quote(g.h)), md(g.x.why(g.h)), "Theo bạn thì nói thế nào mới đúng?"],
+    chips: () => g.h.chips.slice(0,3).concat([ESCAPE]),
+    after: md(g.x.ok(g.h)), fix:g.h, rule:g.x
+  });
+  return null;
+}
+
+function onChip(p, r){
+  const b = pending, m = marks[LQ];
+  m["did_" + b.id] = true;
+  if (b.id === "grammar"){
+    if (p.toLowerCase() === b.fix.right.toLowerCase()){
+      bubble("ta", b.after); award(b.rule.kind, 1); award("self_fix", 1);
+      logMistake(b.fix, b.rule.cat, b.rule.why(b.fix));
+    } else {
+      bubble("ta", md('Chưa phải — đáp án là **"' + b.fix.right + '"**.'));
+      logMistake(b.fix, b.rule.cat, b.rule.why(b.fix));
+    }
+    renderQuests(); pending = null; return closeQ(r);
+  }
+  if (/Thôi|đủ rồi|Đi tiếp/i.test(p)){ pending = null; return closeQ(r); }
+  bubble("ta", b.after);
+  stage = "retry"; pending = null;
+  showInput(); $("#ans").focus();
+}
+
+function closeQ(r){
+  const m = marks[LQ];
+  const won = [m.direct && "direct answer", m.example && "ví dụ", m.specific && "chuyện thật"].filter(Boolean);
+  bubble("mastery", "✅ Câu này bạn có: <strong>" + (won.join(" + ") || "—") + "</strong>");
+  award("answered", 1); renderQuests();
+  LQ++; stage = "answer";
+  setTimeout(askQ, 1300);
+}
+
+/* ---------- report card ---------- */
+function report(){
+  const got = marks.reduce((a,m) => a + (m.direct?1:0) + (m.example?1:0) + (m.specific?1:0), 0);
+  const max = LESSON.questions.length * 3;
+  const pct = Math.round(got / max * 100);
+  const stories = marks.filter(m => m.specific).length;
+  $("#rTitle").textContent = stories >= 4 ? "Bạn kể chuyện thật khá đều tay rồi."
+    : stories >= 2 ? "Bắt đầu có chuyện thật rồi đó."
+    : "Ví dụ còn chung chung — đây là chỗ để luyện tiếp.";
+  $("#rNum").textContent = got;
+  $("#rRing").style.setProperty("--p", pct + "%");
+  $("#rSay").innerHTML = "Bạn kể được <strong>" + stories + "/" + LESSON.questions.length +
+    "</strong> câu chuyện cụ thể. Ví dụ cụ thể là thứ giám khảo chấm cao nhất ở phần phát triển ý — " +
+    (stories >= 4 ? "giữ nhịp này nhé." : "buổi sau mình sẽ quay lại đúng kỹ năng này.");
+  $("#rRows").innerHTML = marks.map((m,i) =>
+    '<div class="rrow"><span class="q">' + (i+1) + ". " + esc(m.q) + "</span>" +
+    '<span class="marks">' +
+      '<span class="m' + (m.direct ? " got" : "") + '" title="Direct answer">DA</span>' +
+      '<span class="m' + (m.example ? " got" : "") + '" title="Có ví dụ">VD</span>' +
+      '<span class="m' + (m.specific ? " got" : "") + '" title="Chuyện cụ thể">CT</span>' +
+    "</span></div>").join("") +
+    '<div class="rrow"><span class="rlegend">DA = direct answer · VD = có ví dụ · CT = chuyện cụ thể</span><span></span></div>';
+  try { mine.exampleRate = Math.round(stories / LESSON.questions.length * 100); saveMine(); } catch(_){}
+  go("report");
 }
 
 /* ---------- speech ---------- */
@@ -1032,17 +1336,22 @@ function enter(){
 /* ---------- wiring ---------- */
 $("#spGo").onclick = enter;
 $("#goHome").onclick = () => go("menu");
-$("#replay").onclick = () => say(SET.questions[qi]);
-$("#sample").onclick = () => { $("#ans").value = SET.samples[qi] || ""; updateWc(); $("#ans").focus(); };
-$("#send").onclick = submit;
-$("#quit").onclick = () => { if (rec){ try { rec.onend = null; rec.stop(); } catch(_){} rec = null; } go("menu"); };
+$("#replay").onclick = () => say(LESSON.questions[LQ].q);
+
+$("#send").onclick = sendAnswer;
+$("#quit").onclick = () => { if (rec){ try { rec.onend = null; rec.stop(); } catch(_){} rec = null; }
+  clearHint(); wave(() => go("menu")); };
+$("#tGo").onclick = startLesson;
+$("#tSkip").onclick = showTheory;
+$("#rMenu").onclick = () => wave(() => go("menu"));
+$("#rAgain").onclick = () => wave(() => startLesson());
 $("#ans").addEventListener("input", updateWc);
 $("#ans").addEventListener("keydown", e => {
-  if (e.key === "Enter" && (e.metaKey || e.ctrlKey)){ e.preventDefault(); submit(); }
+  if (e.key === "Enter" && (e.metaKey || e.ctrlKey)){ e.preventDefault(); sendAnswer(); }
 });
 
 document.body.dataset.view = "menu";
 $("#vMenu").setAttribute("data-open","");
 document.body.classList.add("locked");
-renderModes(); renderQuests(); renderGallery(); pips(); renderRows(); updateWc();
+renderModes(); renderQuests(); renderGallery(); updateWc();
 </script>

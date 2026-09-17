@@ -22,7 +22,7 @@ Kể một chuyện đã xảy ra mà           │  Ngày · Tuần · Tháng
 không rơi mất đuôi -ed               │
                                      │  Trả lời 10 câu     6/10
 LUYỆN TỰ DO                          │  15 past simple     9/15
-THƯ VIỆN LỖI   4 đang mở             │  Tự sửa 3 lỗi       1/3
+REPORT CARD    4 đang mở             │  Tự sửa 3 lỗi       1/3
 ```
 
 Part 1 / 2 / 3 are no longer top-level. Offering three Parts as modes *is*

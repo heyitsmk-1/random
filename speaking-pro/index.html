@@ -805,7 +805,7 @@ body.dragging .material,body.dragging .pane{pointer-events:none}
     <div class="gwrap">
       <div class="gtop">
         <div>
-          <h1>Thư viện lỗi</h1>
+          <h1>Report card</h1>
           <p>Mọi lỗi bạn từng mắc, giữ lại hết — để thấy cái nào đã thật sự sửa được.</p>
         </div>
         <button class="btn sec" id="gBack">← Menu</button>
@@ -1008,7 +1008,7 @@ const MODES = [
   { id:"free", t:"LUYỆN TỰ DO", pill:"Part 1",
     s:() => "Chọn chủ đề · ba câu một lượt · ~6 phút",
     go:() => wave(() => { renderTopics(); go("topics"); }) },
-  { id:"gal", t:"THƯ VIỆN LỖI",
+  { id:"gal", t:"REPORT CARD",
     s:() => "Mọi lỗi bạn từng mắc, và cái nào đã sửa được",
     count:() => GALLERY.filter(g => !g.fixed).length + " đang mở",
     go:() => { renderGallery(); go("gallery"); } }

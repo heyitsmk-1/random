@@ -318,7 +318,20 @@ def main(src, dst):
         # whole sentences inside the highlight, or the one sentence a partial highlight sits in
         ids = [s["id"] for p in paragraphs for s in p["sentences"]
                if norm(sentence_text(s)) and (norm(sentence_text(s)) in text or text in norm(sentence_text(s)))]
-        task_comments.append({"sentence_ids": ids, "comment": comment_text(box), "kind": "trcc", "quote": text, "added": ""})
+        added = ""
+        if not ids:
+            # text the teacher typed into the essay (a sentence the student should add): hang it on the
+            # sentence it follows in the TR/CC editor
+            block = sp.find_parent(class_="ce-paragraph")
+            before = norm("".join(t for t in block.find_all(string=True) if t.find_parent() is not None and sp not in t.parents
+                                  and (t.find_previous(lambda x: x is sp) is None))) if block else ""
+            for p_ in paragraphs:
+                for s_ in p_["sentences"]:
+                    st = norm(sentence_text(s_))
+                    if st and st[:40] in before:
+                        ids = [s_["id"]]
+            added, text = text, ""
+        task_comments.append({"sentence_ids": ids[-1:] if added else ids, "comment": comment_text(box), "kind": "trcc", "quote": text, "added": added})
     task_comments += [{"sentence_ids": x.get("sentence_ids", []), **{k: x[k] for k in ("comment", "kind", "quote", "added")}} for x in notes]
 
     scores = [i.get("value") for i in soup.select("#right-partial input.input-otp")][:4]

@@ -1155,7 +1155,7 @@ function addMistake(m, optional) {
   const head = label => h("div", { class: "row" }, h("button", { class: "backchip", type: "button", onclick: () => jump(tabIdx[m.tab]) }, "‹ Tất cả lỗi"), h("span", { class: "pill " + (label === "Quy tắc" ? "tone-orange" : "tone-blush") }, label));
   mistakeIdx[m.id] = screens.length;
   add(m.tab, async c => {
-    c.show(head(m.tab === "LR" ? "Từ vựng" : optional ? "Lỗi phụ" : "Lỗi quan trọng nhất"));
+    c.show(head(m.tab === "LR" && optional ? "Từ vựng" : optional ? "Lỗi phụ" : "Lỗi quan trọng nhất"));
     await c.say(`Em để ý ${sids.length} câu này nè ${NAME}`, "magnify");
     const cards = [], snips = h("div", { class: "stack" });
     for (const [i, sid] of sids.entries()) {
@@ -1194,7 +1194,7 @@ function addMistake(m, optional) {
   }, opts);
 }
 
-// LR: the vocab mistakes stay optional; only the single most important mistake is taught step by step
+// LR: vocab mistakes are optional unless marked core; the grammar's most important mistake is taught step by step
 tabIdx.LR = screens.length;
 add("LR", async c => {
   const M = L.mistakes;
@@ -1202,11 +1202,13 @@ add("LR", async c => {
   await c.say(M.lr_intro[0], "explaining");
   for (const line of M.lr_intro.slice(1, -1)) { await c.gate(); await c.say(line, "thumbsup"); }
   await c.gate();
-  byTab("LR").forEach(m => c.show(minorCard(m)));
+  const cards = byTab("LR").map(m => c.show(m.core ? mainCard(m) : minorCard(m)));
   const ob = othersBtn("LR"); if (ob) c.show(ob);
-  await c.say(M.lr_intro[M.lr_intro.length - 1], "explaining");
+  // a core vocab mistake is what he is pointing at, not the list of small ones
+  const core = byTab("LR").findIndex(m => m.core);
+  await c.say(M.lr_intro[M.lr_intro.length - 1], "explaining", core >= 0 ? { spot: cards[core] } : {});
 }, { end: "dock" });
-byTab("LR").forEach(m => addMistake(m, true));
+byTab("LR").forEach(m => addMistake(m, !m.core));  // vocab is optional unless the lesson marks it core
 
 tabIdx.GRA = screens.length;
 add("GRA", async c => {

@@ -81,11 +81,11 @@ button { font: inherit; color: inherit; }
 
 /* anh Đậu: a character outside the app. When he talks the page dims, the card he is talking
    about stays lit (the spotlight), and he leans in from the left edge with his speech bubble. */
-.dim { position: absolute; inset: 0; z-index: 5; background: rgba(24, 16, 8, .55); opacity: 0; pointer-events: none; transition: opacity .35s ease; }
-.app.dau-talk .dim { opacity: 1; }
-.scene .spot:not(.card) { background: var(--bg); padding: 10px; margin: -10px; }
-.scene .spot { position: relative; z-index: 6; box-shadow: 0 0 0 3px var(--orange), 0 10px 30px rgba(0, 0, 0, .25); border-radius: 18px; }
-.app.dau-talk .bottom { background: rgba(24, 16, 8, .55); transition: background .35s; }
+/* focus instead of a dark overlay: what he is talking about stays crisp and lifts a little,
+   everything else fades back */
+.content > * { transition: opacity .35s ease, filter .35s ease, box-shadow .35s ease, translate .35s ease; }
+.app.dau-talk .content > *:not(.spot) { opacity: .28; filter: blur(1.5px) saturate(.6); }
+.app.dau-talk .content > .spot { translate: 0 -3px; box-shadow: 0 2px 4px rgba(60, 40, 20, .06), 0 18px 40px rgba(60, 40, 20, .16); }
 .app.dau-talk .bottom > * { visibility: hidden; }
 .dau-layer { position: absolute; left: 0; right: 0; bottom: 0; top: var(--top-h, 70px); z-index: 8; pointer-events: none; }
 .catch { position: absolute; inset: 0; display: none; pointer-events: auto; touch-action: none; cursor: pointer; }
@@ -593,7 +593,7 @@ if (document.fonts) document.fonts.ready.then(settle);
 
 /* ---------- Đậu's body language ---------- */
 const POSES = {
-  waving: ["a-wave"], thumbsup: ["a-up"], magnify: ["a-think", "look-up"], thinking: ["a-think", "look-up"],
+  talk: [], waving: ["a-wave"], thumbsup: ["a-up"], magnify: ["a-think", "look-up"], thinking: ["a-think", "look-up"],
   oops: ["a-oops", "m-o"], cheering: ["a-cheer", "m-laugh"], writing: ["a-point"], explaining: ["a-point"],
 };
 function face(state) {
@@ -652,7 +652,7 @@ function makeCtx(id) {
       clearTimeout(awayTimer); awayTimer = null; saidAt = passed;
       clearTimeout(idleTimer);
       const entering = mode === "away";
-      if (p) curPose = p;
+      curPose = p || "talk";
       typed = false;
       setMode("talk"); face("talk");
       spotlight("spot" in opts ? opts.spot : autoSpot());
@@ -728,7 +728,7 @@ async function run(i, tgt = 0, dir = 1) {
   replay = dir < 0 || tgt > 0;
   const sc = screens[i];
   content = h("div", { class: "content" });
-  scene = h("div", { class: "scene" + (replay ? " instant" : " in") }, h("div", { class: "dim" }), content);
+  scene = h("div", { class: "scene" + (replay ? " instant" : " in") }, content);
   $("#stage").replaceChildren(scene);
   fitRO.disconnect(); fitMO.disconnect();
   fitRO.observe(scene); fitMO.observe(scene, { childList: true, subtree: true, characterData: true });
@@ -861,7 +861,7 @@ add(0, async c => {
   await said;
   await c.gate(); await c.say(L.results.words[1]);
   await c.gate();
-  await c.say(L.results.criteria, "waving");
+  await c.say(L.results.criteria, "explaining");
   const grid = h("div", { class: "scores" });
   c.show(grid);
   for (const [k, lab] of [["TR", "Task"], ["CC", "Mạch lạc"], ["LR", "Từ vựng"], ["GR", "Ngữ pháp"]]) {
@@ -877,14 +877,14 @@ add(0, async c => {
   await c.wait(400);
   await tick(ring, Number(L.overall), .5, 1, 90, c.id);
   await c.say(L.results.score[0], "thumbsup");
-  for (const line of L.results.score.slice(1)) { await c.gate(); await c.say(line, "waving"); }
+  for (const line of L.results.score.slice(1)) { await c.gate(); await c.say(line, "explaining"); }
 }, { label: "Xem chi tiết" });
 
 // framework: one part per beat, then a short overview
 add(1, async c => {
   const F = L.framework;
   c.show(h("h1", { class: "h" }, "Framework " + L.essay_type));
-  await c.say(F.intro[0], "waving");
+  await c.say(F.intro[0], "explaining");
   for (const line of F.intro.slice(1)) { await c.gate(); await c.say(line); }
   for (const [pi, part] of F.parts.entries()) {
     await c.gate();
@@ -950,7 +950,7 @@ L.ideas.details.forEach((D, k) => (detailIdx[D.tag] = screens.length, add(2, asy
   await c.say(i === D.ask.answer ? D.ask.right : D.ask.wrong, i === D.ask.answer ? "thumbsup" : "oops");
   await c.gate();
   content.querySelector(".ask").remove(); fit();
-  await c.say(D.fix_intro, "waving");
+  await c.say(D.fix_intro, "explaining");
   if (D.bad_node == null) { chain.append(h("div", { class: "gap-mark" }, "Thiếu mắt xích")); fit(); }
   for (const n of D.fix_chain) { await c.wait(800); chain.append(h("div", { class: "arrow" }), h("div", { class: "node new" }, n)); fit(); }
   await c.gate();
@@ -962,7 +962,7 @@ L.ideas.details.forEach((D, k) => (detailIdx[D.tag] = screens.length, add(2, asy
 add(3, async c => {
   const K = L.linking;
   c.show(h("h1", { class: "h" }, "Linking devices"));
-  await c.say(K.intro[0], "waving");
+  await c.say(K.intro[0], "explaining");
   await c.gate();
   const num = h("span", {}, "0");
   c.show(h("div", { class: "card row", style: "gap:1em" }, h("div", { class: "big-num" }, num), h("div", { class: "h2" }, "linking devices")));
@@ -977,7 +977,7 @@ add(3, async c => {
   for (const line of K.result.slice(1)) { await c.gate(); await c.say(line); }
   for (const [si, s] of K.suggestions.entries()) {
     await c.gate();
-    if (si === 0) c.say(K.suggestions_intro, "waving");
+    if (si === 0) c.say(K.suggestions_intro, "explaining");
     c.show(h("div", { class: "card stack" }, h("span", { class: "pill tone-orange" }, `Nâng cấp ${si + 1}/${K.suggestions.length}`), h("div", { class: "swap" }, h("span", { class: "from" }, s.from), h("span", { class: "to" }, s.to)), h("div", { class: "small" }, s.why), cite(s.sid)), { replace: true });
   }
 });
@@ -986,7 +986,7 @@ add(3, async c => {
 add(4, async c => {
   const M = L.mistakes;
   c.show(h("h1", { class: "h" }, "Lỗi quan trọng nhất"));
-  await c.say(M.intro[0], "waving");
+  await c.say(M.intro[0], "explaining");
   for (const line of M.intro.slice(1)) { await c.gate(); await c.say(line, "thumbsup"); }
   const [main, ...rest] = M.main;
   await c.wait(300);
@@ -1024,7 +1024,7 @@ L.mistakes.main.forEach((m, k) => {
     await c.say(i === m.ask.answer ? "Đúng rồi á em" : `Chưa đúng nè ${NAME}, là ${lower1(m.ask.options[m.ask.answer])} á`, i === m.ask.answer ? "thumbsup" : "oops");
     await c.gate();
     content.querySelector(".ask").remove(); fit();
-    await c.say(m.count_line, "waving");
+    await c.say(m.count_line, "explaining");
     for (const card of cards) { card.body.replaceChildren(sentence(card.sid, { mode: "diff", focus: m.cids, live: !replay, window: 5 })); fit(); await c.wait(500); }
     await c.wait(300);
     c.show(h("div", { class: "card times" }, h("div", { class: "n" }, m.cids.length), h("div", { class: "l" }, m.count_line)));
@@ -1191,7 +1191,7 @@ add(5, async c => {
   c.show(h("div", { class: "flow-en" }, "Gợi ý: ", h("span", { class: "en" }, X.chain)));
   c.dock();
   await c.gate();
-  await c.say("Em so sánh với câu mẫu rồi tự check nha", "waving");
+  await c.say("Em so sánh với câu mẫu rồi tự check nha", "explaining");
   c.show(h("div", { class: "card stack" }, h("div", { class: "label" }, "Câu mẫu tham khảo"), h("div", { class: "quote en" }, X.model)), { replace: true });
   c.show(h("div", { class: "selfcheck card" }, h("div", { class: "label" }, "Em tự check nha"),
     ...X.checklist.map((t, i) => h("label", {}, h("input", { type: "checkbox", id: "sc" + i }), h("span", {}, t)))));
@@ -1244,7 +1244,7 @@ add(6, async c => {
 const laterIdx = screens.length;
 add(6, async c => {
   const F = L.finish;
-  await c.say(F.later[0], "waving");
+  await c.say(F.later[0], "explaining");
   for (const line of F.later.slice(1)) { await c.gate(); await c.say(line, "thumbsup"); }
   c.show(h("div", { class: "takeaway" }, h("div", { class: "row" }, img("icon_notebook", "icon"), h("b", { class: "h2" }, "Nhớ cho bài sau")), h("ol", {}, F.takeaways.map(t => h("li", {}, t)))));
   c.show(h("div", { class: "two" },

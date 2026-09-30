@@ -99,7 +99,10 @@ button { font: inherit; color: inherit; }
 .app.dau-talk .content > .spot.card { box-shadow: 0 2px 4px rgba(60, 40, 20, .06), 0 18px 40px rgba(60, 40, 20, .16); }
 /* while there is a question on the page, nothing fades: the question, its answers and what it is about */
 .app.nofade .content > * { opacity: 1 !important; filter: none !important; }
-.app.dau-talk .bottom > * { visibility: hidden; }
+/* while Đậu talks the bottom bar steps back, except the back button: one step back is always there */
+.app.dau-talk .bottom { pointer-events: none; }
+.app.dau-talk .bottom > *:not(.btn-back) { visibility: hidden; }
+.app.dau-talk .btn-back { pointer-events: auto; }
 .dau-layer { position: absolute; left: 0; right: 0; bottom: 0; top: var(--top-h, 70px); z-index: 8; pointer-events: none; }
 .catch { position: absolute; inset: 0; display: none; pointer-events: auto; touch-action: none; cursor: pointer; }
 .app.dau-talk .catch { display: block; }
@@ -179,7 +182,7 @@ button { font: inherit; color: inherit; }
 .instant, .instant * { animation-duration: 1ms !important; animation-delay: 0ms !important; transition: none !important; }
 
 /* bottom bar */
-.bottom { padding: 8px 16px calc(env(safe-area-inset-bottom, 0px) + 12px); display: flex; gap: 10px; position: relative; }
+.bottom { padding: 8px 16px calc(env(safe-area-inset-bottom, 0px) + 12px); display: flex; gap: 10px; position: relative; z-index: 9; }
 .btn { border: 0; border-radius: 16px; padding: 14px 18px; font: 700 17px/1 var(--font-display); cursor: pointer; transition: transform .12s, opacity .2s; }
 .btn:active { transform: translateY(2px); }
 .btn-main { flex: 1; background: var(--orange); color: #3A1D00; box-shadow: 0 4px 0 var(--orange-deep); }
@@ -363,6 +366,23 @@ button.mcard { width: 100%; text-align: left; font: inherit; color: inherit; cur
 .ph { width: 3px; border-radius: 3px; background: var(--orange); align-self: stretch; min-height: 2.2em; }
 textarea.write { width: 100%; min-height: 6.5em; resize: none; border: 2px solid var(--line); border-radius: 16px; padding: .7em .9em; font: 400 1em/1.55 var(--font-body); background: var(--paper); color: var(--ink); user-select: text; -webkit-user-select: text; touch-action: auto; }
 textarea.write:focus { outline: none; border-color: var(--orange); }
+.content > .btn { flex: none; }
+.rw-title { display: flex; gap: .9em; align-items: center; padding: .9em 1em; background: var(--orange-soft); border-color: var(--orange); }
+.rw-title .h { margin: .1em 0 0; }
+.rw-icon { width: 3.4em; height: 3.4em; flex: none; object-fit: contain; }
+.rw-tabs { display: flex; flex-wrap: wrap; gap: .4em; }
+.rw-tab { border: 1.5px solid var(--line); background: var(--paper); border-radius: 999px; padding: .3em .8em; font: 600 .82em var(--font-body); color: var(--ink); cursor: pointer; }
+.rw-tab[aria-pressed="true"] { background: var(--orange-soft); border-color: var(--orange); color: var(--orange-deep); }
+.rw-tab:disabled { opacity: .45; cursor: default; }
+.rw-panel { min-height: 4.5em; }
+.rw-panel ul { margin: 0; padding-left: 1.2em; }
+.rw-panel li { margin: .15em 0; }
+.rw-words { display: flex; flex-wrap: wrap; gap: .4em; }
+.rw-words span { background: var(--mint-soft); color: var(--mint-deep); border-radius: 10px; padding: .25em .6em; font-size: .9em; font-weight: 600; }
+.write.rw { min-height: 7.5em; }
+.contact { display: flex; flex-direction: column; gap: .6em; }
+.btn-zalo { display: flex; align-items: center; justify-content: center; gap: .5em; text-decoration: none; background: #0068FF; color: #fff; border: 0; }
+.copied { color: var(--mint-deep); font-weight: 600; font-size: .85em; text-align: center; }
 .selfcheck label { display: flex; gap: .6em; align-items: flex-start; font-size: .92em; padding: .3em 0; cursor: pointer; }
 .selfcheck input { width: 20px; height: 20px; accent-color: var(--mint-deep); margin-top: 2px; flex: none; }
 
@@ -595,6 +615,20 @@ async function tick(el, to, step, decimals, ms, id) {
   el.textContent = to.toFixed(decimals);
 }
 
+/* laptops: same single column, everything bigger. The page is zoomed by the window height, so it
+   still fits one screen; layout maths below converts screen positions back to page units */
+let ZOOM = 1;
+function setZoom() {
+  ZOOM = innerWidth >= 900 && innerHeight >= 560 ? Math.min(1.45, Math.max(1, innerHeight / 700)) : 1;
+  document.body.style.zoom = ZOOM === 1 ? "" : ZOOM;
+}
+setZoom();
+const rectZ = () => { const w = app.getBoundingClientRect().width; return w && app.offsetWidth ? w / app.offsetWidth : 1; };
+function rectOf(el) {
+  const r = el.getBoundingClientRect(), z = rectZ();
+  return { top: r.top / z, bottom: r.bottom / z, left: r.left / z, right: r.right / z, width: r.width / z, height: r.height / z };
+}
+
 function fit() {
   if (!content) return;
   content.classList.remove("overflow");
@@ -661,21 +695,21 @@ function spotlight(el) {
 }
 function place() {
   if (mode !== "talk") return;
-  const L = layer.getBoundingClientRect(), gh = group.offsetHeight;
+  const L = rectOf(layer), gh = group.offsetHeight;
   const kids = content ? [...content.children] : [];
   const anchor = spotEl && spotEl.isConnected ? spotEl : kids[kids.length - 1];
   let top = 12;
   if (anchor) {
-    const r = anchor.getBoundingClientRect();
+    const r = rectOf(anchor);
     let bottom = r.bottom;
-    for (let n = anchor.nextElementSibling; n; n = n.nextElementSibling) bottom = Math.max(bottom, n.getBoundingClientRect().bottom);
+    for (let n = anchor.nextElementSibling; n; n = n.nextElementSibling) bottom = Math.max(bottom, rectOf(n).bottom);
     const below = bottom - L.top + 14, above = r.top - L.top - gh - 14;
     // no room under an answered question: stand over its choices rather than over what it was about
     const answered = anchor.matches(".ask") && !anchor.querySelector(".choice:not([disabled])");
     top = below + gh <= L.height - 8 ? below : answered ? L.height - gh - 8 : above >= 4 ? above : L.height - gh - 8;
   }
   group.style.top = Math.max(4, top) + "px";
-  const up = !!(spotEl && spotEl.isConnected && spotEl.getBoundingClientRect().bottom < L.top + top);
+  const up = !!(spotEl && spotEl.isConnected && rectOf(spotEl).bottom < L.top + top);
   if (up !== spotLooksUp) { spotLooksUp = up; face(typed ? "rest" : "talk"); }
 }
 let awayWaiters = [];
@@ -791,6 +825,9 @@ function makeCtx(id) {
 }
 
 const screens = [];
+/* 2-3 specific compliments per essay (lesson.praise), each said where it belongs */
+const praiseAt = key => (L.praise || []).filter(p => p.at === key).map(p => p.line);
+async function praise(c, key) { for (const line of praiseAt(key)) { await c.gate(); await c.say(line, "cheering"); } }
 const TABS = [["TR", "TR"], ["CC", "CC"], ["LR", "LR"], ["GRA", "GR"]];
 const tabBtns = TABS.map(([t, k]) => h("button", { class: "tab", type: "button", "aria-label": `${t}, band ${L.scores[k]}`, onclick: () => { if (tabIdx[t] != null) jump(tabIdx[t]); } }, h("b", {}, t), h("span", {}, L.scores[k])));
 $("#tabs").append(...tabBtns);
@@ -915,7 +952,7 @@ document.addEventListener("keydown", e => {
   if (["ArrowLeft", "ArrowUp", "PageUp"].includes(e.key)) { e.preventDefault(); backward(); }
 });
 const topH = () => app.style.setProperty("--top-h", $(".top").offsetHeight + "px");
-addEventListener("resize", () => { topH(); fit(); });
+addEventListener("resize", () => { setZoom(); topH(); fit(); });
 topH();
 
 /* ============================ screens ============================ */
@@ -964,6 +1001,7 @@ add("intro", async c => {
   await tick(ring, Number(L.overall), .5, 1, 90, c.id);
   await c.say(L.results.score[0], "thumbsup");
   for (const line of L.results.score.slice(1)) { await c.gate(); await c.say(line, "explaining"); }
+  await praise(c, "results");
 }, { label: "Xem chi tiết" });
 
 // ---------------- TR: framework ----------------
@@ -1010,6 +1048,7 @@ add("TR", async c => {
   if (F.ok) confetti();
   await c.say(F.verdict[0], F.ok ? "cheering" : "oops");
   for (const line of F.verdict.slice(1)) { await c.gate(); await c.say(line, "thumbsup"); }
+  await praise(c, "framework");
 });
 
 // ---------------- TR: reading the prompt (only when the teacher flagged a misreading) ----------------
@@ -1057,6 +1096,7 @@ add("TR", async c => {
     c.show(o.ok || detailIdx[o.tag] == null ? h("div", { class: "card ov" }, inner)
       : h("button", { class: "card ov tap", type: "button", onclick: () => jump(detailIdx[o.tag]) }, inner, h("span", { class: "chev", "aria-hidden": "true" }, "›")));
     await c.say(o.line || o.note, o.ok ? "thumbsup" : "thinking");
+    await praise(c, "idea:" + o.tag);
   }
 }, { end: "dock" });
 
@@ -1129,6 +1169,7 @@ add("CC", async c => {
   await c.wait(400);
   await c.say(K.result[0], "thumbsup");
   for (const line of K.result.slice(1)) { await c.gate(); await c.say(line); }
+  await praise(c, "linking");
   for (const [si, s] of K.suggestions.entries()) {
     await c.gate();
     if (si === 0) c.say(K.suggestions_intro, "explaining");
@@ -1201,6 +1242,7 @@ add("LR", async c => {
   c.show(h("h1", { class: "h" }, "Từ vựng"));
   await c.say(M.lr_intro[0], "explaining");
   for (const line of M.lr_intro.slice(1, -1)) { await c.gate(); await c.say(line, "thumbsup"); }
+  await praise(c, "lr");
   await c.gate();
   const cards = byTab("LR").map(m => c.show(m.core ? mainCard(m) : minorCard(m)));
   const ob = othersBtn("LR"); if (ob) c.show(ob);
@@ -1217,6 +1259,7 @@ add("GRA", async c => {
   c.show(h("h1", { class: "h" }, "Ngữ pháp"));
   c.show(mainCard(main));
   await c.say(M.gra_intro[0], "explaining");
+  await praise(c, "gra");
   await c.gate();
   await c.say(M.gra_intro[1], "thumbsup");
   await c.gate();
@@ -1230,15 +1273,15 @@ byTab("GRA").forEach((m, k) => addMistake(m, k > 0));
 const ITEM = Object.fromEntries(L.practice.items.map(it => [it.id, it]));
 const CORE = L.practice.core.map(id => ITEM[id]);
 const EXTRA = L.practice.items.filter(it => !L.practice.core.includes(it.id));
-const TOTAL = CORE.length + 1;                    // + the rewrite
+const TOTAL = CORE.length;                        // the rewrite is its own section now
 const kind = it => it.type === "build" ? "Xếp câu tiếng Anh" : it.type === "tap" ? "Tìm chữ sai" : it.sentence ? "Điền vào chỗ trống" : "Chọn câu đúng";
 
-// practice intro: the five kinds of question, one per tap
+// practice intro: the kinds of question, one per tap
 add("practice", async c => {
   c.show(h("h1", { class: "h" }, "Luyện tập"));
   await c.say(L.practice.intro[0], "writing");
   for (const line of L.practice.intro.slice(1)) { await c.gate(); await c.say(line); }
-  for (const [i, t] of [...CORE.map(kind), "Viết lại ý của em"].entries()) {
+  for (const [i, t] of CORE.map(kind).entries()) {
     await c.gate();
     c.show(h("div", { class: "card ov" }, h("span", { class: "num" }, i + 1), h("div", { class: "t" }, h("b", {}, t))));
   }
@@ -1322,10 +1365,10 @@ function builder(item, isDone) {
   let drag = null;
   const before = (x, y) => {
     const kids = [...line.children].filter(n => n.classList.contains("wchip") && n !== drag.ch);
-    for (const kid of kids) { const r = kid.getBoundingClientRect(); if (y < r.top || (y <= r.bottom && x < r.left + r.width / 2)) return kid; }
+    for (const kid of kids) { const r = rectOf(kid); if (y < r.top || (y <= r.bottom && x < r.left + r.width / 2)) return kid; }
     return null;
   };
-  const overLine = (x, y) => { const r = line.getBoundingClientRect(); return x > r.left - 20 && x < r.right + 20 && y > r.top - 30 && y < r.bottom + 30; };
+  const overLine = (x, y) => { const r = rectOf(line); return x > r.left - 20 && x < r.right + 20 && y > r.top - 30 && y < r.bottom + 30; };
   chips.forEach(ch => {
     ch.addEventListener("keydown", e => { if ((e.key === "Enter" || e.key === " ") && !isDone()) { e.preventDefault(); toggle(ch); } });
     ch.addEventListener("pointerdown", e => {
@@ -1337,8 +1380,9 @@ function builder(item, isDone) {
       if (!drag || drag.ch !== ch) return;
       if (!drag.moved && Math.hypot(e.clientX - drag.x, e.clientY - drag.y) < 6) return;
       if (!drag.moved) { drag.moved = true; drag.ghost = h("div", { class: "wchip ghost" }, ch.textContent); document.body.append(drag.ghost); ch.classList.add("dragging"); }
-      drag.ghost.style.left = e.clientX + "px"; drag.ghost.style.top = e.clientY + "px";
-      if (overLine(e.clientX, e.clientY)) line.insertBefore(drag.ph, before(e.clientX, e.clientY)); else drag.ph.remove();
+      const x = e.clientX / ZOOM, y = e.clientY / ZOOM;  // pointer in page units
+      drag.ghost.style.left = x + "px"; drag.ghost.style.top = y + "px";
+      if (overLine(x, y)) line.insertBefore(drag.ph, before(x, y)); else drag.ph.remove();
     });
     const finish = () => {
       if (!drag || drag.ch !== ch) return;
@@ -1360,27 +1404,106 @@ function builder(item, isDone) {
 
 CORE.forEach((item, k) => add("practice", async c => { await exercise(c, item, "p" + item.id, `Câu ${k + 1}/${TOTAL}`); }));
 
-// question 5: rewrite her own idea
-add("practice", async c => {
-  const X = L.practice.challenge;
-  c.show(h("div", { class: "row" }, h("span", { class: "pill tone-orange" }, "Viết lại ý của em"), h("span", { class: "small muted" }, `Câu ${TOTAL}/${TOTAL}`)));
-  await c.say(X.intro[0], "writing");
+// ---------------- Nhiệm vụ viết lại: its own section, after practice ----------------
+const TEACHER = L.teacher || "anh Khoa";
+const ZALO = L.zalo || "";
+const CH = L.practice.challenge || {};
+const RW = L.rewrite || {                     // older lessons: the one-sentence challenge
+  target: "idea", label: "Câu em đã viết", sids: [CH.sid], intro: CH.intro || [], task: "",
+  flow: CH.chain || "", starters: [], phrases: [], checklist: CH.checklist || [], model: CH.model || "",
+};
+const RW_TARGET = { idea: "Một ý phát triển", paragraph: "Một đoạn thân bài", skeleton: "Mở bài và câu chủ đề" };
+const rwHead = () => h("div", { class: "row" }, h("span", { class: "pill tone-orange" }, "Nhiệm vụ viết lại"), h("span", { class: "small muted" }, RW_TARGET[RW.target] || ""));
+
+// 1. what she will rewrite, and why
+add("rewrite", async c => {
+  c.show(h("div", { class: "card rw-title" }, img("icon_dau_happy", "rw-icon", ""),
+    h("div", {}, h("div", { class: "label" }, "Nhiệm vụ của " + TEACHER), h("h1", { class: "h" }, "Viết lại"))));
+  await c.say(RW.intro[0] || `Giờ tới nhiệm vụ viết lại nè ${NAME}`, "writing");
+  for (const line of RW.intro.slice(1)) { await c.gate(); await c.say(line); }
   await c.gate();
-  c.show(h("div", { class: "card stack" }, h("div", { class: "label" }, "Câu em đã viết"), h("div", { class: "quote en" }, origText(X.sid))));
-  await c.say(X.intro[1]);
-  await c.away();
-  const ta = h("textarea", { class: "write", id: "challenge-text", placeholder: "Em viết lại ở đây nha", "aria-label": "Câu viết lại" });
+  c.show(h("div", { class: "card stack" }, h("div", { class: "label" }, RW.label || "Em đã viết"),
+    h("div", { class: "quote en" }, RW.sids.map(origText).join(" ")), cite(RW.sids[0])));
+  if (RW.task) await c.say(RW.task, "explaining");
+}, { label: "Bắt đầu viết" });
+
+// 2. write, with hints she opens one at a time
+add("rewrite", async c => {
+  S.rwHints = S.rwHints || 0;
+  const hints = [
+    ["flow", "Gợi ý 1 · Mạch ý", RW.flow],
+    ["start", "Gợi ý 2 · Câu mở đầu", RW.starters && RW.starters.length ? RW.starters : null],
+    ["words", "Gợi ý 3 · Từ hay", RW.phrases && RW.phrases.length ? RW.phrases : null],
+  ].filter(x => x[2]);
+  const panel = h("div", { class: "card rw-panel" });
+  const bodyOf = key => {
+    if (key === "orig") return [h("div", { class: "label" }, RW.label || "Em đã viết"), h("div", { class: "quote en" }, RW.sids.map(origText).join(" "))];
+    const [, title, v] = hints.find(x => x[0] === key);
+    const label = h("div", { class: "label" }, title);
+    if (key === "flow") return [label, h("div", { class: "flow-en" }, h("span", { class: "en" }, v))];
+    if (key === "start") return [label, h("ul", { class: "en" }, v.map(t => h("li", {}, t)))];
+    return [label, h("div", { class: "rw-words en" }, v.map(t => h("span", {}, t)))];
+  };
+  const tabs = h("div", { class: "rw-tabs" });
+  const btns = [["orig", "Bài gốc"], ...hints.map(([k, t]) => [k, t.split(" · ")[0]])].map(([k, t], i) =>
+    h("button", { class: "rw-tab", type: "button", "data-k": k, onclick: () => open(k, i) }, t));
+  const open = (k, i) => {
+    if (i > S.rwHints) S.rwHints = i, save();          // hints unlock in order
+    btns.forEach((b, j) => { b.setAttribute("aria-pressed", String(b.dataset.k === k)); b.disabled = j > S.rwHints + 1; });
+    panel.replaceChildren(...bodyOf(k)); fit();
+  };
+  tabs.append(...btns);
+  c.show(rwHead());
+  c.show(h("div", { class: "stack" }, tabs, panel));
+  open("orig", 0);
+  await c.say(hints.length ? "Em viết bên dưới nha, cần thì mở gợi ý từng cái một" : "Em viết bên dưới nha", "writing");
+  await c.away();                                   // he steps aside before the writing box appears
+  const ta = h("textarea", { class: "write rw", id: "rewrite-text", placeholder: "Em viết lại ở đây nha", "aria-label": "Bài viết lại" });
   ta.value = S.draft || ""; ta.addEventListener("input", () => { S.draft = ta.value; save(); });
   c.show(ta);
-  c.show(h("div", { class: "flow-en" }, "Gợi ý: ", h("span", { class: "en" }, X.chain)));
-  c.dock();
-  await c.gate();
-  await c.say("Em so sánh với câu mẫu rồi tự check nha", "explaining");
-  c.show(h("div", { class: "card stack" }, h("div", { class: "label" }, "Câu mẫu tham khảo"), h("div", { class: "quote en" }, X.model)), { replace: true });
-  c.show(h("div", { class: "selfcheck card" }, h("div", { class: "label" }, "Em tự check nha"),
-    ...X.checklist.map((t, i) => h("label", {}, h("input", { type: "checkbox", id: "sc" + i }), h("span", {}, t)))));
+  c.show(h("button", { class: "btn btn-main", type: "button", onclick: () => jump(nextIndex(cur, 1)) }, "Em viết xong rồi"));
   c.dock();
 }, { end: "dock" });
+
+// 3. check against the list, see the model, send it to the teacher
+add("rewrite", async c => {
+  const wrote = (S.draft || "").trim().length > 0;
+  c.show(rwHead());
+  if (RW.checklist.length) c.show(h("div", { class: "selfcheck card" }, h("div", { class: "label" }, "Em tự check nha"),
+    ...RW.checklist.map((t, i) => h("label", {}, h("input", { type: "checkbox", id: "rwc" + i }), h("span", {}, t)))));
+  await c.say(wrote ? "Viết xong rồi nè, giờ em tự check theo mấy ý này nha" : "Em chưa viết gì á, nhưng vẫn xem bài mẫu được nè", wrote ? "thumbsup" : "thinking");
+  if (RW.model) {
+    await c.gate();
+    const model = h("div", { class: "card stack" }, h("div", { class: "label" }, "Bài mẫu tham khảo"), h("div", { class: "quote en" }, RW.model));
+    c.show(rwHead(), { replace: true });
+    if (wrote) c.show(model);
+    else {
+      const reveal = h("button", { class: "btn btn-ghost", type: "button", onclick: () => { reveal.replaceWith(model); fit(); } }, "Xem bài mẫu");
+      c.show(reveal);
+    }
+    await c.say("Em so sánh với bài mẫu nha, không cần giống y chang đâu", "explaining");
+  }
+  await c.gate();
+  await c.say(`Viết xong em gửi ${TEACHER} qua Zalo nha, ${TEACHER} xem rồi góp ý cho em`, "thumbsup");
+  await c.away();                                   // step aside so the model stays readable
+  const note = h("div", { class: "copied", "aria-live": "polite" });
+  const copy = h("button", { class: "btn btn-ghost", type: "button", onclick: () => copyText(S.draft || "", note) }, "Chép bài của em");
+  const zalo = ZALO ? h("a", { class: "btn btn-zalo", href: ZALO, target: "_blank", rel: "noopener" }, `Nhắn ${TEACHER} qua Zalo`) : null;
+  c.show(h("div", { class: "card contact" }, h("div", { class: "small" }, `Em chép bài rồi dán vào tin nhắn gửi ${TEACHER} nha`), copy, zalo, note));
+  c.dock();
+}, { end: "dock" });
+
+function copyText(text, note) {
+  const done = () => { note.textContent = text ? "Chép rồi nè, giờ em dán vào Zalo nha" : "Em chưa viết gì hết á"; };
+  if (!text) return done();
+  if (navigator.clipboard && navigator.clipboard.writeText) return navigator.clipboard.writeText(text).then(done, fallback);
+  fallback();
+  function fallback() {
+    const t = h("textarea", { style: "position:fixed;opacity:0" }); t.value = text; document.body.append(t); t.select();
+    try { document.execCommand("copy"); } catch (e) { /* the text is still in the box to copy by hand */ }
+    t.remove(); done();
+  }
+}
 
 // summary, then the offer to practise more
 let summaryIdx = -1;
@@ -1393,7 +1516,7 @@ add("end", async c => {
   const right = recs.filter(r => r.first).length, total = CORE.length;
   const on = right >= total ? 3 : right >= total * .7 ? 2 : right > 0 ? 1 : 0;
   await c.say(F.summary[0], "cheering");
-  c.show(h("div", { class: "card stat" }, h("div", { class: "stars" }, [0, 1, 2].map(i => img("icon_star", i < on ? "" : "off"))), h("div", {}, h("b", {}, `${right}/${total} câu đúng`), h("div", { class: "small muted" }, "ngay lần đầu, chưa tính câu viết lại"))));
+  c.show(h("div", { class: "card stat" }, h("div", { class: "stars" }, [0, 1, 2].map(i => img("icon_star", i < on ? "" : "off"))), h("div", {}, h("b", {}, `${right}/${total} câu đúng`), h("div", { class: "small muted" }, "ngay lần đầu"))));
   await c.gate();
   await c.say(F.summary[1], "thumbsup");
   c.show(h("div", { class: "takeaway" }, h("div", { class: "row" }, img("icon_notebook", "icon"), h("b", { class: "h2" }, "Nhớ cho bài sau")), h("ol", {}, F.takeaways.map(t => h("li", {}, t)))));

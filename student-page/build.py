@@ -21,6 +21,8 @@ def main(lesson_path):
     lesson.update({k: page[k] for k in ("scores", "essay", "corrections", "task_comments")})
     lesson.setdefault("word_count", page["word_count"])  # the page's own count unless the lesson overrides it
     check(lesson)
+    if lesson.get("praise_status") == "draft":
+        print("note: the compliments in this lesson are drafts, waiting for the teacher's OK")
 
     finish = lesson.setdefault("finish", {})
     if not finish.get("quote"):
@@ -69,6 +71,18 @@ def check(lesson):
     for t in lesson["task_comments"]:
         if not t["sentence_ids"]:
             problems.append("a task comment is not linked to any sentence: " + t["comment"][:60])
+    praise = lesson.get("praise", [])
+    if len(praise) > 3:
+        problems.append(f"{len(praise)} compliments: keep it to 2-3 per essay")
+    places = {"results", "framework", "linking", "lr", "gra"} | {"idea:" + o["tag"] for o in lesson["ideas"]["overview"]}
+    problems += [f"compliment at unknown place '{x['at']}'" for x in praise if x["at"] not in places]
+    rw = lesson.get("rewrite")
+    if rw:
+        problems += [f"rewrite: unknown sentence id {sid}" for sid in rw["sids"] if sid not in sids]
+        if rw.get("target") not in ("idea", "paragraph", "skeleton"):
+            problems.append("rewrite target must be idea, paragraph or skeleton")
+    elif not lesson["practice"].get("challenge"):
+        problems.append("no rewrite section (lesson.rewrite)")
     used = json.dumps(lesson)
     problems += [f"unknown sentence id {sid}" for sid in set(re.findall(r'"(?:sid|sids)": \[?"(p\d+s\d+)"', used)) if sid not in sids]
     if problems:

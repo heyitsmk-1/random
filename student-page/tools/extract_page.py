@@ -117,7 +117,9 @@ def student_mask(stream, original):
 def main(src, dst):
     soup = BeautifulSoup(open(src, encoding="utf-8").read(), "html.parser")
     blocks = soup.select("#lrgr #editorjs .ce-paragraph")  # the editor may split the essay into blocks
-    original = "\n".join(b.get_text() for b in soup.select("#trcc .ce-paragraph"))
+    # the student's original, with its line breaks (<br>) kept
+    original = "\n".join(BeautifulSoup(re.sub(r"<br\s*/?>", "\n", str(b)), "html.parser").get_text()
+                         for b in soup.select("#trcc .ce-paragraph"))
     kind_of = lambda tok: next((k for k in tok.get("class", []) if k not in ("comment-inline", "focus")), "other")
 
     # 1. tokens: plain text, corrections, notes (paragraph breaks as None)
@@ -138,6 +140,34 @@ def main(src, dst):
                     items.append(("c", orig, fix, kind_of(tok), comment_text(box)))
             elif tok.get_text().strip() and box is not None:
                 items.append(("n", tok.get_text(), kind_of(tok), comment_text(box)))
+
+    # 1b. paragraph breaks the corrected copy lost ("former.On the one hand"): take them from the original
+    if original:
+        text_of = lambda it: "\n" if it is None else it[1]
+        stream = "".join(text_of(it) for it in items)
+        cuts = set()
+        sm = difflib.SequenceMatcher(None, stream, original, autojunk=False)
+        for tag, i1, i2, j1, j2 in sm.get_opcodes():
+            near = stream[max(0, i1 - 3):i2 + 3]  # a break right beside it is the same break, shifted
+            if tag in ("insert", "replace") and "\n" in original[j1:j2] and "\n" not in near:
+                cuts.add(i1)
+        if cuts:
+            out, pos = [], 0
+            for it in items:
+                text = text_of(it)
+                inner = sorted(c - pos for c in cuts if pos < c < pos + len(text)) if it and it[0] == "t" else []
+                if it and it[0] == "t" and pos in cuts and out and out[-1] is not None:
+                    out.append(None)
+                if inner:
+                    prev = 0
+                    for c in inner:
+                        out += [("t", text[prev:c]), None]
+                        prev = c
+                    out.append(("t", text[prev:]))
+                else:
+                    out.append(it)
+                pos += len(text)
+            items = out
 
     # 2. which characters of what the student wrote (plain text, <s>, note text) are really hers
     stream, owner = [], []

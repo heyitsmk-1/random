@@ -57,10 +57,10 @@ body { margin: 0; background: var(--bg); color: var(--ink); font: 400 16px/1.5 v
 button { font: inherit; color: inherit; }
 :focus-visible { outline: 3px solid var(--orange); outline-offset: 2px; border-radius: 10px; }
 
-.app { height: 100%; max-width: 480px; margin: 0 auto; display: flex; flex-direction: column; }
+.app { height: 100%; max-width: 480px; margin: 0 auto; display: flex; flex-direction: column; position: relative; overflow: hidden; }
 
 /* top bar */
-.top { padding: calc(env(safe-area-inset-top, 0px) + 10px) 16px 6px; display: flex; flex-direction: column; gap: 8px; }
+.top { position: relative; z-index: 9; padding: calc(env(safe-area-inset-top, 0px) + 10px) 16px 6px; display: flex; flex-direction: column; gap: 8px; }
 .top-row { display: flex; align-items: center; gap: 10px; }
 .sec { font: 700 15px/1 var(--font-display); flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .sec small { font: 500 12px var(--font-body); color: var(--muted); margin-left: 6px; }
@@ -73,34 +73,37 @@ button { font: inherit; color: inherit; }
 
 /* stage: fixed height, never scrolls */
 .stage { flex: 1; min-height: 0; position: relative; overflow: hidden; touch-action: none; user-select: none; -webkit-user-select: none; }
-.scene { position: absolute; inset: 0; padding: 8px 16px 6px; display: flex; flex-direction: column; gap: 10px; --k: 1; }
+.scene { position: absolute; inset: 0 0 var(--pad, 0px) 0; transition: bottom .35s ease; padding: 8px 16px 6px; display: flex; flex-direction: column; gap: 10px; --k: 1; }
 .scene.in { animation: sceneIn .45s cubic-bezier(.2, .9, .3, 1) both; }
 .scene.in.back { animation-name: sceneBack; }
 @keyframes sceneIn { from { opacity: 0; transform: translateX(40px); } }
 @keyframes sceneBack { from { opacity: 0; transform: translateX(-40px); } }
 
-/* anh Đậu + one speech bubble at a time */
-.talk { flex: none; display: flex; gap: 10px; align-items: flex-start; }
-.talk[hidden] { display: none; }
-.pic { flex: none; width: 76px; height: 76px; object-fit: contain; animation: bob 3.2s ease-in-out infinite; transform-origin: 50% 100%; }
+/* anh Đậu: slides in over the bottom of the screen, outside the page layout */
+.pic { flex: none; width: 92px; height: 92px; object-fit: contain; animation: bob 3.2s ease-in-out infinite; transform-origin: 50% 100%; }
 .pic.pop { animation: popIn .5s cubic-bezier(.3, 1.6, .5, 1) both, bob 3.2s ease-in-out .5s infinite; }
 @keyframes bob { 0%, 100% { transform: translateY(0) rotate(0); } 50% { transform: translateY(-4px) rotate(-1.5deg); } }
 @keyframes popIn { from { transform: scale(.4); opacity: 0; } }
-.slot { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; align-items: flex-start; }
-.who { font: 700 11px var(--font-display); color: var(--orange-deep); letter-spacing: .06em; text-transform: uppercase; margin-left: 4px; }
-.bubble { background: var(--paper); border: 1.5px solid var(--line); border-radius: 4px 18px 18px 18px; padding: 9px 14px; font-size: calc(16px * var(--k)); line-height: 1.45; box-shadow: var(--shadow); animation: bubbleIn .4s cubic-bezier(.3, 1.2, .5, 1) both; }
-@keyframes bubbleIn { from { opacity: 0; transform: translateX(34px); } }
-.typing { display: inline-flex; gap: 4px; padding: 4px 2px; }
+.catch { position: absolute; inset: 0; z-index: 7; display: none; touch-action: none; cursor: pointer; }
+.app.dau-talk .catch { display: block; }
+.dlg { position: absolute; left: 0; right: 0; bottom: 0; z-index: 8; display: flex; align-items: flex-end; gap: 2px; padding: 34px 14px calc(env(safe-area-inset-bottom, 0px) + 12px) 2px; pointer-events: none; transform: translateX(-104%); opacity: 0; transition: transform .5s cubic-bezier(.3, 1.2, .5, 1), opacity .3s; touch-action: none; }
+.dlg::before { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(to bottom, transparent, var(--bg) 42%); }
+.app.dau-on .dlg { transform: none; opacity: 1; }
+.dlg .pic { pointer-events: auto; cursor: pointer; }
+.box { pointer-events: auto; position: relative; flex: 1; min-width: 0; margin: 0 0 12px 6px; background: var(--paper); border: 2.5px solid var(--orange); border-radius: 18px; padding: 16px 16px 22px; min-height: 88px; font-size: 17px; line-height: 1.45; box-shadow: 0 5px 0 var(--orange-soft), var(--shadow); cursor: pointer; }
+.box::before { content: ""; position: absolute; left: -10px; bottom: 22px; width: 16px; height: 16px; background: var(--paper); border-left: 2.5px solid var(--orange); border-bottom: 2.5px solid var(--orange); transform: rotate(45deg); border-bottom-left-radius: 4px; }
+.box.pop { animation: boxPop .3s cubic-bezier(.3, 1.4, .5, 1); }
+@keyframes boxPop { from { transform: scale(.96); } }
+.tag { position: absolute; top: -13px; left: 14px; background: var(--orange); color: #3A1D00; font: 800 11.5px/1 var(--font-display); letter-spacing: .07em; text-transform: uppercase; padding: 5px 10px 4px; border-radius: 999px; }
+.more-ind { position: absolute; right: 12px; bottom: 4px; display: none; align-items: center; gap: 4px; font: 700 11.5px var(--font-display); color: var(--orange-deep); }
+.more-ind b { display: inline-block; animation: nudgeDown 1s ease-in-out infinite; }
+@keyframes nudgeDown { 50% { transform: translateY(3px); } }
+.app.more .more-ind { display: inline-flex; }
+.typing { display: inline-flex; gap: 4px; padding: 6px 2px; }
 .typing i { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); opacity: .5; animation: dot 1s infinite; }
 .typing i:nth-child(2) { animation-delay: .15s; } .typing i:nth-child(3) { animation-delay: .3s; }
 @keyframes dot { 50% { opacity: 1; transform: translateY(-3px); } }
-/* hero: Đậu bottom-left, his words pop up to the right */
-.scene.hero .talk { flex: 1; align-items: flex-end; order: 2; }
-.scene.hero .pic { width: 140px; height: 140px; margin-bottom: -4px; }
-.scene.hero .slot { align-self: stretch; justify-content: flex-end; padding-bottom: 96px; }
-.scene.hero .bubble { border-radius: 18px 18px 18px 4px; transform-origin: 0 100%; animation-name: chatIn; font-size: calc(18px * var(--k)); }
-@keyframes chatIn { from { opacity: 0; transform: translate(-16px, 20px) scale(.7); } }
-.scene.hero .content { flex: none; order: 1; }
+.app.dau-on .bottom { visibility: hidden; }
 
 /* the card area */
 .content { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: .7em; font-size: calc(16px * var(--k)); }
@@ -122,12 +125,12 @@ button { font: inherit; color: inherit; }
 .btn-back:disabled { visibility: hidden; }
 .btn-ghost { background: var(--paper); border: 1.5px solid var(--line); color: var(--ink); box-shadow: 0 3px 0 var(--line); font-size: .95em; padding: .75em 1em; }
 
-/* swipe hint */
-.app.hinting .scene { padding-bottom: 48px; }
-.hint { position: absolute; left: 50%; bottom: calc(100% + 4px); transform: translateX(-50%); display: flex; align-items: center; gap: 8px; padding: 6px 14px 6px 8px; border-radius: 999px; background: var(--paper); border: 1.5px solid var(--line); box-shadow: var(--shadow); font-size: 13px; font-weight: 600; color: var(--muted); white-space: nowrap; pointer-events: none; animation: rise .5s both; }
-.hint svg { width: 46px; height: 24px; overflow: visible; }
-.hint .finger { animation: swipe 1.8s cubic-bezier(.5, 0, .3, 1) infinite; }
-@keyframes swipe { 0% { transform: translateX(14px); opacity: 0; } 15% { opacity: 1; } 70% { transform: translateX(-14px); opacity: 1; } 100% { transform: translateX(-14px); opacity: 0; } }
+/* swipe-up hint, shown when Đậu is away and the page is waiting */
+.hint { position: absolute; left: 50%; bottom: calc(100% + 2px); transform: translateX(-50%); display: none; align-items: center; gap: 6px; padding: 5px 14px 5px 10px; border-radius: 999px; background: var(--paper); border: 1.5px solid var(--line); box-shadow: var(--shadow); font-size: 13px; font-weight: 600; color: var(--muted); white-space: nowrap; pointer-events: none; }
+.app.hint-on .hint { display: flex; animation: rise .4s both; }
+.hint svg { width: 16px; height: 18px; color: var(--orange); animation: up 1.2s ease-in-out infinite; }
+.hint span:empty { display: none; }
+@keyframes up { 50% { transform: translateY(-4px); } }
 
 /* generic pieces */
 .card { background: var(--paper); border: 1.5px solid var(--line); border-radius: 18px; padding: .9em 1em; box-shadow: var(--shadow); }
@@ -337,11 +340,9 @@ canvas.confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-
 @media (max-height: 740px) {
   .top { padding-top: calc(env(safe-area-inset-top, 0px) + 6px); gap: 6px; }
   .scene { gap: 8px; padding-top: 6px; }
-  .pic { width: 58px; height: 58px; }
-  .who { display: none; }
-  .bubble { padding: 7px 12px; }
+  .pic { width: 70px; height: 70px; }
+  .box { font-size: 16px; padding: 14px 14px 20px; min-height: 76px; }
   .btn { padding: 12px 16px; }
-  .scene.hero .pic { width: 120px; height: 120px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -360,11 +361,21 @@ canvas.confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-
       <div class="bar-sprout" id="barSprout"><img alt="" id="sproutIcon"></div>
     </div>
   </header>
-  <main class="stage" id="stage" aria-live="polite"></main>
+  <main class="stage" id="stage"></main>
   <footer class="bottom" id="bottom">
+    <div class="hint" aria-hidden="true"><svg viewBox="0 0 16 18" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8l5-5 5 5M3 15l5-5 5 5"/></svg><span id="hintText"></span></div>
     <button class="btn btn-back" id="backBtn" type="button" aria-label="Quay lại">‹</button>
     <button class="btn btn-main" id="nextBtn" type="button">Tiếp</button>
   </footer>
+  <div class="catch" id="catch" aria-hidden="true"></div>
+  <div class="dlg" id="dlg">
+    <img class="pic" id="dauPic" alt="anh Đậu">
+    <div class="box" id="dauBox" role="button" tabindex="0" aria-live="polite">
+      <span class="tag">anh Đậu</span>
+      <div id="dauLine"></div>
+      <span class="more-ind" aria-hidden="true">chạm <b>▾</b></span>
+    </div>
+  </div>
 </div>
 
 <script type="application/json" id="lesson-data">__LESSON_JSON__</script>
@@ -455,7 +466,7 @@ function confetti() {
 
 /* ---------- saved progress (this browser only) ---------- */
 const KEY = "dau:" + L.homework + ":" + NAME;
-const fresh = () => ({ screen: 0, passed: 0, answers: {}, practice: {}, beats: {}, draft: "", swiped: false });
+const fresh = () => ({ screen: 0, passed: 0, answers: {}, practice: {}, beats: {}, draft: "", ups: 0 });
 let S = fresh();
 try { const raw = localStorage.getItem(KEY); if (raw) S = { ...S, ...JSON.parse(raw) }; } catch (e) { /* storage unavailable */ }
 const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { /* ignore */ } };
@@ -467,8 +478,14 @@ const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch
    ===================================================================== */
 let runId = 0, cur = 0, passed = 0, target = 0, replay = false, fast = false;
 let waiting = null, needAnswer = null, atEnd = false, resumed = false;
-let scene, talk, pic, slot, content;
+let scene, content;
 const pending = new Set();
+
+/* anh Đậu lives outside the page: he slides in over the bottom, talks, and leaves.
+   "talk": tap anywhere moves his dialogue on.  "dock": he stays but the page is usable
+   (questions, textarea, tappable cards).  "away": buttons and swipe-up hint are back. */
+const app = $("#app"), dlg = $("#dlg"), pic = $("#dauPic"), box = $("#dauBox"), dline = $("#dauLine");
+let mode = "away", dockHold = false, saidAt = -1, awayTimer = null;
 
 const wait = ms => new Promise(r => {
   if (replay || fast || REDUCED) return r();
@@ -498,32 +515,56 @@ function fit() {
   if (over()) content.classList.add("overflow");
 }
 
-/* re-fit whenever the screen's content or Đậu's bubble changes, once per frame */
+/* re-fit whenever the screen's content changes, once per frame */
 let fitQueued = false;
 function settle() { if (fitQueued) return; fitQueued = true; requestAnimationFrame(() => { fitQueued = false; fit(); }); }
 const fitRO = new ResizeObserver(settle), fitMO = new MutationObserver(settle);
 if (document.fonts) document.fonts.ready.then(settle);
 
+/* keep the page clear of Đậu's dialogue while he is on screen */
+function pad() {
+  const px = mode === "away" ? 0 : Math.max(0, dlg.offsetHeight - $("#bottom").offsetHeight + 4);
+  app.style.setProperty("--pad", px + "px");
+}
+function setMode(m) {
+  mode = m;
+  app.classList.toggle("dau-on", m !== "away");
+  app.classList.toggle("dau-talk", m === "talk");
+  requestAnimationFrame(pad);
+  setBtn();
+}
+/* a new card with nothing said about it sends Đậu away, unless he speaks in the same beat */
+function scheduleAway() {
+  if (saidAt === passed) return;
+  clearTimeout(awayTimer);
+  awayTimer = setTimeout(() => { awayTimer = null; if (mode !== "away") setMode("away"); }, 0);
+}
+function pose(p) {
+  const src = A["dau_" + p];
+  if (pic.getAttribute("src") !== src) { pic.src = src; pic.classList.remove("pop"); void pic.offsetWidth; pic.classList.add("pop"); }
+}
+
 function makeCtx(id) {
   const ctx = {
     id,
-    pose(p) { const src = A["dau_" + p]; if (pic.getAttribute("src") !== src) { pic.src = src; pic.classList.remove("pop"); void pic.offsetWidth; pic.classList.add("pop"); } },
-    async say(text, pose) {
+    async say(text, p) {
       alive(id);
-      talk.hidden = false;
-      if (pose) ctx.pose(pose);
-      const b = h("div", { class: "bubble" });
-      const who = slot.querySelector(".who") || h("div", { class: "who" }, "anh Đậu");
-      if (!replay && !fast && !REDUCED) b.append(h("span", { class: "typing", "aria-hidden": "true" }, h("i"), h("i"), h("i")));
-      slot.replaceChildren(who, b); fit();
-      await wait(Math.min(900, 350 + text.length * 8));
-      b.textContent = text; fit();
+      clearTimeout(awayTimer); awayTimer = null; saidAt = passed;
+      const entering = mode === "away";
+      if (p) pose(p);
+      setMode(needAnswer || dockHold ? "dock" : "talk");
+      dline.replaceChildren();
+      if (!replay && !fast && !REDUCED) dline.append(h("span", { class: "typing", "aria-hidden": "true" }, h("i"), h("i"), h("i")));
+      box.classList.remove("pop"); void box.offsetWidth; box.classList.add("pop");
+      await wait(Math.min(1000, (entering ? 550 : 250) + text.length * 8));
+      if (id === runId) { dline.textContent = text; pad(); }
       alive(id);
     },
+    dock() { dockHold = true; if (mode !== "away") setMode("dock"); },
     show(el, { replace = false } = {}) {
       alive(id);
       el.classList.add(replace ? "enter" : "rise");
-      if (replace) content.replaceChildren(el); else content.append(el);
+      if (replace) { content.replaceChildren(el); scheduleAway(); } else content.append(el);
       fit();
       el.querySelectorAll("img").forEach(i => { if (!i.complete) i.addEventListener("load", fit, { once: true }); });
       return el;
@@ -531,21 +572,22 @@ function makeCtx(id) {
     wait: async ms => { await wait(ms); alive(id); },
     async gate() {
       alive(id);
-      if (passed < target) { passed++; return; }
+      if (passed < target) { passed++; dockHold = false; return; }
       replay = false; scene.classList.remove("instant"); fast = false;
+      const go = new Promise(r => { waiting = r; });
       setBtn(); settle();
-      await new Promise(r => { waiting = r; });
+      await go;
       alive(id);
-      passed++; fast = false;
+      passed++; fast = false; dockHold = false;
       if (!screens[cur].noSave) { S.screen = cur; S.passed = passed; save(); }
       progress(); setBtn();
     },
     ask(options, { answer = null, key, en = false }) {
       alive(id);
-      const box = h("div", { class: "choices" });
+      const wrap = h("div", { class: "choices" });
       const btns = options.map(o => h("button", { class: "choice" + (en ? " en" : ""), type: "button" }, o));
-      box.append(...btns);
-      ctx.show(box);
+      wrap.append(...btns);
+      ctx.show(wrap);
       return new Promise(resolve => {
         const pick = i => {
           btns.forEach(b => { b.disabled = true; });
@@ -557,7 +599,7 @@ function makeCtx(id) {
         };
         btns.forEach((b, i) => b.addEventListener("click", () => pick(i)));
         if (S.answers[key] != null && replay) pick(S.answers[key]);
-        else { needAnswer = box; setBtn(); settle(); }
+        else { needAnswer = wrap; setBtn(); settle(); }
       });
     },
   };
@@ -573,23 +615,23 @@ async function run(i, tgt = 0, dir = 1) {
   for (const p of pending) clearTimeout(p.t);
   pending.clear();
   cur = i; passed = 0; target = tgt; atEnd = false; waiting = null; needAnswer = null; fast = false;
+  dockHold = false; saidAt = -1;
   replay = dir < 0 || tgt > 0;
   const sc = screens[i];
-  pic = h("img", { class: "pic pop", alt: "anh Đậu", src: A.dau_waving });
-  slot = h("div", { class: "slot" });
-  talk = h("div", { class: "talk" }, pic, slot); talk.hidden = true;
   content = h("div", { class: "content" });
-  scene = h("div", { class: "scene" + (sc.hero ? " hero" : "") + (replay ? " instant" : " in") }, talk, content);
+  scene = h("div", { class: "scene" + (replay ? " instant" : " in") }, content);
   $("#stage").replaceChildren(scene);
   fitRO.disconnect(); fitMO.disconnect();
   fitRO.observe(scene); fitMO.observe(scene, { childList: true, subtree: true, characterData: true });
   $("#sec").replaceChildren(SECTIONS[sc.sec], h("small", {}, `${sc.sec + 1}/${SECTIONS.length}`));
-  progress(); setBtn(); hint();
+  scheduleAway();
+  progress(); setBtn();
   try { await sc.script(makeCtx(id)); }
   catch (e) { if (e.message === "stale") return; console.error(e); }
   if (id !== runId) return;
   replay = false; scene.classList.remove("instant");
   atEnd = true; S.beats[i] = passed; settle();
+  if (sc.end && mode !== "away") setMode("dock");
   if (!sc.noSave) { S.screen = i; S.passed = passed; }
   save(); progress(); setBtn();
 }
@@ -606,8 +648,9 @@ function jump(i) { if (document.querySelector(".sheet")) return; resumed = true;
 function forward() {
   if (document.querySelector(".sheet")) return;
   if (needAnswer) { needAnswer.classList.remove("nudge"); void needAnswer.offsetWidth; needAnswer.classList.add("nudge"); return; }
-  if (waiting) { const w = waiting; waiting = null; w(); return; }
+  if (waiting) { const w = waiting; waiting = null; setBtn(); w(); return; }
   if (!atEnd) { hurry(); return; }                 // still animating: finish it, never skip ahead
+  if (atEnd && screens[cur].end === "choose" && mode !== "away") return;  // the page's own buttons decide
   if (cur === 0 && S.screen > 1 && !resumed) { resumed = true; return run(S.screen, S.passed); }
   resumed = true;
   const j = nextIndex(cur, 1);
@@ -622,6 +665,8 @@ function backward() {
 
 function setBtn() {
   const b = $("#nextBtn"), sc = screens[cur];
+  if (!sc) return;
+  if (needAnswer && mode === "talk") return setMode("dock");
   b.classList.toggle("wait", !!needAnswer);
   let t = "Tiếp";
   if (needAnswer) t = "Chọn đáp án nha";
@@ -630,6 +675,10 @@ function setBtn() {
   else if (atEnd && sc.label) t = sc.label;
   b.textContent = t;
   $("#backBtn").disabled = cur === 0 && passed === 0;
+  const ready = !needAnswer && (waiting || atEnd) && !(atEnd && sc.end === "choose");
+  app.classList.toggle("more", mode !== "away" && ready);
+  app.classList.toggle("hint-on", mode === "away" && ready);
+  $("#hintText").textContent = (S.ups || 0) < 3 ? "Vuốt lên để xem tiếp" : "";
 }
 function progress() {
   const beats = S.beats[cur] || 4;
@@ -639,48 +688,47 @@ function progress() {
   $("#bar").setAttribute("aria-valuenow", Math.round(pct));
 }
 
-/* swipe hint until the first swipe */
-function hint() {
-  const old = $(".hint"); if (old) old.remove();
-  $("#app").classList.toggle("hinting", !S.swiped && cur <= 3);
-  if (S.swiped || cur > 3) return;
-  $("#bottom").append(h("div", { class: "hint", html: '<svg viewBox="0 0 46 24" aria-hidden="true"><path d="M6 12h34" stroke="currentColor" stroke-width="2" stroke-dasharray="3 4" opacity=".4"/><g class="finger"><circle cx="23" cy="12" r="7" fill="var(--orange)" opacity=".85"/><circle cx="23" cy="12" r="11" fill="none" stroke="var(--orange)" stroke-width="2" opacity=".35"/></g></svg>' }, "Vuốt sang trái để tiếp tục"));
-}
-
-/* gestures: finger left or up = next, right or down = back */
-(() => {
-  const st = $("#stage"); let sx = 0, sy = 0, on = false;
-  st.addEventListener("pointerdown", e => {
+/* gestures: swipe up or left = next, down or right = back; while Đậu talks, a tap anywhere = next */
+function gestures(el, tapForward) {
+  let sx = 0, sy = 0, on = false;
+  el.addEventListener("pointerdown", e => {
     if (e.target.closest(".wchip, textarea, input, label")) return;
     on = true; sx = e.clientX; sy = e.clientY;
   });
-  st.addEventListener("pointerup", e => {
+  el.addEventListener("pointerup", e => {
     if (!on) return; on = false;
     const dx = e.clientX - sx, dy = e.clientY - sy;
-    if (Math.max(Math.abs(dx), Math.abs(dy)) < 45) return;
+    if (Math.max(Math.abs(dx), Math.abs(dy)) < 45) { if (tapForward) forward(); return; }
     const fwd = Math.abs(dx) > Math.abs(dy) ? dx < 0 : dy < 0;
-    if (!S.swiped) { S.swiped = true; save(); const hn = $(".hint"); if (hn) hn.remove(); $("#app").classList.remove("hinting"); fit(); }
-    if (fwd) forward(); else backward();
+    if (fwd) { S.ups = (S.ups || 0) + 1; save(); forward(); } else backward();
   });
-  st.addEventListener("pointercancel", () => { on = false; });
-})();
+  el.addEventListener("pointercancel", () => { on = false; });
+}
+gestures($("#stage"), false);
+gestures($("#catch"), true);
+gestures(dlg, false);
+box.addEventListener("click", () => { if (mode === "talk" || app.classList.contains("more")) forward(); });
+pic.addEventListener("click", () => { if (mode === "talk" || app.classList.contains("more")) forward(); });
+box.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); forward(); } });
 $("#nextBtn").addEventListener("click", forward);
 $("#backBtn").addEventListener("click", backward);
 document.addEventListener("keydown", e => {
-  if ((e.target.closest && e.target.closest("textarea, input")) || document.querySelector(".sheet")) return;
-  if (["ArrowRight", "ArrowDown", "PageDown"].includes(e.key)) { e.preventDefault(); forward(); }
+  if ((e.target.closest && e.target.closest("textarea, input, button, [role=button]")) || document.querySelector(".sheet")) return;
+  if (["ArrowRight", "ArrowDown", "PageDown", " ", "Enter"].includes(e.key)) { e.preventDefault(); forward(); }
   if (["ArrowLeft", "ArrowUp", "PageUp"].includes(e.key)) { e.preventDefault(); backward(); }
 });
-addEventListener("resize", () => fit());
+addEventListener("resize", () => { pad(); fit(); });
 
 /* ============================ screens ============================ */
 
 // hello
 add(0, async c => {
+  c.show(h("h1", { class: "h" }, "Chào " + NAME));
   c.show(h("span", { class: "pill tone-orange" }, L.homework + " · " + L.essay_type));
+  c.show(h("div", { class: "card stack" }, h("div", { class: "label" }, "Đề bài"), h("div", { class: "en" }, L.prompt)));
   await c.say(L.hello[0], "waving");
   for (const line of L.hello.slice(1)) { await c.gate(); await c.say(line); }
-}, { hero: true, label: "Bắt đầu nha", noSave: true });
+}, { label: "Bắt đầu nha", noSave: true });
 
 // results: word count, then each score ticks up one at a time, then overall
 add(0, async c => {
@@ -767,7 +815,7 @@ add(2, async c => {
     c.show(o.ok || detailIdx[o.tag] == null ? h("div", { class: "card ov" }, inner)
       : h("button", { class: "card ov tap", type: "button", onclick: () => jump(detailIdx[o.tag]) }, inner, h("span", { class: "chev", "aria-hidden": "true" }, "›")));
   }
-});
+}, { end: "dock" });
 
 // ideas that need work
 const detailIdx = {};
@@ -838,7 +886,7 @@ add(4, async c => {
   await c.wait(500);
   const otherCount = M.others.reduce((n, o) => n + o.cids.length, 0);
   c.show(h("button", { class: "btn btn-ghost", type: "button", onclick: openOthers }, `Xem ${otherCount} lỗi nhỏ khác`));
-});
+}, { end: "dock" });
 
 // each main mistake: her sentences one by one, the question, the fixes; then the rule
 const mistakeIdx = [];
@@ -1027,12 +1075,14 @@ add(5, async c => {
   ta.value = S.draft || ""; ta.addEventListener("input", () => { S.draft = ta.value; save(); });
   c.show(ta);
   c.show(h("div", { class: "flow-en" }, "Gợi ý: ", h("span", { class: "en" }, X.chain)));
+  c.dock();
   await c.gate();
   await c.say("Em so sánh với câu mẫu rồi tự check nha", "waving");
   c.show(h("div", { class: "card stack" }, h("div", { class: "label" }, "Câu mẫu tham khảo"), h("div", { class: "quote en" }, X.model)), { replace: true });
   c.show(h("div", { class: "selfcheck card" }, h("div", { class: "label" }, "Em tự check nha"),
     ...X.checklist.map((t, i) => h("label", {}, h("input", { type: "checkbox", id: "sc" + i }), h("span", {}, t)))));
-});
+  c.dock();
+}, { end: "dock" });
 
 // summary, then the offer to practise more
 const missedCore = () => CORE.filter(it => S.practice["p" + it.id] && S.practice["p" + it.id].first === false);
@@ -1051,8 +1101,8 @@ add(6, async c => {
   await c.say(F.extra_prompt.replace("{n}", extraCount()), "writing");
   c.show(h("div", { class: "two" },
     h("button", { class: "btn btn-ghost", type: "button", onclick: () => jump(laterIdx) }, "Để lần sau"),
-    h("button", { class: "btn btn-main", type: "button", onclick: forward }, "Luyện thêm")));
-}, { label: "Luyện thêm" });
+    h("button", { class: "btn btn-main", type: "button", onclick: () => jump(nextIndex(cur, 1)) }, "Luyện thêm")));
+}, { label: "Luyện thêm", end: "choose" });
 
 // extra practice: first the core questions she missed, then the rest
 const extraIdx = screens.length;
@@ -1073,8 +1123,8 @@ add(6, async c => {
   if (Q) c.show(h("div", { class: "card quote-card" }, img("icon_bulb", "icon"), h("div", { class: "qt", lang: "en" }, Q.text), h("div", { class: "qs" }, Q.source), Q.meaning ? h("div", { class: "qm" }, Q.meaning) : null));
   c.show(h("div", { class: "two" },
     h("button", { class: "btn btn-ghost", type: "button", onclick: () => openEssay({}) }, "Xem bài sửa"),
-    h("button", { class: "btn btn-ghost", type: "button", onclick: () => { S = fresh(); S.swiped = true; save(); resumed = true; run(0); } }, "Làm lại từ đầu")));
-}, { last: true });
+    h("button", { class: "btn btn-ghost", type: "button", onclick: () => { S = fresh(); S.ups = 3; save(); resumed = true; run(0); } }, "Làm lại từ đầu")));
+}, { last: true, end: "choose" });
 
 // stopped after the summary
 const laterIdx = screens.length;
@@ -1086,7 +1136,7 @@ add(6, async c => {
   c.show(h("div", { class: "two" },
     h("button", { class: "btn btn-ghost", type: "button", onclick: () => openEssay({}) }, "Xem bài sửa"),
     h("button", { class: "btn btn-ghost", type: "button", onclick: () => jump(nextIndex(extraIdx - 1, 1)) }, "Luyện thêm")));
-}, { last: true, optional: true, group: "later" });
+}, { last: true, optional: true, group: "later", end: "choose" });
 
 /* ---------- sheets ---------- */
 function sheet(title, head, body) {

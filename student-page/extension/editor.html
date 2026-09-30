@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<title>Đậu: soạn bài ôn</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="editor.css">
+</head>
+<body>
+<header class="top">
+  <span class="brand">Đậu · soạn bài ôn</span>
+  <span class="who" id="who"></span>
+  <span class="grow"></span>
+  <span class="small muted" id="saved" aria-live="polite"></span>
+  <label class="btn small" title="Mở một bài ôn đã lưu (.json)">Mở bài ôn<input id="openJson" type="file" accept=".json,application/json" hidden></label>
+  <a class="btn small" href="options.html" target="_blank">Cài đặt</a>
+</header>
+<nav class="steps" id="steps" aria-label="Các bước"></nav>
+<main id="main"></main>
+<script type="module" src="editor.js"></script>
+</body>
+</html>

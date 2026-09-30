@@ -1,0 +1,19 @@
+{
+  "manifest_version": 3,
+  "name": "Đậu: tạo bài ôn",
+  "version": "0.1.0",
+  "description": "Turns a marked IELTS 1984 writing homework into anh Đậu's review page for the student.",
+  "permissions": ["storage"],
+  "host_permissions": [
+    "https://admin.ielts1984.vn/*",
+    "https://api.anthropic.com/*",
+    "https://api.netlify.com/*"
+  ],
+  "background": { "service_worker": "background.js", "type": "module" },
+  "content_scripts": [
+    { "matches": ["https://admin.ielts1984.vn/writing/*"], "js": ["content.js"], "run_at": "document_idle" }
+  ],
+  "options_page": "options.html",
+  "action": { "default_title": "Đậu: tạo bài ôn" },
+  "icons": { "128": "bundle/icon128.png" }
+}

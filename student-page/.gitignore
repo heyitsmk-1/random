@@ -3,3 +3,7 @@ data/
 dist/
 # Mascot artwork: keep private until we decide where it lives
 assets/
+# Extension build output (holds the course file and mascot art) and build-time packages
+extension/bundle/
+extension/vendor/
+extension/node_modules/

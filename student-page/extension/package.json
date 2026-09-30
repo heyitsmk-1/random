@@ -1,0 +1,10 @@
+{
+  "name": "dau-extension",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Build-time tools for the Đậu extension: bundles the Anthropic SDK for the browser.",
+  "devDependencies": {
+    "@anthropic-ai/sdk": "0.129.0",
+    "esbuild": "0.28.2"
+  }
+}

@@ -582,8 +582,9 @@ function confetti() {
 const KEY = "dau:" + L.homework + ":" + NAME + ":" + (L.version || "");
 const fresh = () => ({ screen: 0, passed: 0, answers: {}, practice: {}, beats: {}, draft: "", ups: 0 });
 let S = fresh();
-try { const raw = localStorage.getItem(KEY); if (raw) S = { ...S, ...JSON.parse(raw) }; } catch (e) { /* storage unavailable */ }
-const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { /* ignore */ } };
+const PREVIEW = !!L.__preview;              // the teacher's editor: never read or write a student's progress
+try { const raw = !PREVIEW && localStorage.getItem(KEY); if (raw) S = { ...S, ...JSON.parse(raw) }; } catch (e) { /* storage unavailable */ }
+const save = () => { if (PREVIEW) return; try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { /* ignore */ } };
 
 /* =====================================================================
    Engine. A screen is a script of beats. Each gate() waits for the student
@@ -1618,6 +1619,8 @@ $("#essayBtn").addEventListener("click", () => openEssay({}));
 $("#essayIcon").src = A.icon_notebook;
 $("#sproutIcon").src = A.icon_sprout;
 
-run(0);
+// the editor's preview can open straight at a section (and skip a few screens into it)
+const startAt = L.__start ? screens.findIndex(sc => sc.sec === L.__start) : 0;
+run(startAt < 0 ? 0 : Math.min(screens.length - 1, startAt + (L.__startOffset || 0)));
 })();
 </script>

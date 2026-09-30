@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><title>Đậu: cài đặt</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="editor.css">
+</head><body class="options">
+<main class="opt">
+  <h1>Cài đặt</h1>
+  <p class="muted">Mọi thứ ở đây chỉ lưu trong Chrome của bạn.</p>
+  <label>Tên giáo viên (Đậu gọi là)
+    <input id="teacher" placeholder="anh Khoa"></label>
+  <label>Link Zalo (nút "Nhắn … qua Zalo" cuối bài)
+    <input id="zalo" placeholder="https://zalo.me/…"></label>
+  <label>Claude API key
+    <input id="apiKey" type="password" autocomplete="off" placeholder="sk-ant-…"></label>
+  <p class="muted small">Dùng để soạn nháp bài ôn. Mỗi bài khoảng một lần gọi Claude.</p>
+  <label>Netlify token (để tạo link cho học viên, không bắt buộc)
+    <input id="netlifyToken" type="password" autocomplete="off" placeholder="nfp_…"></label>
+  <p class="muted small">Không có token thì vẫn tải được file HTML như bình thường.</p>
+  <label>Netlify Site ID (tự điền sau lần đăng đầu tiên)
+    <input id="netlifySiteId" autocomplete="off"></label>
+  <button id="save" class="btn primary" type="button">Lưu</button>
+  <span id="saved" class="ok small" aria-live="polite"></span>
+</main>
+<script type="module" src="options.js"></script>
+</body></html>

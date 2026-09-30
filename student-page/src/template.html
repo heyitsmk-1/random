@@ -3,8 +3,10 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Be+Vietnam+Pro:wght@400;500;600;700&family=Patrick+Hand&display=swap">
 <style>
-/* Layout: one phone-width column; progress pinned on top, stage scrolls, action bar pinned at the bottom.
-   Đậu (orange) is the only loud colour; mint marks "đúng", coral marks "sai". Paper uses the ô ly grid of a Vietnamese school notebook. */
+/* Layout: one phone-sized screen at a time, never scrolls. Progress on top, anh Đậu's bubble under it,
+   the current card fills the middle, action bar at the bottom. The student moves every step forward
+   (swipe or button). Đậu orange is the only loud colour; mint = đúng, coral = sai; the essay paper uses
+   the ô ly grid of a Vietnamese school notebook. */
 :root {
   --bg: #F3F8F4;
   --paper: #FFFFFF;
@@ -20,7 +22,6 @@
   --coral: #D9483B;
   --coral-soft: #FCE6E2;
   --blush-soft: #FDEBE7;
-  --board: #33504A;
   --chalk: #F4F1E6;
   --grid: rgba(80, 140, 200, .10);
   --grid-strong: rgba(80, 140, 200, .20);
@@ -28,15 +29,13 @@
   --font-display: "Baloo 2", "Be Vietnam Pro", system-ui, sans-serif;
   --font-body: "Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-chalk: "Patrick Hand", "Comic Sans MS", cursive;
-  --r: 18px;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --bg: #1B1815; --paper: #26211D; --ink: #F3ECE5; --muted: #B4A79C; --line: #3A322C;
     --orange: #FFA42E; --orange-deep: #FFB866; --orange-soft: #3A2A17;
     --mint: #6FC9A2; --mint-deep: #7FD8B1; --mint-soft: #1D3A2E;
-    --coral: #FF8373; --coral-soft: #402421; --blush-soft: #3A2622;
-    --board: #2C4540; --chalk: #F4F1E6;
+    --coral: #FF8373; --coral-soft: #402421; --blush-soft: #3A2622; --chalk: #F4F1E6;
     --grid: rgba(120, 170, 230, .07); --grid-strong: rgba(120, 170, 230, .13);
     --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 6px 18px rgba(0, 0, 0, .25);
     color-scheme: dark;
@@ -46,25 +45,24 @@
   --bg: #1B1815; --paper: #26211D; --ink: #F3ECE5; --muted: #B4A79C; --line: #3A322C;
   --orange: #FFA42E; --orange-deep: #FFB866; --orange-soft: #3A2A17;
   --mint: #6FC9A2; --mint-deep: #7FD8B1; --mint-soft: #1D3A2E;
-  --coral: #FF8373; --coral-soft: #402421; --blush-soft: #3A2622;
-  --board: #2C4540; --chalk: #F4F1E6;
+  --coral: #FF8373; --coral-soft: #402421; --blush-soft: #3A2622; --chalk: #F4F1E6;
   --grid: rgba(120, 170, 230, .07); --grid-strong: rgba(120, 170, 230, .13);
   --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 6px 18px rgba(0, 0, 0, .25);
   color-scheme: dark;
 }
 
 * { box-sizing: border-box; }
-html, body { height: 100%; }
-body { margin: 0; background: var(--bg); color: var(--ink); font: 400 16px/1.55 var(--font-body); -webkit-font-smoothing: antialiased; }
+html, body { height: 100%; overflow: hidden; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 400 16px/1.5 var(--font-body); -webkit-font-smoothing: antialiased; overscroll-behavior: none; }
 button { font: inherit; color: inherit; }
 :focus-visible { outline: 3px solid var(--orange); outline-offset: 2px; border-radius: 10px; }
 
-.app { height: 100%; max-width: 480px; margin: 0 auto; display: flex; flex-direction: column; position: relative; }
+.app { height: 100%; max-width: 480px; margin: 0 auto; display: flex; flex-direction: column; }
 
 /* top bar */
-.top { padding: calc(env(safe-area-inset-top, 0px) + 10px) 16px 10px; display: flex; flex-direction: column; gap: 8px; background: var(--bg); z-index: 5; }
+.top { padding: calc(env(safe-area-inset-top, 0px) + 10px) 16px 6px; display: flex; flex-direction: column; gap: 8px; }
 .top-row { display: flex; align-items: center; gap: 10px; }
-.sec { font: 700 15px/1 var(--font-display); letter-spacing: .01em; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sec { font: 700 15px/1 var(--font-display); flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .sec small { font: 500 12px var(--font-body); color: var(--muted); margin-left: 6px; }
 .essay-btn { display: inline-flex; align-items: center; gap: 6px; border: 1.5px solid var(--line); background: var(--paper); border-radius: 999px; padding: 5px 12px 5px 8px; font-size: 13px; font-weight: 600; cursor: pointer; }
 .essay-btn img { width: 20px; height: 20px; object-fit: contain; }
@@ -73,132 +71,149 @@ button { font: inherit; color: inherit; }
 .bar-sprout { position: absolute; top: 50%; width: 26px; height: 26px; transform: translate(-50%, -62%); transition: left .6s cubic-bezier(.3, .9, .3, 1); pointer-events: none; }
 .bar-sprout img { width: 100%; height: 100%; object-fit: contain; }
 
-/* stage */
-.stage { flex: 1; overflow-y: auto; overflow-x: hidden; padding: 8px 16px 24px; -webkit-overflow-scrolling: touch; }
-.screen { display: flex; flex-direction: column; gap: 16px; animation: screenIn .45s cubic-bezier(.2, .9, .3, 1) both; }
-.screen.back { animation-name: screenBack; }
-@keyframes screenIn { from { opacity: 0; transform: translateX(28px); } }
-@keyframes screenBack { from { opacity: 0; transform: translateX(-28px); } }
+/* stage: fixed height, never scrolls */
+.stage { flex: 1; min-height: 0; position: relative; overflow: hidden; touch-action: none; user-select: none; -webkit-user-select: none; }
+.scene { position: absolute; inset: 0; padding: 8px 16px 6px; display: flex; flex-direction: column; gap: 10px; --k: 1; }
+.scene.in { animation: sceneIn .45s cubic-bezier(.2, .9, .3, 1) both; }
+.scene.in.back { animation-name: sceneBack; }
+@keyframes sceneIn { from { opacity: 0; transform: translateX(40px); } }
+@keyframes sceneBack { from { opacity: 0; transform: translateX(-40px); } }
 
-/* bottom bar */
-.bottom { padding: 12px 16px calc(env(safe-area-inset-bottom, 0px) + 14px); display: flex; gap: 10px; background: linear-gradient(to top, var(--bg) 70%, transparent); z-index: 5; }
-.btn { border: 0; border-radius: 16px; padding: 14px 18px; font: 700 17px/1 var(--font-display); cursor: pointer; transition: transform .12s, opacity .2s, background .2s; }
-.btn:active { transform: translateY(2px); }
-.btn-main { flex: 1; background: var(--orange); color: #3A1D00; box-shadow: 0 4px 0 var(--orange-deep); }
-.btn-main:disabled { opacity: .35; cursor: default; box-shadow: none; transform: none; }
-.btn-back { width: 52px; background: var(--paper); border: 1.5px solid var(--line); color: var(--muted); font-size: 22px; padding: 0; }
-.btn-back:disabled { visibility: hidden; }
-.btn-ghost { background: var(--paper); border: 1.5px solid var(--line); color: var(--ink); box-shadow: 0 3px 0 var(--line); }
-
-/* Đậu + speech */
-.dau { display: flex; align-items: flex-start; gap: 10px; }
-.dau-pic { flex: none; width: 84px; height: 84px; object-fit: contain; animation: bob 3.2s ease-in-out infinite; transform-origin: 50% 100%; }
-.dau.big { flex-direction: column; align-items: center; text-align: left; }
-.dau.big .dau-pic { width: 190px; height: 190px; }
-.dau.big .bubbles { width: 100%; }
+/* anh Đậu + one speech bubble at a time */
+.talk { flex: none; display: flex; gap: 10px; align-items: flex-start; }
+.talk[hidden] { display: none; }
+.pic { flex: none; width: 76px; height: 76px; object-fit: contain; animation: bob 3.2s ease-in-out infinite; transform-origin: 50% 100%; }
+.pic.pop { animation: popIn .5s cubic-bezier(.3, 1.6, .5, 1) both, bob 3.2s ease-in-out .5s infinite; }
 @keyframes bob { 0%, 100% { transform: translateY(0) rotate(0); } 50% { transform: translateY(-4px) rotate(-1.5deg); } }
-.dau-pic.pop { animation: popIn .5s cubic-bezier(.3, 1.6, .5, 1) both, bob 3.2s ease-in-out .5s infinite; }
 @keyframes popIn { from { transform: scale(.4); opacity: 0; } }
-.bubbles { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
-.who { font: 700 12px var(--font-display); color: var(--orange-deep); letter-spacing: .04em; text-transform: uppercase; margin-left: 4px; }
-.bubble { background: var(--paper); border: 1.5px solid var(--line); border-radius: 4px 18px 18px 18px; padding: 9px 14px; max-width: 100%; box-shadow: var(--shadow); animation: bubbleIn .35s cubic-bezier(.3, 1.3, .5, 1) both; }
-.bubble + .bubble { border-radius: 18px; }
-@keyframes bubbleIn { from { opacity: 0; transform: translateY(8px) scale(.96); } }
+.slot { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; align-items: flex-start; }
+.who { font: 700 11px var(--font-display); color: var(--orange-deep); letter-spacing: .06em; text-transform: uppercase; margin-left: 4px; }
+.bubble { background: var(--paper); border: 1.5px solid var(--line); border-radius: 4px 18px 18px 18px; padding: 9px 14px; font-size: calc(16px * var(--k)); line-height: 1.45; box-shadow: var(--shadow); animation: bubbleIn .4s cubic-bezier(.3, 1.2, .5, 1) both; }
+@keyframes bubbleIn { from { opacity: 0; transform: translateX(34px); } }
 .typing { display: inline-flex; gap: 4px; padding: 4px 2px; }
 .typing i { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); opacity: .5; animation: dot 1s infinite; }
 .typing i:nth-child(2) { animation-delay: .15s; } .typing i:nth-child(3) { animation-delay: .3s; }
 @keyframes dot { 50% { opacity: 1; transform: translateY(-3px); } }
+/* hero: Đậu bottom-left, his words pop up to the right */
+.scene.hero .talk { flex: 1; align-items: flex-end; order: 2; }
+.scene.hero .pic { width: 140px; height: 140px; margin-bottom: -4px; }
+.scene.hero .slot { align-self: stretch; justify-content: flex-end; padding-bottom: 96px; }
+.scene.hero .bubble { border-radius: 18px 18px 18px 4px; transform-origin: 0 100%; animation-name: chatIn; font-size: calc(18px * var(--k)); }
+@keyframes chatIn { from { opacity: 0; transform: translate(-16px, 20px) scale(.7); } }
+.scene.hero .content { flex: none; order: 1; }
+
+/* the card area */
+.content { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: .7em; font-size: calc(16px * var(--k)); }
+.content > * { flex-shrink: 0; }
+.content.overflow { overflow-y: auto; touch-action: pan-y; }
+.enter { animation: upIn .5s cubic-bezier(.2, .9, .3, 1) both; }
+@keyframes upIn { from { opacity: 0; transform: translateY(36px); } }
+.rise { animation: rise .45s cubic-bezier(.2, .9, .3, 1) both; }
+@keyframes rise { from { opacity: 0; transform: translateY(12px); } }
+.instant, .instant * { animation-duration: 1ms !important; animation-delay: 0ms !important; transition: none !important; }
+
+/* bottom bar */
+.bottom { padding: 8px 16px calc(env(safe-area-inset-bottom, 0px) + 12px); display: flex; gap: 10px; position: relative; }
+.btn { border: 0; border-radius: 16px; padding: 14px 18px; font: 700 17px/1 var(--font-display); cursor: pointer; transition: transform .12s, opacity .2s; }
+.btn:active { transform: translateY(2px); }
+.btn-main { flex: 1; background: var(--orange); color: #3A1D00; box-shadow: 0 4px 0 var(--orange-deep); }
+.btn-main.wait { opacity: .4; box-shadow: none; }
+.btn-back { width: 52px; background: var(--paper); border: 1.5px solid var(--line); color: var(--muted); font-size: 22px; padding: 0; }
+.btn-back:disabled { visibility: hidden; }
+.btn-ghost { background: var(--paper); border: 1.5px solid var(--line); color: var(--ink); box-shadow: 0 3px 0 var(--line); font-size: .95em; padding: .75em 1em; }
+
+/* swipe hint */
+.app.hinting .scene { padding-bottom: 48px; }
+.hint { position: absolute; left: 50%; bottom: calc(100% + 4px); transform: translateX(-50%); display: flex; align-items: center; gap: 8px; padding: 6px 14px 6px 8px; border-radius: 999px; background: var(--paper); border: 1.5px solid var(--line); box-shadow: var(--shadow); font-size: 13px; font-weight: 600; color: var(--muted); white-space: nowrap; pointer-events: none; animation: rise .5s both; }
+.hint svg { width: 46px; height: 24px; overflow: visible; }
+.hint .finger { animation: swipe 1.8s cubic-bezier(.5, 0, .3, 1) infinite; }
+@keyframes swipe { 0% { transform: translateX(14px); opacity: 0; } 15% { opacity: 1; } 70% { transform: translateX(-14px); opacity: 1; } 100% { transform: translateX(-14px); opacity: 0; } }
 
 /* generic pieces */
-.card { background: var(--paper); border: 1.5px solid var(--line); border-radius: var(--r); padding: 16px; box-shadow: var(--shadow); }
-.appear { animation: rise .5s cubic-bezier(.2, .9, .3, 1) both; }
-@keyframes rise { from { opacity: 0; transform: translateY(14px); } }
-.pill { display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; padding: 3px 11px; font: 700 13px/1.5 var(--font-display); letter-spacing: .02em; }
+.card { background: var(--paper); border: 1.5px solid var(--line); border-radius: 18px; padding: .9em 1em; box-shadow: var(--shadow); }
+.pill { display: inline-flex; align-self: flex-start; align-items: center; gap: 6px; border-radius: 999px; padding: .15em .7em; font: 700 .8em/1.5 var(--font-display); letter-spacing: .02em; }
 .tone-orange { background: var(--orange-soft); color: var(--orange-deep); }
 .tone-mint { background: var(--mint-soft); color: var(--mint-deep); }
 .tone-blush { background: var(--blush-soft); color: var(--coral); }
-.h { font: 800 26px/1.15 var(--font-display); margin: 0; text-wrap: balance; }
-.h2 { font: 700 20px/1.25 var(--font-display); margin: 0; text-wrap: balance; }
+.h { font: 800 1.6em/1.15 var(--font-display); margin: 0; text-wrap: balance; }
+.h2 { font: 700 1.2em/1.25 var(--font-display); margin: 0; text-wrap: balance; }
+.label { font: 700 .72em var(--font-display); letter-spacing: .07em; text-transform: uppercase; color: var(--muted); }
 .muted { color: var(--muted); }
-.small { font-size: 14px; }
+.small { font-size: .88em; }
 .en { font-style: italic; }
-.quote { font-size: 15px; line-height: 1.6; color: var(--ink); }
-.quote::before { content: "“"; font: 800 22px/0 var(--font-display); color: var(--orange); margin-right: 2px; vertical-align: -6px; }
-.quote::after { content: "”"; font: 800 22px/0 var(--font-display); color: var(--orange); margin-left: 1px; vertical-align: -6px; }
-.cite { display: inline-flex; align-items: center; gap: 5px; border: 0; background: none; color: var(--orange-deep); font: 600 13px var(--font-body); padding: 4px 0; cursor: pointer; }
+.quote { font-size: .95em; line-height: 1.6; }
+.quote::before, .quote::after { font: 800 1.4em/0 var(--font-display); color: var(--orange); vertical-align: -.3em; }
+.quote::before { content: "“"; margin-right: 2px; } .quote::after { content: "”"; margin-left: 1px; }
+.cite { display: inline-flex; align-self: flex-start; align-items: center; gap: 5px; border: 0; background: none; color: var(--orange-deep); font: 600 .82em var(--font-body); padding: 2px 0; cursor: pointer; }
 .cite svg { width: 14px; height: 14px; }
-.row { display: flex; gap: 10px; align-items: center; }
-.stack { display: flex; flex-direction: column; gap: 10px; }
-.icon { width: 26px; height: 26px; object-fit: contain; flex: none; }
+.stack { display: flex; flex-direction: column; gap: .6em; }
+.row { display: flex; gap: .6em; align-items: center; }
+.icon { width: 1.6em; height: 1.6em; object-fit: contain; flex: none; }
 
 /* choices */
-.choices { display: flex; flex-direction: column; gap: 10px; }
-.choice { text-align: left; border: 2px solid var(--line); background: var(--paper); border-radius: 16px; padding: 13px 16px; font-weight: 600; cursor: pointer; box-shadow: 0 3px 0 var(--line); transition: transform .12s, border-color .2s, background .2s; }
+.choices { display: flex; flex-direction: column; gap: .55em; }
+.choice { text-align: left; border: 2px solid var(--line); background: var(--paper); border-radius: 16px; padding: .7em 1em; font-weight: 600; font-size: 1em; cursor: pointer; box-shadow: 0 3px 0 var(--line); transition: border-color .2s, background .2s; }
 .choice:active { transform: translateY(2px); box-shadow: none; }
-.choice.picked { border-color: var(--orange); background: var(--orange-soft); }
 .choice.right { border-color: var(--mint-deep); background: var(--mint-soft); box-shadow: 0 3px 0 var(--mint); }
 .choice.wrong { border-color: var(--coral); background: var(--coral-soft); box-shadow: 0 3px 0 var(--coral); animation: shake .4s; }
 .choice:disabled { cursor: default; }
 .choice.en { font-style: italic; font-weight: 500; }
+.nudge { animation: shake .4s; }
 @keyframes shake { 20%, 60% { transform: translateX(-6px); } 40%, 80% { transform: translateX(6px); } }
 
 /* results */
-.count-card { display: flex; flex-direction: column; gap: 10px; }
-.big-num { font: 800 64px/1 var(--font-display); font-variant-numeric: tabular-nums; color: var(--orange-deep); }
-.big-num small { font: 600 18px var(--font-body); color: var(--muted); margin-left: 6px; }
-.meter { position: relative; height: 14px; border-radius: 999px; background: var(--bg); border: 1.5px solid var(--line); margin-top: 18px; }
-.meter-fill { position: absolute; inset: 0 auto 0 0; width: 0; border-radius: 999px; background: var(--mint); transition: width 1.3s cubic-bezier(.2, .8, .2, 1); }
-.meter-mark { position: absolute; top: -20px; bottom: -4px; width: 2px; background: var(--ink); opacity: .55; }
-.meter-mark span { position: absolute; top: -2px; left: 6px; font-size: 12px; font-weight: 600; white-space: nowrap; color: var(--muted); }
-.scores { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; perspective: 600px; }
-.score { background: var(--paper); border: 1.5px solid var(--line); border-radius: 14px; padding: 10px 4px 8px; text-align: center; animation: flip .6s cubic-bezier(.2, .9, .3, 1) both; box-shadow: var(--shadow); }
-.score b { display: block; font: 800 30px/1.1 var(--font-display); font-variant-numeric: tabular-nums; }
-.score span { font: 700 12px var(--font-display); color: var(--muted); letter-spacing: .06em; }
+.big-num { font: 800 3.4em/1 var(--font-display); font-variant-numeric: tabular-nums; color: var(--orange-deep); }
+.big-num small { font: 600 .32em var(--font-body); color: var(--muted); margin-left: 6px; }
+.meter { position: relative; height: 12px; border-radius: 999px; background: var(--bg); border: 1.5px solid var(--line); margin-top: 1.2em; }
+.meter-fill { position: absolute; inset: 0 auto 0 0; width: 0; border-radius: 999px; background: var(--mint); transition: width 1.4s cubic-bezier(.2, .8, .2, 1); }
+.meter-mark { position: absolute; top: -18px; bottom: -4px; width: 2px; background: var(--ink); opacity: .55; }
+.meter-mark span { position: absolute; top: -3px; left: 6px; font-size: 11px; font-weight: 600; white-space: nowrap; color: var(--muted); }
+.scores { display: grid; grid-template-columns: repeat(4, 1fr); gap: .5em; perspective: 600px; }
+.score { background: var(--paper); border: 1.5px solid var(--line); border-radius: 14px; padding: .5em .2em .45em; text-align: center; animation: flip .5s cubic-bezier(.2, .9, .3, 1) both; box-shadow: var(--shadow); }
+.score b { display: block; font: 800 1.8em/1.1 var(--font-display); font-variant-numeric: tabular-nums; }
+.score span { display: block; font: 700 .72em var(--font-display); color: var(--muted); letter-spacing: .06em; }
+.score em { display: block; font-style: normal; font-size: .66em; color: var(--muted); }
 @keyframes flip { from { transform: rotateY(90deg); opacity: 0; } }
-.overall { display: flex; align-items: center; gap: 16px; }
-.overall-ring { width: 104px; height: 104px; flex: none; border-radius: 50%; display: grid; place-items: center; background: var(--orange); color: #3A1D00; font: 800 40px/1 var(--font-display); box-shadow: 0 0 0 6px var(--orange-soft), 0 5px 0 6px var(--line); animation: popIn .6s cubic-bezier(.3, 1.6, .5, 1) both; }
+.overall { display: flex; align-items: center; gap: 1em; }
+.ring { width: 2.4em; height: 2.4em; flex: none; border-radius: 50%; display: grid; place-items: center; background: var(--orange); color: #3A1D00; font: 800 1.9em/1 var(--font-display); font-variant-numeric: tabular-nums; box-shadow: 0 0 0 5px var(--orange-soft); animation: popIn .6s cubic-bezier(.3, 1.6, .5, 1) both; }
 
 /* framework */
-.fw-card { display: flex; flex-direction: column; gap: 10px; }
-.fw-card .summary { font-weight: 600; font-size: 15px; }
-.ideas { display: flex; flex-direction: column; gap: 8px; }
-.idea-chip { display: flex; gap: 10px; align-items: baseline; padding: 9px 12px; border-radius: 12px; background: var(--bg); animation: popIn .45s cubic-bezier(.3, 1.5, .5, 1) both; }
-.idea-chip b { font: 700 12px var(--font-display); letter-spacing: .04em; color: var(--muted); white-space: nowrap; text-transform: uppercase; }
-.checklist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
-.checklist li { display: flex; gap: 10px; align-items: center; font-size: 15px; animation: rise .4s both; }
-.tick { width: 26px; height: 26px; flex: none; border-radius: 50%; display: grid; place-items: center; background: var(--mint-soft); }
+.fw-card { display: flex; flex-direction: column; gap: .6em; }
+.summary { font-weight: 600; }
+.idea-chip { display: flex; gap: .7em; align-items: baseline; padding: .5em .8em; border-radius: 12px; background: var(--bg); animation: popIn .45s cubic-bezier(.3, 1.5, .5, 1) both; }
+.idea-chip b { font: 700 .72em var(--font-display); letter-spacing: .05em; color: var(--muted); white-space: nowrap; text-transform: uppercase; }
+.map { display: grid; grid-template-columns: auto 1fr 1fr; gap: .5em; align-items: center; }
+.map .lab { display: flex; align-items: center; gap: .45em; font: 700 .9em var(--font-display); white-space: nowrap; animation: rise .4s both; }
+.map .wide { grid-column: 2 / 4; font-size: .85em; color: var(--muted); animation: rise .4s both; }
+.map .chip { font-size: .85em; font-weight: 600; text-align: center; padding: .45em .5em; border-radius: 12px; line-height: 1.3; animation: popIn .4s cubic-bezier(.3, 1.5, .5, 1) both; }
+.map .c { background: var(--mint-soft); color: var(--mint-deep); }
+.map .s { background: var(--blush-soft); color: var(--coral); }
+.map .down { text-align: center; color: var(--orange); font-weight: 800; line-height: 1; animation: rise .4s both; }
+.tick { width: 1.5em; height: 1.5em; flex: none; border-radius: 50%; display: grid; place-items: center; background: var(--mint-soft); }
 .tick.no { background: var(--coral-soft); }
-.tick svg { width: 16px; height: 16px; stroke: var(--mint-deep); stroke-width: 3.2; fill: none; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 24; stroke-dashoffset: 24; animation: draw .45s .15s forwards; }
+.tick svg { width: 62%; height: 62%; stroke: var(--mint-deep); stroke-width: 3.4; fill: none; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 24; stroke-dashoffset: 24; animation: draw .45s .15s forwards; }
 .tick.no svg { stroke: var(--coral); }
 @keyframes draw { to { stroke-dashoffset: 0; } }
-.pairs { display: grid; grid-template-columns: 1fr 34px 1fr; gap: 10px 0; align-items: center; }
-.pairs .p { font-size: 13px; font-weight: 600; padding: 8px 10px; border-radius: 12px; line-height: 1.35; animation: rise .45s both; }
-.pairs .c { background: var(--mint-soft); color: var(--mint-deep); }
-.pairs .s { background: var(--blush-soft); color: var(--coral); }
-.pairs svg { width: 34px; height: 20px; overflow: visible; }
-.pairs path { fill: none; stroke: var(--orange); stroke-width: 2.5; stroke-linecap: round; stroke-dasharray: 40; stroke-dashoffset: 40; animation: draw .5s forwards; }
-.pairs-head { font: 700 12px var(--font-display); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
 
 /* idea chains */
-.chain { display: flex; flex-direction: column; align-items: stretch; gap: 0; }
-.node { padding: 10px 14px; border-radius: 14px; background: var(--mint-soft); color: var(--ink); font-weight: 600; font-size: 15px; animation: popIn .45s cubic-bezier(.3, 1.5, .5, 1) both; }
+.chain { display: flex; flex-direction: column; align-items: stretch; }
+.node { padding: .45em .85em; border-radius: 12px; background: var(--mint-soft); font-weight: 600; font-size: .92em; animation: popIn .45s cubic-bezier(.3, 1.5, .5, 1) both; }
 .node.bad { background: var(--coral-soft); color: var(--coral); font-style: italic; }
 .node.new { background: transparent; border: 2px dashed var(--mint-deep); color: var(--mint-deep); }
-.arrow { align-self: center; width: 2px; height: 16px; background: var(--muted); opacity: .45; position: relative; animation: rise .3s both; }
+.arrow { align-self: center; width: 2px; height: .75em; background: var(--muted); opacity: .45; position: relative; animation: rise .3s both; }
 .arrow::after { content: ""; position: absolute; left: -4px; bottom: -2px; border: 5px solid transparent; border-top-color: var(--muted); border-bottom: 0; }
-.gap-mark { align-self: center; font: 700 13px var(--font-display); color: var(--coral); padding: 6px 12px; border-radius: 999px; background: var(--coral-soft); animation: popIn .4s both; }
-.flow-en { font-size: 13px; color: var(--muted); line-height: 1.5; }
-.ov { display: flex; gap: 12px; align-items: center; padding: 12px 14px; animation: rise .45s both; }
+.gap-mark { align-self: center; font: 700 .8em var(--font-display); color: var(--coral); padding: .3em .8em; border-radius: 999px; background: var(--coral-soft); margin-top: .3em; animation: popIn .4s both; }
+.flow-en { font-size: .8em; color: var(--muted); line-height: 1.5; }
+.ov { display: flex; gap: .75em; align-items: center; padding: .7em .9em; animation: rise .45s both; }
 .ov .t { flex: 1; min-width: 0; }
-.ov .t b { display: block; font-size: 15px; }
-.ov .t span { font-size: 13px; color: var(--muted); }
+.ov .t b { display: block; font-size: .95em; }
+.ov .t span { font-size: .82em; color: var(--muted); }
 
 /* linking */
-.link-groups { display: flex; flex-direction: column; gap: 14px; }
-.lg-label { font: 700 12px var(--font-display); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
-.chips { display: flex; flex-wrap: wrap; gap: 8px; }
-.lchip { border: 0; border-radius: 10px; padding: 6px 11px; background: var(--orange-soft); color: var(--orange-deep); font-weight: 600; font-size: 14px; font-style: italic; cursor: pointer; animation: popIn .4s cubic-bezier(.3, 1.5, .5, 1) both; }
-.swap { display: flex; flex-direction: column; gap: 6px; }
+.lg-label { font: 700 .72em var(--font-display); letter-spacing: .07em; text-transform: uppercase; color: var(--muted); margin-bottom: .35em; }
+.chips { display: flex; flex-wrap: wrap; gap: .45em; }
+.lchip { border: 0; border-radius: 10px; padding: .35em .7em; background: var(--orange-soft); color: var(--orange-deep); font-weight: 600; font-size: .88em; font-style: italic; cursor: pointer; animation: popIn .4s cubic-bezier(.3, 1.5, .5, 1) both; }
+.swap { display: flex; flex-direction: column; gap: .35em; }
 .swap .from { color: var(--coral); text-decoration: line-through; text-decoration-thickness: 2px; font-style: italic; }
 .swap .to { color: var(--mint-deep); font-weight: 600; font-style: italic; }
 
@@ -210,65 +225,63 @@ button { font: inherit; color: inherit; }
 .corr.live s { background: linear-gradient(var(--coral), var(--coral)) no-repeat 0 55% / 0 2px; text-decoration: none; animation: strike .45s forwards; }
 .corr.live ins { display: inline-block; animation: popIn .4s .4s cubic-bezier(.3, 1.5, .5, 1) both; }
 @keyframes strike { to { background-size: 100% 2px; } }
-.sent-card { display: flex; flex-direction: column; gap: 4px; animation: rise .45s both; }
-.times { display: flex; align-items: center; gap: 14px; }
-.times .n { font: 800 54px/1 var(--font-display); color: var(--coral); font-variant-numeric: tabular-nums; }
+.snip { display: flex; gap: .6em; align-items: flex-start; padding: .55em .8em; text-align: left; font: inherit; color: inherit; cursor: pointer; width: 100%; }
+.snip .quote { flex: 1; min-width: 0; }
+.snip .pin { flex: none; width: 16px; height: 16px; color: var(--orange-deep); margin-top: .25em; }
+.times { display: flex; align-items: center; gap: .8em; }
+.times .n { font: 800 2.8em/1 var(--font-display); color: var(--coral); font-variant-numeric: tabular-nums; }
 .times .l { font-weight: 600; }
-.mcard { display: flex; gap: 14px; align-items: center; animation: rise .45s both; }
-.mcard .n { width: 46px; height: 46px; flex: none; border-radius: 14px; display: grid; place-items: center; background: var(--coral-soft); color: var(--coral); font: 800 22px var(--font-display); }
+.mcard { display: flex; gap: .8em; align-items: center; padding: .7em .9em; animation: rise .45s both; }
+.mcard .n { width: 2.6em; height: 2.6em; flex: none; border-radius: 12px; display: grid; place-items: center; background: var(--coral-soft); color: var(--coral); font: 800 1.1em var(--font-display); }
 .mcard .t { flex: 1; min-width: 0; }
-.mcard .t b { display: block; font-size: 16px; }
-details.others { border: 1.5px dashed var(--line); border-radius: var(--r); padding: 12px 14px; }
-details.others summary { cursor: pointer; font-weight: 600; }
-.other-row { padding: 10px 0; border-top: 1px solid var(--line); font-size: 14px; }
-.other-row:first-of-type { border-top: 0; }
-.other-row .ex { color: var(--muted); font-size: 13px; margin-top: 2px; }
+.mcard .t b { display: block; }
 
 /* chalkboard */
-.board-wrap { position: relative; container-type: inline-size; width: 100%; max-width: 420px; align-self: center; }
+.board-wrap { position: relative; container-type: inline-size; width: calc(72% * var(--k)); max-width: 300px; align-self: center; flex: none; }
 .board-wrap img { width: 100%; display: block; }
 .board-text { position: absolute; left: 59%; top: 33.5%; width: 33%; height: 13.5%; display: flex; flex-direction: column; justify-content: center; align-items: center; font: 400 5.2cqw/1.05 var(--font-chalk); color: var(--chalk); text-align: center; white-space: nowrap; }
 .board-text.one { font-size: 7.5cqw; }
 .board-text span { opacity: 0; animation: chalk .5s forwards; }
 @keyframes chalk { from { opacity: 0; filter: blur(2px); } to { opacity: 1; filter: none; } }
-.rules { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
-.rules li { display: flex; gap: 10px; animation: rise .45s both; }
-.rules li::before { content: ""; flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--orange); margin-top: 9px; }
-.ex-line { display: flex; gap: 10px; align-items: center; font-style: italic; }
+.rules { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .55em; }
+.rules li { display: flex; gap: .6em; font-size: .95em; animation: rise .45s both; }
+.rules li::before { content: ""; flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--orange); margin-top: .55em; }
+.ex-line { display: flex; gap: .6em; align-items: center; font-style: italic; font-size: .95em; }
 
 /* practice */
-.pbadge { align-self: flex-start; }
-.tap-sent { display: flex; flex-wrap: wrap; gap: 6px 4px; font-size: 18px; line-height: 1.4; }
-.tok { border: 0; background: var(--paper); border-bottom: 2px solid var(--line); border-radius: 8px; padding: 5px 7px; cursor: pointer; font-style: italic; }
-.tok.wrong { background: var(--coral-soft); border-color: var(--coral); animation: shake .4s; }
+.tap-sent { display: flex; flex-wrap: wrap; gap: .4em .25em; font-size: 1.1em; line-height: 1.35; }
+.tok { border: 0; background: var(--paper); border-bottom: 2px solid var(--line); border-radius: 8px; padding: .3em .45em; cursor: pointer; font-style: italic; }
 .tok:disabled { cursor: default; }
+.tok.wrong { background: var(--coral-soft); border-color: var(--coral); animation: shake .4s; }
 .tok.right { background: var(--mint-soft); border-color: var(--mint-deep); }
 .tok s { color: var(--coral); }
 .tok ins { text-decoration: none; color: var(--mint-deep); font-weight: 700; margin-left: 4px; }
-.build-line { min-height: 64px; display: flex; flex-wrap: wrap; gap: 8px; align-content: flex-start; padding: 12px; border-radius: 16px; background: var(--paper); border: 2px dashed var(--line); background-image: linear-gradient(transparent 31px, var(--line) 32px); background-size: 100% 40px; }
+.vi { font: 700 1.1em/1.4 var(--font-body); }
+.build-line { min-height: 3.6em; display: flex; flex-wrap: wrap; gap: .45em; align-content: flex-start; padding: .6em; border-radius: 16px; background: var(--paper); border: 2px dashed var(--line); }
 .build-line.ok { border-color: var(--mint-deep); border-style: solid; }
 .build-line.bad { border-color: var(--coral); animation: shake .4s; }
-.pool { display: flex; flex-wrap: wrap; gap: 8px; }
-.wchip { border: 0; background: var(--paper); border-radius: 12px; padding: 9px 13px; font-size: 16px; font-style: italic; font-weight: 500; cursor: pointer; box-shadow: 0 0 0 1.5px var(--line), 0 3px 0 var(--line); animation: popIn .3s both; }
-.wchip:active { transform: translateY(2px); box-shadow: 0 0 0 1.5px var(--line); }
-.wchip.used { visibility: hidden; }
-.vi { font: 700 18px/1.4 var(--font-body); }
-textarea.write { width: 100%; min-height: 120px; resize: vertical; border: 2px solid var(--line); border-radius: 16px; padding: 12px 14px; font: 400 16px/1.6 var(--font-body); background: var(--paper); color: var(--ink); background-image: linear-gradient(transparent 25px, var(--grid-strong) 26px); background-size: 100% 25.6px; }
+.build-line:empty::before { content: "Kéo hoặc chạm vào từ để xếp câu"; color: var(--muted); font-size: .85em; padding: .45em .2em; }
+.pool { display: flex; flex-wrap: wrap; gap: .45em; min-height: 2.6em; }
+.wchip { border: 0; background: var(--paper); border-radius: 12px; padding: .5em .8em; font-size: 1em; font-style: italic; font-weight: 500; cursor: grab; touch-action: none; box-shadow: 0 0 0 1.5px var(--line), 0 3px 0 var(--line); }
+.wchip.dragging { opacity: .25; }
+.wchip:disabled { cursor: default; }
+.ghost { position: fixed; z-index: 40; pointer-events: none; transform: translate(-50%, -60%) scale(1.08) rotate(-2deg); box-shadow: 0 0 0 2px var(--orange), 0 10px 24px rgba(0, 0, 0, .2); }
+.ph { width: 3px; border-radius: 3px; background: var(--orange); align-self: stretch; min-height: 2.2em; }
+textarea.write { width: 100%; min-height: 6.5em; resize: none; border: 2px solid var(--line); border-radius: 16px; padding: .7em .9em; font: 400 1em/1.55 var(--font-body); background: var(--paper); color: var(--ink); user-select: text; -webkit-user-select: text; touch-action: auto; }
 textarea.write:focus { outline: none; border-color: var(--orange); }
-.selfcheck label { display: flex; gap: 10px; align-items: flex-start; font-size: 15px; padding: 6px 0; cursor: pointer; }
+.selfcheck label { display: flex; gap: .6em; align-items: flex-start; font-size: .92em; padding: .3em 0; cursor: pointer; }
 .selfcheck input { width: 20px; height: 20px; accent-color: var(--mint-deep); margin-top: 2px; flex: none; }
 
-.review-item { padding-top: 16px; border-top: 1.5px dashed var(--line); }
-
 /* finish */
-.takeaway { background: var(--orange-soft); border-radius: var(--r); padding: 18px 18px 14px; transform: rotate(-.6deg); box-shadow: var(--shadow); }
-.takeaway ol { margin: 8px 0 0; padding-left: 22px; display: flex; flex-direction: column; gap: 8px; font-weight: 600; }
-.stat { display: flex; align-items: center; gap: 14px; }
+.takeaway { background: var(--orange-soft); border-radius: 18px; padding: .9em 1em .8em; transform: rotate(-.6deg); box-shadow: var(--shadow); }
+.takeaway ol { margin: .4em 0 0; padding-left: 1.3em; display: flex; flex-direction: column; gap: .35em; font-weight: 600; font-size: .95em; }
+.stat { display: flex; align-items: center; gap: .8em; padding: .6em .9em; }
 .stars { display: flex; gap: 4px; }
-.stars img { width: 34px; height: 34px; animation: popIn .45s cubic-bezier(.3, 1.6, .5, 1) both; }
+.stars img { width: 1.9em; height: 1.9em; animation: popIn .45s cubic-bezier(.3, 1.6, .5, 1) both; }
 .stars img.off { filter: grayscale(1); opacity: .25; }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: .6em; }
 
-/* essay sheet */
+/* sheets (essay, other mistakes) */
 .sheet-back { position: fixed; inset: 0; background: rgba(30, 20, 10, .35); z-index: 20; animation: fade .25s both; }
 @keyframes fade { from { opacity: 0; } }
 .sheet { position: fixed; left: 0; right: 0; bottom: 0; max-width: 480px; margin: 0 auto; height: 88%; background: var(--paper); border-radius: 24px 24px 0 0; z-index: 21; display: flex; flex-direction: column; animation: sheetUp .35s cubic-bezier(.2, .9, .3, 1) both; box-shadow: 0 -10px 40px rgba(0, 0, 0, .18); }
@@ -276,20 +289,19 @@ textarea.write:focus { outline: none; border-color: var(--orange); }
 .sheet-head { padding: 10px 16px 12px; display: flex; flex-direction: column; gap: 10px; border-bottom: 1.5px solid var(--line); }
 .grab { width: 44px; height: 5px; border-radius: 9px; background: var(--line); align-self: center; }
 .sheet-title { display: flex; align-items: center; gap: 10px; }
-.sheet-title .h2 { flex: 1; min-width: 0; }
+.sheet-title .h2 { flex: 1; min-width: 0; font-size: 20px; }
 .x { border: 0; background: var(--bg); width: 36px; height: 36px; border-radius: 50%; font-size: 20px; cursor: pointer; color: var(--muted); }
 .seg { display: flex; background: var(--bg); border-radius: 12px; padding: 3px; }
 .seg button { flex: 1; border: 0; background: none; border-radius: 10px; padding: 7px; font-weight: 600; font-size: 14px; cursor: pointer; color: var(--muted); }
 .seg button[aria-pressed="true"] { background: var(--paper); color: var(--ink); box-shadow: var(--shadow); }
-.sheet-body { flex: 1; overflow-y: auto; padding: 16px 16px calc(env(safe-area-inset-bottom, 0px) + 28px);
+.sheet-body { flex: 1; overflow-y: auto; padding: 16px 16px calc(env(safe-area-inset-bottom, 0px) + 28px); font-size: 16px;
   background-color: var(--paper);
   background-image:
     linear-gradient(var(--grid-strong) 1px, transparent 1px), linear-gradient(90deg, var(--grid-strong) 1px, transparent 1px),
     linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px);
   background-size: 32px 32px, 32px 32px, 8px 8px, 8px 8px; }
 .prompt { font-size: 14px; background: var(--bg); border-radius: 14px; padding: 12px 14px; margin-bottom: 16px; }
-.prompt b { font: 700 12px var(--font-display); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); display: block; }
-.essay p { margin: 0 0 16px; font-size: 16px; line-height: 1.85; }
+.essay p { margin: 0 0 16px; line-height: 1.85; }
 .essay .s { border-radius: 6px; transition: background .4s; }
 .essay .s.hl { background: rgba(255, 190, 60, .38); box-shadow: 0 0 0 3px rgba(255, 190, 60, .38); }
 .essay .corr { cursor: pointer; }
@@ -298,11 +310,25 @@ textarea.write:focus { outline: none; border-color: var(--orange); }
 .tr-mark img { width: 18px; height: 18px; }
 .note { margin: 8px 0 14px; padding: 12px 14px; border-radius: 14px; background: var(--orange-soft); font-size: 14px; line-height: 1.6; white-space: pre-line; animation: rise .3s both; }
 .note .nh { font-weight: 700; font-style: italic; margin-bottom: 4px; white-space: normal; }
+.other-row { padding: 12px 0; border-top: 1px solid var(--line); font-size: 15px; }
+.other-row:first-child { border-top: 0; }
+.other-row .ex { color: var(--muted); font-size: 14px; margin-top: 2px; }
 
 canvas.confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 30; }
 
+/* short phones (iPhone SE and similar) */
+@media (max-height: 740px) {
+  .top { padding-top: calc(env(safe-area-inset-top, 0px) + 6px); gap: 6px; }
+  .scene { gap: 8px; padding-top: 6px; }
+  .pic { width: 58px; height: 58px; }
+  .who { display: none; }
+  .bubble { padding: 7px 12px; }
+  .btn { padding: 12px 16px; }
+  .scene.hero .pic { width: 120px; height: 120px; }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { animation-duration: 1ms !important; animation-delay: 0ms !important; animation-iteration-count: 1 !important; transition-duration: 1ms !important; }
+  *, *::before, *::after { animation-duration: 1ms !important; animation-delay: 0ms !important; animation-iteration-count: 1 !important; transition: none !important; }
 }
 </style>
 
@@ -317,8 +343,8 @@ canvas.confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-
       <div class="bar-sprout" id="barSprout"><img alt="" id="sproutIcon"></div>
     </div>
   </header>
-  <main class="stage" id="stage"></main>
-  <footer class="bottom">
+  <main class="stage" id="stage" aria-live="polite"></main>
+  <footer class="bottom" id="bottom">
     <button class="btn btn-back" id="backBtn" type="button" aria-label="Quay lại">‹</button>
     <button class="btn btn-main" id="nextBtn" type="button">Tiếp</button>
   </footer>
@@ -333,17 +359,18 @@ const L = JSON.parse(document.getElementById("lesson-data").textContent);
 const A = JSON.parse(document.getElementById("asset-data").textContent);
 const NAME = L.student;
 const REDUCED = matchMedia("(prefers-reduced-motion: reduce)").matches;
-const $ = (s, r = document) => r.querySelector(s);
+const $ = s => document.querySelector(s);
+const lower1 = t => t.charAt(0).toLowerCase() + t.slice(1);
 
 /* ---------- essay index ---------- */
 const SENT = {};
-L.essay.paragraphs.forEach((p, pi) => p.sentences.forEach((s, si) => { SENT[s.id] = { ...s, pi, si }; }));
+L.essay.paragraphs.forEach(p => p.sentences.forEach(s => { SENT[s.id] = s; }));
 const C = L.corrections;
 const CID_SENT = {};
 Object.values(SENT).forEach(s => s.segs.forEach(g => { if (typeof g !== "string") CID_SENT[g.c] = s.id; }));
 const origText = sid => SENT[sid].segs.map(g => typeof g === "string" ? g : C[g.c].orig).join("").replace(/\s+/g, " ").trim();
 
-/* ---------- tiny DOM helper ---------- */
+/* ---------- DOM helpers ---------- */
 function h(tag, attrs, ...kids) {
   const e = document.createElement(tag);
   for (const [k, v] of Object.entries(attrs || {})) {
@@ -357,14 +384,13 @@ function h(tag, attrs, ...kids) {
   for (const k of kids.flat()) if (k != null && k !== false) e.append(k.nodeType ? k : document.createTextNode(k));
   return e;
 }
-const img = (key, cls, alt = "") => h("img", { src: A[key], class: cls, alt });
+const img = (key, cls = "", alt = "") => h("img", { src: A[key], class: cls, alt });
 const CITE_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>';
-const cite = (sid, cids, label = "Xem trong bài") => h("button", { class: "cite", type: "button", html: CITE_SVG, onclick: () => openEssay({ sid, cids }) }, label);
-const TICK_SVG = '<svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
-const CROSS_SVG = '<svg viewBox="0 0 24 24"><path d="M7 7l10 10M17 7L7 17"/></svg>';
+const cite = (sid, cids) => h("button", { class: "cite", type: "button", html: CITE_SVG, onclick: () => openEssay({ sid, cids }) }, "Xem trong bài");
+const TICK = ok => h("span", { class: "tick" + (ok ? "" : " no"), html: ok ? '<svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>' : '<svg viewBox="0 0 24 24"><path d="M7 7l10 10M17 7L7 17"/></svg>' });
 
-/* sentence renderer: mode "orig" marks focused errors, "diff" shows strike + fix */
-function sentence(sid, { mode = "orig", focus = null, live = false } = {}) {
+/* sentence renderer: "orig" marks focused errors, "diff" shows strike + fix; window trims to N words around them */
+function sentence(sid, { mode = "orig", focus = null, live = false, window: win = 0 } = {}) {
   const wrap = h("span", { class: "s", "data-sid": sid });
   for (const g of SENT[sid].segs) {
     if (typeof g === "string") { wrap.append(g); continue; }
@@ -377,517 +403,653 @@ function sentence(sid, { mode = "orig", focus = null, live = false } = {}) {
       if (!on) { wrap.append(c.orig); continue; }
       const orig = c.orig.trim(), fix = c.fix.trim();
       const lead = /^\s/.test(c.orig || c.fix) ? " " : "", tail = /\s$/.test(c.orig) || /\s$/.test(c.fix) ? " " : "";
-      const node = h("span", { class: "corr" + (live ? " live" : ""), "data-c": g.c },
-        orig ? h("s", {}, orig) : null, orig && fix ? " " : null, fix ? h("ins", {}, fix) : null);
-      wrap.append(lead, node, tail);
+      wrap.append(lead, h("span", { class: "corr" + (live ? " live" : ""), "data-c": g.c }, orig ? h("s", {}, orig) : null, orig && fix ? " " : null, fix ? h("ins", {}, fix) : null), tail);
+    }
+  }
+  wrap.normalize();
+  if (win && focus) {
+    const kids = [...wrap.childNodes];
+    const marks = kids.map((n, i) => n.nodeType === 1 ? i : -1).filter(i => i >= 0);
+    if (marks.length) {
+      const a = marks[0], b = marks[marks.length - 1];
+      const first = kids[a - 1], last = kids[b + 1];
+      if (first && first.nodeType === 3) { const w = first.data.split(" "); if (w.length > win + 1) first.data = "… " + w.slice(-win - 1).join(" "); }
+      if (last && last.nodeType === 3) { const w = last.data.split(" "); if (w.length > win + 1) last.data = w.slice(0, win + 1).join(" ") + " …"; }
     }
   }
   return wrap;
 }
 
-/* ---------- timing: taps on the stage fast-forward the current reveal ---------- */
-let runId = 0, fast = false;
-const wait = ms => new Promise(r => setTimeout(r, fast || REDUCED ? 0 : ms));
-function alive(id) { if (id !== runId) throw new Error("stale"); }
-
-/* ---------- Đậu speaking ---------- */
-function dau(pose, { big = false } = {}) {
-  const bubbles = h("div", { class: "bubbles" }, h("div", { class: "who" }, "anh Đậu"));
-  const pic = img("dau_" + pose, "dau-pic pop", "anh Đậu");
-  const box = h("div", { class: "dau" + (big ? " big" : "") }, pic, bubbles);
-  box.clear = () => bubbles.querySelectorAll(".bubble").forEach(b => b.remove());
-  box.setPose = p => { pic.src = A["dau_" + p]; pic.classList.remove("pop"); void pic.offsetWidth; pic.classList.add("pop"); };
-  box.say = async (lines, id) => {
-    for (const line of [].concat(lines)) {
-      const b = h("div", { class: "bubble" }, h("span", { class: "typing", "aria-hidden": "true" }, h("i"), h("i"), h("i")));
-      bubbles.append(b); scrollDown();
-      await wait(Math.min(900, 380 + line.length * 9)); alive(id);
-      b.textContent = line; scrollDown();
-      await wait(260); alive(id);
-    }
-  };
-  return box;
-}
-
-function scrollDown() {
-  const st = $("#stage");
-  requestAnimationFrame(() => st.scrollTo({ top: st.scrollHeight, behavior: REDUCED || fast ? "auto" : "smooth" }));
-}
-
 /* ---------- confetti ---------- */
 function confetti() {
-  if (REDUCED) return;
+  if (REDUCED || replay) return;
   const cv = h("canvas", { class: "confetti" }); document.body.append(cv);
   const ctx = cv.getContext("2d"), dpr = devicePixelRatio || 1;
   cv.width = innerWidth * dpr; cv.height = innerHeight * dpr; ctx.scale(dpr, dpr);
   const cols = ["#FF9800", "#8DD9B8", "#F9B8AE", "#FFD166", "#6FB7F2"];
-  const ps = Array.from({ length: 90 }, () => ({ x: innerWidth / 2 + (Math.random() - .5) * 80, y: innerHeight * .42, vx: (Math.random() - .5) * 9, vy: -Math.random() * 11 - 4, r: Math.random() * 6.28, vr: (Math.random() - .5) * .3, w: 6 + Math.random() * 6, hh: 4 + Math.random() * 5, c: cols[Math.random() * cols.length | 0] }));
+  const ps = Array.from({ length: 90 }, () => ({ x: innerWidth / 2 + (Math.random() - .5) * 80, y: innerHeight * .45, vx: (Math.random() - .5) * 9, vy: -Math.random() * 11 - 4, r: Math.random() * 6.28, vr: (Math.random() - .5) * .3, w: 6 + Math.random() * 6, hh: 4 + Math.random() * 5, c: cols[Math.random() * cols.length | 0] }));
   let t = 0;
-  (function tick() {
+  (function frame() {
     ctx.clearRect(0, 0, innerWidth, innerHeight);
     for (const p of ps) { p.vy += .32; p.vx *= .99; p.x += p.vx; p.y += p.vy; p.r += p.vr; ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.r); ctx.fillStyle = p.c; ctx.fillRect(-p.w / 2, -p.hh / 2, p.w, p.hh); ctx.restore(); }
-    if (++t < 150) requestAnimationFrame(tick); else cv.remove();
+    if (++t < 150) requestAnimationFrame(frame); else cv.remove();
   })();
 }
 
-/* ---------- saved progress (per-browser convenience only) ---------- */
+/* ---------- saved progress (this browser only) ---------- */
 const KEY = "dau:" + L.homework + ":" + NAME;
-let S = { step: 0, answers: {}, practice: {}, draft: "" };
+const fresh = () => ({ screen: 0, passed: 0, answers: {}, practice: {}, beats: {}, draft: "", swiped: false });
+let S = fresh();
 try { const raw = localStorage.getItem(KEY); if (raw) S = { ...S, ...JSON.parse(raw) }; } catch (e) { /* storage unavailable */ }
 const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { /* ignore */ } };
 
-/* ---------- question helper: one tap, one reply ---------- */
-function ask(options, { answer = null, key, en = false }) {
-  return new Promise(resolve => {
-    const box = h("div", { class: "choices appear" });
-    const btns = options.map((o, i) => h("button", { class: "choice" + (en ? " en" : ""), type: "button", onclick: () => pick(i) }, o));
-    box.append(...btns);
-    function pick(i) {
-      btns.forEach(b => b.disabled = true);
-      btns[i].classList.add(answer == null ? "picked" : i === answer ? "right" : "wrong");
-      if (answer != null && i !== answer) btns[answer].classList.add("right");
-      S.answers[key] = i; save();
-      resolve(i);
-    }
-    box.preset = () => { const i = S.answers[key]; if (i != null) pick(i); };
-    ask.last = box;
-  });
+/* =====================================================================
+   Engine. A screen is a script of beats. Each gate() waits for the student
+   (swipe or Tiếp); nothing moves forward on its own. Going back re-runs the
+   screen instantly up to the previous gate.
+   ===================================================================== */
+let runId = 0, cur = 0, passed = 0, target = 0, replay = false, fast = false;
+let waiting = null, needAnswer = null, atEnd = false, resumed = false;
+let scene, talk, pic, slot, content;
+const pending = new Set();
+
+const wait = ms => new Promise(r => {
+  if (replay || fast || REDUCED) return r();
+  const p = { r, t: setTimeout(() => { pending.delete(p); r(); }, ms) };
+  pending.add(p);
+});
+function hurry() { fast = true; for (const p of pending) { clearTimeout(p.t); p.r(); } pending.clear(); }
+function alive(id) { if (id !== runId) throw new Error("stale"); }
+
+async function tick(el, to, step, decimals, ms, id) {
+  for (let v = step; v < to - 1e-9; v += step) { el.textContent = v.toFixed(decimals); await wait(ms); alive(id); }
+  el.textContent = to.toFixed(decimals);
 }
 
-/* ---------- steps ---------- */
+function fit() {
+  if (!content) return;
+  content.classList.remove("overflow");
+  let k = 1;
+  scene.style.setProperty("--k", k);
+  // layout heights only: entrance animations use transforms, which would inflate scrollHeight
+  const over = () => {
+    let bottom = 0;
+    for (const ch of content.children) bottom = Math.max(bottom, ch.offsetTop + ch.offsetHeight);
+    return bottom - content.offsetTop > content.clientHeight + 1;
+  };
+  while (over() && k > .74) { k = +(k - .04).toFixed(2); scene.style.setProperty("--k", k); }
+  if (over()) content.classList.add("overflow");
+}
+
+/* re-fit whenever the screen's content or Đậu's bubble changes, once per frame */
+let fitQueued = false;
+function settle() { if (fitQueued) return; fitQueued = true; requestAnimationFrame(() => { fitQueued = false; fit(); }); }
+const fitRO = new ResizeObserver(settle), fitMO = new MutationObserver(settle);
+if (document.fonts) document.fonts.ready.then(settle);
+
+function makeCtx(id) {
+  const ctx = {
+    id,
+    pose(p) { const src = A["dau_" + p]; if (pic.getAttribute("src") !== src) { pic.src = src; pic.classList.remove("pop"); void pic.offsetWidth; pic.classList.add("pop"); } },
+    async say(text, pose) {
+      alive(id);
+      talk.hidden = false;
+      if (pose) ctx.pose(pose);
+      const b = h("div", { class: "bubble" });
+      const who = slot.querySelector(".who") || h("div", { class: "who" }, "anh Đậu");
+      if (!replay && !fast && !REDUCED) b.append(h("span", { class: "typing", "aria-hidden": "true" }, h("i"), h("i"), h("i")));
+      slot.replaceChildren(who, b); fit();
+      await wait(Math.min(900, 350 + text.length * 8));
+      b.textContent = text; fit();
+      alive(id);
+    },
+    show(el, { replace = false } = {}) {
+      alive(id);
+      el.classList.add(replace ? "enter" : "rise");
+      if (replace) content.replaceChildren(el); else content.append(el);
+      fit();
+      el.querySelectorAll("img").forEach(i => { if (!i.complete) i.addEventListener("load", fit, { once: true }); });
+      return el;
+    },
+    wait: async ms => { await wait(ms); alive(id); },
+    async gate() {
+      alive(id);
+      if (passed < target) { passed++; return; }
+      replay = false; scene.classList.remove("instant"); fast = false;
+      setBtn(); settle();
+      await new Promise(r => { waiting = r; });
+      alive(id);
+      passed++; fast = false;
+      if (!screens[cur].noSave) { S.screen = cur; S.passed = passed; save(); }
+      progress(); setBtn();
+    },
+    ask(options, { answer = null, key, en = false }) {
+      alive(id);
+      const box = h("div", { class: "choices" });
+      const btns = options.map(o => h("button", { class: "choice" + (en ? " en" : ""), type: "button" }, o));
+      box.append(...btns);
+      ctx.show(box);
+      return new Promise(resolve => {
+        const pick = i => {
+          btns.forEach(b => { b.disabled = true; });
+          btns[i].classList.add(answer == null || i === answer ? "right" : "wrong");
+          if (answer != null && i !== answer) btns[answer].classList.add("right");
+          S.answers[key] = i; save();
+          needAnswer = null; setBtn();
+          resolve(i);
+        };
+        btns.forEach((b, i) => b.addEventListener("click", () => pick(i)));
+        if (S.answers[key] != null && replay) pick(S.answers[key]);
+        else { needAnswer = box; setBtn(); settle(); }
+      });
+    },
+  };
+  return ctx;
+}
+
+const screens = [];
 const SECTIONS = ["Kết quả", "Framework", "Phát triển ý", "Linking", "Ngữ pháp & Từ vựng", "Luyện tập", "Tổng kết"];
-const steps = [];
-const add = (sec, render, opts = {}) => steps.push({ sec, render, ...opts });
-let ready, setReady, nextLabel;
+const add = (sec, script, opts = {}) => screens.push({ sec, script, ...opts });
 
-// 0 hello
-add(0, async (st, id) => {
-  const d = dau("waving", { big: true });
-  st.append(h("div", { class: "row", style: "justify-content:center" }, h("span", { class: "pill tone-orange" }, L.homework + " · " + L.essay_type)), d);
-  await d.say(L.hello, id);
-  nextLabel(S.step > 1 ? "Làm tiếp bài dở" : "Bắt đầu nha");
-  setReady();
-}, { noSave: true });
+async function run(i, tgt = 0, dir = 1) {
+  runId++; const id = runId;
+  for (const p of pending) clearTimeout(p.t);
+  pending.clear();
+  cur = i; passed = 0; target = tgt; atEnd = false; waiting = null; needAnswer = null; fast = false;
+  replay = dir < 0 || tgt > 0;
+  const sc = screens[i];
+  pic = h("img", { class: "pic pop", alt: "anh Đậu", src: A.dau_waving });
+  slot = h("div", { class: "slot" });
+  talk = h("div", { class: "talk" }, pic, slot); talk.hidden = true;
+  content = h("div", { class: "content" });
+  scene = h("div", { class: "scene" + (sc.hero ? " hero" : "") + (replay ? " instant" : " in") }, talk, content);
+  $("#stage").replaceChildren(scene);
+  fitRO.disconnect(); fitMO.disconnect();
+  fitRO.observe(scene); fitMO.observe(scene, { childList: true, subtree: true, characterData: true });
+  $("#sec").replaceChildren(SECTIONS[sc.sec], h("small", {}, `${sc.sec + 1}/${SECTIONS.length}`));
+  progress(); setBtn(); hint();
+  try { await sc.script(makeCtx(id)); }
+  catch (e) { if (e.message === "stale") return; console.error(e); }
+  if (id !== runId) return;
+  replay = false; scene.classList.remove("instant");
+  atEnd = true; S.beats[i] = passed; settle();
+  if (!sc.noSave) { S.screen = i; S.passed = passed; }
+  save(); progress(); setBtn();
+}
 
-// 1 results
-add(0, async (st, id) => {
-  st.append(h("h1", { class: "h" }, "Bài của " + NAME));
-  const num = h("span", {}, "0");
-  const fill = h("div", { class: "meter-fill" });
+function visible(i) { return !(screens[i].skip && screens[i].skip()); }
+function nextIndex(from, dir) { let j = from + dir; while (j >= 0 && j < screens.length && !visible(j)) j += dir; return j; }
+
+function forward() {
+  if (document.querySelector(".sheet")) return;
+  if (needAnswer) { needAnswer.classList.remove("nudge"); void needAnswer.offsetWidth; needAnswer.classList.add("nudge"); return; }
+  if (waiting) { const w = waiting; waiting = null; w(); return; }
+  if (!atEnd) { hurry(); return; }                 // still animating: finish it, never skip ahead
+  if (cur === 0 && S.screen > 1 && !resumed) { resumed = true; return run(S.screen, S.passed); }
+  resumed = true;
+  const j = nextIndex(cur, 1);
+  if (j < screens.length) run(j); else openEssay({});
+}
+function backward() {
+  if (document.querySelector(".sheet")) return;
+  if (passed > 0) return run(cur, passed - 1, -1);
+  const j = nextIndex(cur, -1);
+  if (j >= 0) run(j, S.beats[j] != null ? S.beats[j] : 999, -1);
+}
+
+function setBtn() {
+  const b = $("#nextBtn"), sc = screens[cur];
+  b.classList.toggle("wait", !!needAnswer);
+  let t = "Tiếp";
+  if (needAnswer) t = "Chọn đáp án nha";
+  else if (atEnd && cur === 0 && S.screen > 1 && !resumed) t = "Làm tiếp bài dở";
+  else if (atEnd && sc.last) t = "Xong";
+  else if (atEnd && sc.label) t = sc.label;
+  b.textContent = t;
+  $("#backBtn").disabled = cur === 0 && passed === 0;
+}
+function progress() {
+  const beats = S.beats[cur] || 4;
+  const pct = Math.min(100, (cur + Math.min(1, passed / Math.max(1, beats))) / (screens.length - 1) * 100);
+  $("#barFill").style.width = pct + "%";
+  $("#barSprout").style.left = `clamp(10px, ${pct}%, calc(100% - 10px))`;
+  $("#bar").setAttribute("aria-valuenow", Math.round(pct));
+}
+
+/* swipe hint until the first swipe */
+function hint() {
+  const old = $(".hint"); if (old) old.remove();
+  $("#app").classList.toggle("hinting", !S.swiped && cur <= 3);
+  if (S.swiped || cur > 3) return;
+  $("#bottom").append(h("div", { class: "hint", html: '<svg viewBox="0 0 46 24" aria-hidden="true"><path d="M6 12h34" stroke="currentColor" stroke-width="2" stroke-dasharray="3 4" opacity=".4"/><g class="finger"><circle cx="23" cy="12" r="7" fill="var(--orange)" opacity=".85"/><circle cx="23" cy="12" r="11" fill="none" stroke="var(--orange)" stroke-width="2" opacity=".35"/></g></svg>' }, "Vuốt sang trái để tiếp tục"));
+}
+
+/* gestures: finger left or up = next, right or down = back */
+(() => {
+  const st = $("#stage"); let sx = 0, sy = 0, on = false;
+  st.addEventListener("pointerdown", e => {
+    if (e.target.closest(".wchip, textarea, input, label")) return;
+    on = true; sx = e.clientX; sy = e.clientY;
+  });
+  st.addEventListener("pointerup", e => {
+    if (!on) return; on = false;
+    const dx = e.clientX - sx, dy = e.clientY - sy;
+    if (Math.max(Math.abs(dx), Math.abs(dy)) < 45) return;
+    const fwd = Math.abs(dx) > Math.abs(dy) ? dx < 0 : dy < 0;
+    if (!S.swiped) { S.swiped = true; save(); const hn = $(".hint"); if (hn) hn.remove(); $("#app").classList.remove("hinting"); fit(); }
+    if (fwd) forward(); else backward();
+  });
+  st.addEventListener("pointercancel", () => { on = false; });
+})();
+$("#nextBtn").addEventListener("click", forward);
+$("#backBtn").addEventListener("click", backward);
+document.addEventListener("keydown", e => {
+  if ((e.target.closest && e.target.closest("textarea, input")) || document.querySelector(".sheet")) return;
+  if (["ArrowRight", "ArrowDown", "PageDown"].includes(e.key)) { e.preventDefault(); forward(); }
+  if (["ArrowLeft", "ArrowUp", "PageUp"].includes(e.key)) { e.preventDefault(); backward(); }
+});
+addEventListener("resize", () => fit());
+
+/* ============================ screens ============================ */
+
+// hello
+add(0, async c => {
+  c.show(h("span", { class: "pill tone-orange" }, L.homework + " · " + L.essay_type));
+  await c.say(L.hello[0], "waving");
+  for (const line of L.hello.slice(1)) { await c.gate(); await c.say(line); }
+}, { hero: true, label: "Bắt đầu nha", noSave: true });
+
+// results: word count, then each score ticks up one at a time, then overall
+add(0, async c => {
+  const num = h("span", {}, "0"), fill = h("div", { class: "meter-fill" });
   const max = Math.max(L.word_count, L.word_target) * 1.15;
-  const meter = h("div", { class: "meter" }, fill, h("div", { class: "meter-mark", style: `left:${L.word_target / max * 100}%` }, h("span", {}, "Yêu cầu " + L.word_target)));
-  st.append(h("div", { class: "card count-card appear" }, h("div", { class: "big-num" }, num, h("small", {}, "chữ")), meter));
-  await wait(250); alive(id);
+  c.show(h("div", { class: "card" }, h("div", { class: "big-num" }, num, h("small", {}, "chữ")),
+    h("div", { class: "meter" }, fill, h("div", { class: "meter-mark", style: `left:${L.word_target / max * 100}%` }, h("span", {}, "Yêu cầu " + L.word_target)))));
+  const said = c.say(L.results.words[0], "thumbsup");
+  await c.wait(300);
   fill.style.width = (L.word_count / max * 100) + "%";
-  const t0 = performance.now(), dur = fast || REDUCED ? 1 : 1300;
-  await new Promise(r => (function f(t) { const k = Math.min(1, (t - t0) / dur); num.textContent = Math.round(L.word_count * (1 - Math.pow(1 - k, 3))); k < 1 && id === runId ? requestAnimationFrame(f) : r(); })(performance.now()));
-  alive(id);
-  const d1 = dau("thumbsup"); st.append(d1); await d1.say(L.results.words, id);
-  const crit = [["TR", "Task"], ["CC", "Mạch lạc"], ["LR", "Từ vựng"], ["GR", "Ngữ pháp"]];
+  const t0 = performance.now(), dur = replay || REDUCED ? 1 : 1500;
+  await new Promise(r => (function f(t) {
+    const k = Math.min(1, (t - t0) / dur);
+    num.textContent = Math.round(L.word_count * (1 - Math.pow(1 - k, 3)));
+    if (fast || k >= 1 || c.id !== runId) { num.textContent = L.word_count; r(); } else requestAnimationFrame(f);
+  })(performance.now()));
+  await said;
+  await c.gate(); await c.say(L.results.words[1]);
+  await c.gate();
+  await c.say(L.results.criteria, "waving");
   const grid = h("div", { class: "scores" });
-  st.append(h("div", { class: "stack" }, h("div", { class: "pairs-head" }, "Điểm từng tiêu chí"), grid)); scrollDown();
-  for (const [i, [k, lab]] of crit.entries()) {
-    grid.append(h("div", { class: "score", style: `animation-delay:${fast ? 0 : i * 160}ms` }, h("b", {}, L.scores[k]), h("span", {}, k), h("div", { class: "small muted", style: "font-size:11px" }, lab)));
+  c.show(grid);
+  for (const [k, lab] of [["TR", "Task"], ["CC", "Mạch lạc"], ["LR", "Từ vựng"], ["GR", "Ngữ pháp"]]) {
+    const n = h("b", {}, "0");
+    grid.append(h("div", { class: "score" }, n, h("span", {}, k), h("em", {}, lab))); fit();
+    await c.wait(300);
+    await tick(n, Number(L.scores[k]), 1, 0, 120, c.id);
+    await c.wait(550);
   }
-  await wait(900); alive(id);
-  st.append(h("div", { class: "card overall" }, h("div", { class: "overall-ring" }, L.overall), h("div", {}, h("div", { class: "h2" }, "Overall"), h("div", { class: "muted small" }, L.teacher + " chấm"))));
-  scrollDown(); await wait(500); alive(id);
-  const d2 = dau("waving"); st.append(d2); await d2.say(L.results.score, id);
-  nextLabel("Xem chi tiết"); setReady();
-});
+  await c.gate();
+  const ring = h("div", { class: "ring" }, "0.0");
+  c.show(h("div", { class: "card overall" }, ring, h("div", {}, h("div", { class: "h2" }, "Overall"), h("div", { class: "muted small" }, L.teacher + " chấm"))));
+  await c.wait(400);
+  await tick(ring, Number(L.overall), .5, 1, 90, c.id);
+  await c.say(L.results.score[0], "thumbsup");
+  for (const line of L.results.score.slice(1)) { await c.gate(); await c.say(line, "waving"); }
+}, { label: "Xem chi tiết" });
 
-// 2 framework guess
-add(1, async (st, id) => {
+// framework: one part per beat, then a short overview
+add(1, async c => {
   const F = L.framework;
-  st.append(h("h1", { class: "h" }, "Framework " + L.essay_type));
-  const d = dau("thinking"); st.append(d); await d.say(F.intro, id);
-  const p = ask(F.guess.options, { key: "fwGuess" }); st.append(ask.last); ask.last.preset(); scrollDown();
-  const i = await p; alive(id);
-  await d.say(F.guess.replies[i], id);
-  setReady();
+  c.show(h("h1", { class: "h" }, "Framework " + L.essay_type));
+  await c.say(F.intro[0], "waving");
+  for (const line of F.intro.slice(1)) { await c.gate(); await c.say(line); }
+  for (const [pi, part] of F.parts.entries()) {
+    await c.gate();
+    if (pi === 0) c.say(F.reveal_intro[0], "thumbsup");
+    const card = c.show(h("div", { class: "card fw-card" }, h("span", { class: "pill tone-" + part.tone }, part.label)), { replace: true });
+    await c.wait(500);
+    card.append(h("div", { class: "quote en rise" }, part.sids.map(origText).join(" "))); fit();
+    await c.wait(1800);
+    card.append(h("div", { class: "summary rise" }, part.summary)); fit();
+    for (const idea of part.ideas || []) { await c.wait(1100); card.append(h("div", { class: "idea-chip" }, h("b", {}, idea.tag), h("span", {}, idea.text))); fit(); }
+    await c.wait(500);
+    card.append(cite(part.sids[0])); fit();
+  }
+  await c.gate();
+  const [intro, b1, b2, concl] = F.parts;
+  const map = h("div", { class: "map" });
+  c.show(h("div", { class: "card stack" }, h("div", { class: "label" }, "Tổng quan bài của em"), map), { replace: true });
+  const rows = [
+    [h("div", { class: "lab" }, TICK(true), "Mở bài"), h("div", { class: "wide" }, intro.short)],
+    [h("div", { class: "lab" }, TICK(true), "Body 1"), ...b1.ideas.map(x => h("div", { class: "chip c" }, x.short))],
+    [h("div"), h("div", { class: "down", "aria-hidden": "true" }, "↓"), h("div", { class: "down", "aria-hidden": "true" }, "↓")],
+    [h("div", { class: "lab" }, TICK(true), "Body 2"), ...b2.ideas.map(x => h("div", { class: "chip s" }, x.short))],
+    [h("div", { class: "lab" }, TICK(true), "Kết bài"), h("div", { class: "wide" }, concl.short)],
+  ];
+  for (const r of rows) { await c.wait(550); map.append(...r); fit(); }
+  await c.wait(400);
+  if (F.ok) confetti();
+  await c.say(F.verdict[0], F.ok ? "cheering" : "oops");
+  for (const line of F.verdict.slice(1)) { await c.gate(); await c.say(line, "thumbsup"); }
 });
 
-// 3 framework reveal
-add(1, async (st, id) => {
-  const F = L.framework;
-  const d = dau("waving"); st.append(d); await d.say(F.reveal_intro, id);
-  for (const part of F.parts) {
-    const summary = h("div", { class: "summary" });
-    const card = h("div", { class: "card fw-card appear" },
-      h("span", { class: "pill tone-" + part.tone, style: "align-self:flex-start" }, part.label),
-      h("div", { class: "quote en" }, part.sids.map(origText).join(" ")),
-      h("div", { class: "row", style: "justify-content:space-between" }, cite(part.sids[0])));
-    st.append(card); scrollDown();
-    await wait(700); alive(id);
-    card.append(summary); summary.textContent = part.summary; summary.classList.add("appear"); scrollDown();
-    if (part.ideas) {
-      const list = h("div", { class: "ideas" }); card.append(list);
-      for (const idea of part.ideas) { await wait(450); alive(id); list.append(h("div", { class: "idea-chip" }, h("b", {}, idea.tag), h("span", {}, idea.text))); scrollDown(); }
-    }
-    await wait(900); alive(id);
-  }
-  setReady();
-});
-
-// 4 framework verdict
-add(1, async (st, id) => {
-  const F = L.framework;
-  st.append(h("h2", { class: "h2" }, "Kiểm tra theo Framework"));
-  const ul = h("ul", { class: "checklist" }); st.append(h("div", { class: "card" }, ul));
-  for (const [i, c] of F.checklist.entries()) {
-    await wait(i ? 380 : 150); alive(id);
-    ul.append(h("li", {}, h("span", { class: "tick" + (c.ok ? "" : " no"), html: c.ok ? TICK_SVG : CROSS_SVG }), h("span", {}, c.text)));
-  }
-  await wait(500); alive(id);
-  const pairs = h("div", { class: "pairs" }, h("div", { class: "pairs-head" }, "Nguyên nhân"), h("div"), h("div", { class: "pairs-head", style: "text-align:right" }, "Giải pháp"));
-  st.append(h("div", { class: "card stack appear" }, h("div", { class: "small muted" }, "Giải pháp của em đi đúng vào từng nguyên nhân"), pairs)); scrollDown();
-  for (const [i, p] of F.pairs.entries()) {
-    await wait(i ? 500 : 250); alive(id);
-    pairs.append(h("div", { class: "p c" }, p.cause), h("div", { html: '<svg viewBox="0 0 34 20"><path d="M2 10 H30 M24 4 L31 10 L24 16"/></svg>', style: "display:grid;place-items:center" }), h("div", { class: "p s" }, p.solution));
-    scrollDown();
-  }
-  await wait(700); alive(id);
-  const d = dau(F.ok ? "cheering" : "oops"); st.append(d);
-  if (F.ok && !fast) confetti();
-  await d.say(F.verdict, id);
-  setReady();
-});
-
-// 5 ideas overview
-add(2, async (st, id) => {
+// ideas overview
+add(2, async c => {
   const I = L.ideas;
-  st.append(h("h1", { class: "h" }, "Em phát triển ý tới đâu?"));
-  const d = dau("thinking"); st.append(d); await d.say(I.intro, id);
+  c.show(h("h1", { class: "h" }, "Em phát triển ý tới đâu?"));
+  await c.say(I.intro[0], "thinking");
+  for (const line of I.intro.slice(1)) { await c.gate(); await c.say(line); }
   for (const o of I.overview) {
-    await wait(300); alive(id);
-    st.append(h("div", { class: "card ov" }, img(o.ok ? "icon_check" : "icon_cross", "icon"), h("div", { class: "t" }, h("b", {}, o.tag + " · " + o.text), h("span", {}, o.note))));
-    scrollDown();
+    await c.wait(700);
+    c.show(h("div", { class: "card ov" }, img(o.ok ? "icon_check" : "icon_cross", "icon"), h("div", { class: "t" }, h("b", {}, o.tag + " · " + o.text), h("span", {}, o.note))));
   }
-  setReady();
 });
 
-// 6.. idea details
-L.ideas.details.forEach((D, k) => add(2, async (st, id) => {
-  st.append(h("span", { class: "pill tone-blush pbadge" }, `Cần sửa ${k + 1}/${L.ideas.details.length}`), h("h2", { class: "h2" }, D.tag + " · " + D.title));
-  st.append(h("div", { class: "card stack appear" }, h("div", { class: "quote en" }, D.sids.map(origText).join(" ")), cite(D.sids[D.sids.length - 1], null)));
-  const chain = h("div", { class: "chain" }); st.append(h("div", { class: "card appear" }, h("div", { class: "pairs-head", style: "margin-bottom:8px" }, "Chuỗi ý của em"), chain));
+// ideas that need work
+L.ideas.details.forEach((D, k) => add(2, async c => {
+  c.show(h("span", { class: "pill tone-blush" }, `Cần sửa ${k + 1}/${L.ideas.details.length} · ${D.tag}`));
+  await c.say(`Đây là ý ${lower1(D.title)} của em nè`, "magnify");
+  c.show(h("div", { class: "card stack" }, h("div", { class: "quote en" }, D.sids.map(origText).join(" ")), cite(D.sids[D.sids.length - 1])));
+  await c.gate();
+  const chain = h("div", { class: "chain" });
+  c.show(h("div", { class: "card" }, h("div", { class: "label", style: "margin-bottom:.4em" }, "Chuỗi ý của em"), chain), { replace: true });
   for (const [i, n] of D.chain.entries()) {
-    await wait(i ? 520 : 300); alive(id);
+    await c.wait(i ? 800 : 300);
     if (i) chain.append(h("div", { class: "arrow" }));
-    chain.append(h("div", { class: "node" + (D.bad_node === i ? " bad" : "") }, n)); scrollDown();
+    chain.append(h("div", { class: "node" + (D.bad_node === i ? " bad" : "") }, n)); fit();
   }
-  await wait(400); alive(id);
-  const d = dau("magnify"); st.append(d); await d.say(D.ask.q, id);
-  const p = ask(D.ask.options, { answer: D.ask.answer, key: "idea" + k }); st.append(ask.last); ask.last.preset(); scrollDown();
-  const i = await p; alive(id);
-  const d2 = dau(i === D.ask.answer ? "thumbsup" : "oops"); st.append(d2);
-  await d2.say([i === D.ask.answer ? D.ask.right : D.ask.wrong, D.fix_intro], id);
-  if (D.bad_node == null) chain.append(h("div", { class: "gap-mark" }, "Thiếu mắt xích"));
-  for (const n of D.fix_chain) { await wait(450); alive(id); chain.append(h("div", { class: "arrow" }), h("div", { class: "node new" }, n)); }
-  st.append(h("div", { class: "flow-en appear" }, "Flow gợi ý: ", h("span", { class: "en" }, D.fix_en)));
-  scrollDown(); await wait(400); alive(id);
-  await d2.say(D.outro, id);
-  setReady();
+  await c.wait(500);
+  await c.say(D.ask.q, "thinking");
+  const i = await c.ask(D.ask.options, { answer: D.ask.answer, key: "idea" + k });
+  await c.say(i === D.ask.answer ? D.ask.right : D.ask.wrong, i === D.ask.answer ? "thumbsup" : "oops");
+  await c.gate();
+  content.querySelector(".choices").remove(); fit();
+  await c.say(D.fix_intro, "waving");
+  if (D.bad_node == null) { chain.append(h("div", { class: "gap-mark" }, "Thiếu mắt xích")); fit(); }
+  for (const n of D.fix_chain) { await c.wait(800); chain.append(h("div", { class: "arrow" }), h("div", { class: "node new" }, n)); fit(); }
+  await c.gate();
+  c.show(h("div", { class: "flow-en" }, "Flow gợi ý: ", h("span", { class: "en" }, D.fix_en)));
+  await c.say(D.outro, "thumbsup");
 }));
 
 // linking
-add(3, async (st, id) => {
+add(3, async c => {
   const K = L.linking;
-  st.append(h("h1", { class: "h" }, "Linking devices"));
-  const d = dau("thinking"); st.append(d); await d.say(K.intro, id);
-  const p = ask(K.guess.options, { answer: K.guess.answer, key: "linkGuess" }); st.append(ask.last); ask.last.preset(); scrollDown();
-  await p; alive(id);
+  c.show(h("h1", { class: "h" }, "Linking devices"));
+  await c.say(K.intro[0], "waving");
+  await c.gate();
   const num = h("span", {}, "0");
-  st.append(h("div", { class: "card appear row", style: "gap:16px" }, h("div", { class: "big-num" }, num), h("div", { class: "h2" }, "linking devices")));
-  scrollDown();
-  for (let n = 1; n <= K.count; n++) { await wait(70); alive(id); num.textContent = n; }
-  num.textContent = K.count;
-  const groups = h("div", { class: "link-groups" }); st.append(h("div", { class: "card" }, groups));
+  c.show(h("div", { class: "card row", style: "gap:1em" }, h("div", { class: "big-num" }, num), h("div", { class: "h2" }, "linking devices")));
+  await tick(num, K.count, 1, 0, 110, c.id);
+  await c.say(K.result[0], "thumbsup");
+  const box = c.show(h("div", { class: "card stack" }));
   for (const g of K.groups) {
-    const chips = h("div", { class: "chips" }); groups.append(h("div", {}, h("div", { class: "lg-label" }, g.label), chips));
-    for (const it of g.items) { await wait(160); alive(id); chips.append(h("button", { class: "lchip", type: "button", onclick: () => openEssay({ sid: it.sid }) }, it.text)); }
-    scrollDown();
+    const chips = h("div", { class: "chips" }); box.append(h("div", {}, h("div", { class: "lg-label" }, g.label), chips)); fit();
+    for (const it of g.items) { await c.wait(320); chips.append(h("button", { class: "lchip", type: "button", onclick: () => openEssay({ sid: it.sid }) }, it.text)); fit(); }
+    await c.wait(400);
   }
-  const d2 = dau("thumbsup"); st.append(d2); await d2.say([...K.result, K.suggestions_intro], id);
-  for (const s of K.suggestions) {
-    await wait(400); alive(id);
-    st.append(h("div", { class: "card stack appear" }, h("div", { class: "swap" }, h("span", { class: "from" }, s.from), h("span", { class: "to" }, s.to)), h("div", { class: "small" }, s.why), cite(s.sid)));
-    scrollDown();
+  for (const line of K.result.slice(1)) { await c.gate(); await c.say(line); }
+  for (const [si, s] of K.suggestions.entries()) {
+    await c.gate();
+    if (si === 0) c.say(K.suggestions_intro, "waving");
+    c.show(h("div", { class: "card stack" }, h("span", { class: "pill tone-orange" }, `Nâng cấp ${si + 1}/${K.suggestions.length}`), h("div", { class: "swap" }, h("span", { class: "from" }, s.from), h("span", { class: "to" }, s.to)), h("div", { class: "small" }, s.why), cite(s.sid)), { replace: true });
   }
-  setReady();
 });
 
 // mistakes overview
-add(4, async (st, id) => {
+add(4, async c => {
   const M = L.mistakes;
-  st.append(h("h1", { class: "h" }, "3 lỗi chính của em"));
-  const d = dau("thumbsup"); st.append(d); await d.say(M.intro, id);
+  c.show(h("h1", { class: "h" }, "3 lỗi chính của em"));
+  await c.say(M.intro[0], "waving");
+  for (const line of M.intro.slice(1)) { await c.gate(); await c.say(line, "thumbsup"); }
   for (const [i, m] of M.main.entries()) {
-    await wait(350); alive(id);
-    st.append(h("div", { class: "card mcard" }, h("div", { class: "n" }, m.cids.length + "×"), h("div", { class: "t" }, h("b", {}, m.title), h("span", { class: "small muted" }, m.tag))));
-    scrollDown();
+    await c.wait(i ? 700 : 300);
+    c.show(h("div", { class: "card mcard" }, h("div", { class: "n" }, m.cids.length + "×"), h("div", { class: "t" }, h("b", {}, m.title), h("span", { class: "small muted" }, m.tag))));
   }
-  await wait(300); alive(id);
+  await c.wait(500);
   const otherCount = M.others.reduce((n, o) => n + o.cids.length, 0);
-  const det = h("details", { class: "others appear" }, h("summary", {}, `Các lỗi nhỏ khác (${otherCount})`));
-  for (const o of M.others) {
-    det.append(h("div", { class: "other-row" }, h("div", { style: "font-weight:600" }, `${o.label} · ${o.cids.length}`),
-      ...o.cids.map(c => h("div", { class: "ex en" }, (C[c].orig.trim() || "…") + "  →  " + (C[c].fix.trim() || "bỏ")))));
-  }
-  st.append(det); scrollDown();
-  setReady();
+  c.show(h("button", { class: "btn btn-ghost", type: "button", onclick: openOthers }, `Xem ${otherCount} lỗi nhỏ khác`));
 });
 
-// each main mistake: pattern, then rule
+// each main mistake: her sentences one by one, the question, the fixes; then the rule
 L.mistakes.main.forEach((m, k) => {
-  const sids = [...new Set(m.cids.map(c => CID_SENT[c]))];
-  add(4, async (st, id) => {
-    st.append(h("span", { class: "pill tone-blush pbadge" }, `Lỗi ${k + 1}/3`));
-    const d = dau("magnify"); st.append(d);
-    await d.say(`Em để ý ${sids.length} câu này nè ${NAME}`, id);
-    const cards = sids.map((sid, i) => {
-      const body = h("div", { class: "quote en" }, sentence(sid, { mode: "orig", focus: m.cids }));
-      const c = h("div", { class: "card sent-card", style: `animation-delay:${fast ? 0 : i * 200}ms` }, body, cite(sid, m.cids));
-      c.body = body; c.sid = sid; return c;
-    });
-    st.append(...cards); scrollDown();
-    await wait(600); alive(id);
-    await d.say(m.ask.q, id);
-    const p = ask(m.ask.options, { answer: m.ask.answer, key: "m" + k }); st.append(ask.last); ask.last.preset(); scrollDown();
-    const i = await p; alive(id);
-    await d.say(i === m.ask.answer ? "Đúng rồi á em" : `Chưa đúng nè ${NAME}, là ${m.ask.options[m.ask.answer].toLowerCase()} á`, id);
-    for (const c of cards) { c.body.replaceChildren(sentence(c.sid, { mode: "diff", focus: m.cids, live: !fast })); await wait(350); alive(id); }
-    await wait(500); alive(id);
-    st.append(h("div", { class: "card times appear" }, h("div", { class: "n" }, m.cids.length), h("div", { class: "l" }, m.count_line)));
-    scrollDown();
-    const d2 = dau("thinking"); st.append(d2); await d2.say(m.reason, id);
-    setReady();
+  const sids = [...new Set(m.cids.map(x => CID_SENT[x]))];
+  add(4, async c => {
+    c.show(h("span", { class: "pill tone-blush" }, `Lỗi ${k + 1}/3`));
+    await c.say(`Em để ý ${sids.length} câu này nè ${NAME}`, "magnify");
+    const cards = [];
+    for (const [i, sid] of sids.entries()) {
+      if (i) await c.gate();
+      const body = h("div", { class: "quote en" }, sentence(sid, { mode: "orig", focus: m.cids, window: 5 }));
+      const card = h("button", { class: "card snip", type: "button", "aria-label": "Xem câu này trong bài", onclick: () => openEssay({ sid, cids: m.cids }) }, body, h("span", { class: "pin", html: CITE_SVG }));
+      card.body = body; card.sid = sid; cards.push(card);
+      c.show(card);
+    }
+    await c.gate();
+    await c.say(m.ask.q, "thinking");
+    const i = await c.ask(m.ask.options, { answer: m.ask.answer, key: "m" + k });
+    await c.say(i === m.ask.answer ? "Đúng rồi á em" : `Chưa đúng nè ${NAME}, là ${lower1(m.ask.options[m.ask.answer])} á`, i === m.ask.answer ? "thumbsup" : "oops");
+    await c.gate();
+    content.querySelector(".choices").remove(); fit();
+    await c.say(m.count_line, "waving");
+    for (const card of cards) { card.body.replaceChildren(sentence(card.sid, { mode: "diff", focus: m.cids, live: !replay, window: 5 })); fit(); await c.wait(500); }
+    await c.wait(300);
+    c.show(h("div", { class: "card times" }, h("div", { class: "n" }, m.cids.length), h("div", { class: "l" }, m.count_line)));
+    await c.gate();
+    await c.say(m.reason, "thinking");
   });
-  add(4, async (st, id) => {
-    st.append(h("span", { class: "pill tone-orange pbadge" }, `Lỗi ${k + 1}/3 · Quy tắc`), h("h2", { class: "h2" }, m.title));
+  add(4, async c => {
+    c.show(h("span", { class: "pill tone-orange" }, `Lỗi ${k + 1}/3 · Quy tắc`));
+    c.show(h("h2", { class: "h2" }, m.title));
     const text = h("div", { class: "board-text" + (m.board.length === 1 ? " one" : ""), "aria-label": m.board.join(", ") });
-    st.append(h("div", { class: "board-wrap appear" }, img("dau_explaining", "", "anh Đậu chỉ lên bảng"), text));
-    for (const [i, line] of m.board.entries()) { await wait(i ? 350 : 500); alive(id); text.append(h("span", {}, line)); }
-    const ul = h("ul", { class: "rules" }); st.append(h("div", { class: "card" }, ul));
-    for (const r of m.rule) { await wait(450); alive(id); ul.append(h("li", {}, r)); scrollDown(); }
-    await wait(400); alive(id);
-    st.append(h("div", { class: "card stack appear" },
+    c.show(h("div", { class: "board-wrap" }, img("dau_explaining", "", "anh Đậu chỉ lên bảng"), text));
+    for (const [i, line] of m.board.entries()) { await c.wait(i ? 450 : 600); text.append(h("span", {}, line)); }
+    const ul = h("ul", { class: "rules" });
+    c.show(h("div", { class: "card" }, ul));
+    for (const [i, r] of m.rule.entries()) { if (i) await c.gate(); else await c.wait(700); ul.append(h("li", {}, r)); fit(); }
+    await c.gate();
+    c.show(h("div", { class: "card stack" },
       h("div", { class: "ex-line" }, img("icon_cross", "icon"), h("span", {}, m.example.bad)),
       h("div", { class: "ex-line" }, img("icon_check", "icon"), h("span", {}, m.example.good))));
-    scrollDown();
-    setReady();
   });
 });
 
 // practice intro
-add(5, async (st, id) => {
-  st.append(h("h1", { class: "h" }, "Luyện tập"));
-  const d = dau("writing", { big: true }); st.append(d); await d.say(L.practice.intro, id);
+add(5, async c => {
+  c.show(h("h1", { class: "h" }, "Luyện tập"));
+  await c.say(L.practice.intro[0], "writing");
+  for (const line of L.practice.intro.slice(1)) { await c.gate(); await c.say(line); }
   for (const m of L.mistakes.main) {
+    await c.wait(600);
     const n = L.practice.items.filter(x => x.mistake === m.id).length;
-    await wait(250); alive(id);
-    st.append(h("div", { class: "card ov" }, img("icon_notebook", "icon"), h("div", { class: "t" }, h("b", {}, m.title), h("span", {}, n + " câu"))));
-    scrollDown();
+    c.show(h("div", { class: "card ov" }, img("icon_notebook", "icon"), h("div", { class: "t" }, h("b", {}, m.title), h("span", {}, n + " câu"))));
   }
-  nextLabel("Bắt đầu luyện"); setReady();
-});
+}, { label: "Bắt đầu luyện" });
 
-/* exercise renderer, shared by practice and review */
+/* one exercise; resolves when solved (or revealed after 2 tries) */
 let rightCount = 0;
 const RIGHT = ["Chuẩn rồi á em", `Đúng rồi nè ${NAME}`, "Chính xác", "Đúng rồi, em nắm được rồi đó"];
-function exercise(item, key, id, st, onDone) {
+function exercise(c, item, key) {
   const m = L.mistakes.main.find(x => x.id === item.mistake);
   const rec = S.practice[key] || (S.practice[key] = { tries: 0, done: false, first: null });
-  const coach = dau("magnify");
   const body = h("div", { class: "stack" });
-  st.append(h("span", { class: "pill tone-orange pbadge" }, m.title), body);
-  let finished = false;
-  async function result(ok) {
-    if (finished) return;
-    rec.tries++;
-    if (rec.first == null) rec.first = ok;
-    save();
-    if (!body.contains(coach)) body.append(coach);
-    if (ok) {
-      finished = true; rec.done = true; save(); lock();
-      coach.setPose("thumbsup"); coach.clear();
-      await coach.say(rec.tries > 1 ? RIGHT[rightCount++ % RIGHT.length] : [RIGHT[rightCount++ % RIGHT.length], item.explain], id);
-      onDone(true);
-    } else if (rec.tries < 2) {
-      coach.setPose("oops"); coach.clear();
-      await coach.say([`Chưa đúng nè ${NAME}`, item.explain, "Em thử lại nhen"], id);
-    } else {
-      finished = true; rec.done = true; save();
-      coach.setPose("thinking"); coach.clear();
-      await coach.say(["Đáp án ở đây nè, câu này mình ôn lại cuối bài nha"], id);
-      reveal(); lock(); onDone(false);
+  c.show(h("div", { class: "stack" }, h("span", { class: "pill tone-orange" }, m.title), body), { replace: true });
+  if (!rec.done) c.say(item.type === "build" ? "Dịch câu này sang tiếng Anh nha" : item.q, "magnify");
+  return new Promise(resolve => {
+    let finished = false, reveal = () => {};
+    const lock = () => body.querySelectorAll(".tok, .wchip, .choice").forEach(b => { b.disabled = true; });
+    const end = ok => { finished = true; rec.done = true; save(); lock(); needAnswer = null; setBtn(); resolve(ok); };
+    async function result(ok) {
+      if (finished) return;
+      rec.tries++; if (rec.first == null) rec.first = ok; save();
+      if (ok) { end(true); await c.say(rec.tries > 1 ? RIGHT[rightCount++ % RIGHT.length] : RIGHT[rightCount++ % RIGHT.length] + ", " + lower1(item.explain), "thumbsup"); }
+      else if (rec.tries < 2) await c.say(`Chưa đúng nè ${NAME}, ${lower1(item.explain)}, em thử lại nhen`, "oops");
+      else { reveal(); end(false); await c.say("Đáp án ở đây nè, câu này mình ôn lại cuối bài nha", "thinking"); }
     }
-  }
-  let reveal = () => {};
-  const lock = () => body.querySelectorAll(".tok, .wchip").forEach(b => { b.disabled = true; });
-  if (item.type === "choose") {
-    body.append(h("div", { class: "h2" }, item.q));
-    if (item.sentence) body.append(h("div", { class: "card quote en" }, item.sentence));
-    const btns = item.options.map((o, i) => h("button", { class: "choice" + (item.sentence ? "" : " en"), type: "button", onclick: () => {
-      if (finished) return;
-      btns.forEach(b => b.classList.remove("wrong"));
-      if (i === item.answer) { btns[i].classList.add("right"); btns.forEach(b => b.disabled = true); result(true); }
-      else { btns[i].classList.add("wrong"); btns[i].disabled = true; result(false); }
-    } }, o));
-    reveal = () => { btns.forEach(b => b.disabled = true); btns[item.answer].classList.add("right"); };
-    body.append(h("div", { class: "choices" }, btns));
-  } else if (item.type === "tap") {
-    body.append(h("div", { class: "h2" }, item.q));
-    const words = item.sentence.split(" ");
-    const target = words.findIndex(w => w.replace(/[.,!?]/g, "") === item.wrong);
-    const toks = words.map((w, i) => h("button", { class: "tok", type: "button", onclick: () => {
-      if (finished) return;
-      toks.forEach(t => t.classList.remove("wrong"));
-      if (i === target) { fixTok(); result(true); } else { toks[i].classList.add("wrong"); result(false); }
-    } }, w));
-    function fixTok() { const t = toks[target]; const punct = words[target].replace(/[^.,!?]/g, ""); t.classList.add("right"); t.replaceChildren(h("s", {}, item.wrong), h("ins", {}, item.fix + punct)); }
-    reveal = fixTok;
-    body.append(h("div", { class: "card tap-sent" }, toks));
-  } else if (item.type === "build") {
-    body.append(h("div", { class: "small muted" }, "Dịch sang tiếng Anh"), h("div", { class: "vi" }, item.vi));
-    const line = h("div", { class: "build-line", "aria-label": "Câu của em" });
-    const pool = h("div", { class: "pool" });
-    const words = [...item.answer, ...item.extra];
-    const order = words.map((_, i) => i).sort((a, b) => ((a * 7919 + words.length * 31) % 97) - ((b * 7919 + words.length * 31) % 97));
-    const picked = [];
-    const chips = order.map(i => h("button", { class: "wchip", type: "button", onclick: () => {
-      if (finished || chips[order.indexOf(i)].classList.contains("used")) return;
-      chips[order.indexOf(i)].classList.add("used"); picked.push(i);
-      const c = h("button", { class: "wchip", type: "button", onclick: () => {
+    if (item.type === "choose") {
+      if (item.sentence) body.append(h("div", { class: "card quote en" }, item.sentence));
+      const btns = item.options.map((o, i) => h("button", { class: "choice" + (item.sentence ? "" : " en"), type: "button", onclick: () => {
         if (finished) return;
-        picked.splice(picked.indexOf(i), 1); c.remove(); chips[order.indexOf(i)].classList.remove("used"); line.classList.remove("bad");
-      } }, words[i]);
-      line.append(c);
-    } }, words[i]));
-    pool.append(...chips);
-    const check = h("button", { class: "btn btn-ghost", type: "button", onclick: () => {
-      if (finished || !picked.length) return;
-      const ok = picked.map(i => words[i]).join(" ") === item.answer.join(" ");
-      line.classList.remove("bad"); void line.offsetWidth;
-      line.classList.add(ok ? "ok" : "bad");
-      if (ok) check.remove();
-      result(ok);
-    } }, "Kiểm tra");
-    reveal = () => { check.remove(); line.replaceChildren(...item.answer.map(w => h("span", { class: "wchip" }, w))); line.classList.remove("bad"); line.classList.add("ok"); pool.remove(); };
-    body.append(line, pool, check);
-  }
-  if (rec.done) { finished = true; reveal(); lock(); onDone(rec.first); }
+        btns.forEach(b => b.classList.remove("wrong"));
+        if (i === item.answer) { btns[i].classList.add("right"); result(true); }
+        else { btns[i].classList.add("wrong"); btns[i].disabled = true; result(false); }
+      } }, o));
+      reveal = () => btns[item.answer].classList.add("right");
+      const box = h("div", { class: "choices" }, btns); body.append(box); needAnswer = box;
+    } else if (item.type === "tap") {
+      const words = item.sentence.split(" ");
+      const target = words.findIndex(w => w.replace(/[.,!?]/g, "") === item.wrong);
+      const toks = words.map((w, i) => h("button", { class: "tok", type: "button", onclick: () => {
+        if (finished) return;
+        toks.forEach(t => t.classList.remove("wrong"));
+        if (i === target) { fixTok(); result(true); } else { toks[i].classList.add("wrong"); result(false); }
+      } }, w));
+      function fixTok() { const t = toks[target]; t.classList.add("right"); t.replaceChildren(h("s", {}, item.wrong), h("ins", {}, item.fix + words[target].replace(/[^.,!?]/g, ""))); }
+      reveal = fixTok;
+      body.append(h("div", { class: "small muted" }, "Chạm vào chữ sai"));
+      const box = h("div", { class: "card tap-sent" }, toks); body.append(box); needAnswer = box;
+    } else if (item.type === "build") {
+      body.append(h("div", { class: "vi" }, item.vi));
+      const b = builder(item, () => finished);
+      const check = h("button", { class: "btn btn-ghost", type: "button", onclick: () => {
+        if (finished) return;
+        const words = b.picked();
+        if (!words.length) return;
+        const ok = words.join(" ") === item.answer.join(" ");
+        b.line.classList.remove("bad"); void b.line.offsetWidth; b.line.classList.add(ok ? "ok" : "bad");
+        if (ok || rec.tries >= 1) check.remove();
+        result(ok);
+      } }, "Kiểm tra");
+      reveal = () => { check.remove(); b.showAnswer(); };
+      body.append(b.el, check); needAnswer = b.el;
+    }
+    fit(); setBtn(); settle();
+    if (rec.done) { reveal(); end(rec.first); c.say(rec.first ? RIGHT[0] : "Đáp án ở đây nè", rec.first ? "thumbsup" : "thinking"); }
+  });
 }
 
-L.practice.items.forEach((item, k) => add(5, async (st, id) => {
-  st.prepend(h("div", { class: "small muted" }, `Câu ${k + 1}/${L.practice.items.length}`));
-  exercise(item, "p" + k, id, st, () => setReady());
-}));
+/* sentence builder: tap to add or remove a word, drag it to put it anywhere */
+function builder(item, isDone) {
+  const words = [...item.answer, ...item.extra];
+  const order = words.map((_, i) => i).sort((a, b) => ((a * 7919 + words.length * 31) % 97) - ((b * 7919 + words.length * 31) % 97));
+  const line = h("div", { class: "build-line", "aria-label": "Câu của em" });
+  const pool = h("div", { class: "pool" });
+  const chips = order.map((i, rank) => { const ch = h("button", { class: "wchip", type: "button", "data-i": i }, words[i]); ch.rank = rank; return ch; });
+  pool.append(...chips);
+  const toPool = ch => { const after = [...pool.children].find(x => x.rank > ch.rank); pool.insertBefore(ch, after || null); };
+  const toggle = ch => { if (ch.parentNode === pool) line.append(ch); else toPool(ch); line.classList.remove("bad", "ok"); fit(); };
+  let drag = null;
+  const before = (x, y) => {
+    const kids = [...line.children].filter(n => n.classList.contains("wchip") && n !== drag.ch);
+    for (const kid of kids) { const r = kid.getBoundingClientRect(); if (y < r.top || (y <= r.bottom && x < r.left + r.width / 2)) return kid; }
+    return null;
+  };
+  const overLine = (x, y) => { const r = line.getBoundingClientRect(); return x > r.left - 20 && x < r.right + 20 && y > r.top - 30 && y < r.bottom + 30; };
+  chips.forEach(ch => {
+    ch.addEventListener("keydown", e => { if ((e.key === "Enter" || e.key === " ") && !isDone()) { e.preventDefault(); toggle(ch); } });
+    ch.addEventListener("pointerdown", e => {
+      if (isDone()) return;
+      e.preventDefault(); ch.setPointerCapture(e.pointerId);
+      drag = { ch, x: e.clientX, y: e.clientY, moved: false, ghost: null, ph: h("span", { class: "ph" }) };
+    });
+    ch.addEventListener("pointermove", e => {
+      if (!drag || drag.ch !== ch) return;
+      if (!drag.moved && Math.hypot(e.clientX - drag.x, e.clientY - drag.y) < 6) return;
+      if (!drag.moved) { drag.moved = true; drag.ghost = h("div", { class: "wchip ghost" }, ch.textContent); document.body.append(drag.ghost); ch.classList.add("dragging"); }
+      drag.ghost.style.left = e.clientX + "px"; drag.ghost.style.top = e.clientY + "px";
+      if (overLine(e.clientX, e.clientY)) line.insertBefore(drag.ph, before(e.clientX, e.clientY)); else drag.ph.remove();
+    });
+    const finish = () => {
+      if (!drag || drag.ch !== ch) return;
+      const d = drag; drag = null;
+      if (!d.moved) return toggle(ch);
+      ch.classList.remove("dragging"); d.ghost.remove();
+      if (d.ph.parentNode) { line.insertBefore(ch, d.ph); d.ph.remove(); } else toPool(ch);
+      line.classList.remove("bad", "ok"); fit();
+    };
+    ch.addEventListener("pointerup", finish);
+    ch.addEventListener("pointercancel", finish);
+  });
+  return {
+    el: h("div", { class: "stack" }, line, pool), line,
+    picked: () => [...line.querySelectorAll(".wchip")].map(x => words[+x.dataset.i]),
+    showAnswer: () => { line.replaceChildren(...item.answer.map(w => h("span", { class: "wchip" }, w))); line.classList.remove("bad"); line.classList.add("ok"); pool.remove(); fit(); },
+  };
+}
 
-// review of missed items
+L.practice.items.forEach((item, k) => add(5, async c => { await exercise(c, item, "p" + k); }));
+
+// retry round for missed items
 const missed = () => L.practice.items.map((it, k) => ({ it, k })).filter(({ k }) => S.practice["p" + k] && S.practice["p" + k].first === false);
-add(5, async (st, id) => {
+add(5, async c => {
   const list = missed();
-  st.append(h("h2", { class: "h2" }, "Ôn lại câu sai"));
-  const d = dau("thinking"); st.append(d); await d.say([`Mình làm lại ${list.length} câu vừa sai nha ${NAME}`], id);
-  for (const { it, k } of list) {
-    const box = h("div", { class: "stack appear review-item" }); st.append(box); scrollDown();
-    await new Promise(r => exercise(it, "r" + k, id, box, r)); alive(id);
-    await wait(300);
-  }
-  setReady();
+  await c.say(`Mình làm lại ${list.length} câu vừa sai nha ${NAME}`, "thinking");
+  for (const { it, k } of list) { await c.gate(); await exercise(c, it, "r" + k); }
 }, { skip: () => missed().length === 0 });
 
-// challenge
-add(5, async (st, id) => {
+// final challenge
+add(5, async c => {
   const X = L.practice.challenge;
-  st.append(h("span", { class: "pill tone-orange pbadge" }, "Thử thách cuối"));
-  const d = dau("writing"); st.append(d); await d.say(X.intro, id);
-  st.append(h("div", { class: "card stack appear" }, h("div", { class: "pairs-head" }, "Câu em đã viết"), h("div", { class: "quote en" }, origText(X.sid)), cite(X.sid)));
+  c.show(h("span", { class: "pill tone-orange" }, "Thử thách cuối"));
+  await c.say(X.intro[0], "writing");
+  await c.gate();
+  await c.say(X.intro[1]);
+  c.show(h("div", { class: "card stack" }, h("div", { class: "label" }, "Câu em đã viết"), h("div", { class: "quote en" }, origText(X.sid))));
   const ta = h("textarea", { class: "write", id: "challenge-text", placeholder: "Em viết lại ở đây nha", "aria-label": "Câu viết lại" });
   ta.value = S.draft || ""; ta.addEventListener("input", () => { S.draft = ta.value; save(); });
-  const hint = h("div", { class: "flow-en" }, "Gợi ý chuỗi ý: ", h("span", { class: "en" }, X.chain));
-  const compare = h("button", { class: "btn btn-ghost", type: "button", onclick: async () => {
-    compare.remove();
-    st.append(h("div", { class: "card stack appear" }, h("div", { class: "pairs-head" }, "Câu mẫu tham khảo"), h("div", { class: "quote en" }, X.model)));
-    const checks = h("div", { class: "selfcheck card appear" }, h("div", { class: "pairs-head" }, "Em tự check nha"),
-      ...X.checklist.map((c, i) => h("label", {}, h("input", { type: "checkbox", id: "sc" + i }), h("span", {}, c))));
-    st.append(checks); scrollDown();
-  } }, "So sánh với câu mẫu");
-  st.append(ta, hint, compare); scrollDown();
-  setReady();
+  c.show(ta);
+  c.show(h("div", { class: "flow-en" }, "Gợi ý: ", h("span", { class: "en" }, X.chain)));
+  await c.gate();
+  await c.say("Em so sánh với câu mẫu rồi tự check nha", "waving");
+  c.show(h("div", { class: "card stack" }, h("div", { class: "label" }, "Câu mẫu tham khảo"), h("div", { class: "quote en" }, X.model)), { replace: true });
+  c.show(h("div", { class: "selfcheck card" }, h("div", { class: "label" }, "Em tự check nha"),
+    ...X.checklist.map((t, i) => h("label", {}, h("input", { type: "checkbox", id: "sc" + i }), h("span", {}, t)))));
 });
 
 // finish
-add(6, async (st, id) => {
+add(6, async c => {
   const F = L.finish;
-  const d = dau("cheering", { big: true }); st.append(d);
-  if (!fast) confetti();
-  await d.say(F.lines, id);
-  const items = L.practice.items.map((_, k) => S.practice["p" + k]).filter(Boolean);
-  const right = items.filter(r => r.first).length, total = L.practice.items.length;
-  const starsOn = right >= total ? 3 : right >= total * .7 ? 2 : right > 0 ? 1 : 0;
-  st.append(h("div", { class: "card stat appear" }, h("div", { class: "stars" }, [0, 1, 2].map(i => img("icon_star", i < starsOn ? "" : "off"))), h("div", {}, h("b", {}, `${right}/${total} câu đúng`), h("div", { class: "small muted" }, "ngay lần đầu"))));
-  st.append(h("div", { class: "takeaway appear" }, h("div", { class: "row" }, img("icon_notebook", "icon"), h("b", { class: "h2" }, "Nhớ cho bài sau")), h("ol", {}, F.takeaways.map(t => h("li", {}, t)))));
-  st.append(h("button", { class: "btn btn-ghost", type: "button", onclick: () => openEssay({}) }, "Xem lại toàn bộ bài sửa"));
-  st.append(h("button", { class: "btn btn-ghost", type: "button", onclick: () => { S = { step: 0, answers: {}, practice: {}, draft: "" }; save(); go(0); } }, "Làm lại từ đầu"));
-  scrollDown();
-  nextLabel("Xong"); setReady();
+  confetti();
+  await c.say(F.lines[0], "cheering");
+  await c.gate();
+  await c.say(F.lines[1], "thumbsup");
+  const recs = L.practice.items.map((_, k) => S.practice["p" + k]).filter(Boolean);
+  const right = recs.filter(r => r.first).length, total = L.practice.items.length;
+  const on = right >= total ? 3 : right >= total * .7 ? 2 : right > 0 ? 1 : 0;
+  c.show(h("div", { class: "card stat" }, h("div", { class: "stars" }, [0, 1, 2].map(i => img("icon_star", i < on ? "" : "off"))), h("div", {}, h("b", {}, `${right}/${total} câu đúng`), h("div", { class: "small muted" }, "ngay lần đầu"))));
+  c.show(h("div", { class: "takeaway" }, h("div", { class: "row" }, img("icon_notebook", "icon"), h("b", { class: "h2" }, "Nhớ cho bài sau")), h("ol", {}, F.takeaways.map(t => h("li", {}, t)))));
+  c.show(h("div", { class: "two" },
+    h("button", { class: "btn btn-ghost", type: "button", onclick: () => openEssay({}) }, "Xem bài sửa"),
+    h("button", { class: "btn btn-ghost", type: "button", onclick: () => { S = fresh(); S.swiped = true; save(); resumed = true; run(0); } }, "Làm lại từ đầu")));
 }, { last: true });
 
-/* ---------- navigation ---------- */
-let cur = 0;
-function visible(i) { return !(steps[i].skip && steps[i].skip()); }
-async function go(i, dir = 1) {
-  cur = i; runId++; fast = false;
-  const id = runId, step = steps[i];
-  if (!step.noSave) { S.step = i; save(); }
-  const st = $("#stage");
-  const screen = h("div", { class: "screen" + (dir < 0 ? " back" : "") });
-  st.replaceChildren(screen); st.scrollTop = 0;
-  const secIdx = step.sec;
-  $("#sec").replaceChildren(SECTIONS[secIdx], h("small", {}, `${secIdx + 1}/${SECTIONS.length}`));
-  const pct = i / (steps.length - 1) * 100;
-  $("#barFill").style.width = pct + "%"; $("#barSprout").style.left = `clamp(10px, ${pct}%, calc(100% - 10px))`;
-  $("#bar").setAttribute("aria-valuenow", Math.round(pct));
-  const next = $("#nextBtn"), back = $("#backBtn");
-  back.disabled = i === 0;
-  next.disabled = true; next.textContent = "Tiếp";
-  ready = false;
-  setReady = () => { if (id !== runId) return; ready = true; next.disabled = false; };
-  nextLabel = t => { if (id === runId) next.textContent = t; };
-  // done before: replay quickly
-  if (S.seen && S.seen[i]) fast = true;
-  try { await step.render(screen, id); } catch (e) { if (e.message !== "stale") { console.error(e); setReady(); } }
-  if (id === runId) { S.seen = S.seen || {}; S.seen[i] = true; save(); }
+/* ---------- sheets ---------- */
+function sheet(title, head, body) {
+  const back = h("div", { class: "sheet-back" });
+  const el = h("div", { class: "sheet", role: "dialog", "aria-modal": "true", "aria-label": title },
+    h("div", { class: "sheet-head" }, h("div", { class: "grab" }),
+      h("div", { class: "sheet-title" }, h("div", { class: "h2" }, title), h("button", { class: "x", type: "button", "aria-label": "Đóng" }, "×")), head),
+    body);
+  const close = () => { back.remove(); el.remove(); document.removeEventListener("keydown", esc); $("#essayBtn").focus(); };
+  const esc = e => { if (e.key === "Escape") close(); };
+  back.addEventListener("click", close); el.querySelector(".x").addEventListener("click", close);
+  document.addEventListener("keydown", esc);
+  document.body.append(back, el);
+  el.querySelector(".x").focus();
+  return el;
 }
-function nextIndex(from, dir) { let j = from + dir; while (j >= 0 && j < steps.length && !visible(j)) j += dir; return j; }
-$("#nextBtn").addEventListener("click", () => {
-  if (!ready) return;
-  if (cur === 0 && S.step > 1) return go(S.step);
-  const j = nextIndex(cur, 1);
-  if (j < steps.length) go(j); else openEssay({});
-});
-$("#backBtn").addEventListener("click", () => { const j = nextIndex(cur, -1); if (j >= 0) go(j, -1); });
-$("#stage").addEventListener("click", e => { if (!ready && !e.target.closest("button, textarea, input, label, details")) fast = true; });
-
-/* ---------- essay sheet ---------- */
+function openOthers() {
+  const body = h("div", { class: "sheet-body" });
+  L.mistakes.others.forEach(o => body.append(h("div", { class: "other-row" }, h("div", { style: "font-weight:600" }, `${o.label} · ${o.cids.length}`),
+    ...o.cids.map(x => h("div", { class: "ex en" }, (C[x].orig.trim() || "…") + "  →  " + (C[x].fix.trim() || "bỏ"))))));
+  sheet("Các lỗi nhỏ khác", null, body);
+}
 function openEssay({ sid = null, cids = null }) {
   let mode = "diff";
-  const back = h("div", { class: "sheet-back", onclick: close });
   const body = h("div", { class: "sheet-body" });
-  const segBtns = [["orig", "Bài gốc"], ["diff", "Bài sửa"]].map(([k, t]) => h("button", { type: "button", "aria-pressed": String(k === mode), onclick: () => { mode = k; segBtns.forEach(b => b.setAttribute("aria-pressed", String(b.dataset.k === k))); draw(); } }, t));
-  segBtns.forEach((b, i) => b.dataset.k = ["orig", "diff"][i]);
-  const sheet = h("div", { class: "sheet", role: "dialog", "aria-modal": "true", "aria-label": "Bài của em" },
-    h("div", { class: "sheet-head" }, h("div", { class: "grab" }),
-      h("div", { class: "sheet-title" }, h("div", { class: "h2" }, "Bài của " + NAME), h("button", { class: "x", type: "button", "aria-label": "Đóng", onclick: close }, "×")),
-      h("div", { class: "seg" }, segBtns)),
-    body);
-  function close() { back.remove(); sheet.remove(); document.removeEventListener("keydown", esc); $("#essayBtn").focus(); }
-  function esc(e) { if (e.key === "Escape") close(); }
-  document.addEventListener("keydown", esc);
+  const segBtns = [["orig", "Bài gốc"], ["diff", "Bài sửa"]].map(([k, t]) => h("button", { type: "button", "data-k": k, "aria-pressed": String(k === mode), onclick: () => { mode = k; segBtns.forEach(b => b.setAttribute("aria-pressed", String(b.dataset.k === k))); draw(); } }, t));
   const trBy = {};
   L.task_comments.forEach(t => { const last = t.sentence_ids[t.sentence_ids.length - 1]; if (last) trBy[last] = t; });
+  const clearNotes = () => body.querySelectorAll(".note").forEach(n => n.remove());
   function draw() {
     const essay = h("div", { class: "essay" });
     L.essay.paragraphs.forEach(p => {
@@ -895,31 +1057,27 @@ function openEssay({ sid = null, cids = null }) {
       p.sentences.forEach((s, i) => {
         if (i) para.append(" ");
         const span = sentence(s.id, { mode: mode === "diff" ? "diff" : "orig" });
-        span.querySelectorAll(".corr").forEach(c => c.addEventListener("click", () => note(para, c.dataset.c)));
+        span.querySelectorAll(".corr").forEach(x => x.addEventListener("click", () => {
+          clearNotes(); const cc = C[x.dataset.c];
+          para.after(h("div", { class: "note" }, h("div", { class: "nh" }, (cc.orig.trim() || "…") + "  →  " + (cc.fix.trim() || "bỏ")), cc.comment));
+        }));
         if (s.id === sid) span.classList.add("hl");
-        if (cids) span.querySelectorAll(".corr").forEach(c => cids.includes(c.dataset.c) && c.classList.add("focus"));
+        if (cids) span.querySelectorAll(".corr").forEach(x => { if (cids.includes(x.dataset.c)) x.classList.add("focus"); });
         para.append(span);
-        if (trBy[s.id]) para.append(h("button", { class: "tr-mark", type: "button", "aria-label": "Nhận xét về ý", onclick: () => noteTR(para, trBy[s.id]) }, img("icon_bulb", "")));
+        if (trBy[s.id]) para.append(h("button", { class: "tr-mark", type: "button", "aria-label": "Nhận xét về ý", onclick: () => { clearNotes(); para.after(h("div", { class: "note" }, trBy[s.id].comment)); } }, img("icon_bulb")));
       });
       essay.append(para);
     });
-    body.replaceChildren(h("div", { class: "prompt" }, h("b", {}, "Đề bài"), h("span", { class: "en" }, L.prompt)), essay);
+    body.replaceChildren(h("div", { class: "prompt" }, h("div", { class: "label" }, "Đề bài"), h("span", { class: "en" }, L.prompt)), essay);
   }
-  function note(para, cid) {
-    body.querySelectorAll(".note").forEach(n => n.remove());
-    const c = C[cid];
-    para.after(h("div", { class: "note" }, h("div", { class: "nh en" }, (c.orig.trim() || "…") + "  →  " + (c.fix.trim() || "bỏ")), c.comment));
-  }
-  function noteTR(para, t) { body.querySelectorAll(".note").forEach(n => n.remove()); para.after(h("div", { class: "note" }, t.comment)); }
   draw();
-  document.body.append(back, sheet);
-  sheet.querySelector(".x").focus();
+  sheet("Bài của " + NAME, h("div", { class: "seg" }, segBtns), body);
   if (sid) requestAnimationFrame(() => { const t = body.querySelector(".s.hl"); if (t) t.scrollIntoView({ block: "center", behavior: REDUCED ? "auto" : "smooth" }); });
 }
 $("#essayBtn").addEventListener("click", () => openEssay({}));
 $("#essayIcon").src = A.icon_notebook;
 $("#sproutIcon").src = A.icon_sprout;
 
-go(0);
+run(0);
 })();
 </script>

@@ -93,7 +93,6 @@ button { font: inherit; color: inherit; }
 .dgroup { position: absolute; left: 0; right: 0; top: 40%; display: flex; align-items: flex-end; padding-right: 14px; transition: top .35s cubic-bezier(.3, .9, .3, 1); pointer-events: none; }
 .dau { flex: none; width: 150px; margin-left: -22px; transform: translateX(-120%) rotate(-8deg); transform-origin: 30% 100%; transition: transform .55s cubic-bezier(.3, 1.35, .45, 1); pointer-events: auto; cursor: pointer; }
 .app.dau-talk .dau { transform: translateX(0) rotate(6deg); }
-.dau svg { width: 100%; height: auto; display: block; overflow: visible; filter: drop-shadow(0 8px 14px rgba(0, 0, 0, .25)); }
 .say { position: relative; flex: 1; min-width: 0; align-self: flex-start; margin: 0 0 0 16px; background: #FFFDF8; color: #2B2420; border: 2.5px solid var(--orange); border-radius: 20px; padding: 18px 16px 24px; min-height: 84px; font-size: 18px; line-height: 1.45; box-shadow: 0 6px 0 rgba(0, 0, 0, .12); pointer-events: auto; cursor: pointer; opacity: 0; transform: scale(.6); transform-origin: 0 100%; transition: opacity .2s, transform .35s cubic-bezier(.3, 1.4, .5, 1); }
 .app.dau-talk .say { opacity: 1; transform: none; transition-delay: .15s; }
 .say::before { content: ""; position: absolute; left: -11px; bottom: 26px; width: 18px; height: 18px; background: #FFFDF8; border-left: 2.5px solid var(--orange); border-bottom: 2.5px solid var(--orange); transform: rotate(45deg); border-bottom-left-radius: 4px; }
@@ -110,40 +109,44 @@ button { font: inherit; color: inherit; }
 @keyframes dot { 50% { opacity: 1; transform: translateY(-3px); } }
 .qtext { font: 700 1.1em/1.3 var(--font-display); }
 
-/* the placeholder Đậu rig: every part moves on its own */
-.d-all { animation: dbob 3.2s ease-in-out infinite; }
+/* anh Đậu, built from ChatGPT's separate layers; every part moves on its own */
+.rig { position: relative; width: 100%; aspect-ratio: 380 / 366; animation: dbob 3.2s ease-in-out infinite; filter: drop-shadow(0 8px 14px rgba(0, 0, 0, .22)); }
 @keyframes dbob { 50% { transform: translateY(-4px); } }
-.d-sprout { transform-origin: 100px 44px; animation: sway 2.8s ease-in-out infinite; }
+.rig .l { position: absolute; inset: 0; width: 100%; height: 100%; user-select: none; -webkit-user-drag: none; }
+.l-sprout { transform-origin: 49.8% 23.6%; animation: sway 2.8s ease-in-out infinite; }
 @keyframes sway { 0%, 100% { transform: rotate(-5deg); } 50% { transform: rotate(6deg); } }
-.d-arm { transition: transform .45s cubic-bezier(.3, 1.4, .5, 1); }
-.d-arm-l { transform-origin: 50px 124px; transform: rotate(0deg); }
-.d-arm-r { transform-origin: 150px 124px; transform: rotate(0deg); }
-.a-wave .d-arm-r { animation: wave 1s ease-in-out infinite; }
+.l-arm_l, .l-arm_r { transition: transform .45s cubic-bezier(.3, 1.4, .5, 1); }
+.l-arm_l { transform-origin: 21.9% 59.7%; }
+.l-arm_r { transform-origin: 82.1% 59.7%; }
+.a-wave .l-arm_r { animation: wave 1s ease-in-out infinite; }
 @keyframes wave { 0%, 100% { transform: rotate(-140deg); } 50% { transform: rotate(-110deg); } }
-.a-point .d-arm-r { transform: rotate(-72deg); }
-.a-up .d-arm-r { transform: rotate(-125deg); }
-.a-cheer .d-arm-l { animation: cheerL .6s ease-in-out infinite alternate; }
-.a-cheer .d-arm-r { animation: cheerR .6s ease-in-out infinite alternate; }
+.a-point .l-arm_r { transform: rotate(-72deg); }
+.a-up .l-arm_r { transform: rotate(-125deg); }
+.a-cheer .l-arm_l { animation: cheerL .6s ease-in-out infinite alternate; }
+.a-cheer .l-arm_r { animation: cheerR .6s ease-in-out infinite alternate; }
 @keyframes cheerL { from { transform: rotate(115deg); } to { transform: rotate(135deg); } }
 @keyframes cheerR { from { transform: rotate(-115deg); } to { transform: rotate(-135deg); } }
-.a-think .d-arm-r { transform: rotate(62deg); }
-.a-oops .d-arm-l { transform: rotate(-48deg); }
-.a-oops .d-arm-r { transform: rotate(48deg); }
-.d-eyes-open, .d-mouth-open, .d-mouth-o, .d-sweat { display: none; }
-.e-open .d-eyes-open { display: inline; }
-.e-open .d-eyes-happy { display: none; }
-.d-eyes-open { transform-origin: 101px 108px; animation: blink 4.2s infinite; }
-@keyframes blink { 0%, 91%, 97%, 100% { transform: scaleY(1); } 94% { transform: scaleY(.08); } }
-.d-pupils { animation: glance 7s ease-in-out infinite; }
-@keyframes glance { 0%, 30%, 54%, 70%, 90%, 100% { transform: translate(0, 0); } 34%, 50% { transform: translate(-4px, 0); } 74%, 86% { transform: translate(4px, 1px); } }
-.look-up .d-pupils { animation: none; transform: translate(2px, -4px); }
-.m-talk .d-mouth-open { display: inline; animation: talkA .3s steps(1) infinite; }
-.m-talk .d-mouth-smile { animation: talkB .3s steps(1) infinite; }
+.a-think .l-arm_r { transform: rotate(55deg); }
+.a-oops .l-arm_l { transform: rotate(-40deg); }
+.a-oops .l-arm_r { transform: rotate(40deg); }
+/* eyes: happy ^ ^ by default; open while talking, with blinks and glances */
+.rig .l-eyes_open, .rig .l-eyes_blink, .rig .l-eyes_left, .rig .l-eyes_right, .rig .l-eyes_up,
+.rig .l-mouth_talk, .rig .l-mouth_laugh, .rig .l-mouth_o { display: none; }
+.rig.e-open .l-eyes_happy { display: none; }
+.rig.e-open .l-eyes_open { display: block; }
+.rig.e-open.look-l .l-eyes_open, .rig.e-open.look-r .l-eyes_open, .rig.e-open.look-up .l-eyes_open { display: none; }
+.rig.e-open.look-l:not(.look-up) .l-eyes_left { display: block; }
+.rig.e-open.look-r:not(.look-up) .l-eyes_right { display: block; }
+.rig.e-open.look-up .l-eyes_up { display: block; }
+.rig.e-open.blink .l-eyes_open, .rig.e-open.blink .l-eyes_left, .rig.e-open.blink .l-eyes_right, .rig.e-open.blink .l-eyes_up { display: none; }
+.rig.e-open.blink .l-eyes_blink { display: block; }
+/* mouth: smile by default, flaps while he talks */
+.rig.m-talk .l-mouth_talk { display: block; animation: talkA .3s steps(1) infinite; }
+.rig.m-talk .l-mouth_smile { animation: talkB .3s steps(1) infinite; }
 @keyframes talkA { 50% { opacity: 0; } }
 @keyframes talkB { 0% { opacity: 0; } 50% { opacity: 1; } }
-.m-laugh .d-mouth-open { display: inline; }
-.m-laugh .d-mouth-smile, .m-o .d-mouth-smile { display: none; }
-.m-o .d-mouth-o, .m-o .d-sweat { display: inline; }
+.rig.m-laugh .l-mouth_laugh, .rig.m-o .l-mouth_o { display: block; }
+.rig.m-laugh .l-mouth_smile, .rig.m-o .l-mouth_smile { display: none; }
 
 /* the card area */
 .content { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: .7em; font-size: calc(16px * var(--k)); }
@@ -411,32 +414,23 @@ canvas.confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-
     <div class="catch" id="catch" aria-hidden="true"></div>
     <div class="dgroup" id="dgroup">
       <div class="dau" id="dau" role="img" aria-label="anh Đậu">
-        <svg viewBox="0 0 200 230" id="dauSvg" aria-hidden="true">
-          <g class="d-all">
-            <g class="d-sprout">
-              <path d="M100 44 C 99 32, 101 22, 104 13" stroke="#7CCBA8" stroke-width="5" fill="none" stroke-linecap="round"/>
-              <path d="M102 22 C 88 6, 68 8, 60 15 C 70 30, 92 32, 102 22 Z" fill="#8DD9B8"/>
-              <path d="M104 17 C 112 2, 131 -2, 142 2 C 138 17, 121 25, 104 17 Z" fill="#8DD9B8"/>
-            </g>
-            <ellipse cx="74" cy="214" rx="18" ry="11" fill="#E27E00"/>
-            <ellipse cx="128" cy="214" rx="18" ry="11" fill="#E27E00"/>
-            <path d="M100 40 C 146 40, 168 84, 172 136 C 176 188, 146 214, 100 214 C 54 214, 26 188, 29 138 C 32 86, 54 40, 100 40 Z" fill="#FF9800"/>
-            <path d="M64 62 C 44 90, 38 130, 42 172 C 34 150, 32 110, 44 84 C 50 72, 57 66, 64 62 Z" fill="#FFB547" opacity=".85"/>
-            <g class="d-arm d-arm-l"><ellipse cx="38" cy="150" rx="12.5" ry="27" transform="rotate(22 38 150)" fill="#EE8500"/></g>
-            <g class="d-arm d-arm-r"><ellipse cx="162" cy="150" rx="12.5" ry="27" transform="rotate(-22 162 150)" fill="#EE8500"/></g>
-            <ellipse cx="62" cy="134" rx="13" ry="9" fill="#F9B8AE"/>
-            <ellipse cx="140" cy="134" rx="13" ry="9" fill="#F9B8AE"/>
-            <g class="d-eyes-open"><g class="d-pupils">
-              <ellipse cx="78" cy="110" rx="7" ry="9.5" fill="#1E1A17"/><circle cx="80.5" cy="106" r="2.4" fill="#fff"/>
-              <ellipse cx="124" cy="110" rx="7" ry="9.5" fill="#1E1A17"/><circle cx="126.5" cy="106" r="2.4" fill="#fff"/>
-            </g></g>
-            <g class="d-eyes-happy" fill="none" stroke="#1E1A17" stroke-width="5" stroke-linecap="round"><path d="M68 114 Q 78 100 88 114"/><path d="M114 114 Q 124 100 134 114"/></g>
-            <path class="d-mouth-smile" d="M88 138 Q 101 152 114 138" stroke="#8A3B00" stroke-width="4.5" fill="none" stroke-linecap="round"/>
-            <g class="d-mouth-open"><path d="M86 134 Q 101 133 116 134 Q 114 159 101 160 Q 88 159 86 134 Z" fill="#B84E00"/><path d="M92 152 Q 101 145 110 152 Q 106 160 101 160 Q 96 160 92 152 Z" fill="#F06128"/></g>
-            <ellipse class="d-mouth-o" cx="101" cy="146" rx="7" ry="8.5" fill="#B84E00"/>
-            <path class="d-sweat" d="M152 84 C 147 93, 147 100, 152 101 C 158 101, 158 93, 152 84 Z" fill="#8FD0F0"/>
-          </g>
-        </svg>
+        <div class="rig" id="dauRig" aria-hidden="true">
+          <img class="l l-sprout" data-a="rig_sprout" alt="" draggable="false">
+          <img class="l l-body" data-a="rig_body" alt="" draggable="false">
+          <img class="l l-arm_l" data-a="rig_arm_l" alt="" draggable="false">
+          <img class="l l-arm_r" data-a="rig_arm_r" alt="" draggable="false">
+          <img class="l l-blush" data-a="rig_blush" alt="" draggable="false">
+          <img class="l l-eyes_happy" data-a="rig_eyes_happy" alt="" draggable="false">
+          <img class="l l-eyes_open" data-a="rig_eyes_open" alt="" draggable="false">
+          <img class="l l-eyes_blink" data-a="rig_eyes_blink" alt="" draggable="false">
+          <img class="l l-eyes_left" data-a="rig_eyes_left" alt="" draggable="false">
+          <img class="l l-eyes_right" data-a="rig_eyes_right" alt="" draggable="false">
+          <img class="l l-eyes_up" data-a="rig_eyes_up" alt="" draggable="false">
+          <img class="l l-mouth_smile" data-a="rig_mouth_smile" alt="" draggable="false">
+          <img class="l l-mouth_talk" data-a="rig_mouth_talk" alt="" draggable="false">
+          <img class="l l-mouth_laugh" data-a="rig_mouth_laugh" alt="" draggable="false">
+          <img class="l l-mouth_o" data-a="rig_mouth_o" alt="" draggable="false">
+        </div>
       </div>
       <div class="say" id="say" role="button" tabindex="0" aria-live="polite">
         <span class="tag">anh Đậu</span>
@@ -553,7 +547,7 @@ const pending = new Set();
 /* anh Đậu is not part of the page. When he talks the page dims, the card he means stays lit,
    and he leans in from the left edge; a tap anywhere moves him on. When the student has to
    do something (answer, type, tap a card) the tap sends him away instead. */
-const app = $("#app"), layer = $("#dauLayer"), group = $("#dgroup"), dau = $("#dau"), svg = $("#dauSvg"), sayBox = $("#say"), dline = $("#dauLine");
+const app = $("#app"), layer = $("#dauLayer"), group = $("#dgroup"), dau = $("#dau"), rig = $("#dauRig"), sayBox = $("#say"), dline = $("#dauLine");
 let sayN = 0;
 let mode = "away", dockHold = false, saidAt = -1, awayTimer = null, typed = true, spotEl = null, idleTimer = null, curPose = "waving";
 
@@ -604,7 +598,22 @@ function face(state) {
   // open eyes while talking, happy ^ ^ when he is just standing there
   const cls = state === "talk" ? [...arms, ...look, "e-open", "m-talk"] : [...arms, ...look, ...mouth, keepOpen ? "e-open" : ""];
   if (spotLooksUp) cls.push("look-up");
-  svg.setAttribute("class", cls.join(" "));
+  rig.className = "rig " + cls.join(" ");
+  rig.classList.toggle("blink", blinking);
+  if (lookSide) rig.classList.add(lookSide);
+}
+/* little life: a blink every few seconds, a glance to the side now and then */
+let blinking = false, lookSide = "";
+rig.querySelectorAll("img").forEach(i => { i.src = A[i.dataset.a]; });
+if (!REDUCED) {
+  (function blinkLoop() {
+    setTimeout(() => { blinking = true; rig.classList.add("blink");
+      setTimeout(() => { blinking = false; rig.classList.remove("blink"); blinkLoop(); }, 140); }, 2600 + Math.random() * 2600);
+  })();
+  (function lookLoop() {
+    setTimeout(() => { lookSide = Math.random() < .5 ? "look-l" : "look-r"; rig.classList.add(lookSide);
+      setTimeout(() => { rig.classList.remove(lookSide); lookSide = ""; lookLoop(); }, 1100); }, 4200 + Math.random() * 3600);
+  })();
 }
 
 /* ---------- spotlight + where Đậu stands ---------- */

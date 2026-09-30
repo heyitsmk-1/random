@@ -1,0 +1,912 @@
+[
+  {
+    "name": "Common",
+    "slots": [
+      {
+        "label": "Collocation",
+        "tag": "LR",
+        "text": "sai <b>collocation</b> á em"
+      },
+      {
+        "label": "Công thức ",
+        "tag": "LR",
+        "text": "Công thức của từ <b>X</b> là <b>something</b>"
+      },
+      {
+        "label": "Nghĩa",
+        "tag": "LR",
+        "text": "hơi sai nghĩa á em"
+      },
+      {
+        "label": "ADJ Clause 1",
+        "tag": "GRA",
+        "text": "adj clause ở đây bổ nghĩa cho cả mệnh đề ở trước cho nên mình dùng <b>phẩy </b>which em nhé&nbsp;"
+      },
+      {
+        "label": "ADJ Clause 2",
+        "tag": "GRA",
+        "text": "<b>which</b> ở đây thay thế cho cả mệnh đề ở trước cho nên mình <b>chia theo số ít&nbsp;</b>em nhé&nbsp;<!--EndFragment-->"
+      },
+      {
+        "label": "Linking",
+        "tag": "CC",
+        "text": "Thêm<b> linking device</b> nha emm, câu sau là <b>Reason Impact</b> của câu trước thì mình dùng <b>This is because As a result </b>nhen"
+      },
+      {
+        "label": "Plural",
+        "tag": "GRA",
+        "text": "danh từ <u>đếm được nói chung chung</u> thì mình <b>dùng số nhiều</b> nha em"
+      },
+      {
+        "label": "Spelling",
+        "tag": "LR",
+        "text": "check spelling nha emm"
+      },
+      {
+        "label": "Modal Verb",
+        "tag": "GRA",
+        "text": "có modal verb rồi thì mình không chia thì nữa em nhé"
+      },
+      {
+        "label": "Adj no comma",
+        "tag": "GRA",
+        "text": "adj clause ở đây xác định noun là gì&nbsp;ở trước cho nên mình không&nbsp;phẩy em nhé&nbsp;"
+      },
+      {
+        "label": "Link SupIdea1",
+        "tag": "CC",
+        "text": "dẫn vào supporting idea 1 thì mình dùng linking này em nhé"
+      },
+      {
+        "label": "Overstates a minor concession with \"several\" — use \"some minor negative effects\"",
+        "tag": "CC",
+        "text": "several là ngôn ngữ dùng để nâng view á em -&gt; nên là some minor negative effects nhen"
+      },
+      {
+        "label": "",
+        "text": ""
+      },
+      {
+        "label": "",
+        "text": ""
+      },
+      {
+        "label": "",
+        "text": ""
+      },
+      {
+        "label": "",
+        "text": ""
+      }
+    ]
+  },
+  {
+    "name": "Common 2",
+    "slots": [
+      {
+        "label": "Idea",
+        "tag": "TR",
+        "text": "<!--StartFragment-->Anh thấy ý này chưa đủ rõ á em&nbsp;<br style=\"color: rgb(224, 224, 232); background-color: rgb(26, 26, 33); font-family: &quot;DM Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, system-ui, sans-serif; font-size: 12px;\"><br style=\"color: rgb(224, 224, 232); background-color: rgb(26, 26, 33); font-family: &quot;DM Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, system-ui, sans-serif; font-size: 12px;\"><b>Em đang viết là:</b><br>idea -&gt; idea -&gt; idea<br><br style=\"color: rgb(224, 224, 232) !important;\"><b>Lẽ ra mình nên viết là:</b><br><i>idea</i><br><i><br style=\"color: rgb(224, 224, 232) !important;\"></i><b>Anh đề xuất mình viết lại như sau nhé:</b><!--EndFragment-->"
+      },
+      {
+        "label": "Topic sentence",
+        "tag": "CC",
+        "text": "Em thiếu topic sentence nè, mỗi đoạn mình đều phải có câu topic sentence đếm trình bày main idea nha"
+      },
+      {
+        "label": "and",
+        "tag": "GRA",
+        "text": "Trước và sau and phải <b>cùng từ loại</b> á em&nbsp;<br>-&gt;&nbsp;"
+      },
+      {
+        "label": "Clause",
+        "tag": "GRA",
+        "text": "Hai mệnh đề cần <b>nối với nhau bằng liên từ</b> nha, mỗi dấu phẩy <u>không đủ</u> á&nbsp;"
+      },
+      {
+        "label": "S-V Agreement",
+        "tag": "GRA",
+        "text": "chủ ngữ này mình chia theo <b>số ít nhiều&nbsp;</b>nha em"
+      },
+      {
+        "label": "Number/Amount",
+        "tag": "GRA",
+        "text": "<b>number amount</b> dùng với danh từ <b>không đếm được</b> em nhé"
+      },
+      {
+        "label": "Linking",
+        "tag": "CC",
+        "text": "mình đang dẫn vào một trong hai lý do thì mình dùng linking này em nhé"
+      },
+      {
+        "label": "Shorthand",
+        "tag": "LR",
+        "text": "Không viết tắt trong essay nha emm"
+      },
+      {
+        "label": "lack",
+        "tag": "LR",
+        "text": "lack (verb) something || a lack (noun) of something<br>=&gt; khi ở dạng danh từ mình dùng là a lack of á em, còn động từ thì lack something nhé"
+      },
+      {
+        "label": "",
+        "text": ""
+      },
+      {
+        "label": "",
+        "text": ""
+      },
+      {
+        "label": "",
+        "text": ""
+      },
+      {
+        "label": "",
+        "text": ""
+      },
+      {
+        "label": "",
+        "text": ""
+      },
+      {
+        "label": "",
+        "text": ""
+      },
+      {
+        "label": "",
+        "text": ""
+      }
+    ]
+  },
+  {
+    "name": "Common 3",
+    "slots": [
+      {
+        "label": "Government",
+        "tag": "GRA",
+        "text": "<!--StartFragment--><b>the&nbsp;</b>government || government<b>S</b><br style=\"color: rgb(224, 224, 232); background-color: rgb(26, 26, 33); font-family: &quot;DM Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, system-ui, sans-serif; font-size: 12px;\">-&gt; nếu dùng government số ít thì phải có 'the' á em, còn không thì mình dùng số nhiều<!--EndFragment-->"
+      },
+      {
+        "label": "Topic sentence ",
+        "tag": "CC",
+        "text": "Topic sentence của em chưa nhắc tới từ benefit drawback cho nên ở đây không rõ <b>them </b>đang chỉ lại cái gì á"
+      },
+      {
+        "label": "Gerund",
+        "tag": "GRA",
+        "text": "Chủ ngữ là gerund (V-ing) thì mình chia theo số ít em nhé<br><br>"
+      },
+      {
+        "label": "every + số ít",
+        "tag": "GRA",
+        "text": "every + số <b>ít </b>|| all + số <b>nhiều</b><br>-&gt; phân biệt hai từ này em nhé"
+      },
+      {
+        "label": "",
+        "text": ""
+      },
+      {
+        "label": "",
+        "text": ""
+      },
+      {
+        "label": "",
+        "text": ""
+      },
+      {
+        "label": "",
+        "text": ""
+      },
+      {
+        "label": "",
+        "text": ""
+      },
+      {
+        "label": "",
+        "text": ""
+      },
+      {
+        "label": "",
+        "text": ""
+      },
+      {
+        "label": "",
+        "text": ""
+      },
+      {
+        "label": "",
+        "text": ""
+      },
+      {
+        "label": "",
+        "text": ""
+      },
+      {
+        "label": "",
+        "text": ""
+      },
+      {
+        "label": "",
+        "text": ""
+      }
+    ]
+  },
+  {
+    "name": "Week 1",
+    "slots": [
+      {
+        "label": "discourage",
+        "tag": "LR",
+        "text": "Từ prevent nghĩa là ngăn cản hoàn toàn á, từ discourage mới đúng là hạn chế"
+      },
+      {
+        "label": "Raise",
+        "tag": "LR",
+        "text": "<b>raise something || something rises</b><br><br>-&gt; tăng gì đó thì mình dùng động từ <b>raise </b>nha em, còn cái gì đó tự tăng lên thì mình dùng <b>rise</b>"
+      },
+      {
+        "label": "Tax→budget idea ending in a generic benefit (not obesity-specific)",
+        "tag": "TR",
+        "text": "chỗ này chưa rõ <b>impact </b>của việc có thêm ngân sách nhà nước&nbsp;<br><br>Anh đề xuất mình đưa ra <b>impact&nbsp;</b>là mình dùng tiền này để đầu tư cho các chính sách hỗ trợ người obese, hoặc xây dựng các khu tập thể dụng công, cũng có thể là cho các chiến dịch giáo dục về sức khỏe và dinh dưỡng nè"
+      },
+      {
+        "label": "Building",
+        "tag": "LR",
+        "text": "<!--StartFragment-->Từ&nbsp;<b>structure construction</b>&nbsp;là các 'cấu trúc' thôi á em, mình dùng từ&nbsp;<b>building&nbsp;</b>thì mới chính xác nhất với đề. Mình có thể thế bằng từ '<b>one</b>' nếu ở trước mình dùng building rồi á em<!--EndFragment-->"
+      },
+      {
+        "label": "Paraphrase intro missing the \"Opinions are divided on whether\" frame",
+        "tag": "TR",
+        "text": "<!--StartFragment-->Các chỗ paraphrasing không sai nhưng em nên tập viết theo Framework nhé. Cả 3 mở bài đều là Opinion, mình nên dẫn là Opinions are divided on whether ...&nbsp;<!--EndFragment-->"
+      },
+      {
+        "label": "interest",
+        "tag": "LR",
+        "text": "hơi sai nghĩa á em, interest something nghĩa là gây sự thích thú cho gì đó á em, mình thấy thích gì đó thì mình dùng dạng bị động&nbsp;<br>-&gt; be interested in something"
+      },
+      {
+        "label": "\"Opinions are divided\" frame used on a fact/trend prompt (living alone/small families, or moving away for work)",
+        "tag": "TR",
+        "text": "Đề này cho mình fact, không phải là opinion á em; mình phải thảo luận là liệu rằng việc này tích cực hay tiêu cực. Câu của em đang viết là liệu rằng việc này có xảy ra hay không"
+      },
+      {
+        "label": "",
+        "text": ""
+      },
+      {
+        "label": "",
+        "text": ""
+      },
+      {
+        "label": "",
+        "text": ""
+      },
+      {
+        "label": "",
+        "text": ""
+      },
+      {
+        "label": "",
+        "text": ""
+      },
+      {
+        "label": "",
+        "text": ""
+      },
+      {
+        "label": "",
+        "text": ""
+      },
+      {
+        "label": "",
+        "text": ""
+      },
+      {
+        "label": "",
+        "text": ""
+      }
+    ]
+  },
+  {
+    "name": "Week 2",
+    "slots": [
+      {
+        "label": "Off-topic: explains why goods production rose, not why environmental problems exist",
+        "tag": "TR",
+        "text": "sai đề á em<br><br>Đề đang hỏi là<b> tại sao có vấn đề về môi trường</b>, không phải là tại sao có sự gia tăng sản xuất hàng hóa á&nbsp;"
+      },
+      {
+        "label": "Plastic waste mentioned without its environmental impact",
+        "tag": "TR",
+        "text": "Anh đề xuất ý mới nhen. Mình có thể nói về rác thải nè&nbsp;<br><br>-&gt; nhiều sản phẩm ngày nay <b>dùng nhựa (<i>plastic</i>)</b> vì nó rẻ và dễ sản xuất&nbsp;<br>=&gt; Tuy nhiên <b>vật liệu (<i>material</i>)</b> này thì không <b>tự phân hủy (<i>biodegradable</i>)&nbsp;</b><br>=&gt; Nó sẽ đọng lại tại các <b>bãi rác (<i>landfills</i>)</b> và từ từ gây <b>ô nhiễm đất (<i>soil pollution</i>)</b> ở nơi đó"
+      },
+      {
+        "label": "Solution states the goal but not how to achieve it",
+        "tag": "TR",
+        "text": "Giải pháp <b>chưa đủ rõ</b> á em, em chỉ mới nói được là mục tiêu là gì, em chưa nói được làm sao mình đạt được mục tiêu đó á. Anh đề xuất mình giải thích là:<br><br>-&gt;&nbsp;"
+      },
+      {
+        "label": "\"Govt should fine/tax polluters\" — such laws already exist; needs an enforcement change",
+        "tag": "TR",
+        "text": "Anh đồng ý giải pháp này, nhưng anh nghĩ có thể hay hơn. Hiện tại thì mình cũng có quy định và phạt rồi nhưng nhiều người vẫn không tuân thủ<br><br>=&gt; Anh đề xuất là mình có các đội ngũ <b>thanh tra </b><i>(inspectors) </i>thường xuyên kiểm tra để bắt những<i> trường hợp vi phạm (violations)</i>"
+      },
+      {
+        "label": "Says companies don't treat waste, but not why they fail to despite knowing better",
+        "tag": "TR",
+        "text": "Anh nghĩ ở đây mình nên giải thích rõ hơn là tại sao người ta biết là thải ra môi trường thì có hại nhưng họ lại không xử lý chất thải nè<br><br>-&gt; mình có thể nói là vì nó mắc tiền và cty ưu tiên lợi nhuận"
+      },
+      {
+        "label": "Over-exploitation of resources stated as \"harms environment\" — elaborate the mechanism (destroys animal habitats)",
+        "tag": "TR",
+        "text": "chưa rõ hại nè em&nbsp;<br>-&gt; mình khai thác nhiều tài nguyên thì nó phá hoại môi trường như thế nào?&nbsp;<br>=&gt; phải làm rõ là khi mình khai thác, đặc biệt là quá mức (over-exploitation) thì nó sẽ phá họa môi trường sống của động vật&nbsp;"
+      },
+      {
+        "label": "\"Launch awareness campaigns\" without saying how to make them effective (collaborate with influencers)",
+        "tag": "TR",
+        "text": "Anh nghĩ idea này tốt á, mình có thể viết tốt hơn bằng cách nói là làm sao để các campaigns này hiệu quả hơn<br><br>-&gt; nên hợp tác (collaborate) với những người nổi tiếng (celebrities) để lan tỏa thông điệp (spread the message) vì họ là những người có sức ảnh hưởng lớn (influential - adj.)&nbsp;"
+      },
+      {
+        "label": "Intro splits the paraphrase across multiple sentences — should be one",
+        "tag": "CC",
+        "text": "Câu paraphrasing nên gom vào 1 câu nha em"
+      },
+      {
+        "label": "",
+        "text": ""
+      },
+      {
+        "label": "",
+        "text": ""
+      },
+      {
+        "label": "",
+        "text": ""
+      },
+      {
+        "label": "",
+        "text": ""
+      },
+      {
+        "label": "",
+        "text": ""
+      },
+      {
+        "label": "",
+        "text": ""
+      },
+      {
+        "label": "",
+        "text": ""
+      },
+      {
+        "label": "",
+        "text": ""
+      }
+    ]
+  },
+  {
+    "name": "Week 3",
+    "slots": [
+      {
+        "label": "Claims housing reduces crime without linking homelessness to crime",
+        "tag": "TR",
+        "text": "Idea chưa rõ á em, em phải giải thích được tại sao người homeless thì lại phạm tội á<br><br>-&gt; có thể giải thích là vì khi quá nghèo thì họ sẽ tuyệt vọng (desperate) -&gt; phạm tội để sống qua ngày (commit crimes out of necessity) =&gt; nếu có nhà thì giảm tình trạng này"
+      },
+      {
+        "label": "\"Housing gives a stable place to live\" stated without why it matters",
+        "tag": "TR",
+        "text": "Anh đề xuất ý 2 mình nói về lợi về mặt an toàn về sức khỏe á =&gt; người sống ở ngoài đường -&gt; tiếp xúc với môi trường mất vệ sinh =&gt; dễ bị bệnh =&gt; có thể lây nhiễm cho người khác -&gt; có nơi ở sạch sẽ -&gt; giảm rủi ro này"
+      },
+      {
+        "label": "Drawback \"housing diverts money from other priorities\" — make specific: why education matters more than housing",
+        "tag": "TR",
+        "text": "Hay hơn thì em giải thích tại sao education lại quan trọng hơn so với housing nhé<br>-&gt; vì có education miễn phí thì sẽ giúp người ta tự thoát nghèo mà không cần phụ thuộc vào chính phủ&nbsp;"
+      },
+      {
+        "label": "Over-reliance drawback wrongly tied to \"they won't work\" — these people weren't in the workforce anyway",
+        "tag": "TR",
+        "text": "anh nghĩ idea này chưa được hay lắm á em, vì những người mà cần chính sách này thường không phải là những người đóng góp cho lực lượng lao động, nên nếu họ không tìm việc làm thì không ảnh hưởng nhiều<br><br>anh nghĩ mình đi theo hướng là do thuế tăng cao lên cho nên người dân sẽ tiết kiệm tiền hơn -&gt; hoạt động thương mại giảm thì làm chậm phát triển kinh tế"
+      },
+      {
+        "label": "",
+        "text": ""
+      },
+      {
+        "label": "",
+        "text": ""
+      },
+      {
+        "label": "",
+        "text": ""
+      },
+      {
+        "label": "",
+        "text": ""
+      },
+      {
+        "label": "",
+        "text": ""
+      },
+      {
+        "label": "",
+        "text": ""
+      },
+      {
+        "label": "",
+        "text": ""
+      },
+      {
+        "label": "",
+        "text": ""
+      },
+      {
+        "label": "",
+        "text": ""
+      },
+      {
+        "label": "",
+        "text": ""
+      },
+      {
+        "label": "",
+        "text": ""
+      },
+      {
+        "label": "",
+        "text": ""
+      }
+    ]
+  },
+  {
+    "name": "Week 4",
+    "slots": [
+      {
+        "label": "\"Imports bad: inspection costs strain govt budget\" — companies pay inspections, not govt",
+        "tag": "TR",
+        "text": "anh nghĩ idea 2 chưa được hay lắm á em, vì chính phủ không lấy tiền thuế của người dân để chi trả cho việc thanh tra này á. Các cty xuất nhập khẩu là những người sẽ trực tiếp chi trả tiền cho việc thanh tra này á<br><br>em có thể viết về hại cho môi trường nè: xuất nhập khẩu nhiều thì sẽ cần vận chuyển -&gt; khí thải"
+      },
+      {
+        "label": "Replacement for irrelevant import drawback: environmental harm (more shipping → emissions → air pollution)",
+        "tag": "TR",
+        "text": "hoạt động xuất nhập khẩu phát triển -&gt; cần phải vận chuyển hàng hóa nhiều hơn -&gt; dùng thuyền, máy bay nhiều hơn -&gt; tăng việc dùng nhiên liệu -&gt; khí thải =&gt; ô nhiễm không khí&nbsp;"
+      },
+      {
+        "label": "Drawback only applies if imports are abused — not a harm of proper importing",
+        "tag": "TR",
+        "text": "hại này anh thấy không được hay lắm á em, vì nó là hại khi người ta lạm dụng việc nhập khẩu, nếu mình nhập khẩu đàng hoàng thì không có hại này á&nbsp;"
+      },
+      {
+        "label": "Claims foreign food is higher quality (unfounded) — use a less debatable benefit (enough food / variety)",
+        "tag": "TR",
+        "text": "hơi suy diễn á em, tại sao em nghĩ đồ ăn nước ngoài lại tốt hơn đồ ăn trong nước?<br><br>Nếu em muốn giữ idea về sức khỏe thì anh nghĩ mình nên nói về việc là người ta có đủ thức ăn, chứ không phải là đồ ăn nước ngoài chất lượng hơn á<br><br>Hoặc em có thể đổi idea và mình nói chung chung là người ta có thể tiếp cận được nhiều món lạ á"
+      },
+      {
+        "label": "Irrelevant or undeveloped import benefit — suggest agriculture/logistics growth (farmers earn more, logistics firms grow)",
+        "tag": "TR",
+        "text": "anh nghĩ mình nói về lợi cho việc phát triển các ngành nông nghiệp và logistics thì sẽ rõ hơn nhé<br><br>Hoạt động xuất nhập khẩu phát triển -&gt; Nông dân trong nước xuất khẩu có thêm cơ hội kiếm tiền và các công ty quản lý vận chuyển (logistics) sẽ phát triển"
+      },
+      {
+        "label": "\"Local farmers lose income\" stated without explaining how (imports seen as better → undercut on price)",
+        "tag": "TR",
+        "text": "Mình phải giải thích là nông dân họ cạnh tranh không lại vì đồ ăn nước ngoài thường được cho là chất lượng tốt hơn -&gt; người tiêu dùng chọn loại đồ ăn nhập khẩu =&gt; nông dân trong nước phải hạ giá để cạnh tranh -&gt; mất thu nhập"
+      },
+      {
+        "label": "cheaper imported goods available year",
+        "tag": "LR",
+        "text": "cheaper imported goods <b>available year round</b><div><b><br></b></div><div><b>=&gt; </b>chỗ này mình cần nhấn mạnh là loại đồ ăn này sẵn có quanh năm á em</div>"
+      },
+      {
+        "label": "Paragraph announces a benefit of importing but then shifts into a drawback",
+        "tag": "CC",
+        "text": "Mất mạch lạc á em, em đang nói là lợi lớn nhất là ...&nbsp;<div><br></div><div>Nhưng sau đó em viết về hại là nhiều nước lại bị thiếu đất trồng trọt</div><div><br></div><div>=&gt; Mình nên bắt đầu nói là mình đảm bảo được sự ổn định nguồn thức ăn nha (ensure food security)</div>"
+      },
+      {
+        "label": "Claims we learn a culture through its food (unfounded) — give a concrete example instead",
+        "tag": "TR",
+        "text": "Không hợp lý lắm á em, vì mình cũng không biết gì thêm nhiều về văn hóa người nước ngoài khi ăn đồ ăn của họ.&nbsp;<div><br></div><div>Đôi khi mình còn gây xích mích nữa em : )) -&gt; như người Việt ăn pizza với sốt cà; hoặc người Ý ăn phở với mắm tôm kkk</div><div><br></div><div>=&gt; tốt nhất chỗ này mình đưa ví dụ nhé</div>"
+      },
+      {
+        "label": "Paragraph is about a drawback but then gives a benefit of imported food",
+        "tag": "CC",
+        "text": "Không mạch lạc á em, vì câu trước em nói là việc này có hại, nhưng câu này em đưa ra lợi của imported food -&gt; mình nên linking rõ hơn là:<div>Hại cho nông dân bởi vì imported food nó 'hấp dẫn hơn'</div><div>-&gt; ...foreign countries. One of them is causing a loss of profits for local farmers, as imported food is more ...</div>"
+      },
+      {
+        "label": "",
+        "text": ""
+      },
+      {
+        "label": "",
+        "text": ""
+      },
+      {
+        "label": "",
+        "text": ""
+      },
+      {
+        "label": "",
+        "text": ""
+      },
+      {
+        "label": "",
+        "text": ""
+      },
+      {
+        "label": "",
+        "text": ""
+      }
+    ]
+  },
+  {
+    "name": "Week 5",
+    "slots": [
+      {
+        "label": "Says TV/books help with studying or academic subjects — off-topic, prompt is about entertainment not learning",
+        "tag": "TR",
+        "text": "Idea này không đúng với đề lắm á em, đề đang hỏi mình so sánh giữa việc bố mẹ đọc chuyện cho con để giải trí và việc tự đọc sách / coi TV để giải trí&nbsp;<br><br>-&gt; việc trẻ con dùng sách để tìm kiến thức mới thì không đúng với đề á<br><br>Nếu em muốn giữ idea tương tự thì mình nên viết là trẻ em có thể rèn luyện kỹ năng tự nghiên cứu vì khi tự coi phim hoặc đọc sách sẽ có những chỗ chúng không hiểu -&gt; do nó là chủ đề chúng thích -&gt; sẽ tự nghiên cứu&nbsp;"
+      },
+      {
+        "label": "Says parent-child bond improves but not why that's beneficial (e.g. kids share sensitive issues → parents spot problems earlier)",
+        "tag": "TR",
+        "text": "Idea này oke á em, nhưng mà hay hơn thì anh nghĩ em có thể nói thêm là khi con cái có mối quan hệ với bố mẹ tốt hơn thì sẽ có lợi gì&nbsp;<br><br>-&gt; ví dụ có thể dễ dàng chia sẻ các vấn đề tế nhị hơn -&gt; bố mẹ phát hiện các vấn đề con mình gặp sớm hơn"
+      },
+      {
+        "label": "Generic benefit of parents reading to kids — suggest a specific one: parents can filter content (vs. kids self-selecting unhealthy material)",
+        "tag": "TR",
+        "text": "anh nghĩ mình nói về lợi của việc bố mẹ có thể chọn lọc nội dung cho con cái á&nbsp;<br>=&gt; mình so sánh với việc cho con mình tự chọn -&gt; tiếp xúc nội dung không lành mạnh trên mạng =&gt; nếu bố mẹ chọn thì hạn chế được điều này"
+      },
+      {
+        "label": "",
+        "text": ""
+      },
+      {
+        "label": "Claims self-reading/watching makes children more independent (unjustified) — reframe as building self-research skills",
+        "tag": "TR",
+        "text": "Việc đọc sách và coi phim -&gt; tự lập chưa rõ á, lẽ ra mình phải nói là luyện kỹ năng tự nghiên cứu vì khi tự coi phim hoặc đọc sách sẽ có những chỗ chúng không hiểu -&gt; do nó là chủ đề chúng thích -&gt; sẽ tự nghiên cứu&nbsp;"
+      },
+      {
+        "label": "",
+        "text": ""
+      },
+      {
+        "label": "",
+        "text": ""
+      },
+      {
+        "label": "",
+        "text": ""
+      },
+      {
+        "label": "",
+        "text": ""
+      },
+      {
+        "label": "",
+        "text": ""
+      },
+      {
+        "label": "",
+        "text": ""
+      },
+      {
+        "label": "",
+        "text": ""
+      },
+      {
+        "label": "",
+        "text": ""
+      },
+      {
+        "label": "",
+        "text": ""
+      },
+      {
+        "label": "",
+        "text": ""
+      },
+      {
+        "label": "",
+        "text": ""
+      }
+    ]
+  },
+  {
+    "name": "Week 6",
+    "slots": [
+      {
+        "label": "Argues for banning an ad only from the product's harm, not the ad's effect (ads fail to warn / manipulate impressionable teens)",
+        "tag": "TR",
+        "text": "hơi lạc đề á em, em đang nhầm lẫn việc cấm quảng cáo và việc cấm sản phẩm á&nbsp;<br><br>trong bài em viết thì tập trung cho việc cấm sản phẩm và em chưa giải thích được là tại sao nên cấm quảng cáo á. Mình có thể dùng lại idea là giảm consumption nhưng em nên giải thích tại sao cấm quảng cáo thì sẽ giảm consumption á"
+      },
+      {
+        "label": "Thesis bans by product type, but topic sentence says generic \"X good / Y bad\" instead of which type to ban",
+        "tag": "CC",
+        "text": "Topic sentence em chưa đủ rõ á, em chỉ nói được là có hai sản phẩm này thì có lợi / hại á. Lẽ ra mình cần làm rõ là mình nghĩ nên cấm hay không cấm á"
+      },
+      {
+        "label": "Takes a flat \"benefits outweigh / should be banned\" stance instead of the \"it depends on product type\" answer",
+        "tag": "CC",
+        "text": "Bài này là to what extent á em, mình trả lời rõ ràng hơn là mình nghĩ là không nên vì hại đáng kể hơn lợi nhé"
+      },
+      {
+        "label": "hay hơn thì nên có",
+        "tag": "TR",
+        "text": "hay hơn thì nên có ví dụ nha em, chính xác là thông tin về snacks và fast food"
+      },
+      {
+        "label": "Conclusion doesn't clearly state the ban / no-ban position",
+        "tag": "CC",
+        "text": "kết luận không rõ ràng á em -&gt; chính xác là em nghĩ nên hay không nên cấm?"
+      },
+      {
+        "label": "Argues to ban ads for already-illegal products (self-evident, redundant) — replace with a real benefit (less nuisance for viewers)",
+        "tag": "TR",
+        "text": "sản phẩm mà illegal thì hiển nhiên quảng cáo nên illegal rồi em, anh nghĩ idea này không cần thiết á&nbsp;<div><br></div><div>-&gt; em có thể nói về lợi của việc hạn chế gây phiền phức cho người xem nè&nbsp;</div>"
+      },
+      {
+        "label": "Uses \"reduces trust\" as advertising's harm (too weak) — stronger harm: it makes people waste money",
+        "tag": "TR",
+        "text": "giảm tin tưởng thì chưa đủ hại á em, anh nghĩ mình nói là nó làm người ta tốn tiền sẽ hại hơn á&nbsp;"
+      },
+      {
+        "label": "Paragraph set up as a minor benefit but then opens with a harm",
+        "tag": "CC",
+        "text": "mất mạch lạc á em, ở trước em nói là nó có lợi nhỏ, câu đầu tiên em đang viết về hại -&gt; mình diễn đạt lại xíu: một lợi ích là nó hạn chế việc người tiêu dùng bị thao túng tâm lý nhen"
+      },
+      {
+        "label": "Thêm linking nha em, câu",
+        "tag": "CC",
+        "text": "Thêm linking nha em, câu sau đưa ra thêm chi tiết cho câu trước thì mình dùng cụm: <span style=\"font-weight: bold;\">In particular</span>"
+      },
+      {
+        "label": "",
+        "text": ""
+      },
+      {
+        "label": "",
+        "text": ""
+      },
+      {
+        "label": "",
+        "text": ""
+      },
+      {
+        "label": "",
+        "text": ""
+      },
+      {
+        "label": "",
+        "text": ""
+      },
+      {
+        "label": "",
+        "text": ""
+      },
+      {
+        "label": "",
+        "text": ""
+      }
+    ]
+  },
+  {
+    "name": "Week 7",
+    "slots": [
+      {
+        "label": "figure",
+        "tag": "GRA",
+        "text": "figure of + số || figure for + noun&nbsp;<br><br>-&gt; mình nói số liệu của gì đó thì mình dùng giới từ for nha em. Mình dùng of nếu em muốn đưa số&nbsp;"
+      },
+      {
+        "label": "Overview not put in its own separate paragraph",
+        "tag": "CC",
+        "text": "Overview thì xuống đoạn nha em ui"
+      },
+      {
+        "label": "Tổng",
+        "tag": "LR",
+        "text": "tổng của bài này là người nha em, không phả là sự nghiệp á em<br><br>Cấu trúc mình dùng là: <b>the percentage of + tổng</b> nhé"
+      },
+      {
+        "label": "least / lowest ",
+        "tag": "GRA",
+        "text": "least là ít nhất á em, nhưng khi tả số thì mình phải nói nó thấp nhất á"
+      },
+      {
+        "label": "",
+        "text": ""
+      },
+      {
+        "label": "",
+        "text": ""
+      },
+      {
+        "label": "",
+        "text": ""
+      },
+      {
+        "label": "",
+        "text": ""
+      },
+      {
+        "label": "",
+        "text": ""
+      },
+      {
+        "label": "",
+        "text": ""
+      },
+      {
+        "label": "",
+        "text": ""
+      },
+      {
+        "label": "",
+        "text": ""
+      },
+      {
+        "label": "",
+        "text": ""
+      },
+      {
+        "label": "",
+        "text": ""
+      },
+      {
+        "label": "",
+        "text": ""
+      },
+      {
+        "label": "",
+        "text": ""
+      }
+    ]
+  },
+  {
+    "name": "Week 8",
+    "slots": [
+      {
+        "label": "figureS",
+        "tag": "GRA",
+        "text": "figure dùng để tả xu hướng thì mình dùng số nhiều nha em"
+      },
+      {
+        "label": "this figure",
+        "tag": "GRA",
+        "text": "the former figure là số $2 á em, nó chỉ là một số thôi, và nó không tăng giảm được á em, phải là giá chuối (figures for this country) thì mới tăng giảm nhé"
+      },
+      {
+        "label": "Germany's fluctuating prices described as only a rise-then-fall — should be \"fluctuating with an upward trend\"",
+        "tag": "TR",
+        "text": "chính xác hơn thì mình tả là nó dao động có xu hướng đi lên á em<br><br>-&gt; before fluctuating with an upward trend to $1.7 in 2004."
+      },
+      {
+        "label": "US prices described as just rising start-to-end — should note it rose then leveled out",
+        "tag": "TR",
+        "text": "có thể chính xác hơn xíu a em, mình nên nói là nó tăng lên 1.2 ở 1998 và đi ngang<br><br>-&gt; Prices in the US rose to 1.2 in 1998 before leveling out until the end of the period."
+      },
+      {
+        "label": "Overview only says trends \"fluctuated\" without stating which rose or fell",
+        "tag": "TR",
+        "text": "<!--StartFragment-->fluctuations chỉ nói được là có nhiều thay đổi thôi á em, nó chưa nói được là xu hướng tăng, giảm hay đi ngang á&nbsp;<br style=\"color: rgb(224, 224, 232); background-color: rgb(26, 26, 33); font-family: &quot;DM Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, system-ui, sans-serif; font-size: 12px;\"><br style=\"color: rgb(224, 224, 232); background-color: rgb(26, 26, 33); font-family: &quot;DM Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, system-ui, sans-serif; font-size: 12px;\">Phần trends trong overview yêu cầu mình phải làm rõ được nhé, mình có thể kết hợp nó với ý fluctuations như sau:<br style=\"color: rgb(224, 224, 232); background-color: rgb(26, 26, 33); font-family: &quot;DM Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, system-ui, sans-serif; font-size: 12px;\"><br style=\"color: rgb(224, 224, 232); background-color: rgb(26, 26, 33); font-family: &quot;DM Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, system-ui, sans-serif; font-size: 12px;\">-&gt; Although there were fluctuations in banana prices, all countries saw increases, with the exception of France.&nbsp;<!--EndFragment-->"
+      },
+      {
+        "label": "saw plural increases",
+        "tag": "GRA",
+        "text": "<!--StartFragment-->mỗi nước là một sự gia tăng á em, mình dùng số nhiều&nbsp;nhé&nbsp;<!--EndFragment-->"
+      },
+      {
+        "label": "France described as fluctuating or fall-then-rise — should be: hovered below $2 then rose and held at $2",
+        "tag": "TR",
+        "text": "<!--StartFragment-->Anh nghĩ mình có thể tả thông tin chính xác hơn một xíu nha em<br style=\"color: rgb(224, 224, 232); background-color: rgb(26, 26, 33); font-family: &quot;DM Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, system-ui, sans-serif; font-size: 12px;\"><br style=\"color: rgb(224, 224, 232); background-color: rgb(26, 26, 33); font-family: &quot;DM Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, system-ui, sans-serif; font-size: 12px;\">cụ thể với nước Pháp thì mình sẽ nói là nó hover (dao động nhẹ) ở dưới mức $2/kg và sau đó tăng lên và giữ nguyên ở mức $2 ở các năm cuối<!--EndFragment-->"
+      },
+      {
+        "label": "most / all countries",
+        "tag": "GRA",
+        "text": "most ám chỉ là em đã trừ Pháp rồi á em, mình nên dùng all nhé"
+      },
+      {
+        "label": "Introduction doesn't state the unit of measurement (dollars per kilogram)",
+        "tag": "TR",
+        "text": "chỗ này nên tả rõ thêm đơn vị nha em<div><br></div><div>-&gt; measured in dollars per kilogram</div>"
+      },
+      {
+        "label": "Overview only compares, or doesn't cover all four countries' trends",
+        "tag": "TR",
+        "text": "Overview em tả trend chưa đủ rõ nè, mình cần phải tả thêm xu hướng của nước Nhật và Mỹ nữa nhe Toàn&nbsp;<!--EndFragment--><div><br></div><div>-&gt; The prices of bananas in all countries increased over the given period, with the exception of France, which saw relatively little change</div>"
+      },
+      {
+        "label": "No linking device between body sentences 1 and 2 — add one (e.g. \"In the following years\")",
+        "tag": "CC",
+        "text": "câu 2 trong body mình đi tả ở nhưng năm sau -&gt; dùng <b>linking In the following years</b> nhen"
+      },
+      {
+        "label": "",
+        "text": ""
+      },
+      {
+        "label": "",
+        "text": ""
+      },
+      {
+        "label": "",
+        "text": ""
+      },
+      {
+        "label": "",
+        "text": ""
+      },
+      {
+        "label": "",
+        "text": ""
+      }
+    ]
+  },
+  {
+    "name": "COMMENTS",
+    "slots": [
+      {
+        "label": "Good",
+        "text": "<!--StartFragment--><b>Nice em!</b>&nbsp;Chỉ có một vài chỗ nhỏ mình có thể viết tốt hơn thôi nè, em check comments anh nhé"
+      },
+      {
+        "label": "Nice",
+        "text": "Em check lại comments của anh về phần Grammar và Vocab nha"
+      },
+      {
+        "label": "Grammar",
+        "text": "Anh thấy bài này em <b>kiểm soát phần ngữ pháp</b> <b>chưa tốt</b> á, em đọc kỹ lại các comments của anh về phần này nhen"
+      },
+      {
+        "label": "Vocab",
+        "text": "Anh thấy bài này em <b>kiểm soát từ vựng chưa tốt</b> á,"
+      },
+      {
+        "label": "AI",
+        "text": "<!--StartFragment-->Hình như bài này em có dùng AI để tráng lại hoặc để giúp em lên idea đúng không?<br><br style=\"color: rgb(224, 224, 232) !important;\">Anh ghi nhận nỗ lực làm bài của em nhen, nhưng em nhớ là mục tiêu của homework không phải là mình nộp bài hoàn hảo để được điểm cao qua môn :D mà để anh có thể góp ý bài viết của em để em cải thiện nè. Nếu bài em hoàn toàn không có lỗi thì anh không thêm được gì vào á.<br><br style=\"color: rgb(224, 224, 232) !important;\">Nếu em muốn thì em làm lại bài này rồi nhắn lại cho anh nhenn<!--EndFragment-->"
+      },
+      {
+        "label": "Incomplete",
+        "text": "Bài này anh đã chấm với lần nộp trước á"
+      },
+      {
+        "label": "CC",
+        "text": "Anh thấy bài em còn hơi thiếu mạch lạc á, em check lại các chỗ anh comment màu vàng nè"
+      },
+      {
+        "label": "TR",
+        "text": "Anh thấy idea em dùng trong bài chưa được hợp lý lắm, em xem kỹ phần anh comment ra nhen"
+      },
+      {
+        "label": "",
+        "text": ""
+      },
+      {
+        "label": "",
+        "text": ""
+      },
+      {
+        "label": "",
+        "text": ""
+      },
+      {
+        "label": "",
+        "text": ""
+      },
+      {
+        "label": "",
+        "text": ""
+      },
+      {
+        "label": "",
+        "text": ""
+      },
+      {
+        "label": "",
+        "text": ""
+      },
+      {
+        "label": "",
+        "text": ""
+      }
+    ]
+  }
+]

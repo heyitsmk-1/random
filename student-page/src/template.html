@@ -73,37 +73,77 @@ button { font: inherit; color: inherit; }
 
 /* stage: fixed height, never scrolls */
 .stage { flex: 1; min-height: 0; position: relative; overflow: hidden; touch-action: none; user-select: none; -webkit-user-select: none; }
-.scene { position: absolute; inset: 0 0 var(--pad, 0px) 0; transition: bottom .35s ease; padding: 8px 16px 6px; display: flex; flex-direction: column; gap: 10px; --k: 1; }
+.scene { position: absolute; inset: 0; padding: 8px 16px 6px; display: flex; flex-direction: column; gap: 10px; --k: 1; }
 .scene.in { animation: sceneIn .45s cubic-bezier(.2, .9, .3, 1) both; }
 .scene.in.back { animation-name: sceneBack; }
 @keyframes sceneIn { from { opacity: 0; transform: translateX(40px); } }
 @keyframes sceneBack { from { opacity: 0; transform: translateX(-40px); } }
 
-/* anh Đậu: slides in over the bottom of the screen, outside the page layout */
-.pic { flex: none; width: 92px; height: 92px; object-fit: contain; animation: bob 3.2s ease-in-out infinite; transform-origin: 50% 100%; }
-.pic.pop { animation: popIn .5s cubic-bezier(.3, 1.6, .5, 1) both, bob 3.2s ease-in-out .5s infinite; }
-@keyframes bob { 0%, 100% { transform: translateY(0) rotate(0); } 50% { transform: translateY(-4px) rotate(-1.5deg); } }
-@keyframes popIn { from { transform: scale(.4); opacity: 0; } }
-.catch { position: absolute; inset: 0; z-index: 7; display: none; touch-action: none; cursor: pointer; }
+/* anh Đậu: a character outside the app. When he talks the page dims, the card he is talking
+   about stays lit (the spotlight), and he leans in from the left edge with his speech bubble. */
+.dim { position: absolute; inset: 0; z-index: 5; background: rgba(24, 16, 8, .55); opacity: 0; pointer-events: none; transition: opacity .35s ease; }
+.app.dau-talk .dim { opacity: 1; }
+.scene .spot:not(.card) { background: var(--bg); padding: 10px; margin: -10px; }
+.scene .spot { position: relative; z-index: 6; box-shadow: 0 0 0 3px var(--orange), 0 10px 30px rgba(0, 0, 0, .25); border-radius: 18px; }
+.app.dau-talk .bottom { background: rgba(24, 16, 8, .55); transition: background .35s; }
+.app.dau-talk .bottom > * { visibility: hidden; }
+.dau-layer { position: absolute; left: 0; right: 0; bottom: 0; top: var(--top-h, 70px); z-index: 8; pointer-events: none; }
+.catch { position: absolute; inset: 0; display: none; pointer-events: auto; touch-action: none; cursor: pointer; }
 .app.dau-talk .catch { display: block; }
-.dlg { position: absolute; left: 0; right: 0; bottom: 0; z-index: 8; display: flex; align-items: flex-end; gap: 2px; padding: 34px 14px calc(env(safe-area-inset-bottom, 0px) + 12px) 2px; pointer-events: none; transform: translateX(-104%); opacity: 0; transition: transform .5s cubic-bezier(.3, 1.2, .5, 1), opacity .3s; touch-action: none; }
-.dlg::before { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(to bottom, transparent, var(--bg) 42%); }
-.app.dau-on .dlg { transform: none; opacity: 1; }
-.dlg .pic { pointer-events: auto; cursor: pointer; }
-.box { pointer-events: auto; position: relative; flex: 1; min-width: 0; margin: 0 0 12px 6px; background: var(--paper); border: 2.5px solid var(--orange); border-radius: 18px; padding: 16px 16px 22px; min-height: 88px; font-size: 17px; line-height: 1.45; box-shadow: 0 5px 0 var(--orange-soft), var(--shadow); cursor: pointer; }
-.box::before { content: ""; position: absolute; left: -10px; bottom: 22px; width: 16px; height: 16px; background: var(--paper); border-left: 2.5px solid var(--orange); border-bottom: 2.5px solid var(--orange); transform: rotate(45deg); border-bottom-left-radius: 4px; }
-.box.pop { animation: boxPop .3s cubic-bezier(.3, 1.4, .5, 1); }
-@keyframes boxPop { from { transform: scale(.96); } }
+.dgroup { position: absolute; left: 0; right: 0; top: 40%; display: flex; align-items: flex-end; padding-right: 14px; transition: top .35s cubic-bezier(.3, .9, .3, 1); pointer-events: none; }
+.dau { flex: none; width: 150px; margin-left: -22px; transform: translateX(-120%) rotate(-8deg); transform-origin: 30% 100%; transition: transform .55s cubic-bezier(.3, 1.35, .45, 1); pointer-events: auto; cursor: pointer; }
+.app.dau-talk .dau { transform: translateX(0) rotate(6deg); }
+.dau svg { width: 100%; height: auto; display: block; overflow: visible; filter: drop-shadow(0 8px 14px rgba(0, 0, 0, .25)); }
+.say { position: relative; flex: 1; min-width: 0; align-self: flex-start; margin: 0 0 0 16px; background: #FFFDF8; color: #2B2420; border: 2.5px solid var(--orange); border-radius: 20px; padding: 18px 16px 24px; min-height: 84px; font-size: 18px; line-height: 1.45; box-shadow: 0 6px 0 rgba(0, 0, 0, .12); pointer-events: auto; cursor: pointer; opacity: 0; transform: scale(.6); transform-origin: 0 100%; transition: opacity .2s, transform .35s cubic-bezier(.3, 1.4, .5, 1); }
+.app.dau-talk .say { opacity: 1; transform: none; transition-delay: .15s; }
+.say::before { content: ""; position: absolute; left: -11px; bottom: 26px; width: 18px; height: 18px; background: #FFFDF8; border-left: 2.5px solid var(--orange); border-bottom: 2.5px solid var(--orange); transform: rotate(45deg); border-bottom-left-radius: 4px; }
+.say.pop { animation: boxPop .3s cubic-bezier(.3, 1.4, .5, 1); }
+@keyframes boxPop { from { transform: scale(.95); } }
 .tag { position: absolute; top: -13px; left: 14px; background: var(--orange); color: #3A1D00; font: 800 11.5px/1 var(--font-display); letter-spacing: .07em; text-transform: uppercase; padding: 5px 10px 4px; border-radius: 999px; }
-.more-ind { position: absolute; right: 12px; bottom: 4px; display: none; align-items: center; gap: 4px; font: 700 11.5px var(--font-display); color: var(--orange-deep); }
+.more-ind { position: absolute; right: 12px; bottom: 5px; display: none; align-items: center; gap: 4px; font: 700 11.5px var(--font-display); color: #C65D00; }
 .more-ind b { display: inline-block; animation: nudgeDown 1s ease-in-out infinite; }
 @keyframes nudgeDown { 50% { transform: translateY(3px); } }
 .app.more .more-ind { display: inline-flex; }
 .typing { display: inline-flex; gap: 4px; padding: 6px 2px; }
-.typing i { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); opacity: .5; animation: dot 1s infinite; }
+.typing i { width: 7px; height: 7px; border-radius: 50%; background: #9A8E85; opacity: .5; animation: dot 1s infinite; }
 .typing i:nth-child(2) { animation-delay: .15s; } .typing i:nth-child(3) { animation-delay: .3s; }
 @keyframes dot { 50% { opacity: 1; transform: translateY(-3px); } }
-.app.dau-on .bottom { visibility: hidden; }
+.qtext { font: 700 1.1em/1.3 var(--font-display); }
+
+/* the placeholder Đậu rig: every part moves on its own */
+.d-all { animation: dbob 3.2s ease-in-out infinite; }
+@keyframes dbob { 50% { transform: translateY(-4px); } }
+.d-sprout { transform-origin: 100px 44px; animation: sway 2.8s ease-in-out infinite; }
+@keyframes sway { 0%, 100% { transform: rotate(-5deg); } 50% { transform: rotate(6deg); } }
+.d-arm { transition: transform .45s cubic-bezier(.3, 1.4, .5, 1); }
+.d-arm-l { transform-origin: 50px 124px; transform: rotate(0deg); }
+.d-arm-r { transform-origin: 150px 124px; transform: rotate(0deg); }
+.a-wave .d-arm-r { animation: wave 1s ease-in-out infinite; }
+@keyframes wave { 0%, 100% { transform: rotate(-140deg); } 50% { transform: rotate(-110deg); } }
+.a-point .d-arm-r { transform: rotate(-72deg); }
+.a-up .d-arm-r { transform: rotate(-125deg); }
+.a-cheer .d-arm-l { animation: cheerL .6s ease-in-out infinite alternate; }
+.a-cheer .d-arm-r { animation: cheerR .6s ease-in-out infinite alternate; }
+@keyframes cheerL { from { transform: rotate(115deg); } to { transform: rotate(135deg); } }
+@keyframes cheerR { from { transform: rotate(-115deg); } to { transform: rotate(-135deg); } }
+.a-think .d-arm-r { transform: rotate(62deg); }
+.a-oops .d-arm-l { transform: rotate(-48deg); }
+.a-oops .d-arm-r { transform: rotate(48deg); }
+.d-eyes-open, .d-mouth-open, .d-mouth-o, .d-sweat { display: none; }
+.e-open .d-eyes-open { display: inline; }
+.e-open .d-eyes-happy { display: none; }
+.d-eyes-open { transform-origin: 101px 108px; animation: blink 4.2s infinite; }
+@keyframes blink { 0%, 91%, 97%, 100% { transform: scaleY(1); } 94% { transform: scaleY(.08); } }
+.d-pupils { animation: glance 7s ease-in-out infinite; }
+@keyframes glance { 0%, 30%, 54%, 70%, 90%, 100% { transform: translate(0, 0); } 34%, 50% { transform: translate(-4px, 0); } 74%, 86% { transform: translate(4px, 1px); } }
+.look-up .d-pupils { animation: none; transform: translate(2px, -4px); }
+.m-talk .d-mouth-open { display: inline; animation: talkA .3s steps(1) infinite; }
+.m-talk .d-mouth-smile { animation: talkB .3s steps(1) infinite; }
+@keyframes talkA { 50% { opacity: 0; } }
+@keyframes talkB { 0% { opacity: 0; } 50% { opacity: 1; } }
+.m-laugh .d-mouth-open { display: inline; }
+.m-laugh .d-mouth-smile, .m-o .d-mouth-smile { display: none; }
+.m-o .d-mouth-o, .m-o .d-sweat { display: inline; }
 
 /* the card area */
 .content { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: .7em; font-size: calc(16px * var(--k)); }
@@ -340,8 +380,8 @@ canvas.confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-
 @media (max-height: 740px) {
   .top { padding-top: calc(env(safe-area-inset-top, 0px) + 6px); gap: 6px; }
   .scene { gap: 8px; padding-top: 6px; }
-  .pic { width: 70px; height: 70px; }
-  .box { font-size: 16px; padding: 14px 14px 20px; min-height: 76px; }
+  .dau { width: 120px; }
+  .say { font-size: 16px; padding: 16px 14px 22px; min-height: 72px; }
   .btn { padding: 12px 16px; }
 }
 
@@ -367,13 +407,42 @@ canvas.confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-
     <button class="btn btn-back" id="backBtn" type="button" aria-label="Quay lại">‹</button>
     <button class="btn btn-main" id="nextBtn" type="button">Tiếp</button>
   </footer>
-  <div class="catch" id="catch" aria-hidden="true"></div>
-  <div class="dlg" id="dlg">
-    <img class="pic" id="dauPic" alt="anh Đậu">
-    <div class="box" id="dauBox" role="button" tabindex="0" aria-live="polite">
-      <span class="tag">anh Đậu</span>
-      <div id="dauLine"></div>
-      <span class="more-ind" aria-hidden="true">chạm <b>▾</b></span>
+  <div class="dau-layer" id="dauLayer">
+    <div class="catch" id="catch" aria-hidden="true"></div>
+    <div class="dgroup" id="dgroup">
+      <div class="dau" id="dau" role="img" aria-label="anh Đậu">
+        <svg viewBox="0 0 200 230" id="dauSvg" aria-hidden="true">
+          <g class="d-all">
+            <g class="d-sprout">
+              <path d="M100 44 C 99 32, 101 22, 104 13" stroke="#7CCBA8" stroke-width="5" fill="none" stroke-linecap="round"/>
+              <path d="M102 22 C 88 6, 68 8, 60 15 C 70 30, 92 32, 102 22 Z" fill="#8DD9B8"/>
+              <path d="M104 17 C 112 2, 131 -2, 142 2 C 138 17, 121 25, 104 17 Z" fill="#8DD9B8"/>
+            </g>
+            <ellipse cx="74" cy="214" rx="18" ry="11" fill="#E27E00"/>
+            <ellipse cx="128" cy="214" rx="18" ry="11" fill="#E27E00"/>
+            <path d="M100 40 C 146 40, 168 84, 172 136 C 176 188, 146 214, 100 214 C 54 214, 26 188, 29 138 C 32 86, 54 40, 100 40 Z" fill="#FF9800"/>
+            <path d="M64 62 C 44 90, 38 130, 42 172 C 34 150, 32 110, 44 84 C 50 72, 57 66, 64 62 Z" fill="#FFB547" opacity=".85"/>
+            <g class="d-arm d-arm-l"><ellipse cx="38" cy="150" rx="12.5" ry="27" transform="rotate(22 38 150)" fill="#EE8500"/></g>
+            <g class="d-arm d-arm-r"><ellipse cx="162" cy="150" rx="12.5" ry="27" transform="rotate(-22 162 150)" fill="#EE8500"/></g>
+            <ellipse cx="62" cy="134" rx="13" ry="9" fill="#F9B8AE"/>
+            <ellipse cx="140" cy="134" rx="13" ry="9" fill="#F9B8AE"/>
+            <g class="d-eyes-open"><g class="d-pupils">
+              <ellipse cx="78" cy="110" rx="7" ry="9.5" fill="#1E1A17"/><circle cx="80.5" cy="106" r="2.4" fill="#fff"/>
+              <ellipse cx="124" cy="110" rx="7" ry="9.5" fill="#1E1A17"/><circle cx="126.5" cy="106" r="2.4" fill="#fff"/>
+            </g></g>
+            <g class="d-eyes-happy" fill="none" stroke="#1E1A17" stroke-width="5" stroke-linecap="round"><path d="M68 114 Q 78 100 88 114"/><path d="M114 114 Q 124 100 134 114"/></g>
+            <path class="d-mouth-smile" d="M88 138 Q 101 152 114 138" stroke="#8A3B00" stroke-width="4.5" fill="none" stroke-linecap="round"/>
+            <g class="d-mouth-open"><path d="M86 134 Q 101 133 116 134 Q 114 159 101 160 Q 88 159 86 134 Z" fill="#B84E00"/><path d="M92 152 Q 101 145 110 152 Q 106 160 101 160 Q 96 160 92 152 Z" fill="#F06128"/></g>
+            <ellipse class="d-mouth-o" cx="101" cy="146" rx="7" ry="8.5" fill="#B84E00"/>
+            <path class="d-sweat" d="M152 84 C 147 93, 147 100, 152 101 C 158 101, 158 93, 152 84 Z" fill="#8FD0F0"/>
+          </g>
+        </svg>
+      </div>
+      <div class="say" id="say" role="button" tabindex="0" aria-live="polite">
+        <span class="tag">anh Đậu</span>
+        <div id="dauLine"></div>
+        <span class="more-ind" aria-hidden="true">chạm <b>▾</b></span>
+      </div>
     </div>
   </div>
 </div>
@@ -481,11 +550,11 @@ let waiting = null, needAnswer = null, atEnd = false, resumed = false;
 let scene, content;
 const pending = new Set();
 
-/* anh Đậu lives outside the page: he slides in over the bottom, talks, and leaves.
-   "talk": tap anywhere moves his dialogue on.  "dock": he stays but the page is usable
-   (questions, textarea, tappable cards).  "away": buttons and swipe-up hint are back. */
-const app = $("#app"), dlg = $("#dlg"), pic = $("#dauPic"), box = $("#dauBox"), dline = $("#dauLine");
-let mode = "away", dockHold = false, saidAt = -1, awayTimer = null;
+/* anh Đậu is not part of the page. When he talks the page dims, the card he means stays lit,
+   and he leans in from the left edge; a tap anywhere moves him on. When the student has to
+   do something (answer, type, tap a card) the tap sends him away instead. */
+const app = $("#app"), layer = $("#dauLayer"), group = $("#dgroup"), dau = $("#dau"), svg = $("#dauSvg"), sayBox = $("#say"), dline = $("#dauLine");
+let mode = "away", dockHold = false, saidAt = -1, awayTimer = null, typed = true, spotEl = null, idleTimer = null, curPose = "waving";
 
 const wait = ms => new Promise(r => {
   if (replay || fast || REDUCED) return r();
@@ -513,6 +582,7 @@ function fit() {
   };
   while (over() && k > .74) { k = +(k - .04).toFixed(2); scene.style.setProperty("--k", k); }
   if (over()) content.classList.add("overflow");
+  place();
 }
 
 /* re-fit whenever the screen's content changes, once per frame */
@@ -521,16 +591,50 @@ function settle() { if (fitQueued) return; fitQueued = true; requestAnimationFra
 const fitRO = new ResizeObserver(settle), fitMO = new MutationObserver(settle);
 if (document.fonts) document.fonts.ready.then(settle);
 
-/* keep the page clear of Đậu's dialogue while he is on screen */
-function pad() {
-  const px = mode === "away" ? 0 : Math.max(0, dlg.offsetHeight - $("#bottom").offsetHeight + 4);
-  app.style.setProperty("--pad", px + "px");
+/* ---------- Đậu's body language ---------- */
+const POSES = {
+  waving: ["a-wave"], thumbsup: ["a-up"], magnify: ["a-think", "look-up"], thinking: ["a-think", "look-up"],
+  oops: ["a-oops", "m-o"], cheering: ["a-cheer", "m-laugh"], writing: ["a-point"], explaining: ["a-point"],
+};
+function face(state) {
+  const p = POSES[curPose] || [];
+  const arms = p.filter(c => c.startsWith("a-")), look = p.filter(c => c === "look-up"), mouth = p.filter(c => c.startsWith("m-"));
+  const keepOpen = ["thinking", "magnify", "oops"].includes(curPose);
+  // open eyes while talking, happy ^ ^ when he is just standing there
+  const cls = state === "talk" ? [...arms, ...look, "e-open", "m-talk"] : [...arms, ...look, ...mouth, keepOpen ? "e-open" : ""];
+  if (spotLooksUp) cls.push("look-up");
+  svg.setAttribute("class", cls.join(" "));
+}
+
+/* ---------- spotlight + where Đậu stands ---------- */
+let spotLooksUp = false;
+const NOT_SPOT = el => /^H[1-6]$/.test(el.tagName) || el.matches(".pill, .label, .flow-en, .row");
+function autoSpot() {
+  const kids = content ? [...content.children].filter(el => !NOT_SPOT(el)) : [];
+  return kids[kids.length - 1] || null;
+}
+function spotlight(el) {
+  if (spotEl && spotEl !== el) spotEl.classList.remove("spot");
+  spotEl = el;
+  if (el && mode === "talk") el.classList.add("spot");
+}
+function place() {
+  if (mode !== "talk") return;
+  const L = layer.getBoundingClientRect(), gh = group.offsetHeight;
+  let top = L.height - gh - 24;
+  if (spotEl && spotEl.isConnected) {
+    const r = spotEl.getBoundingClientRect();
+    const below = r.bottom - L.top + 14, above = r.top - L.top - gh - 14;
+    top = below + gh <= L.height - 8 ? below : above >= 4 ? above : L.height - gh - 8;
+  }
+  group.style.top = Math.max(4, top) + "px";
+  const up = !!(spotEl && spotEl.isConnected && spotEl.getBoundingClientRect().bottom < L.top + top);
+  if (up !== spotLooksUp) { spotLooksUp = up; face(typed ? "rest" : "talk"); }
 }
 function setMode(m) {
   mode = m;
-  app.classList.toggle("dau-on", m !== "away");
   app.classList.toggle("dau-talk", m === "talk");
-  requestAnimationFrame(pad);
+  if (m === "away") { if (spotEl) spotEl.classList.remove("spot"); spotEl = null; }
   setBtn();
 }
 /* a new card with nothing said about it sends Đậu away, unless he speaks in the same beat */
@@ -539,32 +643,36 @@ function scheduleAway() {
   clearTimeout(awayTimer);
   awayTimer = setTimeout(() => { awayTimer = null; if (mode !== "away") setMode("away"); }, 0);
 }
-function pose(p) {
-  const src = A["dau_" + p];
-  if (pic.getAttribute("src") !== src) { pic.src = src; pic.classList.remove("pop"); void pic.offsetWidth; pic.classList.add("pop"); }
-}
 
 function makeCtx(id) {
   const ctx = {
     id,
-    async say(text, p) {
+    async say(text, p, opts = {}) {
       alive(id);
       clearTimeout(awayTimer); awayTimer = null; saidAt = passed;
+      clearTimeout(idleTimer);
       const entering = mode === "away";
-      if (p) pose(p);
-      setMode(needAnswer || dockHold ? "dock" : "talk");
+      if (p) curPose = p;
+      typed = false;
+      setMode("talk"); face("talk");
+      spotlight("spot" in opts ? opts.spot : autoSpot());
       dline.replaceChildren();
       if (!replay && !fast && !REDUCED) dline.append(h("span", { class: "typing", "aria-hidden": "true" }, h("i"), h("i"), h("i")));
-      box.classList.remove("pop"); void box.offsetWidth; box.classList.add("pop");
-      await wait(Math.min(1000, (entering ? 550 : 250) + text.length * 8));
-      if (id === runId) { dline.textContent = text; pad(); }
+      sayBox.classList.remove("pop"); void sayBox.offsetWidth; sayBox.classList.add("pop");
+      place();
+      await wait(Math.min(1100, (entering ? 650 : 250) + text.length * 8));
+      if (id === runId) {
+        dline.textContent = text; typed = true; place(); setBtn();
+        idleTimer = setTimeout(() => face("rest"), replay || REDUCED ? 0 : 1300);
+      }
       alive(id);
     },
-    dock() { dockHold = true; if (mode !== "away") setMode("dock"); },
+    dock() { dockHold = true; setBtn(); },
     show(el, { replace = false } = {}) {
       alive(id);
       el.classList.add(replace ? "enter" : "rise");
       if (replace) { content.replaceChildren(el); scheduleAway(); } else content.append(el);
+      if (mode === "talk" && !NOT_SPOT(el)) spotlight(el);
       fit();
       el.querySelectorAll("img").forEach(i => { if (!i.complete) i.addEventListener("load", fit, { once: true }); });
       return el;
@@ -582,11 +690,12 @@ function makeCtx(id) {
       if (!screens[cur].noSave) { S.screen = cur; S.passed = passed; save(); }
       progress(); setBtn();
     },
-    ask(options, { answer = null, key, en = false }) {
+    ask(options, { answer = null, key, en = false, q = null }) {
       alive(id);
-      const wrap = h("div", { class: "choices" });
+      const box = h("div", { class: "choices" });
       const btns = options.map(o => h("button", { class: "choice" + (en ? " en" : ""), type: "button" }, o));
-      wrap.append(...btns);
+      box.append(...btns);
+      const wrap = h("div", { class: "stack ask" }, q ? h("div", { class: "qtext" }, q) : null, box);
       ctx.show(wrap);
       return new Promise(resolve => {
         const pick = i => {
@@ -599,7 +708,7 @@ function makeCtx(id) {
         };
         btns.forEach((b, i) => b.addEventListener("click", () => pick(i)));
         if (S.answers[key] != null && replay) pick(S.answers[key]);
-        else { needAnswer = wrap; setBtn(); settle(); }
+        else { needAnswer = box; setBtn(); settle(); }
       });
     },
   };
@@ -615,11 +724,11 @@ async function run(i, tgt = 0, dir = 1) {
   for (const p of pending) clearTimeout(p.t);
   pending.clear();
   cur = i; passed = 0; target = tgt; atEnd = false; waiting = null; needAnswer = null; fast = false;
-  dockHold = false; saidAt = -1;
+  dockHold = false; saidAt = -1; typed = true; spotEl = null;
   replay = dir < 0 || tgt > 0;
   const sc = screens[i];
   content = h("div", { class: "content" });
-  scene = h("div", { class: "scene" + (replay ? " instant" : " in") }, content);
+  scene = h("div", { class: "scene" + (replay ? " instant" : " in") }, h("div", { class: "dim" }), content);
   $("#stage").replaceChildren(scene);
   fitRO.disconnect(); fitMO.disconnect();
   fitRO.observe(scene); fitMO.observe(scene, { childList: true, subtree: true, characterData: true });
@@ -631,7 +740,6 @@ async function run(i, tgt = 0, dir = 1) {
   if (id !== runId) return;
   replay = false; scene.classList.remove("instant");
   atEnd = true; S.beats[i] = passed; settle();
-  if (sc.end && mode !== "away") setMode("dock");
   if (!sc.noSave) { S.screen = i; S.passed = passed; }
   save(); progress(); setBtn();
 }
@@ -647,10 +755,15 @@ function jump(i) { if (document.querySelector(".sheet")) return; resumed = true;
 
 function forward() {
   if (document.querySelector(".sheet")) return;
+  if (mode === "talk") {
+    if (!typed) { hurry(); return; }
+    // the student has something to do on the page: step aside
+    if (needAnswer || dockHold || (atEnd && screens[cur].end)) { setMode("away"); return; }
+  }
   if (needAnswer) { needAnswer.classList.remove("nudge"); void needAnswer.offsetWidth; needAnswer.classList.add("nudge"); return; }
   if (waiting) { const w = waiting; waiting = null; setBtn(); w(); return; }
   if (!atEnd) { hurry(); return; }                 // still animating: finish it, never skip ahead
-  if (atEnd && screens[cur].end === "choose" && mode !== "away") return;  // the page's own buttons decide
+  if (screens[cur].end === "choose") return;        // the page's own buttons decide
   if (cur === 0 && S.screen > 1 && !resumed) { resumed = true; return run(S.screen, S.passed); }
   resumed = true;
   const j = nextIndex(cur, 1);
@@ -666,7 +779,6 @@ function backward() {
 function setBtn() {
   const b = $("#nextBtn"), sc = screens[cur];
   if (!sc) return;
-  if (needAnswer && mode === "talk") return setMode("dock");
   b.classList.toggle("wait", !!needAnswer);
   let t = "Tiếp";
   if (needAnswer) t = "Chọn đáp án nha";
@@ -675,9 +787,9 @@ function setBtn() {
   else if (atEnd && sc.label) t = sc.label;
   b.textContent = t;
   $("#backBtn").disabled = cur === 0 && passed === 0;
-  const ready = !needAnswer && (waiting || atEnd) && !(atEnd && sc.end === "choose");
-  app.classList.toggle("more", mode !== "away" && ready);
-  app.classList.toggle("hint-on", mode === "away" && ready);
+  const ready = typed && (waiting || atEnd || needAnswer || dockHold);
+  app.classList.toggle("more", mode === "talk" && !!ready);
+  app.classList.toggle("hint-on", mode === "away" && !needAnswer && (!!waiting || (atEnd && sc.end !== "choose")));
   $("#hintText").textContent = (S.ups || 0) < 3 ? "Vuốt lên để xem tiếp" : "";
 }
 function progress() {
@@ -706,10 +818,9 @@ function gestures(el, tapForward) {
 }
 gestures($("#stage"), false);
 gestures($("#catch"), true);
-gestures(dlg, false);
-box.addEventListener("click", () => { if (mode === "talk" || app.classList.contains("more")) forward(); });
-pic.addEventListener("click", () => { if (mode === "talk" || app.classList.contains("more")) forward(); });
-box.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); forward(); } });
+gestures(sayBox, true);
+gestures(dau, true);
+sayBox.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); forward(); } });
 $("#nextBtn").addEventListener("click", forward);
 $("#backBtn").addEventListener("click", backward);
 document.addEventListener("keydown", e => {
@@ -717,7 +828,9 @@ document.addEventListener("keydown", e => {
   if (["ArrowRight", "ArrowDown", "PageDown", " ", "Enter"].includes(e.key)) { e.preventDefault(); forward(); }
   if (["ArrowLeft", "ArrowUp", "PageUp"].includes(e.key)) { e.preventDefault(); backward(); }
 });
-addEventListener("resize", () => { pad(); fit(); });
+const topH = () => app.style.setProperty("--top-h", $(".top").offsetHeight + "px");
+addEventListener("resize", () => { topH(); fit(); });
+topH();
 
 /* ============================ screens ============================ */
 
@@ -833,10 +946,10 @@ L.ideas.details.forEach((D, k) => (detailIdx[D.tag] = screens.length, add(2, asy
   }
   await c.wait(500);
   await c.say(D.ask.q, "thinking");
-  const i = await c.ask(D.ask.options, { answer: D.ask.answer, key: "idea" + k });
+  const i = await c.ask(D.ask.options, { answer: D.ask.answer, key: "idea" + k, q: D.ask.q });
   await c.say(i === D.ask.answer ? D.ask.right : D.ask.wrong, i === D.ask.answer ? "thumbsup" : "oops");
   await c.gate();
-  content.querySelector(".choices").remove(); fit();
+  content.querySelector(".ask").remove(); fit();
   await c.say(D.fix_intro, "waving");
   if (D.bad_node == null) { chain.append(h("div", { class: "gap-mark" }, "Thiếu mắt xích")); fit(); }
   for (const n of D.fix_chain) { await c.wait(800); chain.append(h("div", { class: "arrow" }), h("div", { class: "node new" }, n)); fit(); }
@@ -897,20 +1010,20 @@ L.mistakes.main.forEach((m, k) => {
   add(4, async c => {
     c.show(h("span", { class: "pill tone-blush" }, k ? `Lỗi phụ ${k}/${L.mistakes.main.length - 1}` : "Lỗi quan trọng nhất"));
     await c.say(`Em để ý ${sids.length} câu này nè ${NAME}`, "magnify");
-    const cards = [];
+    const cards = [], snips = h("div", { class: "stack" });
     for (const [i, sid] of sids.entries()) {
       if (i) await c.gate();
       const body = h("div", { class: "quote en" }, sentence(sid, { mode: "orig", focus: m.cids, window: 5 }));
       const card = h("button", { class: "card snip", type: "button", "aria-label": "Xem câu này trong bài", onclick: () => openEssay({ sid, cids: m.cids }) }, body, h("span", { class: "pin", html: CITE_SVG }));
       card.body = body; card.sid = sid; cards.push(card);
-      c.show(card);
+      if (i) { card.classList.add("rise"); snips.append(card); } else { snips.append(card); c.show(snips); }
     }
     await c.gate();
     await c.say(m.ask.q, "thinking");
-    const i = await c.ask(m.ask.options, { answer: m.ask.answer, key: "m" + k });
+    const i = await c.ask(m.ask.options, { answer: m.ask.answer, key: "m" + k, q: m.ask.q });
     await c.say(i === m.ask.answer ? "Đúng rồi á em" : `Chưa đúng nè ${NAME}, là ${lower1(m.ask.options[m.ask.answer])} á`, i === m.ask.answer ? "thumbsup" : "oops");
     await c.gate();
-    content.querySelector(".choices").remove(); fit();
+    content.querySelector(".ask").remove(); fit();
     await c.say(m.count_line, "waving");
     for (const card of cards) { card.body.replaceChildren(sentence(card.sid, { mode: "diff", focus: m.cids, live: !replay, window: 5 })); fit(); await c.wait(500); }
     await c.wait(300);
@@ -958,7 +1071,9 @@ function exercise(c, item, key, counter) {
   const rec = S.practice[key] || (S.practice[key] = { tries: 0, done: false, first: null });
   const body = h("div", { class: "stack" });
   c.show(h("div", { class: "stack" }, h("div", { class: "row" }, h("span", { class: "pill tone-orange" }, kind(item)), counter ? h("span", { class: "small muted" }, counter) : null), body), { replace: true });
-  if (!rec.done) c.say(item.type === "build" ? "Dịch câu này sang tiếng Anh nha" : item.q, "magnify");
+  const q = item.type === "build" ? "Dịch câu này sang tiếng Anh nha" : item.q;
+  body.append(h("div", { class: "qtext" }, q));
+  if (!rec.done) c.say(q, "magnify");
   return new Promise(resolve => {
     let finished = false, reveal = () => {};
     const lock = () => body.querySelectorAll(".tok, .wchip, .choice").forEach(b => { b.disabled = true; });
@@ -990,7 +1105,6 @@ function exercise(c, item, key, counter) {
       } }, w));
       function fixTok() { const t = toks[target]; t.classList.add("right"); t.replaceChildren(h("s", {}, item.wrong), h("ins", {}, item.fix + words[target].replace(/[^.,!?]/g, ""))); }
       reveal = fixTok;
-      body.append(h("div", { class: "small muted" }, "Chạm vào chữ sai"));
       const box = h("div", { class: "card tap-sent" }, toks); body.append(box); needAnswer = box;
     } else if (item.type === "build") {
       body.append(h("div", { class: "vi" }, item.vi));

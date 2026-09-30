@@ -134,7 +134,7 @@ def main(src, dst):
             orig = tok.s.get_text() if tok.s else ""
             fix = tok.mark.get_text() if tok.mark else ""
             if tok.s is not None or tok.mark is not None:
-                if (orig or fix) and box is not None:
+                if orig or fix:  # a correction may have no comment box
                     items.append(("c", orig, fix, kind_of(tok), comment_text(box)))
             elif tok.get_text().strip() and box is not None:
                 items.append(("n", tok.get_text(), kind_of(tok), comment_text(box)))
@@ -146,7 +146,7 @@ def main(src, dst):
         stream.append(text)
         owner += [k] * len(text)
     keep = student_mask("".join(stream), original)
-    split = {}
+    split, flags_of = {}, {}
     pos = 0
     for k, text in enumerate(stream):
         flags = keep[pos:pos + len(text)]
@@ -155,6 +155,7 @@ def main(src, dst):
         added = " ".join("".join(ch if not ok or ch.isspace() else "\0" for ch, ok in zip(text, flags)).replace("\0", " \0 ").split()).replace("\0", "")
         added = re.sub(r"\s+", " ", added).strip()
         split[k] = (mine, added)
+        flags_of[k] = flags
         pos += len(text)
 
     # 3. sentences
@@ -187,13 +188,31 @@ def main(src, dst):
             continue
         mine, added = split[k]
         if it[0] == "t":
-            text = re.sub(r" {2,}", " ", mine)
-            if after_stop and text[:1].isspace():
-                close()
-                text = text.lstrip()
-            after_stop = False
-            if text:
-                text_in(text)
+            # the student's text, with anything the teacher typed into it (no highlight) as a correction
+            runs = []
+            for ch, ok in zip(it[1], flags_of[k]):
+                if runs and runs[-1][1] == ok:
+                    runs[-1][0] += ch
+                else:
+                    runs.append([ch, ok])
+            for i in range(len(runs) - 2, 0, -1):  # "The high": teacher words split by a kept space
+                if runs[i][1] and not runs[i][0].strip() and not runs[i - 1][1] and not runs[i + 1][1]:
+                    runs[i - 1][0] += runs[i][0] + runs.pop(i + 1)[0]
+                    runs.pop(i)
+            for chunk, ok in runs:
+                if not ok:
+                    n += 1
+                    corrections[f"c{n}"] = {"orig": "", "fix": chunk, "kind": "teacher", "comment": ""}
+                    segs.append({"c": f"c{n}"})
+                    after_stop = bool(re.search(r"[.?!]\s*$", chunk))
+                    continue
+                text = re.sub(r" {2,}", " ", chunk)
+                if after_stop and text[:1].isspace():
+                    close()
+                    text = text.lstrip()
+                after_stop = False
+                if text:
+                    text_in(text)
             continue
         if it[0] == "n":
             _, _, kind, comment = it

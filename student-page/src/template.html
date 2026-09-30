@@ -56,6 +56,10 @@ html, body { height: 100%; overflow: hidden; }
 body { margin: 0; background: var(--bg); color: var(--ink); font: 400 16px/1.5 var(--font-body); -webkit-font-smoothing: antialiased; overscroll-behavior: none; }
 button { font: inherit; color: inherit; }
 :focus-visible { outline: 3px solid var(--orange); outline-offset: 2px; border-radius: 10px; }
+/* no blue flash on tap (phones), and focus rings only for keyboard users */
+* { -webkit-tap-highlight-color: transparent; }
+:focus:not(:focus-visible) { outline: none; }
+.sheet:focus { outline: none; }
 
 .app { height: 100%; max-width: 480px; margin: 0 auto; display: flex; flex-direction: column; position: relative; overflow: hidden; }
 
@@ -1441,7 +1445,8 @@ function sheet(title, head, body) {
   back.addEventListener("click", close); el.querySelector(".x").addEventListener("click", close);
   document.addEventListener("keydown", esc);
   document.body.append(back, el);
-  el.querySelector(".x").focus();
+  // focus the sheet itself: a touch-opened sheet shouldn't light up its close button
+  el.tabIndex = -1; el.focus({ preventScroll: true });
   return el;
 }
 function openOthers(tab) {

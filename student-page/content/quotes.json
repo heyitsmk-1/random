@@ -1,0 +1,30 @@
+{
+  "_note": "Closing quotes shown after a student finishes all the practice. Edit freely: add, remove or reword. Each lesson picks one by student name, or set finish.quote in a lesson to force one. 'meaning' is a plain Vietnamese gloss, not an official translation.",
+  "quotes": [
+    {
+      "text": "Let the wise hear and increase in learning, and the one who understands obtain guidance.",
+      "source": "Proverbs 1:5",
+      "meaning": "Người khôn ngoan thì lắng nghe để học thêm mỗi ngày"
+    },
+    {
+      "text": "Give instruction to a wise man, and he will be still wiser; teach a righteous man, and he will increase in learning.",
+      "source": "Proverbs 9:9",
+      "meaning": "Người khôn nhận lời góp ý thì càng khôn hơn"
+    },
+    {
+      "text": "An intelligent heart acquires knowledge, and the ear of the wise seeks knowledge.",
+      "source": "Proverbs 18:15",
+      "meaning": "Người hiểu biết luôn tìm tòi để biết thêm"
+    },
+    {
+      "text": "Whatever you do, work at it with all your heart.",
+      "source": "Colossians 3:23",
+      "meaning": "Làm gì cũng làm hết lòng"
+    },
+    {
+      "text": "Have patience with all things, but chiefly have patience with yourself.",
+      "source": "St. Francis de Sales",
+      "meaning": "Hãy kiên nhẫn với mọi thứ, nhất là với chính mình"
+    }
+  ]
+}

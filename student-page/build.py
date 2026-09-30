@@ -18,6 +18,12 @@ def main(lesson_path):
     page = json.loads((lesson_path.parent / lesson.pop("page")).read_text(encoding="utf-8"))
     lesson.update({k: page[k] for k in ("scores", "essay", "corrections", "task_comments")})
 
+    finish = lesson.setdefault("finish", {})
+    if not finish.get("quote"):
+        quotes = json.loads((ROOT / "content" / "quotes.json").read_text(encoding="utf-8"))["quotes"]
+        key = sum(map(ord, lesson["student"] + lesson["homework"]))  # stable per student and homework
+        finish["quote"] = quotes[key % len(quotes)]
+
     assets = {p.stem: "data:image/webp;base64," + base64.b64encode(p.read_bytes()).decode()
               for p in sorted((ROOT / "assets").glob("*.webp"))}
 

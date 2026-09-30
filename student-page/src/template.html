@@ -209,6 +209,23 @@ button { font: inherit; color: inherit; }
 .ov .t b { display: block; font-size: .95em; }
 .ov .t span { font-size: .82em; color: var(--muted); }
 
+.ov.tap { width: 100%; text-align: left; font: inherit; color: inherit; cursor: pointer; border-color: var(--coral); }
+.ov.tap:active { transform: translateY(2px); }
+.chev { flex: none; font: 800 1.5em/1 var(--font-display); color: var(--coral); }
+.ov.tap .go { color: var(--coral); font-weight: 600; }
+button.mcard { width: 100%; text-align: left; font: inherit; color: inherit; cursor: pointer; }
+.mcard.main { border: 2px solid var(--orange); background: var(--orange-soft); padding: .9em 1em; }
+.mcard.main .n { background: var(--orange); color: #3A1D00; }
+.mcard.main .t b { font: 800 1.15em/1.25 var(--font-display); }
+.mcard.minor { opacity: .5; box-shadow: none; padding: .45em .8em; font-size: .88em; }
+.mcard.minor .n { width: 2.2em; height: 2.2em; }
+.num { width: 1.9em; height: 1.9em; flex: none; border-radius: 10px; display: grid; place-items: center; background: var(--orange-soft); color: var(--orange-deep); font: 800 1em var(--font-display); }
+.quote-card { text-align: center; padding: 1.3em 1.2em; display: flex; flex-direction: column; gap: .6em; align-items: center; }
+.quote-card .qt { font: 700 1.2em/1.45 var(--font-display); font-style: italic; text-wrap: balance; }
+.quote-card .qs { font: 700 .75em var(--font-display); letter-spacing: .07em; text-transform: uppercase; color: var(--orange-deep); }
+.quote-card .qm { font-size: .9em; color: var(--muted); }
+.quote-card .qt::before { content: "“"; color: var(--orange); } .quote-card .qt::after { content: "”"; color: var(--orange); }
+
 /* linking */
 .lg-label { font: 700 .72em var(--font-display); letter-spacing: .07em; text-transform: uppercase; color: var(--muted); margin-bottom: .35em; }
 .chips { display: flex; flex-wrap: wrap; gap: .45em; }
@@ -577,8 +594,14 @@ async function run(i, tgt = 0, dir = 1) {
   save(); progress(); setBtn();
 }
 
-function visible(i) { return !(screens[i].skip && screens[i].skip()); }
-function nextIndex(from, dir) { let j = from + dir; while (j >= 0 && j < screens.length && !visible(j)) j += dir; return j; }
+/* optional screens (extra mistakes, the "later" goodbye) are only reached by tapping into them */
+function visible(i, from) {
+  const sc = screens[i];
+  if (sc.skip && sc.skip()) return false;
+  return !sc.optional || screens[from].group === sc.group;
+}
+function nextIndex(from, dir) { let j = from + dir; while (j >= 0 && j < screens.length && !visible(j, from)) j += dir; return j; }
+function jump(i) { if (document.querySelector(".sheet")) return; resumed = true; run(i); }
 
 function forward() {
   if (document.querySelector(".sheet")) return;
@@ -740,12 +763,15 @@ add(2, async c => {
   for (const line of I.intro.slice(1)) { await c.gate(); await c.say(line); }
   for (const o of I.overview) {
     await c.wait(700);
-    c.show(h("div", { class: "card ov" }, img(o.ok ? "icon_check" : "icon_cross", "icon"), h("div", { class: "t" }, h("b", {}, o.tag + " · " + o.text), h("span", {}, o.note))));
+    const inner = [img(o.ok ? "icon_check" : "icon_cross", "icon"), h("div", { class: "t" }, h("b", {}, o.tag + " · " + o.text), h("span", {}, o.note, o.ok ? null : h("span", { class: "go" }, " · chạm để xem")))];
+    c.show(o.ok || detailIdx[o.tag] == null ? h("div", { class: "card ov" }, inner)
+      : h("button", { class: "card ov tap", type: "button", onclick: () => jump(detailIdx[o.tag]) }, inner, h("span", { class: "chev", "aria-hidden": "true" }, "›")));
   }
 });
 
 // ideas that need work
-L.ideas.details.forEach((D, k) => add(2, async c => {
+const detailIdx = {};
+L.ideas.details.forEach((D, k) => (detailIdx[D.tag] = screens.length, add(2, async c => {
   c.show(h("span", { class: "pill tone-blush" }, `Cần sửa ${k + 1}/${L.ideas.details.length} · ${D.tag}`));
   await c.say(`Đây là ý ${lower1(D.title)} của em nè`, "magnify");
   c.show(h("div", { class: "card stack" }, h("div", { class: "quote en" }, D.sids.map(origText).join(" ")), cite(D.sids[D.sids.length - 1])));
@@ -769,7 +795,7 @@ L.ideas.details.forEach((D, k) => add(2, async c => {
   await c.gate();
   c.show(h("div", { class: "flow-en" }, "Flow gợi ý: ", h("span", { class: "en" }, D.fix_en)));
   await c.say(D.outro, "thumbsup");
-}));
+})));
 
 // linking
 add(3, async c => {
@@ -798,23 +824,30 @@ add(3, async c => {
 // mistakes overview
 add(4, async c => {
   const M = L.mistakes;
-  c.show(h("h1", { class: "h" }, "3 lỗi chính của em"));
+  c.show(h("h1", { class: "h" }, "Lỗi quan trọng nhất"));
   await c.say(M.intro[0], "waving");
   for (const line of M.intro.slice(1)) { await c.gate(); await c.say(line, "thumbsup"); }
-  for (const [i, m] of M.main.entries()) {
-    await c.wait(i ? 700 : 300);
-    c.show(h("div", { class: "card mcard" }, h("div", { class: "n" }, m.cids.length + "×"), h("div", { class: "t" }, h("b", {}, m.title), h("span", { class: "small muted" }, m.tag))));
-  }
+  const [main, ...rest] = M.main;
+  await c.wait(300);
+  c.show(h("button", { class: "card mcard main", type: "button", onclick: () => jump(mistakeIdx[0]) },
+    h("div", { class: "n" }, main.cids.length + "×"), h("div", { class: "t" }, h("b", {}, main.title), h("span", { class: "small muted" }, main.tag + " · chạm để bắt đầu")), h("span", { class: "chev", style: "color:var(--orange-deep)", "aria-hidden": "true" }, "›")));
+  await c.wait(900);
+  c.show(h("div", { class: "label" }, "Xem thêm nếu em muốn"));
+  rest.forEach((m, i) => c.show(h("button", { class: "card mcard minor", type: "button", onclick: () => jump(mistakeIdx[i + 1]) },
+    h("div", { class: "n" }, m.cids.length + "×"), h("div", { class: "t" }, h("b", {}, m.title)))));
   await c.wait(500);
   const otherCount = M.others.reduce((n, o) => n + o.cids.length, 0);
   c.show(h("button", { class: "btn btn-ghost", type: "button", onclick: openOthers }, `Xem ${otherCount} lỗi nhỏ khác`));
 });
 
 // each main mistake: her sentences one by one, the question, the fixes; then the rule
+const mistakeIdx = [];
 L.mistakes.main.forEach((m, k) => {
   const sids = [...new Set(m.cids.map(x => CID_SENT[x]))];
+  const opts = { group: "m" + k, optional: k > 0 };
+  mistakeIdx.push(screens.length);
   add(4, async c => {
-    c.show(h("span", { class: "pill tone-blush" }, `Lỗi ${k + 1}/3`));
+    c.show(h("span", { class: "pill tone-blush" }, k ? `Lỗi phụ ${k}/${L.mistakes.main.length - 1}` : "Lỗi quan trọng nhất"));
     await c.say(`Em để ý ${sids.length} câu này nè ${NAME}`, "magnify");
     const cards = [];
     for (const [i, sid] of sids.entries()) {
@@ -836,9 +869,9 @@ L.mistakes.main.forEach((m, k) => {
     c.show(h("div", { class: "card times" }, h("div", { class: "n" }, m.cids.length), h("div", { class: "l" }, m.count_line)));
     await c.gate();
     await c.say(m.reason, "thinking");
-  });
+  }, opts);
   add(4, async c => {
-    c.show(h("span", { class: "pill tone-orange" }, `Lỗi ${k + 1}/3 · Quy tắc`));
+    c.show(h("span", { class: "pill tone-orange" }, "Quy tắc"));
     c.show(h("h2", { class: "h2" }, m.title));
     const text = h("div", { class: "board-text" + (m.board.length === 1 ? " one" : ""), "aria-label": m.board.join(", ") });
     c.show(h("div", { class: "board-wrap" }, img("dau_explaining", "", "anh Đậu chỉ lên bảng"), text));
@@ -850,29 +883,33 @@ L.mistakes.main.forEach((m, k) => {
     c.show(h("div", { class: "card stack" },
       h("div", { class: "ex-line" }, img("icon_cross", "icon"), h("span", {}, m.example.bad)),
       h("div", { class: "ex-line" }, img("icon_check", "icon"), h("span", {}, m.example.good))));
-  });
+  }, opts);
 });
+
+const ITEM = Object.fromEntries(L.practice.items.map(it => [it.id, it]));
+const CORE = L.practice.core.map(id => ITEM[id]);
+const EXTRA = L.practice.items.filter(it => !L.practice.core.includes(it.id));
+const TOTAL = CORE.length + 1;                    // + the rewrite
+const kind = it => it.type === "build" ? "Xếp câu tiếng Anh" : it.type === "tap" ? "Tìm chữ sai" : it.sentence ? "Điền vào chỗ trống" : "Chọn câu đúng";
 
 // practice intro
 add(5, async c => {
   c.show(h("h1", { class: "h" }, "Luyện tập"));
   await c.say(L.practice.intro[0], "writing");
   for (const line of L.practice.intro.slice(1)) { await c.gate(); await c.say(line); }
-  for (const m of L.mistakes.main) {
-    await c.wait(600);
-    const n = L.practice.items.filter(x => x.mistake === m.id).length;
-    c.show(h("div", { class: "card ov" }, img("icon_notebook", "icon"), h("div", { class: "t" }, h("b", {}, m.title), h("span", {}, n + " câu"))));
+  for (const [i, t] of [...CORE.map(kind), "Viết lại ý của em"].entries()) {
+    await c.wait(500);
+    c.show(h("div", { class: "card ov" }, h("span", { class: "num" }, i + 1), h("div", { class: "t" }, h("b", {}, t))));
   }
 }, { label: "Bắt đầu luyện" });
 
 /* one exercise; resolves when solved (or revealed after 2 tries) */
 let rightCount = 0;
 const RIGHT = ["Chuẩn rồi á em", `Đúng rồi nè ${NAME}`, "Chính xác", "Đúng rồi, em nắm được rồi đó"];
-function exercise(c, item, key) {
-  const m = L.mistakes.main.find(x => x.id === item.mistake);
+function exercise(c, item, key, counter) {
   const rec = S.practice[key] || (S.practice[key] = { tries: 0, done: false, first: null });
   const body = h("div", { class: "stack" });
-  c.show(h("div", { class: "stack" }, h("span", { class: "pill tone-orange" }, m.title), body), { replace: true });
+  c.show(h("div", { class: "stack" }, h("div", { class: "row" }, h("span", { class: "pill tone-orange" }, kind(item)), counter ? h("span", { class: "small muted" }, counter) : null), body), { replace: true });
   if (!rec.done) c.say(item.type === "build" ? "Dịch câu này sang tiếng Anh nha" : item.q, "magnify");
   return new Promise(resolve => {
     let finished = false, reveal = () => {};
@@ -976,20 +1013,12 @@ function builder(item, isDone) {
   };
 }
 
-L.practice.items.forEach((item, k) => add(5, async c => { await exercise(c, item, "p" + k); }));
+CORE.forEach((item, k) => add(5, async c => { await exercise(c, item, "p" + item.id, `Câu ${k + 1}/${TOTAL}`); }));
 
-// retry round for missed items
-const missed = () => L.practice.items.map((it, k) => ({ it, k })).filter(({ k }) => S.practice["p" + k] && S.practice["p" + k].first === false);
-add(5, async c => {
-  const list = missed();
-  await c.say(`Mình làm lại ${list.length} câu vừa sai nha ${NAME}`, "thinking");
-  for (const { it, k } of list) { await c.gate(); await exercise(c, it, "r" + k); }
-}, { skip: () => missed().length === 0 });
-
-// final challenge
+// question 5: rewrite her own idea
 add(5, async c => {
   const X = L.practice.challenge;
-  c.show(h("span", { class: "pill tone-orange" }, "Thử thách cuối"));
+  c.show(h("div", { class: "row" }, h("span", { class: "pill tone-orange" }, "Viết lại ý của em"), h("span", { class: "small muted" }, `Câu ${TOTAL}/${TOTAL}`)));
   await c.say(X.intro[0], "writing");
   await c.gate();
   await c.say(X.intro[1]);
@@ -1005,22 +1034,59 @@ add(5, async c => {
     ...X.checklist.map((t, i) => h("label", {}, h("input", { type: "checkbox", id: "sc" + i }), h("span", {}, t)))));
 });
 
-// finish
+// summary, then the offer to practise more
+const missedCore = () => CORE.filter(it => S.practice["p" + it.id] && S.practice["p" + it.id].first === false);
+const extraCount = () => missedCore().length + EXTRA.length;
 add(6, async c => {
   const F = L.finish;
-  confetti();
-  await c.say(F.lines[0], "cheering");
-  await c.gate();
-  await c.say(F.lines[1], "thumbsup");
-  const recs = L.practice.items.map((_, k) => S.practice["p" + k]).filter(Boolean);
-  const right = recs.filter(r => r.first).length, total = L.practice.items.length;
+  const recs = CORE.map(it => S.practice["p" + it.id]).filter(Boolean);
+  const right = recs.filter(r => r.first).length, total = CORE.length;
   const on = right >= total ? 3 : right >= total * .7 ? 2 : right > 0 ? 1 : 0;
-  c.show(h("div", { class: "card stat" }, h("div", { class: "stars" }, [0, 1, 2].map(i => img("icon_star", i < on ? "" : "off"))), h("div", {}, h("b", {}, `${right}/${total} câu đúng`), h("div", { class: "small muted" }, "ngay lần đầu"))));
+  await c.say(F.summary[0], "cheering");
+  c.show(h("div", { class: "card stat" }, h("div", { class: "stars" }, [0, 1, 2].map(i => img("icon_star", i < on ? "" : "off"))), h("div", {}, h("b", {}, `${right}/${total} câu đúng`), h("div", { class: "small muted" }, "ngay lần đầu, chưa tính câu viết lại"))));
+  await c.gate();
+  await c.say(F.summary[1], "thumbsup");
   c.show(h("div", { class: "takeaway" }, h("div", { class: "row" }, img("icon_notebook", "icon"), h("b", { class: "h2" }, "Nhớ cho bài sau")), h("ol", {}, F.takeaways.map(t => h("li", {}, t)))));
+  await c.gate();
+  await c.say(F.extra_prompt.replace("{n}", extraCount()), "writing");
+  c.show(h("div", { class: "two" },
+    h("button", { class: "btn btn-ghost", type: "button", onclick: () => jump(laterIdx) }, "Để lần sau"),
+    h("button", { class: "btn btn-main", type: "button", onclick: forward }, "Luyện thêm")));
+}, { label: "Luyện thêm" });
+
+// extra practice: first the core questions she missed, then the rest
+const extraIdx = screens.length;
+add(5, async c => {
+  const list = missedCore();
+  await c.say(`Mình làm lại ${list.length} câu vừa sai trước nha ${NAME}`, "thinking");
+  for (const it of list) { await c.gate(); await exercise(c, it, "r" + it.id, "Làm lại"); }
+}, { skip: () => missedCore().length === 0 });
+EXTRA.forEach((item, k) => add(5, async c => { await exercise(c, item, "x" + item.id, `Luyện thêm ${k + 1}/${EXTRA.length}`); }));
+
+// finished everything: something kind, and a verse or saying about study (content/quotes.json)
+add(6, async c => {
+  const F = L.finish, Q = F.quote;
+  confetti();
+  await c.say(F.done[0], "cheering");
+  await c.gate();
+  await c.say(F.done[1], "thumbsup");
+  if (Q) c.show(h("div", { class: "card quote-card" }, img("icon_bulb", "icon"), h("div", { class: "qt", lang: "en" }, Q.text), h("div", { class: "qs" }, Q.source), Q.meaning ? h("div", { class: "qm" }, Q.meaning) : null));
   c.show(h("div", { class: "two" },
     h("button", { class: "btn btn-ghost", type: "button", onclick: () => openEssay({}) }, "Xem bài sửa"),
     h("button", { class: "btn btn-ghost", type: "button", onclick: () => { S = fresh(); S.swiped = true; save(); resumed = true; run(0); } }, "Làm lại từ đầu")));
 }, { last: true });
+
+// stopped after the summary
+const laterIdx = screens.length;
+add(6, async c => {
+  const F = L.finish;
+  await c.say(F.later[0], "waving");
+  for (const line of F.later.slice(1)) { await c.gate(); await c.say(line, "thumbsup"); }
+  c.show(h("div", { class: "takeaway" }, h("div", { class: "row" }, img("icon_notebook", "icon"), h("b", { class: "h2" }, "Nhớ cho bài sau")), h("ol", {}, F.takeaways.map(t => h("li", {}, t)))));
+  c.show(h("div", { class: "two" },
+    h("button", { class: "btn btn-ghost", type: "button", onclick: () => openEssay({}) }, "Xem bài sửa"),
+    h("button", { class: "btn btn-ghost", type: "button", onclick: () => jump(nextIndex(extraIdx - 1, 1)) }, "Luyện thêm")));
+}, { last: true, optional: true, group: "later" });
 
 /* ---------- sheets ---------- */
 function sheet(title, head, body) {

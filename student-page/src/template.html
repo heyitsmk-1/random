@@ -22,6 +22,8 @@
   --coral: #D9483B;
   --coral-soft: #FCE6E2;
   --blush-soft: #FDEBE7;
+  --sky-soft: #E3EFFB;
+  --sky-deep: #2F6CA6;
   --chalk: #F4F1E6;
   --grid: rgba(80, 140, 200, .10);
   --grid-strong: rgba(80, 140, 200, .20);
@@ -35,7 +37,7 @@
     --bg: #1B1815; --paper: #26211D; --ink: #F3ECE5; --muted: #B4A79C; --line: #3A322C;
     --orange: #FFA42E; --orange-deep: #FFB866; --orange-soft: #3A2A17;
     --mint: #6FC9A2; --mint-deep: #7FD8B1; --mint-soft: #1D3A2E;
-    --coral: #FF8373; --coral-soft: #402421; --blush-soft: #3A2622; --chalk: #F4F1E6;
+    --coral: #FF8373; --coral-soft: #402421; --blush-soft: #3A2622; --chalk: #F4F1E6; --sky-soft: #1D2F42; --sky-deep: #8FC3F2;
     --grid: rgba(120, 170, 230, .07); --grid-strong: rgba(120, 170, 230, .13);
     --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 6px 18px rgba(0, 0, 0, .25);
     color-scheme: dark;
@@ -45,7 +47,7 @@
   --bg: #1B1815; --paper: #26211D; --ink: #F3ECE5; --muted: #B4A79C; --line: #3A322C;
   --orange: #FFA42E; --orange-deep: #FFB866; --orange-soft: #3A2A17;
   --mint: #6FC9A2; --mint-deep: #7FD8B1; --mint-soft: #1D3A2E;
-  --coral: #FF8373; --coral-soft: #402421; --blush-soft: #3A2622; --chalk: #F4F1E6;
+  --coral: #FF8373; --coral-soft: #402421; --blush-soft: #3A2622; --chalk: #F4F1E6; --sky-soft: #1D2F42; --sky-deep: #8FC3F2;
   --grid: rgba(120, 170, 230, .07); --grid-strong: rgba(120, 170, 230, .13);
   --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 6px 18px rgba(0, 0, 0, .25);
   color-scheme: dark;
@@ -198,6 +200,7 @@ button { font: inherit; color: inherit; }
 .tone-orange { background: var(--orange-soft); color: var(--orange-deep); }
 .tone-mint { background: var(--mint-soft); color: var(--mint-deep); }
 .tone-blush { background: var(--blush-soft); color: var(--coral); }
+.tone-sky { background: var(--sky-soft); color: var(--sky-deep); }
 .h { font: 800 1.6em/1.15 var(--font-display); margin: 0; text-wrap: balance; }
 .h2 { font: 700 1.2em/1.25 var(--font-display); margin: 0; text-wrap: balance; }
 .label { font: 700 .72em var(--font-display); letter-spacing: .07em; text-transform: uppercase; color: var(--muted); }
@@ -261,7 +264,7 @@ mark.hl { background: linear-gradient(transparent 55%, var(--orange-soft) 55%); 
 .map .wide { grid-column: 2 / 4; font-size: .85em; color: var(--muted); animation: rise .4s both; }
 .map .chip { font-size: .85em; font-weight: 600; text-align: center; padding: .45em .5em; border-radius: 12px; line-height: 1.3; animation: popIn .4s cubic-bezier(.3, 1.5, .5, 1) both; }
 .map .c { background: var(--mint-soft); color: var(--mint-deep); }
-.map .s { background: var(--blush-soft); color: var(--coral); }
+.map .s { background: var(--sky-soft); color: var(--sky-deep); }
 .map .down { text-align: center; color: var(--orange); font-weight: 800; line-height: 1; animation: rise .4s both; }
 .tick { width: 1.5em; height: 1.5em; flex: none; border-radius: 50%; display: grid; place-items: center; background: var(--mint-soft); }
 .tick.no { background: var(--coral-soft); }

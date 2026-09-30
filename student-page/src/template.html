@@ -663,7 +663,9 @@ function place() {
     let bottom = r.bottom;
     for (let n = anchor.nextElementSibling; n; n = n.nextElementSibling) bottom = Math.max(bottom, n.getBoundingClientRect().bottom);
     const below = bottom - L.top + 14, above = r.top - L.top - gh - 14;
-    top = below + gh <= L.height - 8 ? below : above >= 4 ? above : L.height - gh - 8;
+    // no room under an answered question: stand over its choices rather than over what it was about
+    const answered = anchor.matches(".ask") && !anchor.querySelector(".choice:not([disabled])");
+    top = below + gh <= L.height - 8 ? below : answered ? L.height - gh - 8 : above >= 4 ? above : L.height - gh - 8;
   }
   group.style.top = Math.max(4, top) + "px";
   const up = !!(spotEl && spotEl.isConnected && spotEl.getBoundingClientRect().bottom < L.top + top);
@@ -992,7 +994,7 @@ add("TR", async c => {
   const rows = [
     [h("div", { class: "lab" }, TICK(true), "Mở bài"), h("div", { class: "wide" }, intro.short)],
     [h("div", { class: "lab" }, TICK(true), "Body 1"), ...b1.ideas.map(x => h("div", { class: "chip c" }, x.short))],
-    [h("div"), h("div", { class: "down", "aria-hidden": "true" }, "↓"), h("div", { class: "down", "aria-hidden": "true" }, "↓")],
+    ...((F.pairs || []).length ? [[h("div"), h("div", { class: "down", "aria-hidden": "true" }, "↓"), h("div", { class: "down", "aria-hidden": "true" }, "↓")]] : []),
     [h("div", { class: "lab" }, TICK(true), "Body 2"), ...b2.ideas.map(x => h("div", { class: "chip s" }, x.short))],
     [h("div", { class: "lab" }, TICK(true), "Kết bài"), h("div", { class: "wide" }, concl.short)],
   ];
@@ -1001,6 +1003,34 @@ add("TR", async c => {
   if (F.ok) confetti();
   await c.say(F.verdict[0], F.ok ? "cheering" : "oops");
   for (const line of F.verdict.slice(1)) { await c.gate(); await c.say(line, "thumbsup"); }
+});
+
+// ---------------- TR: reading the prompt (only when the teacher flagged a misreading) ----------------
+if (L.prompt_check) add("TR", async c => {
+  const P = L.prompt_check;
+  c.show(h("h1", { class: "h" }, "Em đọc đề kỹ chưa?"));
+  for (const [k, it] of P.items.entries()) {
+    if (k) await c.gate();
+    // just the sentence of the prompt the misreading is about, so her sentence fits beside it
+    const line = (L.prompt.match(/[^.?!]+[.?!]*/g) || [L.prompt]).find(x => x.includes(it.prompt_focus)) || L.prompt;
+    const prompt = h("div", { class: "card stack" }, h("div", { class: "label" }, "Đề bài"), h("div", { class: "en" }, markFocus(line.trim(), it.prompt_focus)));
+    const mine = h("div", { class: "card stack" }, h("div", { class: "label" }, "Em viết"), h("div", { class: "quote en" }, markFocus(origText(it.sid), it.focus)), cite(it.sid));
+    if (k) { c.show(prompt, { replace: true }); c.show(mine); } else { c.show(prompt); c.show(mine); }
+    await c.say(k ? it.line : P.intro, k ? "thinking" : "magnify", { spot: k ? mine : prompt });
+    if (it.ask) {
+      await c.gate();
+      await c.say(it.ask.q, "thinking", { spot: mine });
+      const i = await c.ask(it.ask.options, { answer: it.ask.answer, key: "prompt" + k, q: it.ask.q });
+      await c.say(i === it.ask.answer ? it.ask.right : it.ask.wrong, i === it.ask.answer ? "thumbsup" : "oops");
+      await c.gate();
+      content.querySelector(".ask").remove(); prompt.remove(); fit();
+    } else {
+      await c.gate();
+      prompt.remove(); fit();
+    }
+    c.show(h("div", { class: "card stack" }, h("div", { class: "label" }, "Viết lại"), h("div", { class: "quote en" }, it.fix)));
+    await c.say(it.fix_line, "explaining");
+  }
 });
 
 // ---------------- TR: idea development ----------------
@@ -1030,8 +1060,8 @@ L.ideas.details.forEach((D, k) => (detailIdx[D.tag] = screens.length, add("TR", 
   await c.say(`Đây là ý ${lower1(D.title)} của em nè`, "magnify");
   c.show(h("div", { class: "card stack" }, h("div", { class: "quote en" }, D.sids.map(origText).join(" ")), cite(D.sids[D.sids.length - 1])));
   await c.gate();
-  const chain = h("div", { class: "chain" });
-  c.show(h("div", { class: "card" }, h("div", { class: "label", style: "margin-bottom:.4em" }, "Chuỗi ý của em"), chain), { replace: true });
+  const chain = h("div", { class: "chain" }), chainLabel = h("div", { class: "label", style: "margin-bottom:.4em" }, "Chuỗi ý của em");
+  c.show(h("div", { class: "card" }, chainLabel, chain), { replace: true });
   for (const [i, n] of D.chain.entries()) {
     await c.wait(i ? 800 : 300);
     if (i) chain.append(h("div", { class: "arrow" }));
@@ -1044,16 +1074,28 @@ L.ideas.details.forEach((D, k) => (detailIdx[D.tag] = screens.length, add("TR", 
   await c.gate();
   content.querySelector(".ask").remove(); fit();
   await c.say(D.fix_intro, "explaining");
-  if (D.bad_node == null) { chain.append(h("div", { class: "gap-mark" }, "Thiếu mắt xích")); fit(); }
-  for (const n of D.fix_chain) { await c.wait(800); chain.append(h("div", { class: "arrow" }), h("div", { class: "node new" }, n)); fit(); }
+  if (D.replace) {
+    // same idea, fewer links
+    await c.wait(300);
+    chainLabel.textContent = D.replace; chain.replaceChildren(); fit();
+    for (const [i, n] of D.fix_chain.entries()) { await c.wait(i ? 800 : 200); if (i) chain.append(h("div", { class: "arrow" })); chain.append(h("div", { class: "node new" }, n)); fit(); }
+  } else if (D.gap_after != null) {
+    // the missing link sits between two of her own
+    const ref = chain.children[2 * D.gap_after + 1] || null;
+    chain.insertBefore(h("div", { class: "gap-mark" }, "Thiếu mắt xích"), ref); fit();
+    for (const n of D.fix_chain) { await c.wait(800); chain.insertBefore(h("div", { class: "arrow" }), ref); chain.insertBefore(h("div", { class: "node new" }, n), ref); fit(); }
+  } else {
+    if (D.bad_node == null) { chain.append(h("div", { class: "gap-mark" }, "Thiếu mắt xích")); fit(); }
+    for (const n of D.fix_chain) { await c.wait(800); chain.append(h("div", { class: "arrow" }), h("div", { class: "node new" }, n)); fit(); }
+  }
   await c.gate();
   // make room for the flow: fold her earlier links, keep the one the new links hang from
-  if (D.bad_node == null && D.chain.length > 2) {
+  if (D.bad_node == null && !D.replace && D.gap_after == null && D.chain.length > 2) {
     const kids = [...chain.children], keep = (D.chain.length - 1) * 2;
     kids.slice(0, keep).forEach(k => k.remove());
     chain.prepend(h("div", { class: "node fold" }, "…"), h("div", { class: "arrow" }));
   }
-  chain.parentNode.append(h("div", { class: "flow-en rise", style: "margin-top:.6em" }, "Flow gợi ý: ", h("span", { class: "en" }, D.fix_en))); fit();
+  chain.parentNode.append(h("div", { class: "flow-en rise", style: "margin-top:.6em" }, (D.fix_label || "Flow gợi ý") + ": ", h("span", { class: "en" }, D.fix_en))); fit();
   await c.say(D.outro, "thumbsup");
 })));
 
@@ -1429,7 +1471,7 @@ function openEssay({ sid = null, cids = null }) {
         if (s.id === sid) span.classList.add("hl");
         if (cids) span.querySelectorAll(".corr").forEach(x => { if (cids.includes(x.dataset.c)) x.classList.add("focus"); });
         para.append(span);
-        if (trBy[s.id]) para.append(h("button", { class: "tr-mark", type: "button", "aria-label": "Nhận xét về ý", onclick: () => { clearNotes(); para.after(h("div", { class: "note" }, trBy[s.id].map(t => t.comment).join("\n\n"))); } }, img("icon_bulb")));
+        if (trBy[s.id]) para.append(h("button", { class: "tr-mark", type: "button", "aria-label": "Nhận xét về ý", onclick: () => { clearNotes(); para.after(h("div", { class: "note" }, trBy[s.id].map(t => (t.added && !t.added.startsWith("=>") ? t.added.replace(/[,.;:]+$/, "") + ": " : "") + t.comment).join("\n\n"))); } }, img("icon_bulb")));
       });
       essay.append(para);
     });

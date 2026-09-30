@@ -5,8 +5,10 @@ Writes dist/<lesson>.html (standalone) and dist/<lesson>.fragment.html (for the 
 which supplies its own <html>/<head>/<body> skeleton).
 """
 import base64
+import hashlib
 import json
 import pathlib
+import re
 import sys
 
 ROOT = pathlib.Path(__file__).parent
@@ -17,6 +19,8 @@ def main(lesson_path):
     lesson = json.loads(lesson_path.read_text(encoding="utf-8"))
     page = json.loads((lesson_path.parent / lesson.pop("page")).read_text(encoding="utf-8"))
     lesson.update({k: page[k] for k in ("scores", "essay", "corrections", "task_comments")})
+    lesson.setdefault("word_count", page["word_count"])  # the page's own count unless the lesson overrides it
+    check(lesson)
 
     finish = lesson.setdefault("finish", {})
     if not finish.get("quote"):
@@ -24,13 +28,18 @@ def main(lesson_path):
         key = sum(map(ord, lesson["student"] + lesson["homework"]))  # stable per student and homework
         finish["quote"] = quotes[key % len(quotes)]
 
+    # saved progress in the browser is only reused for this exact lesson build
+    lesson["version"] = hashlib.sha1(json.dumps(lesson, sort_keys=True).encode()).hexdigest()[:10]
+
+    template = (ROOT / "src" / "template.html").read_text(encoding="utf-8")
+    # only embed images the template actually names
     assets = {p.stem: "data:image/webp;base64," + base64.b64encode(p.read_bytes()).decode()
-              for p in sorted((ROOT / "assets").glob("*.webp"))}
+              for p in sorted((ROOT / "assets").glob("*.webp")) if p.stem in template}
 
     def js(obj):  # safe inside <script type="application/json">
         return json.dumps(obj, ensure_ascii=False).replace("</", "<\\/")
 
-    fragment = (ROOT / "src" / "template.html").read_text(encoding="utf-8")
+    fragment = template
     fragment = (fragment.replace("__TITLE__", lesson["student"])
                         .replace("__LESSON_JSON__", js(lesson))
                         .replace("__ASSETS_JSON__", js(assets)))
@@ -44,6 +53,26 @@ def main(lesson_path):
         '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">'
         "</head><body>\n" + fragment + "\n</body></html>\n", encoding="utf-8")
     print(f"dist/{name}.html  {len(fragment) // 1024} KB")
+
+
+def check(lesson):
+    """Fail the build on lesson data the page cannot render."""
+    sids = {s["id"] for p in lesson["essay"]["paragraphs"] for s in p["sentences"]}
+    problems = []
+    for item in lesson["practice"]["items"]:
+        if item["type"] == "tap":
+            bare = lambda w: re.sub(r"[^\w'-]", "", w).lower()
+            if bare(item["wrong"]) not in [bare(w) for w in item["sentence"].split()]:
+                problems.append(f"tap item {item.get('id')}: '{item['wrong']}' is not a single word of its sentence")
+    for m in lesson["mistakes"]["main"]:
+        problems += [f"mistake {m['id']}: unknown correction {c}" for c in m["cids"] if c not in lesson["corrections"]]
+    for t in lesson["task_comments"]:
+        if not t["sentence_ids"]:
+            problems.append("a task comment is not linked to any sentence: " + t["comment"][:60])
+    used = json.dumps(lesson)
+    problems += [f"unknown sentence id {sid}" for sid in set(re.findall(r'"(?:sid|sids)": \[?"(p\d+s\d+)"', used)) if sid not in sids]
+    if problems:
+        sys.exit("Lesson problems:\n  " + "\n  ".join(problems))
 
 
 if __name__ == "__main__":

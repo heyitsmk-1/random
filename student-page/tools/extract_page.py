@@ -14,6 +14,30 @@ import sys
 from bs4 import BeautifulSoup, NavigableString, Tag
 
 SENT_END = re.compile(r"(?<=[.?!])\s+")
+ABBREV = re.compile(r"(?:\b(?:e\.g|i\.e|etc|vs|Mr|Mrs|Ms|Dr|St|approx)\.)$", re.I)
+
+
+def split_sentences(text):
+    """Split on sentence punctuation, but not after common abbreviations."""
+    parts = []
+    for part in SENT_END.split(text):
+        if parts and ABBREV.search(parts[-1]):
+            parts[-1] += " " + part
+        else:
+            parts.append(part)
+    return parts
+
+
+def comment_text(box):
+    """The comment's text, or '' if the box has no editable body."""
+    body = box.select_one("[contenteditable]") if box else None
+    return body.get_text().strip() if body else ""
+
+
+def page_word_count(soup):
+    """The word count the admin page shows next to the essay ("274 từ"), if present."""
+    m = re.search(r"(\d+)\s*\n\s*từ\b", soup.get_text("\n"))
+    return int(m.group(1)) if m else None
 
 
 def para_tokens(p):
@@ -48,6 +72,7 @@ def main(src, dst):
                 sentences.append({"id": f"p{pi}s{len(sentences)}", "segs": list(segs)})
                 segs.clear()
 
+        after_stop = False  # the last correction ended a sentence
         for tok in toks:
             if isinstance(tok, Tag):
                 sid = tok.get("id")
@@ -58,12 +83,16 @@ def main(src, dst):
                     continue  # empty highlight left behind in the editor
                 n += 1
                 cid = f"c{n}"
-                kind = [k for k in tok["class"] if k != "comment-inline"][0]
-                comment = box.select_one("[contenteditable]").get_text().strip()
-                corrections[cid] = {"orig": orig, "fix": fix, "kind": kind, "comment": comment}
+                kinds = [k for k in tok.get("class", []) if k != "comment-inline"]
+                corrections[cid] = {"orig": orig, "fix": fix, "kind": kinds[0] if kinds else "other", "comment": comment_text(box)}
                 segs.append({"c": cid})
+                after_stop = bool(re.search(r"[.?!]\s*$", fix or orig))
                 continue
-            parts = SENT_END.split(tok)
+            if after_stop and tok[:1].isspace():
+                close()
+                tok = tok.lstrip()
+            after_stop = False
+            parts = split_sentences(tok)
             for i, part in enumerate(parts):
                 if i > 0:
                     close()
@@ -75,20 +104,21 @@ def main(src, dst):
     def sentence_text(s):
         return "".join(x if isinstance(x, str) else corrections[x["c"]]["orig"] for x in s["segs"])
 
+    norm = lambda t: re.sub(r"\s+", " ", t).strip()
     task_comments = []
     for sp in soup.select("#trcc span.comment-inline"):
         box = soup.find(id=f"comment-{sp.get('id')}")
-        text = re.sub(r"\s+", " ", sp.get_text()).strip()
+        text = norm(sp.get_text())
+        # whole sentences inside the highlight, or the one sentence a partial highlight sits in
         ids = [s["id"] for p in paragraphs for s in p["sentences"]
-               if re.sub(r"\s+", " ", sentence_text(s)).strip() in text]
-        task_comments.append({"sentence_ids": ids,
-                              "comment": box.select_one("[contenteditable]").get_text().strip() if box else ""})
+               if norm(sentence_text(s)) and (norm(sentence_text(s)) in text or text in norm(sentence_text(s)))]
+        task_comments.append({"sentence_ids": ids, "comment": comment_text(box)})
 
     scores = [i.get("value") for i in soup.select("#right-partial input.input-otp")][:4]
     original = " ".join(sentence_text(s) for p in paragraphs for s in p["sentences"])
     json.dump({
         "scores": dict(zip(["TR", "CC", "LR", "GR"], scores)),
-        "word_count": len(original.split()),
+        "word_count": page_word_count(soup) or len(original.split()),
         "essay": {"paragraphs": paragraphs},
         "corrections": corrections,
         "task_comments": task_comments,

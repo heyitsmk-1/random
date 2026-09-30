@@ -148,7 +148,7 @@ button { font: inherit; color: inherit; }
 /* the card area */
 .content { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: .7em; font-size: calc(16px * var(--k)); }
 .content > * { flex-shrink: 0; }
-.content.overflow { overflow-y: auto; touch-action: pan-y; }
+.content.overflow { overflow-y: auto; }
 .enter { animation: upIn .5s cubic-bezier(.2, .9, .3, 1) both; }
 @keyframes upIn { from { opacity: 0; transform: translateY(36px); } }
 .rise { animation: rise .45s cubic-bezier(.2, .9, .3, 1) both; }
@@ -534,7 +534,7 @@ function confetti() {
 }
 
 /* ---------- saved progress (this browser only) ---------- */
-const KEY = "dau:" + L.homework + ":" + NAME;
+const KEY = "dau:" + L.homework + ":" + NAME + ":" + (L.version || "");
 const fresh = () => ({ screen: 0, passed: 0, answers: {}, practice: {}, beats: {}, draft: "", ups: 0 });
 let S = fresh();
 try { const raw = localStorage.getItem(KEY); if (raw) S = { ...S, ...JSON.parse(raw) }; } catch (e) { /* storage unavailable */ }
@@ -554,6 +554,7 @@ const pending = new Set();
    and he leans in from the left edge; a tap anywhere moves him on. When the student has to
    do something (answer, type, tap a card) the tap sends him away instead. */
 const app = $("#app"), layer = $("#dauLayer"), group = $("#dgroup"), dau = $("#dau"), svg = $("#dauSvg"), sayBox = $("#say"), dline = $("#dauLine");
+let sayN = 0;
 let mode = "away", dockHold = false, saidAt = -1, awayTimer = null, typed = true, spotEl = null, idleTimer = null, curPose = "waving";
 
 const wait = ms => new Promise(r => {
@@ -649,6 +650,7 @@ function makeCtx(id) {
     id,
     async say(text, p, opts = {}) {
       alive(id);
+      const n = ++sayN;
       clearTimeout(awayTimer); awayTimer = null; saidAt = passed;
       clearTimeout(idleTimer);
       const entering = mode === "away";
@@ -661,7 +663,7 @@ function makeCtx(id) {
       sayBox.classList.remove("pop"); void sayBox.offsetWidth; sayBox.classList.add("pop");
       place();
       await wait(Math.min(1100, (entering ? 650 : 250) + text.length * 8));
-      if (id === runId) {
+      if (id === runId && n === sayN) {
         dline.textContent = text; typed = true; place(); setBtn();
         idleTimer = setTimeout(() => face("rest"), replay || REDUCED ? 0 : 1300);
       }
@@ -764,7 +766,7 @@ function forward() {
   if (waiting) { const w = waiting; waiting = null; setBtn(); w(); return; }
   if (!atEnd) { hurry(); return; }                 // still animating: finish it, never skip ahead
   if (screens[cur].end === "choose") return;        // the page's own buttons decide
-  if (cur === 0 && S.screen > 1 && !resumed) { resumed = true; return run(S.screen, S.passed); }
+  if (cur === 0 && S.screen > 1 && S.screen < screens.length && !resumed) { resumed = true; return run(S.screen, S.passed); }
   resumed = true;
   const j = nextIndex(cur, 1);
   if (j < screens.length) run(j); else openEssay({});
@@ -772,7 +774,7 @@ function forward() {
 function backward() {
   if (document.querySelector(".sheet")) return;
   if (passed > 0) return run(cur, passed - 1, -1);
-  const j = nextIndex(cur, -1);
+  const j = screens[cur].backTo ? screens[cur].backTo() : nextIndex(cur, -1);
   if (j >= 0) run(j, S.beats[j] != null ? S.beats[j] : 999, -1);
 }
 
@@ -782,7 +784,7 @@ function setBtn() {
   b.classList.toggle("wait", !!needAnswer);
   let t = "Tiếp";
   if (needAnswer) t = "Chọn đáp án nha";
-  else if (atEnd && cur === 0 && S.screen > 1 && !resumed) t = "Làm tiếp bài dở";
+  else if (atEnd && cur === 0 && S.screen > 1 && S.screen < screens.length && !resumed) t = "Làm tiếp bài dở";
   else if (atEnd && sc.last) t = "Xong";
   else if (atEnd && sc.label) t = sc.label;
   b.textContent = t;
@@ -812,6 +814,10 @@ function gestures(el, tapForward) {
     const dx = e.clientX - sx, dy = e.clientY - sy;
     if (Math.max(Math.abs(dx), Math.abs(dy)) < 45) { if (tapForward) forward(); return; }
     const fwd = Math.abs(dx) > Math.abs(dy) ? dx < 0 : dy < 0;
+    if (content && content.classList.contains("overflow") && Math.abs(dy) > Math.abs(dx)) {
+      const room = fwd ? content.scrollHeight - content.clientHeight - content.scrollTop : content.scrollTop;
+      if (room > 2) { content.scrollBy({ top: (fwd ? 1 : -1) * content.clientHeight * .8, behavior: REDUCED ? "auto" : "smooth" }); return; }
+    }
     if (fwd) { S.ups = (S.ups || 0) + 1; save(); forward(); } else backward();
   });
   el.addEventListener("pointercancel", () => { on = false; });
@@ -824,8 +830,9 @@ sayBox.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " "
 $("#nextBtn").addEventListener("click", forward);
 $("#backBtn").addEventListener("click", backward);
 document.addEventListener("keydown", e => {
-  if ((e.target.closest && e.target.closest("textarea, input, button, [role=button]")) || document.querySelector(".sheet")) return;
-  if (["ArrowRight", "ArrowDown", "PageDown", " ", "Enter"].includes(e.key)) { e.preventDefault(); forward(); }
+  if ((e.target.closest && e.target.closest("textarea, input")) || document.querySelector(".sheet")) return;
+  const onButton = e.target.closest && e.target.closest("button, [role=button]");
+  if (["ArrowRight", "ArrowDown", "PageDown"].includes(e.key) || (!onButton && [" ", "Enter"].includes(e.key))) { e.preventDefault(); forward(); }
   if (["ArrowLeft", "ArrowUp", "PageUp"].includes(e.key)) { e.preventDefault(); backward(); }
 });
 const topH = () => app.style.setProperty("--top-h", $(".top").offsetHeight + "px");
@@ -1097,13 +1104,15 @@ function exercise(c, item, key, counter) {
       const box = h("div", { class: "choices" }, btns); body.append(box); needAnswer = box;
     } else if (item.type === "tap") {
       const words = item.sentence.split(" ");
-      const target = words.findIndex(w => w.replace(/[.,!?]/g, "") === item.wrong);
+      const bare = w => w.replace(/[^\p{L}\p{N}'-]/gu, "").toLowerCase();
+      const target = words.findIndex(w => bare(w) === bare(item.wrong));
+      if (target < 0) console.error("tap exercise: word not found", item);
       const toks = words.map((w, i) => h("button", { class: "tok", type: "button", onclick: () => {
         if (finished) return;
         toks.forEach(t => t.classList.remove("wrong"));
         if (i === target) { fixTok(); result(true); } else { toks[i].classList.add("wrong"); result(false); }
       } }, w));
-      function fixTok() { const t = toks[target]; t.classList.add("right"); t.replaceChildren(h("s", {}, item.wrong), h("ins", {}, item.fix + words[target].replace(/[^.,!?]/g, ""))); }
+      function fixTok() { const t = toks[target]; if (!t) return; t.classList.add("right"); t.replaceChildren(h("s", {}, item.wrong), h("ins", {}, item.fix + words[target].replace(/[^.,!?]/g, ""))); }
       reveal = fixTok;
       const box = h("div", { class: "card tap-sent" }, toks); body.append(box); needAnswer = box;
     } else if (item.type === "build") {
@@ -1199,8 +1208,10 @@ add(5, async c => {
 }, { end: "dock" });
 
 // summary, then the offer to practise more
+let summaryIdx = -1;
 const missedCore = () => CORE.filter(it => S.practice["p" + it.id] && S.practice["p" + it.id].first === false);
 const extraCount = () => missedCore().length + EXTRA.length;
+summaryIdx = screens.length;
 add(6, async c => {
   const F = L.finish;
   const recs = CORE.map(it => S.practice["p" + it.id]).filter(Boolean);
@@ -1250,7 +1261,7 @@ add(6, async c => {
   c.show(h("div", { class: "two" },
     h("button", { class: "btn btn-ghost", type: "button", onclick: () => openEssay({}) }, "Xem bài sửa"),
     h("button", { class: "btn btn-ghost", type: "button", onclick: () => jump(nextIndex(extraIdx - 1, 1)) }, "Luyện thêm")));
-}, { last: true, optional: true, group: "later", end: "choose" });
+}, { last: true, optional: true, group: "later", end: "choose", backTo: () => summaryIdx });
 
 /* ---------- sheets ---------- */
 function sheet(title, head, body) {
@@ -1278,7 +1289,7 @@ function openEssay({ sid = null, cids = null }) {
   const body = h("div", { class: "sheet-body" });
   const segBtns = [["orig", "Bài gốc"], ["diff", "Bài sửa"]].map(([k, t]) => h("button", { type: "button", "data-k": k, "aria-pressed": String(k === mode), onclick: () => { mode = k; segBtns.forEach(b => b.setAttribute("aria-pressed", String(b.dataset.k === k))); draw(); } }, t));
   const trBy = {};
-  L.task_comments.forEach(t => { const last = t.sentence_ids[t.sentence_ids.length - 1]; if (last) trBy[last] = t; });
+  L.task_comments.forEach(t => { const last = t.sentence_ids[t.sentence_ids.length - 1]; if (last) (trBy[last] = trBy[last] || []).push(t); });
   const clearNotes = () => body.querySelectorAll(".note").forEach(n => n.remove());
   function draw() {
     const essay = h("div", { class: "essay" });
@@ -1294,7 +1305,7 @@ function openEssay({ sid = null, cids = null }) {
         if (s.id === sid) span.classList.add("hl");
         if (cids) span.querySelectorAll(".corr").forEach(x => { if (cids.includes(x.dataset.c)) x.classList.add("focus"); });
         para.append(span);
-        if (trBy[s.id]) para.append(h("button", { class: "tr-mark", type: "button", "aria-label": "Nhận xét về ý", onclick: () => { clearNotes(); para.after(h("div", { class: "note" }, trBy[s.id].comment)); } }, img("icon_bulb")));
+        if (trBy[s.id]) para.append(h("button", { class: "tr-mark", type: "button", "aria-label": "Nhận xét về ý", onclick: () => { clearNotes(); para.after(h("div", { class: "note" }, trBy[s.id].map(t => t.comment).join("\n\n"))); } }, img("icon_bulb")));
       });
       essay.append(para);
     });

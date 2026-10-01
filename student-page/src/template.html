@@ -292,9 +292,17 @@ mark.hl { background: linear-gradient(transparent 55%, var(--orange-soft) 55%); 
 .ov.tap:active { transform: translateY(2px); }
 .chev { flex: none; font: 800 1.5em/1 var(--font-display); color: var(--coral); }
 .ov.tap .go { color: var(--coral); font-weight: 600; }
+.ov.tap.improve { border-color: var(--orange); }
+.ov.tap.improve .go, .ov.tap.improve .chev { color: var(--orange-deep); }
+.icon.tilde { display: inline-grid; place-items: center; border-radius: 50%; background: var(--orange-soft); color: var(--orange-deep); font: 900 1em/1 var(--font-display); }
+.icon.tilde b { font-size: 1.5em; line-height: 1; margin-top: -.15em; }
 .ov.reveal .go, .ov.reveal .chev { animation: hintIn .5s ease both; }
 @keyframes hintIn { from { opacity: 0; } }
 .idea-name { font-weight: 700; font-size: .92em; }
+.pt-comment { font-size: .86em; margin-top: .5em; color: var(--muted); }
+.pt-comment b { color: var(--ink); font-weight: 600; }
+.pt-better { margin-top: .45em; padding: .5em .7em; border-radius: 10px; background: var(--mint-soft); font-size: .92em; }
+.pt-better .lbl { display: block; font: 700 .72em/1.2 var(--font); letter-spacing: .04em; text-transform: uppercase; color: var(--mint-deep); margin-bottom: .2em; }
 .explain { font-size: .9em; padding: .55em .8em; border-radius: 12px; background: var(--orange-soft); border-left: 3px solid var(--orange); animation: rise .35s both; }
 button.mcard { width: 100%; text-align: left; font: inherit; color: inherit; cursor: pointer; }
 .mcard.main { border: 2px solid var(--orange); background: var(--orange-soft); padding: .9em 1em; }
@@ -326,7 +334,7 @@ button.mcard { width: 100%; text-align: left; font: inherit; color: inherit; cur
 .corr.live ins { display: inline-block; animation: popIn .4s .4s cubic-bezier(.3, 1.5, .5, 1) both; }
 @keyframes strike { to { background-size: 100% 2px; } }
 .snip { display: flex; gap: .6em; align-items: flex-start; padding: .55em .8em; text-align: left; font: inherit; color: inherit; cursor: pointer; width: 100%; }
-.snip .quote { flex: 1; min-width: 0; }
+.snip .quote, .snip-col { flex: 1; min-width: 0; }
 .snip .pin { flex: none; width: 16px; height: 16px; color: var(--orange-deep); margin-top: .25em; }
 .times { display: flex; align-items: center; gap: .8em; }
 .times .n { font: 800 2.8em/1 var(--font-display); color: var(--coral); font-variant-numeric: tabular-nums; }
@@ -1026,6 +1034,9 @@ add("intro", async c => {
 
 // ---------------- TR: framework ----------------
 const tabIdx = {};
+/* an idea is ✓ "ok", ~ "improve" or ✗ "fix" (older lessons only say ok: true/false) */
+const ideaStatus = o => o.status || (o.ok ? "ok" : "fix");
+const statusIcon = st => st === "improve" ? h("span", { class: "icon tilde", role: "img", "aria-label": "nâng cấp thêm" }, h("b", {}, "~")) : img(st === "ok" ? "icon_check" : "icon_cross", "icon");
 const markFocus = (text, focus) => {
   const i = focus ? text.indexOf(focus) : -1;
   return i < 0 ? [text] : [text.slice(0, i), h("mark", { class: "hl" }, focus), text.slice(i + focus.length)];
@@ -1109,32 +1120,38 @@ add("TR", async c => {
   await c.gate();
   prompt.remove(); fit();
   await c.say(I.intro[I.intro.length - 1], "explaining");
-  // one idea per tap, each with a word from Đậu. The ✗ ideas become tappable ("chạm để xem")
+  // one idea per tap, each with a word from Đậu. The ✗ and ~ ideas become tappable ("chạm để xem")
   // only once he has been through all of them, so the hint never cuts him short
-  const ovInner = (o, hint) => [img(o.ok ? "icon_check" : "icon_cross", "icon"),
+  const ovInner = (o, hint) => [statusIcon(ideaStatus(o)),
     h("div", { class: "t" }, h("b", {}, o.tag + " · " + o.text), h("span", {}, o.note, hint ? h("span", { class: "go" }, " · chạm để xem") : null))];
   const later = [];
   for (const o of I.overview) {
     await c.gate();
+    const st = ideaStatus(o);
     const card = c.show(h("div", { class: "card ov" }, ovInner(o, false)));
-    if (!o.ok && detailIdx[o.tag] != null) later.push([card, o]);
-    await c.say(o.line || o.note, o.ok ? "thumbsup" : "thinking");
+    if (st !== "ok" && detailIdx[o.tag] != null) later.push([card, o]);
+    await c.say(o.line || o.note, st === "fix" ? "thinking" : "thumbsup");
     await praise(c, "idea:" + o.tag);
   }
   if (later.length) {
     await c.gate();
-    for (const [card, o] of later) card.replaceWith(h("button", { class: "card ov tap reveal", type: "button", onclick: () => jump(detailIdx[o.tag]) },
+    for (const [card, o] of later) card.replaceWith(h("button", { class: "card ov tap reveal " + ideaStatus(o), type: "button", onclick: () => jump(detailIdx[o.tag]) },
       ovInner(o, true), h("span", { class: "chev", "aria-hidden": "true" }, "›")));
     fit();
-    await c.say(later.length > 1 ? "Mấy ý có dấu ✗ mình sửa từng cái nha, em chạm vào ý nào cũng được" : "Ý có dấu ✗ mình xem cách sửa nha, em chạm vào để xem", "explaining");
+    const fixN = later.filter(([, o]) => ideaStatus(o) === "fix").length, upN = later.length - fixN;
+    await c.say(fixN && upN ? "Ý có dấu ✗ mình sửa, dấu ~ mình nâng cấp thêm nha, em chạm vào ý nào cũng được"
+      : upN ? (upN > 1 ? "Mấy ý có dấu ~ mình nâng cấp thêm nha, em chạm vào ý nào cũng được" : "Ý có dấu ~ mình nâng cấp thêm nha, em chạm vào để xem")
+      : (fixN > 1 ? "Mấy ý có dấu ✗ mình sửa từng cái nha, em chạm vào ý nào cũng được" : "Ý có dấu ✗ mình xem cách sửa nha, em chạm vào để xem"), "explaining");
   }
 }, { end: "dock" });
 
-// ideas that need work
+// ideas that need work (✗) or could go further (~), numbered separately
 const detailIdx = {};
+const detailKind = D => ideaStatus(L.ideas.overview.find(o => o.tag === D.tag) || { ok: false }) === "improve" ? "improve" : "fix";
 L.ideas.details.forEach((D, k) => (detailIdx[D.tag] = screens.length, add("TR", async c => {
-  c.show(h("span", { class: "pill tone-blush" }, `Cần sửa ${k + 1}/${L.ideas.details.length} · ${D.tag}`));
-  await c.say(`Mình xem kỹ ${D.tag} của em nha`, "magnify");
+  const kind = detailKind(D), same = L.ideas.details.filter(x => detailKind(x) === kind);
+  c.show(h("span", { class: "pill " + (kind === "improve" ? "tone-orange" : "tone-blush") }, `${kind === "improve" ? "Nâng cấp" : "Cần sửa"} ${same.indexOf(D) + 1}/${same.length} · ${D.tag}`));
+  await c.say(kind === "improve" ? `${D.tag} ổn rồi nè, mình nâng cấp thêm chút nha` : `Mình xem kỹ ${D.tag} của em nha`, "magnify");
   const ideaName = (L.ideas.overview.find(o => o.tag === D.tag) || {}).text || D.title;
   c.show(h("div", { class: "card stack" }, h("div", { class: "idea-name" }, D.tag + " · " + ideaName),
     h("div", { class: "quote en" }, D.sids.map(origText).join(" ")), cite(D.sids[D.sids.length - 1])));
@@ -1212,15 +1229,18 @@ add("CC", async c => {
 // ---------------- LR and GRA: mistakes ----------------
 const mistakeIdx = {};
 const byTab = t => L.mistakes.main.filter(m => m.tab === t);
+// a group holds corrections (cids) and highlighted notes the teacher left uncorrected (points)
+const ptsOf = m => m.points || [];
+const mCount = m => m.cids.length + ptsOf(m).length;
 const othersOf = t => L.mistakes.others.filter(o => o.tag === t);
 const othersBtn = t => {
-  const n = othersOf(t).reduce((s, o) => s + o.cids.length, 0);
+  const n = othersOf(t).reduce((s, o) => s + mCount(o), 0);
   return n ? h("button", { class: "btn btn-ghost", type: "button", onclick: () => openOthers(t) }, `Xem ${n} lỗi ${t === "LR" ? "từ vựng" : "ngữ pháp"} nhỏ khác`) : null;
 };
 const mainCard = m => h("button", { class: "card mcard main", type: "button", onclick: () => jump(mistakeIdx[m.id]) },
-  h("div", { class: "n" }, m.cids.length + "×"), h("div", { class: "t" }, h("b", {}, m.title), h("span", { class: "small muted" }, "chạm để bắt đầu")), h("span", { class: "chev", style: "color:var(--orange-deep)", "aria-hidden": "true" }, "›"));
+  h("div", { class: "n" }, mCount(m) + "×"), h("div", { class: "t" }, h("b", {}, m.title), h("span", { class: "small muted" }, "chạm để bắt đầu")), h("span", { class: "chev", style: "color:var(--orange-deep)", "aria-hidden": "true" }, "›"));
 const minorCard = m => h("button", { class: "card mcard minor", type: "button", onclick: () => jump(mistakeIdx[m.id]) },
-  h("div", { class: "n" }, m.cids.length + "×"), h("div", { class: "t" }, h("b", {}, m.title)));
+  h("div", { class: "n" }, mCount(m) + "×"), h("div", { class: "t" }, h("b", {}, m.title)));
 
 function addMistake(m, optional) {
   const sids = [...new Set(m.cids.map(x => CID_SENT[x]))];
@@ -1229,13 +1249,15 @@ function addMistake(m, optional) {
   mistakeIdx[m.id] = screens.length;
   add(m.tab, async c => {
     c.show(head(m.tab === "LR" && optional ? "Từ vựng" : optional ? "Lỗi phụ" : "Lỗi quan trọng nhất"));
-    await c.say(`Em để ý ${sids.length} câu này nè ${NAME}`, "magnify");
+    const spots = [...sids.map(sid => ({ sid })), ...ptsOf(m).map(p => ({ p, sid: p.sids[0] }))];
+    await c.say(`Em để ý ${spots.length} câu này nè ${NAME}`, "magnify");
     const cards = [], snips = h("div", { class: "stack" });
-    for (const [i, sid] of sids.entries()) {
+    for (const [i, spot] of spots.entries()) {
       if (i) await c.gate();
-      const body = h("div", { class: "quote en" }, sentence(sid, { mode: "orig", focus: m.cids, window: 5 }));
-      const card = h("button", { class: "card snip", type: "button", "aria-label": "Xem câu này trong bài", onclick: () => openEssay({ sid, cids: m.cids }) }, body, h("span", { class: "pin", html: CITE_SVG }));
-      card.body = body; card.sid = sid; cards.push(card);
+      const body = h("div", { class: "quote en" }, spot.p ? markFocus(spot.p.sids.map(origText).join(" "), spot.p.quote) : sentence(spot.sid, { mode: "orig", focus: m.cids, window: 5 }));
+      const col = h("div", { class: "snip-col" }, body);
+      const card = h("button", { class: "card snip", type: "button", "aria-label": "Xem câu này trong bài", onclick: () => openEssay({ sid: spot.sid, cids: m.cids }) }, col, h("span", { class: "pin", html: CITE_SVG }));
+      card.body = body; card.col = col; card.sid = spot.sid; card.p = spot.p; cards.push(card);
       if (i) { card.classList.add("rise"); snips.append(card); } else { snips.append(card); c.show(snips); }
     }
     await c.gate();
@@ -1245,9 +1267,15 @@ function addMistake(m, optional) {
     await c.gate();
     content.querySelector(".ask").remove(); fit();
     await c.say(m.count_line, "explaining");
-    for (const card of cards) { card.body.replaceChildren(sentence(card.sid, { mode: "diff", focus: m.cids, live: !replay, window: 5 })); fit(); await c.wait(500); }
+    for (const card of cards) {
+      // a correction shows the fix in place; a note gets the teacher's comment and a better version under it
+      if (card.p) card.col.append(...[card.p.comment ? h("div", { class: "pt-comment" }, h("b", {}, TEACHER + ": "), card.p.comment) : null,
+        card.p.better ? h("div", { class: "pt-better" }, h("span", { class: "lbl" }, "Viết lại"), h("span", { class: "en" }, card.p.better)) : null].filter(Boolean));
+      else card.body.replaceChildren(sentence(card.sid, { mode: "diff", focus: m.cids, live: !replay, window: 5 }));
+      fit(); await c.wait(500);
+    }
     await c.wait(300);
-    c.show(h("div", { class: "card times" }, h("div", { class: "n" }, m.cids.length), h("div", { class: "l" }, m.count_line)));
+    c.show(h("div", { class: "card times" }, h("div", { class: "n" }, mCount(m)), h("div", { class: "l" }, m.count_line)));
     await c.gate();
     await c.say(m.reason, "thinking");
   }, opts);
@@ -1641,8 +1669,9 @@ function sheet(title, head, body) {
 }
 function openOthers(tab) {
   const body = h("div", { class: "sheet-body" });
-  othersOf(tab).forEach(o => body.append(h("div", { class: "other-row" }, h("div", { style: "font-weight:600" }, `${o.label} · ${o.cids.length}`),
-    ...o.cids.map(x => h("div", { class: "ex en" }, (C[x].orig.trim() || "…") + "  →  " + (C[x].fix.trim() || "bỏ"))))));
+  othersOf(tab).forEach(o => body.append(h("div", { class: "other-row" }, h("div", { style: "font-weight:600" }, `${o.label} · ${mCount(o)}`),
+    ...o.cids.map(x => h("div", { class: "ex en" }, (C[x].orig.trim() || "…") + "  →  " + (C[x].fix.trim() || "bỏ"))),
+    ...ptsOf(o).map(p => h("div", { class: "ex en" }, (p.quote || p.sids.map(origText).join(" ")) + (p.better ? "  →  " + p.better : ""))))));
   sheet(`Các lỗi ${tab === "LR" ? "từ vựng" : "ngữ pháp"} nhỏ khác`, null, body);
 }
 function openEssay({ sid = null, cids = null }) {
@@ -1708,5 +1737,6 @@ $("#sproutIcon").src = A.icon_sprout;
 // the editor's preview can open straight at a section (and skip a few screens into it)
 const startAt = L.__start ? screens.findIndex(sc => sc.sec === L.__start) : 0;
 run(startAt < 0 ? 0 : Math.min(screens.length - 1, startAt + (L.__startOffset || 0)));
+if (PREVIEW && L.__essay) setTimeout(() => openEssay(L.__essay), 300);
 })();
 </script>

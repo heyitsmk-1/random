@@ -54,7 +54,7 @@ function pyDumps(obj, sortKeys, ascii) {
 /** Fill the template. Returns { fragment, html, problems } (problems empty = ready to send). */
 export async function buildPage(lessonIn, { template, assets, quotes }) {
   const lesson = structuredClone(lessonIn);
-  for (const k of Object.keys(lesson)) if (k.startsWith("__") && k !== "__preview" && k !== "__start" && k !== "__startOffset") delete lesson[k];
+  for (const k of Object.keys(lesson)) if (k.startsWith("__") && k !== "__preview" && k !== "__start" && k !== "__startOffset" && k !== "__essay") delete lesson[k];
   const problems = checkLesson(lesson);
   const finish = (lesson.finish = lesson.finish || {});
   if (!finish.quote) {

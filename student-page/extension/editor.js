@@ -1,7 +1,7 @@
 /* Đậu's lesson editor: page -> framework tagging -> Claude draft -> edit with live preview -> export. */
 import { extractPage } from "./lib/extract.js";
 import { buildPage, checkLesson } from "./lib/build.js";
-import { draftLesson, draftToLesson, mergeParts, PARTS, MODEL } from "./lib/draft.js";
+import { draftLesson, draftToLesson, mergeParts, draftGroup, redraftPractice, PARTS, MODEL } from "./lib/draft.js";
 import { getSettings, setSettings, takePage, saveDraft, loadDraft, listDrafts } from "./lib/store.js";
 import { publishPage } from "./lib/netlify.js";
 import { reviewUnits, checks, lint } from "./lib/review.js";
@@ -91,11 +91,24 @@ function openItems() {
   return items;
 }
 function approveItems(items) {
+  const keys = [];
   for (const x of items) {
-    if (x.kind === "unit") x.u.roots.forEach(r => { S.ok[r] = true; });
-    else if (x.kind === "flag" && !x.f.fixOnly) S.ok[x.f.path] = true;
+    const ks = x.kind === "unit" ? x.u.roots : x.kind === "flag" && !x.f.fixOnly ? [x.f.path] : [];
+    for (const k of ks) if (!S.ok[k]) { S.ok[k] = true; keys.push(k); }
   }
   touch(); renderEdit();
+  if (keys.length) showUndo("Đã duyệt: " + (items.length === 1 ? itemLabel(items[0]) : `${items.length} mục`), () => { keys.forEach(k => { delete S.ok[k]; }); });
+}
+const itemLabel = x => x.kind === "unit" ? x.u.label : x.kind === "flag" ? x.f.msg.slice(0, 60) : "Lời khen";
+/* "Hoàn tác" for 10 seconds after an approval */
+let undoTimer = null;
+function showUndo(text, undo) {
+  clearTimeout(undoTimer);
+  document.querySelectorAll(".undo-bar").forEach(e => e.remove());
+  const bar = h("div", { class: "undo-bar", role: "status" }, h("span", {}, text),
+    h("button", { class: "btn small", type: "button", onclick: () => { undo(); bar.remove(); touch(); renderEdit(); } }, "Hoàn tác"));
+  document.body.append(bar);
+  undoTimer = setTimeout(() => bar.remove(), 10000);
 }
 /* keep approvals and sources with their items when an array is reordered: order[newIndex] = oldIndex */
 function reorderKeys(path, order) {
@@ -366,6 +379,15 @@ function renderDraft() {
     status)));
 }
 
+function draftInput() {
+  return {
+    page: S.page, meta: S.meta,
+    tags: Object.fromEntries(Object.entries(S.tags).filter(([, v]) => v).map(([k, v]) => [k, (TAGS.find(t => t[0] === v) || [, v])[1]])),
+    checklist: S.checklist.map(c => ({ item: c.item, ok: c.ok, note: c.note })),
+    notes: S.notes, rewriteTarget: S.rewriteTarget && S.rewriteTarget.sids.length ? S.rewriteTarget : null,
+  };
+}
+const draftWeek = () => { const w = COURSE.weeks.find(x => x.week === S.meta.week); return { ...w, prompts: [{ label: w.essay_type, prompt: S.meta.prompt }] }; };
 async function runDraft({ retry = false } = {}) {
   if (!retry) {
     if (S.lesson && !confirm("Soạn lại sẽ thay toàn bộ bản nháp. Tiếp tục?")) return;
@@ -383,12 +405,7 @@ async function runDraft({ retry = false } = {}) {
   try {
     result = await draftLesson({
       apiKey: SETTINGS.apiKey, week: { ...w, prompts: [{ label: w.essay_type, prompt: S.meta.prompt }] }, teacher: SETTINGS.teacher,
-      input: {
-        page: S.page, meta: S.meta,
-        tags: Object.fromEntries(Object.entries(S.tags).filter(([, v]) => v).map(([k, v]) => [k, (TAGS.find(t => t[0] === v) || [, v])[1]])),
-        checklist: S.checklist.map(c => ({ item: c.item, ok: c.ok, note: c.note })),
-        notes: S.notes, rewriteTarget: S.rewriteTarget && S.rewriteTarget.sids.length ? S.rewriteTarget : null,
-      },
+      input: draftInput(),
       onProgress: n => { bar.value = Math.min(n, +bar.max - 500); const el = $("#draftChars"); if (el) el.textContent = `${n.toLocaleString("vi-VN")} ký tự`; },
       signal: ctrl.signal, done: S.partial || {}, noStrict: SETTINGS.noStrict || [],
     });
@@ -429,6 +446,10 @@ async function runDraft({ retry = false } = {}) {
   }
   S.partial = {};
   S.src = { "": "ai", scores: "page", word_count: "page", essay: "page", corrections: "page", task_comments: "page", student: "teacher", teacher: "teacher", zalo: "teacher", homework: "page", prompt: "teacher", essay_type: "page", overall: "page", word_target: "page" };
+  // a note in a group: her sentence and the teacher's comment come from the page; only the better version is Claude's
+  for (const where of ["main", "others"]) S.lesson.mistakes[where].forEach((g, i) => (g.points || []).forEach((_, j) => {
+    for (const f of ["sids", "quote", "comment"]) S.src[`mistakes.${where}.${i}.points.${j}.${f}`] = "page";
+  }));
   S.ok = {};
   S.mod = "review";
   touch(); go("edit");
@@ -458,7 +479,7 @@ function renderEdit() {
   if (!MODULES.some(m => m[0] === S.mod)) S.mod = "review";
   const mods = h("nav", { class: "mods" }, MODULES.filter(([id]) => id !== "prompt_check" || S.lesson.prompt_check).map(([id, label]) => {
     const n = modPending(id);
-    return h("button", { class: "mod-btn", type: "button", "aria-current": String(S.mod === id), onclick: () => { S.mod = id; renderEdit(); } }, label, n ? h("span", { class: "count", title: "mục cần duyệt" }, n) : null);
+    return h("button", { class: "mod-btn", type: "button", "aria-current": String(S.mod === id), onclick: () => { S.mod = id; S.pvEssay = null; renderEdit(); } }, label, n ? h("span", { class: "count", title: "mục cần duyệt" }, n) : null);
   }));
   const form = h("div", { class: "form" }, moduleForm(S.mod));
   const frame = h("iframe", { id: "pv", title: "Xem trước trên điện thoại" });
@@ -479,7 +500,7 @@ function refreshPreview(now) {
     let [sec, off] = m[3];
     if (off === -1) off = S.lesson.prompt_check ? 2 : 1;
     if (S.mod === "mistakes" && !S.lesson.mistakes.main.some(x => x.tab === "LR")) sec = "GRA";
-    const lesson = { ...structuredClone(S.lesson), __preview: true, __start: sec, __startOffset: off };
+    const lesson = { ...structuredClone(S.lesson), __preview: true, __start: sec, __startOffset: off, ...(S.pvEssay ? { __essay: S.pvEssay } : {}) };
     try { const { html } = await buildPage(lesson, BUNDLE); f.srcdoc = html; } catch (e) { f.srcdoc = `<p style="font:14px sans-serif;padding:16px">Chưa xem trước được: ${e.message}</p>`; }
   }, now ? 0 : 700);
 }
@@ -542,6 +563,14 @@ function fLines(path, label, opts = {}) {
   }), h("button", { class: "btn small", type: "button", onclick: () => { arr.push(""); S.src[`${path}.${arr.length - 1}`] = "teacher"; changed(path, arr, { rerender: true, mark: false }); } }, "+ Thêm dòng"));
   const anyPending = arr.some((_, i) => pending(`${path}.${i}`));
   return h("div", { class: "field" + (anyPending ? " pending" : ""), "data-path": path }, h("div", { class: "lbl" }, label, srcBadge(anyPending ? `${path}.0` : path)), box);
+}
+/* an idea: ✓ ok, ~ could go further, ✗ needs fixing (older lessons only have ok) */
+const STATUS = [["ok", "✓ Ổn"], ["improve", "~ Nâng cấp thêm"], ["fix", "✗ Cần sửa"]];
+const statusOf = o => o.status || (o.ok ? "ok" : "fix");
+function fStatus(p) {
+  const o = getP(S.lesson, p);
+  return wrapField(`${p}.status`, "Đánh giá", h("select", { onchange: e => { o.ok = e.target.value === "ok"; changed(`${p}.status`, e.target.value, { rerender: true }); } },
+    STATUS.map(([v, l]) => h("option", { value: v, selected: statusOf(o) === v ? true : null }, l))));
 }
 function fBool(path, label) {
   return h("label", { class: "inline" }, h("input", { type: "checkbox", checked: !!getP(S.lesson, path), onchange: e => changed(path, e.target.checked) }), label);
@@ -620,7 +649,7 @@ function moduleForm(id) {
       h("h3", {}, "Từng ý"),
       cards("ideas.overview", o => `${o.tag} · ${o.text}`, p => [
         h("div", { class: "grid2" }, fLine(`${p}.text`, "Ý", { voice: false }), fLine(`${p}.note`, "Ghi chú ngắn", { voice: false })),
-        fBool(`${p}.ok`, "Ý này ổn (không cần sửa)"), fLine(`${p}.line`, "Đậu nói")], { remove: false }),
+        fStatus(p), fLine(`${p}.line`, "Đậu nói")], { remove: false }),
       h("h3", {}, "Các ý cần sửa"),
       cards("ideas.details", d => `${d.tag} · ${d.title}`, (p, d) => {
         const mode = d.replace ? "replace" : d.gap_after != null ? "gap" : d.bad_node != null ? "bad_link" : "missing_end";
@@ -692,7 +721,7 @@ function unitSummary(u) {
   if (u.id === "prompt_check") return [sayLine(L.prompt_check.intro), ...L.prompt_check.items.map(it => h("div", { class: "rv-sub" },
     kv("Câu " + it.sid, it.focus), kv("Trong đề", it.prompt_focus), it.ask ? kv("Hỏi", it.ask.q) : sayLine(it.line), kv("Viết lại", enText(it.fix))))];
   if (u.id === "overview") return L.ideas.overview.map(o => h("div", { class: "rv-sub" },
-    h("b", {}, (o.ok ? "✓ " : "✗ ") + o.tag + " · " + o.text), h("span", { class: "muted" }, " · " + o.note), o.line ? sayLine(o.line) : null));
+    h("b", {}, ({ ok: "✓ ", improve: "~ ", fix: "✗ " })[statusOf(o)] + o.tag + " · " + o.text), h("span", { class: "muted" }, " · " + o.note), o.line ? sayLine(o.line) : null));
   const m = /^(detail|group|item)(\d+)$/.exec(u.id);
   if (m && m[1] === "detail") {
     const d = L.ideas.details[+m[2]];
@@ -703,7 +732,7 @@ function unitSummary(u) {
   if (m && m[1] === "group") {
     const g = L.mistakes.main[+m[2]];
     return [kv("Nhóm", `${g.title} · ${g.tab === "LR" ? "từ vựng" : "ngữ pháp"}${g === L.mistakes.main.find(x => x.tab === "GRA") ? " · dạy chính" : g.core ? " · bắt buộc" : ""}`),
-      h("div", { class: "chips static" }, g.cids.map(c => h("span", { class: "cchip" }, h("s", {}, (C[c] && C[c].orig.trim()) || "…"), " → ", h("ins", {}, (C[c] && C[c].fix.trim()) || "bỏ")))),
+      h("div", { class: "crows static" }, g.cids.map(c => corrRow(c, { drag: false })), (g.points || []).map((pt, j) => pointRow(pt, { path: `mistakes.main.${+m[2]}.points.${j}` }))),
       kv("Vì sao", g.reason), kv("Quy tắc", g.rule), kv("Bảng", g.board), kv("Ví dụ", [enText("✗ " + g.example.bad), " ", enText("✓ " + g.example.good)])];
   }
   if (m && m[1] === "item") {
@@ -743,7 +772,20 @@ function reviewForm() {
   return [h("h2", {}, "Cần duyệt"),
     h("p", { class: "muted small" }, "Chỉ những chỗ Claude nhận xét bài của em hoặc dạy kiến thức mới (một dấu ✓ cho mỗi thẻ), và những dòng không qua được kiểm tra tự động. Phần còn lại đã tự duyệt, anh vẫn sửa được trong từng mục bên trái."),
     items.length ? h("p", { class: "small" }, `${items.length} mục`) : h("div", { class: "notice good" }, "Xong, không còn gì cần duyệt. Qua bước 5 · Xuất nha."),
-    items.map(card)];
+    items.map(card), approvedList()];
+}
+/* everything approved by a ✓ (not by editing), each with "Bỏ duyệt" */
+function approvedList() {
+  const { units, flags } = review();
+  const rows = [
+    ...units.filter(u => u.roots.some(r => S.ok[r]) && !unitOpen(u)).map(u => [u.label, () => u.roots.forEach(r => { delete S.ok[r]; })]),
+    ...flags.filter(f => !f.fixOnly && S.ok[f.path]).map(f => ["Giữ nguyên: " + f.msg.slice(0, 70), () => { delete S.ok[f.path]; }]),
+    ...(S.lesson.praise_status === "ok" ? [["Lời khen", () => { S.lesson.praise_status = "draft"; }]] : []),
+  ];
+  if (!rows.length) return null;
+  return h("details", { class: "approved" }, h("summary", {}, `Đã duyệt (${rows.length})`),
+    rows.map(([label, undo]) => h("div", { class: "row approved-row" }, h("span", { class: "grow" }, label),
+      h("button", { class: "btn small", type: "button", onclick: () => { undo(); touch(); renderEdit(); } }, "Bỏ duyệt"))));
 }
 
 /* mistakes: groups the teacher can rename, re-tag, and drag corrections between */
@@ -762,13 +804,14 @@ function setRole(g, role) {
     reorderKeys("mistakes.others", M.others.map((_, j) => j).filter(j => j !== g.i));
     const o = M.others.splice(g.i, 1)[0];
     const id = "g" + Date.now().toString(36);
-    const m = { id, title: o.label, tag: o.tag === "LR" ? "Vocab" : "Grammar", tab: o.tag, cids: o.cids, count_line: `Em mắc lỗi này ${o.cids.length} lần`,
-      ask: { q: `${o.cids.length} chỗ này có lỗi gì giống nhau?`, options: [o.label, "", ""], answer: 0 }, reason: "", board: [], rule: ["", "", ""], example: { bad: "", good: "" } };
+    const n = o.cids.length + (o.points || []).length;
+    const m = { id, title: o.label, tag: o.tag === "LR" ? "Vocab" : "Grammar", tab: o.tag, cids: o.cids, points: o.points || [], count_line: `Em mắc lỗi này ${n} lần`,
+      ask: { q: `${n} chỗ này có lỗi gì giống nhau?`, options: [o.label, "", ""], answer: 0 }, reason: "", board: [], rule: ["", "", ""], example: { bad: "", good: "" } };
     M.main.push(m); S.lesson.__mistake_roles[id] = role; S.src[`mistakes.main.${M.main.length - 1}`] = "teacher";
   } else if (g.where === "main" && role === "other") {
     reorderKeys("mistakes.main", M.main.map((_, j) => j).filter(j => j !== g.i));
     const m = M.main.splice(g.i, 1)[0];
-    M.others.push({ label: m.title, cids: m.cids, tag: m.tab });
+    M.others.push({ label: m.title, cids: m.cids, points: m.points || [], tag: m.tab });
   } else if (g.where === "main") {
     S.lesson.__mistake_roles[g.m.id] = role;
     if (role === "core") g.m.core = true; else delete g.m.core;
@@ -781,61 +824,158 @@ function setRole(g, role) {
   }
   touch(); refreshPreview(); renderEdit();
 }
-function mistakesForm() {
-  const C = S.page.corrections;
-  const groups = mistakeGroups();
-  // tiny corrections ("'" -> "'s") get the word before them, so the chip is readable
-  const before = {};
-  for (const p of S.page.essay.paragraphs) for (const s of p.sentences) {
-    let prev = "";
-    for (const g of s.segs) { if (typeof g === "string") prev = g; else { before[g.c] = (prev.match(/\S+\s*$/) || [""])[0].replace(/\s+$/, " "); prev = C[g.c].fix; } }
+/* one correction as a row: her words around it, the change, the teacher's comment; click = see it in the essay */
+function corrSnippet(cid) {
+  const C = S.lesson.corrections;
+  for (const p of S.lesson.essay.paragraphs) for (const s of p.sentences) {
+    const k = s.segs.findIndex(g => typeof g !== "string" && g.c === cid);
+    if (k < 0) continue;
+    const txt = gs => gs.map(g => typeof g === "string" ? g : C[g.c].orig).join("");
+    const pre = txt(s.segs.slice(0, k)), post = txt(s.segs.slice(k + 1));
+    const pw = pre.trimEnd().split(/\s+/).filter(Boolean), qw = post.trimStart().split(/\s+/).filter(Boolean);
+    return { sid: s.id,
+      pre: (pw.length > 7 ? "… " : "") + pw.slice(-7).join(" ") + (/\s$/.test(pre) || /^\s/.test(C[cid].orig) ? " " : ""),
+      post: (/^\s/.test(post) || /\s$/.test(C[cid].orig) ? " " : "") + qw.slice(0, 7).join(" ") + (qw.length > 7 ? " …" : "") };
   }
-  const chip = cid => {
-    const c = C[cid] || { orig: "", fix: "" }, o = c.orig.trim(), x = c.fix.trim();
-    const ctx = o.length < 4 && x.length < 6 && before[cid] ? before[cid] : null;
-    return h("span", { class: "cchip", draggable: "true", "data-cid": cid, title: c.comment || "",
-      ondragstart: e => { e.dataTransfer.setData("text/plain", cid); } },
-      ctx ? h("span", { class: "ctx" }, ctx) : null, h("s", {}, o || "…"), " → ", ctx ? h("span", { class: "ctx" }, ctx) : null, h("ins", {}, x || "bỏ"));
-  };
+  return { sid: null, pre: "", post: "" };
+}
+function previewEssay(sid, cids) { if (!sid) return; S.pvEssay = { sid, cids: cids || null }; refreshPreview(true); }
+function corrRow(cid, { drag = true } = {}) {
+  const c = S.lesson.corrections[cid] || { orig: "", fix: "", comment: "" }, sn = corrSnippet(cid);
+  return h("div", { class: "crow", draggable: drag ? "true" : null, "data-item": "c:" + cid, title: "Bấm để xem câu này trong bài",
+    ondragstart: drag ? e => e.dataTransfer.setData("text/plain", "c:" + cid) : null, onclick: () => previewEssay(sn.sid, [cid]) },
+    h("div", { class: "crow-text", lang: "en" }, sn.pre, c.orig.trim() ? h("s", {}, c.orig.trim()) : null, c.orig.trim() && c.fix.trim() ? " " : null,
+      c.fix.trim() ? h("ins", {}, c.fix.trim()) : h("ins", { class: "none" }, "(bỏ)"), sn.post),
+    c.comment ? h("div", { class: "crow-comment" }, c.comment) : null);
+}
+/* a highlighted note (or a sentence the teacher added) as a row: her sentence(s), the comment, the better version */
+function pointRow(pt, { path, drag = null, remove = null, editable = false }) {
+  const text = pt.sids.map(sid => { const s = S.lesson.essay.paragraphs.flatMap(p => p.sentences).find(x => x.id === sid); return s ? sentText(s, "orig") : ""; }).join(" ");
+  const k = pt.quote ? text.indexOf(pt.quote.trim()) : -1;
+  const shown = k >= 0 ? [text.slice(0, k), h("mark", {}, pt.quote.trim()), text.slice(k + pt.quote.trim().length)] : [text];
+  return h("div", { class: "crow point", draggable: drag ? "true" : null, "data-item": drag || null, "data-path": path,
+    ondragstart: drag ? e => e.dataTransfer.setData("text/plain", drag) : null },
+    h("div", { class: "row" }, h("span", { class: "tagchip note" }, pt.nid ? "Ghi chú" : "Câu thêm"), h("span", { class: "grow" }),
+      h("button", { class: "btn link small", type: "button", onclick: () => previewEssay(pt.sids[0]) }, "Xem trong bài"),
+      remove ? h("button", { class: "btn link small", type: "button", onclick: remove }, "×") : null),
+    h("div", { class: "crow-text", lang: "en" }, shown),
+    editable ? fLine(`${path}.comment`, "Ghi chú của thầy", { voice: false }) : pt.comment ? h("div", { class: "crow-comment" }, pt.comment) : null,
+    editable ? fLine(`${path}.better`, "Viết lại (câu tốt hơn)", { voice: false, en: true, long: true }) : pt.better ? h("div", { class: "crow-better", lang: "en" }, "→ " + pt.better) : null);
+}
+
+/* "Em mắc lỗi này N lần" follows the group's rows */
+function syncCount(g) {
+  if (g.where !== "main" || !g.m.count_line) return;
+  const n = g.m.cids.length + (g.m.points || []).length;
+  g.m.count_line = g.m.count_line.replace(/\d+ lần/, `${n} lần`);
+}
+function mistakesForm() {
+  const groups = mistakeGroups();
+  const P = (g, f) => `mistakes.${g.where}.${g.i}.${f}`;
+  const mainId = (groups.find(g => g.role === "main") || {}).m;
+  // drop a correction or a note into another group
   const dropInto = g => ({
     ondragover: e => { e.preventDefault(); e.currentTarget.classList.add("over"); },
     ondragleave: e => e.currentTarget.classList.remove("over"),
     ondrop: e => {
       e.preventDefault();
-      const cid = e.dataTransfer.getData("text/plain");
-      for (const x of groups) { const l = x.m.cids; const k = l.indexOf(cid); if (k >= 0) l.splice(k, 1); }
-      g.m.cids.push(cid);
-      if (g.where === "main" && g.m.count_line) g.m.count_line = g.m.count_line.replace(/\d+ lần/, `${g.m.cids.length} lần`);
-      S.src[`mistakes.${g.where}.${g.i}.cids`] = "teacher"; touch(); refreshPreview(); renderEdit();
+      const item = e.dataTransfer.getData("text/plain");
+      if (item.startsWith("c:")) {
+        const cid = item.slice(2);
+        for (const x of groups) { const l = x.m.cids; const k = l.indexOf(cid); if (k >= 0) l.splice(k, 1); }
+        g.m.cids.push(cid);
+        S.src[P(g, "cids")] = "teacher";
+      } else if (item.startsWith("p:")) {
+        const [where, gi, pj] = item.slice(2).split(".");
+        const from = S.lesson.mistakes[where][+gi];
+        if (from === g.m) return;
+        const pts = from.points;
+        reorderKeys(`mistakes.${where}.${gi}.points`, pts.map((_, j) => j).filter(j => j !== +pj));
+        const [pt] = pts.splice(+pj, 1);
+        (g.m.points = g.m.points || []).push(pt);
+        S.src[`${P(g, "points")}.${g.m.points.length - 1}`] = "teacher";
+      } else return;
+      syncCount(g); touch(); refreshPreview(); renderEdit();
     },
   });
-  const P = (g, f) => `mistakes.${g.where}.${g.i}.${f}`;
+  const addSentence = g => h("select", { class: "small", "aria-label": "Thêm câu từ bài", onchange: e => {
+    if (!e.target.value) return;
+    (g.m.points = g.m.points || []).push({ sids: [e.target.value], quote: "", comment: "", better: "" });
+    S.src[`${P(g, "points")}.${g.m.points.length - 1}`] = "teacher";
+    syncCount(g); touch(); refreshPreview(); renderEdit();
+  } }, h("option", { value: "" }, "+ Thêm câu từ bài làm ví dụ"), sidOptions().map(([id, l]) => h("option", { value: id }, l)));
+  const busy = S.busy || {};
   return [
     h("h2", {}, "Từ vựng & ngữ pháp"),
-    h("p", { class: "muted small" }, "Kéo từng chỗ sửa sang nhóm khác. Đặt tên nhóm, chọn nhóm dạy chính. Nhóm “Dạy chính” (ngữ pháp) và “Bắt buộc” (từ vựng) được dạy trong bài; “Xem thêm” là tùy chọn; “Lỗi nhỏ khác” chỉ liệt kê."),
-    approveBar(["mistakes"]),
+    h("p", { class: "muted small" }, "Mỗi nhóm là một kiểu lỗi: chỗ sửa (gạch đỏ → xanh) và ghi chú anh tô mà không sửa. Kéo một dòng sang nhóm khác; bấm vào dòng để xem câu đó trong bài. Nhóm “Dạy chính” (ngữ pháp) và “Bắt buộc” (từ vựng) được dạy trong bài; “Xem thêm” là tùy chọn; “Lỗi nhỏ khác” chỉ liệt kê."),
+    approveBar(),
+    mainId && !S.lesson.practice.items.some(it => it.mistake === mainId.id) ? h("div", { class: "notice" },
+      "Bài luyện đang viết cho nhóm khác, chưa có câu nào cho nhóm dạy chính. ", h("button", { class: "btn small", type: "button", onclick: () => regenPractice() }, "Soạn lại bài luyện")) : null,
     fLines("mistakes.lr_intro", "Mở đầu phần từ vựng"), fLines("mistakes.gra_intro", "Mở đầu phần ngữ pháp"),
-    groups.map(g => h("div", { class: "sub", "data-path": `mistakes.${g.where}.${g.i}` },
-      h("div", { class: "head" }, g.where === "main" ? approveBtn(`mistakes.main.${g.i}`) : null,
-        h("input", { value: g.where === "main" ? g.m.title : g.m.label, style: "flex:1", "aria-label": "Tên nhóm",
-          oninput: e => { if (g.where === "main") changed(P(g, "title"), e.target.value); else changed(P(g, "label"), e.target.value); } }),
-        h("select", { "aria-label": "Từ vựng hay ngữ pháp", onchange: e => { if (g.where === "main") { g.m.tab = e.target.value; g.m.tag = e.target.value === "LR" ? "Vocab" : "Grammar"; } else g.m.tag = e.target.value; touch(); refreshPreview(); renderEdit(); } },
-          [["GRA", "Ngữ pháp"], ["LR", "Từ vựng"]].map(([v, l]) => h("option", { value: v, selected: (g.where === "main" ? g.m.tab : g.m.tag) === v ? true : null }, l))),
-        h("select", { "aria-label": "Vai trò", onchange: e => setRole(g, e.target.value) },
-          [["main", "Dạy chính"], ["core", "Bắt buộc (từ vựng)"], ["optional", "Xem thêm"], ["other", "Lỗi nhỏ khác"]].map(([v, l]) => h("option", { value: v, selected: g.role === v ? true : null }, l)))),
-      h("div", { class: "chips", ...dropInto(g) }, g.m.cids.map(chip)),
-      g.where === "main" ? h("details", {}, h("summary", {}, "Phần dạy (câu hỏi, quy tắc, ví dụ)"),
-        fLine(P(g, "count_line"), "Đếm lỗi"), fLine(P(g, "ask.q"), "Câu hỏi"), fLines(P(g, "ask.options"), "Lựa chọn"), fNumber(P(g, "ask.answer"), "Đáp án đúng (0 là lựa chọn đầu)"),
-        fLine(P(g, "reason"), "Vì sao em hay sai"), fLines(P(g, "board"), "Bảng (công thức ngắn)", { voice: false }),
-        fLines(P(g, "rule"), "Quy tắc"), h("div", { class: "grid2" }, fLine(P(g, "example.bad"), "Ví dụ sai", { voice: false, en: true }), fLine(P(g, "example.good"), "Ví dụ đúng", { voice: false, en: true }))) : null)),
-    h("button", { class: "btn small", type: "button", onclick: () => { S.lesson.mistakes.others.push({ label: "Nhóm mới", cids: [], tag: "GRA" }); touch(); renderEdit(); } }, "+ Thêm nhóm"),
+    groups.map(g => {
+      const key = `${g.where}.${g.i}`, pts = g.m.points || [];
+      return h("div", { class: "sub" + (g.role === "main" ? " main-group" : ""), "data-path": `mistakes.${key}` },
+        h("div", { class: "head" }, g.where === "main" ? approveBtn(`mistakes.main.${g.i}`) : null,
+          g.role === "main" ? h("span", { class: "badge-main" }, "Dạy chính") : null,
+          h("input", { value: g.where === "main" ? g.m.title : g.m.label, style: "flex:1", "aria-label": "Tên nhóm",
+            oninput: e => { if (g.where === "main") changed(P(g, "title"), e.target.value); else changed(P(g, "label"), e.target.value); } }),
+          h("select", { "aria-label": "Từ vựng hay ngữ pháp", onchange: e => { if (g.where === "main") { g.m.tab = e.target.value; g.m.tag = e.target.value === "LR" ? "Vocab" : "Grammar"; } else g.m.tag = e.target.value; touch(); refreshPreview(); renderEdit(); } },
+            [["GRA", "Ngữ pháp"], ["LR", "Từ vựng"]].map(([v, l]) => h("option", { value: v, selected: (g.where === "main" ? g.m.tab : g.m.tag) === v ? true : null }, l))),
+          h("select", { "aria-label": "Vai trò", onchange: e => setRole(g, e.target.value) },
+            [["main", "Dạy chính"], ["core", "Bắt buộc (từ vựng)"], ["optional", "Xem thêm"], ["other", "Lỗi nhỏ khác"]].map(([v, l]) => h("option", { value: v, selected: g.role === v ? true : null }, l)))),
+        h("div", { class: "crows", ...dropInto(g) },
+          g.m.cids.map(c => corrRow(c)),
+          pts.map((pt, j) => pointRow(pt, { path: `mistakes.${key}.points.${j}`, drag: `p:${key}.${j}`, editable: g.where === "main",
+            remove: !pt.nid ? () => { reorderKeys(`mistakes.${key}.points`, pts.map((_, x) => x).filter(x => x !== j)); pts.splice(j, 1); syncCount(g); touch(); refreshPreview(); renderEdit(); } : null })),
+          !g.m.cids.length && !pts.length ? h("div", { class: "small muted" }, "Kéo chỗ sửa vào đây, hoặc thêm câu từ bài") : null),
+        h("div", { class: "row" }, addSentence(g),
+          g.where === "main" ? h("button", { class: "btn small", type: "button", disabled: busy[g.m.id] ? true : null, onclick: () => regenGroup(g) },
+            busy[g.m.id] ? "Claude đang soạn…" : "✨ Soạn phần dạy") : null),
+        g.where === "main" ? h("details", { open: !g.m.rule || !g.m.rule.some(Boolean) ? true : null }, h("summary", {}, "Phần dạy (câu hỏi, quy tắc, ví dụ)"),
+          fLine(P(g, "count_line"), "Đếm lỗi"), fLine(P(g, "ask.q"), "Câu hỏi"), fLines(P(g, "ask.options"), "Lựa chọn"), fNumber(P(g, "ask.answer"), "Đáp án đúng (0 là lựa chọn đầu)"),
+          fLine(P(g, "reason"), "Vì sao em hay sai"), fLines(P(g, "board"), "Bảng (công thức ngắn)", { voice: false }),
+          fLines(P(g, "rule"), "Quy tắc"), h("div", { class: "grid2" }, fLine(P(g, "example.bad"), "Ví dụ sai", { voice: false, en: true }), fLine(P(g, "example.good"), "Ví dụ đúng", { voice: false, en: true }))) : null);
+    }),
+    h("button", { class: "btn small", type: "button", onclick: () => { S.lesson.mistakes.others.push({ label: "Nhóm mới", cids: [], points: [], tag: "GRA" }); touch(); renderEdit(); } }, "+ Thêm nhóm"),
   ];
+}
+
+/* ✨ one small Claude call: the teaching of a group the teacher made or changed (only empty fields are filled) */
+async function regenGroup(g) {
+  if (!SETTINGS.apiKey) return alert("Chưa có Claude API key. Thêm trong phần Cài đặt nha.");
+  S.busy = { ...(S.busy || {}), [g.m.id]: true }; renderEdit();
+  try {
+    const d = await draftGroup({ apiKey: SETTINGS.apiKey, week: draftWeek(), teacher: SETTINGS.teacher, input: draftInput(), lesson: S.lesson, group: g.m });
+    const base = `mistakes.main.${g.i}`, m = g.m, empty = v => v == null || (Array.isArray(v) ? !v.some(Boolean) : typeof v === "object" ? !Object.values(v).some(Boolean) : !String(v).trim());
+    for (const f of ["count_line", "ask", "reason", "board", "rule", "example"]) if (empty(m[f])) { m[f] = d[f]; S.src[`${base}.${f}`] = "ai"; delete S.ok[`${base}.${f}`]; }
+    (m.points || []).forEach((pt, j) => { if (!pt.better && d.better[j]) { pt.better = d.better[j]; S.src[`${base}.points.${j}.better`] = "ai"; } });
+    delete S.ok[base];
+  } catch (e) { alert(e.message || String(e)); }
+  S.busy = { ...S.busy, [g.m.id]: false };
+  touch(); refreshPreview(); renderEdit();
+}
+/* new exercises for the current groups (after the main group changed) */
+async function regenPractice() {
+  if (!SETTINGS.apiKey) return alert("Chưa có Claude API key. Thêm trong phần Cài đặt nha.");
+  if (!confirm("Soạn lại toàn bộ bài luyện theo các nhóm lỗi hiện tại? Bài luyện cũ (cả chỗ anh đã sửa) sẽ được thay.")) return;
+  S.busy = { ...(S.busy || {}), practice: true }; renderEdit();
+  try {
+    const old = S.lesson.practice;
+    S.lesson.practice = await redraftPractice({ apiKey: SETTINGS.apiKey, week: draftWeek(), teacher: SETTINGS.teacher, input: draftInput(), lesson: S.lesson });
+    for (const map of [S.ok, S.src]) for (const k of Object.keys(map)) if (k === "practice" || k.startsWith("practice.")) delete map[k];
+    S.src.practice = "ai";
+    showUndo("Đã soạn lại bài luyện", () => { S.lesson.practice = old; });
+  } catch (e) { alert(e.message || String(e)); }
+  S.busy = { ...S.busy, practice: false };
+  touch(); refreshPreview(); renderEdit();
 }
 
 function practiceForm() {
   const P = S.lesson.practice, ids = P.items.map(x => x.id);
   const mids = S.lesson.mistakes.main.map(m => [m.id, m.title]);
   return [h("h2", {}, "Luyện tập"), h("p", { class: "muted small" }, "4 câu chính (một câu mỗi kiểu) về lỗi dạy chính, rồi các câu luyện thêm."),
+    h("div", { class: "row", style: "margin-bottom:8px" }, h("button", { class: "btn small", type: "button", disabled: (S.busy || {}).practice ? true : null, onclick: () => regenPractice() },
+      (S.busy || {}).practice ? "Claude đang soạn…" : "Soạn lại bài luyện theo các nhóm lỗi hiện tại")),
     approveBar(["practice"]), fLines("practice.intro", "Mở đầu"),
     cards("practice.items", (x, i) => `${P.core.includes(x.id) ? "★ " : ""}${x.id} · ${x.type}`, (p, it) => [
       h("div", { class: "grid2" },
@@ -863,7 +1003,7 @@ function praiseForm() {
   return [h("h2", {}, "Lời khen"),
     h("p", { class: "muted small" }, "Chọn 2 đến 3 lời khen cụ thể. Đậu nói mỗi lời ở đúng chỗ đã chọn."),
     L.praise_status === "draft" ? h("div", { class: "notice" }, "Lời khen đang là bản nháp.",
-      h("button", { class: "btn small", type: "button", style: "margin-left:8px", onclick: () => { L.praise_status = "ok"; S.src.praise = "teacher"; touch(); renderEdit(); } }, "Duyệt lời khen")) :
+      h("button", { class: "btn small", type: "button", style: "margin-left:8px", onclick: () => { L.praise_status = "ok"; touch(); renderEdit(); showUndo("Đã duyệt: lời khen", () => { L.praise_status = "draft"; }); } }, "Duyệt lời khen")) :
       h("div", { class: "notice good" }, "Đã duyệt lời khen"),
     h("p", { class: "warn small" }, warnFor()),
     all.map(c => {

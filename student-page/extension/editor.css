@@ -99,6 +99,33 @@ textarea { min-height: 70px; resize: vertical; }
 .rv .rv-opts .right { color: var(--mint); font-weight: 600; }
 .rv .rv-quote { font-size: 13px; margin-top: 4px; }
 .chips.static { border-style: solid; min-height: 0; margin: 4px 0; }
+/* corrections and notes as rows */
+.crows { display: flex; flex-direction: column; gap: 6px; min-height: 40px; padding: 6px; border: 1.5px dashed var(--line); border-radius: 10px; margin-bottom: 8px; }
+.crows.over { border-color: var(--orange); background: var(--orange-soft); }
+.crows.static { border-style: solid; padding: 4px; margin: 6px 0; }
+.crow { background: var(--paper); border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; cursor: grab; }
+.crows.static .crow { cursor: pointer; }
+.crow:hover { border-color: var(--orange); }
+.crow-text { font-size: 13.5px; line-height: 1.55; }
+.crow-text s { color: var(--coral); }
+.crow-text ins { color: var(--mint); text-decoration: none; font-weight: 600; }
+.crow-text ins.none { color: var(--muted); font-weight: 400; }
+.crow-text mark { background: var(--orange-soft); color: inherit; border-bottom: 2px solid var(--orange); }
+.crow-comment { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
+.crow-better { font-size: 13px; color: var(--mint); margin-top: 2px; }
+.crow.point { cursor: default; }
+.crow.point[draggable="true"] { cursor: grab; }
+.crow.point .field { margin: 6px 0 0; }
+.tagchip.note { background: var(--orange); }
+.badge-main { flex: none; font: 700 11px/1 var(--font); background: var(--mint); color: #fff; border-radius: 999px; padding: 5px 9px; }
+.sub.main-group { border-color: var(--mint); }
+/* undo + approved list */
+.undo-bar { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); z-index: 50; display: flex; gap: 12px; align-items: center;
+  background: var(--ink); color: var(--paper); padding: 10px 14px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0, 0, 0, .25); max-width: 90vw; }
+.undo-bar .btn { background: var(--orange); border-color: var(--orange); color: #3A1D00; }
+details.approved { margin-top: 14px; }
+details.approved summary { cursor: pointer; font-weight: 600; color: var(--muted); }
+.approved-row { padding: 5px 0; border-bottom: 1px dashed var(--line); font-size: 13px; }
 .chips.static .cchip { cursor: default; }
 .field.pending input, .field.pending textarea { border-color: var(--ai); background: var(--ai-soft); }
 .lint { color: var(--coral); font-size: 12px; margin-top: 2px; }

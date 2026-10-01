@@ -44,7 +44,10 @@ function threePartsFromLesson(L) {
         ask_q: it.ask ? it.ask.q : "", ask_options: it.ask ? it.ask.options : [], ask_answer: it.ask ? it.ask.answer : 0,
         ask_right: it.ask ? it.ask.right : "", ask_wrong: it.ask ? it.ask.wrong : "",
         line: it.line || "", fix: it.fix || "", fix_line: it.fix_line || "" })) } : { intro: "", items: [] },
-      ideas: { intro: L.ideas.intro, prompt_focus: L.ideas.prompt_focus || "", overview: L.ideas.overview,
+      // ✓/✗ from the lesson; the second idea to fix becomes "~" (could go further) to exercise that path
+      ideas: { intro: L.ideas.intro, prompt_focus: L.ideas.prompt_focus || "",
+        overview: L.ideas.overview.map(o => ({ tag: o.tag, text: o.text, note: o.note, line: o.line,
+          status: o.ok ? "ok" : L.ideas.details.length > 1 && L.ideas.details[1].tag === o.tag ? "improve" : "fix" })),
         details: L.ideas.details.map(d => ({ tag: d.tag, title: d.title, sids: d.sids, chain: d.chain,
           mode: d.replace ? "replace" : d.gap_after != null ? "gap" : d.bad_node != null ? "bad_link" : "missing_end",
           bad_node: d.bad_node ?? -1, gap_after: d.gap_after ?? -1, ask: d.ask, fix_intro: d.fix_intro, fix_chain: d.fix_chain,
@@ -54,13 +57,15 @@ function threePartsFromLesson(L) {
       linking: L.linking,
       mistakes: {
         groups: [
-          ...L.mistakes.main.map(m => ({ id: m.id, title: m.title, tab: m.tab, cids: m.cids,
+          // the page's first teacher note goes into the second group, as a language mistake with a better version
+          ...L.mistakes.main.map((m, i) => ({ id: m.id, title: m.title, tab: m.tab, cids: m.cids, nids: i === 1 ? ["n1"] : [],
             role: m.tab === "GRA" ? (firstGra ? (firstGra = false, "main") : "optional") : m.core ? "core" : "optional",
             count_line: m.count_line, ask: m.ask, reason: m.reason, board: m.board, rule: m.rule, example: m.example })),
-          ...L.mistakes.others.map((o, i) => ({ id: "o" + i, title: o.label, tab: o.tag, cids: o.cids, role: "other", count_line: "", ask: blankAsk,
+          ...L.mistakes.others.map((o, i) => ({ id: "o" + i, title: o.label, tab: o.tag, cids: o.cids, nids: [], role: "other", count_line: "", ask: blankAsk,
             reason: "", board: [], rule: [], example: { bad: "", good: "" } })),
         ],
         lr_intro: L.mistakes.lr_intro, gra_intro: L.mistakes.gra_intro,
+        note_fixes: [{ nid: "n1", better: "A better version of this sentence (test)." }],
       },
       practice: { intro: L.practice.intro, core: L.practice.core,
         // listed by kind, as Claude returns them; the editor puts the core ones back first
@@ -141,7 +146,10 @@ const fakeParts = partsFromLesson(lesson);
 const FIRST_FIELD = { call_name: "structure", ideas: "ideas", prompt_check: "reading", mistakes: "mistakes", practice: "practice", hello: "frame" };
 // modes: Set of "401", "refuse-ideas-schema" (the API can't compile that schema), "fail-mistakes-once"
 let claudeMode = new Set(), claudeBodies = [], nonStrictReplies = 0;
-const partOf = body => FIRST_FIELD[/only: (\w+)/.exec(body.messages[0].content.at(-1).text)[1]];
+const partOf = body => /teaching of one mistake group/.test(body.messages[0].content.at(-1).text) ? "group"
+  : FIRST_FIELD[/only: (\w+)/.exec(body.messages[0].content.at(-1).text)[1]];
+const FAKE_GROUP = { count_line: "Em mắc lỗi này 1 lần", ask: { q: "Câu hỏi test?", options: ["Một", "Hai", "Ba"], answer: 0 }, reason: "Lý do test nè",
+  board: ["S + V, S + V"], rule: ["Quy tắc một", "Quy tắc hai", "Quy tắc ba"], example: { bad: "Bad one.", good: "Good one." }, better: ["Better sentence (test)."] };
 async function claude(route) {
   const req = route.request(), cors = { "access-control-allow-origin": "*", "access-control-allow-headers": "*", "access-control-allow-methods": "*" };
   if (req.method() === "OPTIONS") return route.fulfill({ status: 204, headers: cors });
@@ -157,7 +165,7 @@ async function claude(route) {
     claudeMode.delete("fail-mistakes-once");
     return error(400, "invalid_request_error", "Something else went wrong");
   }
-  let text = JSON.stringify(fakeParts[part]);
+  let text = JSON.stringify(part === "group" ? FAKE_GROUP : fakeParts[part]);
   if (!strict) {                                     // free-form reply: fenced, and the first one is missing a field
     const bad = structuredClone(fakeParts[part]);
     if (nonStrictReplies++ === 0) delete bad.ideas.prompt_focus;
@@ -326,10 +334,60 @@ try {
   // drag a correction into another group
   await page.locator(".mod-btn", { hasText: "Từ vựng & ngữ pháp" }).click();
   const groups = page.locator(".form .sub");
-  const before0 = await groups.nth(0).locator(".cchip").count(), before1 = await groups.nth(1).locator(".cchip").count();
-  await groups.nth(1).locator(".cchip").first().dragTo(groups.nth(0).locator(".chips"));
-  ok(await groups.nth(0).locator(".cchip").count() === before0 + 1 && await groups.nth(1).locator(".cchip").count() === before1 - 1, "drag a correction between groups");
-  await page.screenshot({ path: join(OUT, "06-drag.png") });
+  const corr = g => groups.nth(g).locator('.crow[data-item^="c:"]');
+  const before0 = await corr(0).count(), before1 = await corr(1).count();
+  ok(await corr(0).first().locator("s, ins").count() >= 1 && (await corr(0).first().locator(".crow-text").textContent()).length > 15, "a correction shows her words around it");
+  await corr(1).first().dragTo(groups.nth(0).locator(".crows"));
+  ok(await corr(0).count() === before0 + 1 && await corr(1).count() === before1 - 1, "drag a correction between groups");
+  // clicking a row opens that sentence in the essay, in the phone preview
+  await corr(0).first().click();
+  const pvf = page.frameLocator("#pv");
+  await pvf.locator(".sheet .s.hl").waitFor({ timeout: 8000 }).catch(() => {});
+  ok(await pvf.locator(".sheet .s.hl").count() === 1, "clicking a row shows its sentence in the preview");
+  // the teacher's highlighted note is in the second group, with Claude's better version
+  const note = page.locator(".form .crow.point").first();
+  ok(await note.count() === 1 && /Ghi chú/.test(await note.textContent()) && await note.locator("input, textarea").last().inputValue() === "A better version of this sentence (test).", "a highlighted note is a row in its group, with a better version");
+  ok(await page.locator(".form .badge-main").count() === 1, "the main group is marked Dạy chính");
+  await page.screenshot({ path: join(OUT, "06-drag.png"), fullPage: true });
+
+  // a group made by hand: a sentence from her essay, then ✨ fills the teaching
+  await page.getByRole("button", { name: "+ Thêm nhóm" }).click();
+  const made = page.locator(".form .sub").last();
+  await made.locator('select[aria-label="Vai trò"]').selectOption("optional");
+  const hmIndex = await page.locator(".form .sub").evaluateAll(els => els.findIndex(e => (e.querySelector('input[aria-label="Tên nhóm"]') || {}).value === "Nhóm mới"));
+  const handmade = page.locator(".form .sub").nth(hmIndex);
+  await handmade.locator('select[aria-label="Thêm câu từ bài"]').selectOption({ index: 2 });
+  ok(await handmade.locator(".crow.point").count() === 1, "add a sentence from the essay to a group");
+  await handmade.getByRole("button", { name: "✨ Soạn phần dạy" }).click();
+  await page.waitForFunction(() => [...document.querySelectorAll(".form input")].some(i => i.value === "Lý do test nè"), null, { timeout: 10000 });
+  ok(await handmade.locator("textarea, input").evaluateAll(els => els.some(e => e.value === "Better sentence (test).")), "✨ fills the teaching and the better version");
+  await page.screenshot({ path: join(OUT, "06b-handmade.png"), fullPage: true });
+
+  // new exercises for the current groups
+  await page.locator(".mod-btn", { hasText: "Luyện tập" }).click();
+  const nBodies = claudeBodies.length;
+  await page.getByRole("button", { name: "Soạn lại bài luyện theo các nhóm lỗi hiện tại" }).click();
+  await page.locator(".undo-bar", { hasText: "Đã soạn lại bài luyện" }).waitFor({ timeout: 10000 });
+  ok(claudeBodies.length === nBodies + 1 && /The mistake groups are set/.test(claudeBodies.at(-1).messages[0].content.at(-1).text), "exercises redrafted in one call, given the groups");
+
+  // ✓ / ~ / ✗
+  await page.locator(".mod-btn", { hasText: "Phát triển ý" }).click();
+  ok(await page.locator('.form select option[value="improve"]:checked').count() === (lesson.ideas.details.length > 1 ? 1 : 0), "an idea marked ~ (could go further)");
+
+  // undo on the review list
+  await page.locator(".mod-btn", { hasText: "Cần duyệt" }).click();
+  const countNow = async () => +(await page.locator(".mod-btn", { hasText: "Cần duyệt" }).locator(".count").textContent());
+  const n0 = await countNow();
+  await page.locator(".sub.rv").first().getByRole("button", { name: /✓/ }).click();
+  ok(await countNow() === n0 - 1 && await page.locator(".undo-bar").count() === 1, "✓ shows an undo bar");
+  await page.locator(".undo-bar").getByRole("button", { name: "Hoàn tác" }).click();
+  ok(await countNow() === n0, "Hoàn tác puts the card back");
+  await page.locator(".sub.rv").first().getByRole("button", { name: /✓/ }).click();
+  await page.locator("details.approved summary").click();
+  const nApproved = await page.locator(".approved-row").count();
+  await page.locator(".approved-row").last().getByRole("button", { name: "Bỏ duyệt" }).click();
+  ok(await countNow() === n0 && nApproved >= 1, "Bỏ duyệt in the approved list puts it back");
+  await page.screenshot({ path: join(OUT, "06c-undo.png"), fullPage: true });
 
   // approve everything
   for (const b of await page.locator(".mod-btn").all()) {

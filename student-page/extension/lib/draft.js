@@ -39,7 +39,7 @@ export const PARTS = {
     schema: O({
       ideas: O({
         intro: A(S), prompt_focus: S,
-        overview: A(O({ tag: S, text: S, ok: B, note: S, line: S })),
+        overview: A(O({ tag: S, text: S, status: E("ok", "improve", "fix"), note: S, line: S })),
         details: A(O({
           tag: S, title: S, sids: A(S), chain: A(S), mode: E("missing_end", "bad_link", "gap", "replace"),
           bad_node: I, gap_after: I, ask: ASK, fix_intro: S, fix_chain: A(S), fix_label: S, fix_en: S, outro: S,
@@ -66,11 +66,12 @@ export const PARTS = {
     schema: O({
       mistakes: O({
         groups: A(O({
-          id: S, title: S, tab: E("LR", "GRA"), cids: A(S), role: E("main", "core", "optional", "other"),
+          id: S, title: S, tab: E("LR", "GRA"), cids: A(S), nids: A(S), role: E("main", "core", "optional", "other"),
           count_line: S, ask: O({ q: S, options: A(S), answer: I }), reason: S, board: A(S), rule: A(S),
           example: O({ bad: S, good: S }),
         })),
         lr_intro: A(S), gra_intro: A(S),
+        note_fixes: A(O({ nid: S, better: S })),
       }),
     }),
   },
@@ -151,7 +152,7 @@ export function systemBlocks(week, teacher) {
 - results: words = 2 lines about the word count (target 250 for Task 2), score = 2 lines (the overall band, then what's next), criteria = 1 line introducing the 4 scores.
 - framework: intro = 2 lines naming the essay type and what the structure should be. reveal_intro = 1 line ("Em đã lập luận như sau"). parts = the essay's parts in order (Mở bài, Body 1 · <short label>, Body 2 · <short label>, Kết bài) with the teacher's sentence tags deciding which sentences belong where. Tones: intro and conclusion "orange", Body 1 "mint", Body 2 "sky". summary = 1 line saying in plain Vietnamese what that part does; short = 2-5 words. ideas (bodies only) = the supporting ideas with tag "Ý 1".."Ý 4" in order across both bodies, sid of the sentence that states the idea, text = the idea in Vietnamese (under 10 words), short = 2-4 words. ok = the structure matches the framework per the teacher's checklist. verdict = 2 lines.
 - prompt_check: only when the teacher's marking shows she misread or didn't answer the question (a wrong reading of the prompt, a thesis/conclusion that doesn't answer the question type); otherwise intro "" and items []. Each item quotes her sentence (sid), focus = the exact words in her sentence (verbatim from the original text), prompt_focus = the exact words in the prompt (verbatim), an optional multiple-choice question (ask_q, ask_options, ask_answer = right index, ask_right/ask_wrong = Đậu's replies; ask_q "" and ask_options [] when there is no question), line = what's wrong (used when there is no question), fix = the corrected sentence (in English, following the framework), fix_line = 1 short line.
-- ideas: intro = 3 lines (what the prompt asks, what every idea must reach, then a count of how many ideas are fine vs need work). prompt_focus = the key words of the prompt, verbatim. overview = one row per idea (same tags): ok = no problem found by the teacher; note = 3-7 words; line = one Đậu line about it. details = only for ideas with a problem, in order:
+- ideas: intro = 3 lines (what the prompt asks, what every idea must reach, then a count such as "2 ý ổn, 1 ý nâng cấp thêm, 1 ý cần sửa"). prompt_focus = the key words of the prompt, verbatim. overview = one row per idea (same tags) with a status: "fix" = the logic breaks (off-topic, a wrong or missing link, the chain never reaches the point; anything the teacher commented on as a problem); "improve" = the logic holds but it could go deeper (an example, a mechanism, a clearer final effect); "ok" = nothing to add. note = 3-7 words; line = one Đậu line about it (for "improve", say it's already fine and can go further). details = one for every idea with status "improve" or "fix", in order (for "improve", the chain is not broken: use mode "missing_end" or "gap" for the step up, and frame ask/fix_intro/outro as an upgrade):
   - sids = the idea's sentences; chain = her reasoning as 2-5 short Vietnamese links (under 9 words each), paraphrased faithfully.
   - bad_node and gap_after are -1 unless the mode uses them.
   - mode "missing_end": the chain stops before reaching the point; fix_chain = links to add at the end.
@@ -160,7 +161,8 @@ export function systemBlocks(week, teacher) {
   - mode "replace": the idea is wordy or circular and should be said again, shorter (fix_label = "Chuỗi ý mới" or similar); fix_chain = the new chain.
   - ask = a Socratic question with 2-3 options and the right index; right/wrong = Đậu's reply to each. fix_intro = 1 line. fix_en = the English flow ("a → b → c"), taken from the teacher's flow when given. outro = 1 line.
 - linking: the linking devices she actually used (count them), grouped into 2-3 groups ("Chuyển đoạn và kết bài", "Dẫn vào ý", "Nối ý chính với phần phát triển"), each with the sid where it appears. result = 2 lines. suggestions = 0-2 upgrades (never replacing the week's framework phrases; prefer the teacher's own suggestions).
-- mistakes.groups: put EVERY correction id into exactly one group. Groups are patterns (same underlying rule). Exactly one group has role "main": the most important grammar (GRA) pattern, weighing frequency and how badly it hurts meaning; sentence-level errors (missing verb, comma splice, wrong clause) beat small ones. Vocabulary (LR) patterns are "optional" unless LR is the student's weakest score or the teacher stressed vocabulary: then the biggest LR pattern is "core". Other taught patterns (2+ corrections, a clear rule) are "optional"; one-offs are "other" (fill their teaching fields with short placeholders). title = short Vietnamese name (the teacher may rename). count_line = "Em mắc lỗi này N lần". ask = "N chỗ này có lỗi gì giống nhau?" with 3 options. reason = why she probably made it (1 line, kind). board = 1-2 formulas for a small chalkboard: at most 20 characters each, symbols welcome (→, =, ≠, +), no Vietnamese explanations in brackets (those go in rule), e.g. "children → children's", "decline ≠ reduce sth". rule = 3 lines. example = a new bad/good pair (not from her essay). lr_intro and gra_intro = 3 lines each (intro, a line about the count, a line before the optional ones).
+- teacher_comments (ids n1, n2, ...) are spots the teacher highlighted without correcting. Decide from what the comment says: if it says she made a language mistake (grammar, vocabulary, sentence structure, e.g. "hạn chế viết câu đơn"), it belongs in a mistake group (its id in nids) and counts like a correction; idea or logic comments stay out of the groups (they are used for the ideas); praise or neutral remarks stay out. For every note you put in a group, note_fixes gives the better version of her sentence(s) in English (use the teacher's suggestion when the comment has one).
+- mistakes.groups: put EVERY correction id into exactly one group (cids); notes that are language mistakes go in nids; a group can hold only notes. Groups are patterns (same underlying rule). Exactly one group has role "main": the most important grammar (GRA) pattern, weighing frequency and how badly it hurts meaning; sentence-level errors (missing verb, comma splice, wrong clause) beat small ones. Vocabulary (LR) patterns are "optional" unless LR is the student's weakest score or the teacher stressed vocabulary: then the biggest LR pattern is "core". Other taught patterns (2+ corrections, a clear rule) are "optional"; one-offs are "other" (fill their teaching fields with short placeholders). title = short Vietnamese name (the teacher may rename). count_line = "Em mắc lỗi này N lần" (N = its corrections + notes). ask = "N chỗ này có lỗi gì giống nhau?" with 3 options. reason = why she probably made it (1 line, kind). board = 1-2 formulas for a small chalkboard: at most 20 characters each, symbols welcome (→, =, ≠, +), no Vietnamese explanations in brackets (those go in rule), e.g. "children → children's", "decline ≠ reduce sth". rule = 3 lines. example = a new bad/good pair (not from her essay). lr_intro and gra_intro = 3 lines each (intro, a line about the count, a line before the optional ones).
 - practice: 4 core items on the main pattern, one of each kind: a "choose" item with sentence "" (3 English sentences as options, pick the correct one), a "choose" item with a sentence containing "___" (3 options), a "tap" item (a sentence with exactly one wrong word; wrong = that word exactly as it appears between spaces, fix = the right word), a "build" item (vi = a Vietnamese sentence, answer_words = 4-8 English chunks in order that form the sentence, extra = 2 wrong chunks). Then 2-4 extra items for the other taught patterns. Each item goes in the list for its kind (choose, tap, build); mistake = the id of its mistake group; ids are unique across the three lists. New sentences on the essay's topic, never copied from her essay. explain = 1 short Vietnamese line. core = the ids of the 4 core items, in the order above. intro = 2 lines ("4 câu thôi á, mỗi câu một kiểu khác nhau").
 - rewrite: use the teacher's chosen target if given, else the weakest idea's development ("idea"). label = what she rewrites ("Ý 4 em đã viết"). intro = 2 lines saying it's ${teacher}'s request. task = 1 line (can be empty). flow = English chain with "→". starters = 2-3 sentence starters ending with "…". phrases = 3-4 useful phrases. checklist = 3 short checks. model = the teacher's model when given, else a model written for her level (1-3 sentences).
 - praise_candidates: 4-5 specific compliments, each backed by evidence in the essay (evidence = the exact words or fact). at = where it is said: "results", "framework", "linking", "lr", "gra", or "idea:<tag>". The teacher keeps 2-3. Never praise something the teacher marked as a problem.
@@ -207,7 +209,7 @@ export function userMessage({ page, meta, tags, checklist, notes, rewriteTarget 
     teacher_overall_comment: page.teacher_comment || "",
     sentences,
     corrections: Object.entries(C).map(([id, c]) => ({ id, orig: c.orig, fix: c.fix, kind: c.kind, comment: c.comment })),
-    teacher_comments: page.task_comments.map(t => ({ sentence_ids: t.sentence_ids, quote: t.quote, typed_by_teacher: t.added, comment: t.comment })),
+    teacher_comments: page.task_comments.map((t, i) => ({ id: "n" + (i + 1), highlight: t.kind || null, sentence_ids: t.sentence_ids, quote: t.quote, typed_by_teacher: t.added, comment: t.comment })),
     framework_checklist: checklist,                  // [{ item, ok, note }]
     teacher_notes: notes || "",
     rewrite_target: rewriteTarget || null,           // { target, sids } chosen by the teacher, or null
@@ -216,10 +218,10 @@ export function userMessage({ page, meta, tags, checklist, notes, rewriteTarget 
 }
 
 /* the essay block is the same in every call (cached); the last block names the part */
-function partContent(essay, part, extra) {
+function partContent(essay, fields, extra) {
   return [
     { type: "text", text: essay, cache_control: { type: "ephemeral" } },
-    { type: "text", text: `Draft this part of the lesson only: ${PARTS[part].fields}.${extra ? "\n\n" + extra : ""}` },
+    { type: "text", text: `Draft this part of the lesson only: ${fields}.${extra ? "\n\n" + extra : ""}` },
   ];
 }
 
@@ -251,20 +253,21 @@ function parseJson(text) {
 
 /* one request. strict = structured outputs; otherwise the schema goes in the prompt and the
    reply is checked here (once more with the problems listed if it doesn't fit) */
-async function requestPart(client, { part, system, essay, extra, strict, onChars, onFirstEvent, signal }) {
+async function requestPart(client, { part, spec, system, essay, extra, strict, onChars, onFirstEvent, signal }) {
+  const P = spec || PARTS[part];
   let hint = "";
   for (let attempt = 0; attempt < (strict ? 1 : 2); attempt++) {
     const ask = strict ? extra : [extra,
       "Reply with only one JSON object that matches this JSON Schema exactly (every field present, no extra fields, no prose, no code fences):",
-      JSON.stringify(PARTS[part].schema), hint].filter(Boolean).join("\n\n");
+      JSON.stringify(P.schema), hint].filter(Boolean).join("\n\n");
     const stream = client.beta.messages.stream({
       model: MODEL,
       max_tokens: 32000,
       betas: ["server-side-fallback-2026-07-01"],
       fallbacks: "default",                          // a declined request is re-run on a fallback model
-      output_config: strict ? { effort: "high", format: { type: "json_schema", schema: PARTS[part].schema } } : { effort: "high" },
+      output_config: strict ? { effort: "high", format: { type: "json_schema", schema: P.schema } } : { effort: "high" },
       system,
-      messages: [{ role: "user", content: partContent(essay, part, ask) }],
+      messages: [{ role: "user", content: partContent(essay, P.fields, ask) }],
     }, { signal });
     let first = true;
     stream.on("streamEvent", () => { if (first) { first = false; if (onFirstEvent) onFirstEvent(); } });
@@ -273,7 +276,7 @@ async function requestPart(client, { part, system, essay, extra, strict, onChars
     if (msg.stop_reason === "refusal") throw new DraftError("Claude từ chối soạn phần này.");
     if (msg.stop_reason === "max_tokens") throw new DraftError("Phần này dài quá nên bị cắt.");
     const data = parseJson(msg.content.filter(b => b.type === "text").map(b => b.text).join(""));
-    const problems = data === undefined ? ["không phải JSON"] : checkAgainst(PARTS[part].schema, data);
+    const problems = data === undefined ? ["không phải JSON"] : checkAgainst(P.schema, data);
     if (!problems.length) return { data, usage: msg.usage, model: msg.model };
     if (strict) throw new DraftError("Claude trả về không đúng định dạng.");
     hint = "Your previous reply did not fit the schema: " + problems.slice(0, 10).join("; ") + ". Reply again with the complete JSON.";
@@ -326,7 +329,7 @@ export async function draftLesson({ apiKey, week, teacher, input, onProgress, fe
       try { d = have[dep] || await run(dep); }
       catch (e) { throw new DraftError(`Cần phần "${PARTS[dep].label}" xong trước.`); }
       extra = "The mistake groups are already drafted. Use these ids for `mistake`, and base the 4 core items on the group with role \"main\":\n" +
-        JSON.stringify(d.mistakes.groups.map(g => ({ id: g.id, title: g.title, tab: g.tab, role: g.role, cids: g.cids })));
+        JSON.stringify(d.mistakes.groups.map(g => ({ id: g.id, title: g.title, tab: g.tab, role: g.role, cids: g.cids, nids: g.nids })));
     }
     return one(part, extra, onFirstEvent);
   })());
@@ -349,16 +352,77 @@ export async function draftLesson({ apiKey, week, teacher, input, onProgress, fe
   return { parts, failed, usage, model, noStrict: [...refused] };
 }
 
+/* ---------- small calls from the editor ---------- */
+const GROUP_SPEC = {
+  fields: "the teaching of one mistake group",
+  schema: O({ count_line: S, ask: O({ q: S, options: A(S), answer: I }), reason: S, board: A(S), rule: A(S), example: O({ bad: S, good: S }), better: A(S) }),
+};
+function groupBrief(L, g) {
+  const C = L.corrections || {};
+  return {
+    title: g.title, tab: g.tab,
+    corrections: g.cids.map(c => C[c] && { orig: C[c].orig, fix: C[c].fix, comment: C[c].comment }).filter(Boolean),
+    notes: (g.points || []).map(p => ({ sentence_ids: p.sids, quote: p.quote, comment: p.comment, better: p.better })),
+  };
+}
+async function smallCall({ apiKey, week, teacher, input, spec, extra, fetchImpl, signal }) {
+  const client = new Anthropic({ apiKey, dangerouslyAllowBrowser: true, ...(fetchImpl ? { fetch: fetchImpl } : {}) });
+  const args = { spec, system: systemBlocks(week, teacher), essay: userMessage(input), extra, onChars: () => {}, signal };
+  try {
+    try { return (await requestPart(client, { ...args, strict: true })).data; }
+    catch (e) {
+      if (!(e instanceof Anthropic.BadRequestError && TOO_BIG.test(friendly(e)))) throw e;
+      return (await requestPart(client, { ...args, strict: false })).data;
+    }
+  } catch (e) { throw new DraftError(friendly(e)); }
+}
+
+/** Teaching for one mistake group the teacher made or changed. Returns the fields + better[] (one per note). */
+export async function draftGroup({ group, lesson, ...rest }) {
+  return smallCall({ ...rest, spec: GROUP_SPEC,
+    extra: "The teacher set up this mistake group. Write its teaching with the same rules as mistakes.groups (count_line, ask with 3 options, reason, board, rule, example). better = for each of its notes, in order, the better version of her sentence(s) in English (keep the teacher's version when the note already has one).\nGroup: " + JSON.stringify(groupBrief(lesson, group)) });
+}
+
+/** New exercises for the current mistake groups (after the teacher changed the main one). */
+export async function redraftPractice({ lesson, ...rest }) {
+  const roles = lesson.__mistake_roles || {};
+  const M = lesson.mistakes;
+  const groups = [
+    ...M.main.map((g, i) => ({ id: g.id, role: roles[g.id] || (i === 0 && g.tab === "GRA" ? "main" : g.core ? "core" : "optional"), ...groupBrief(lesson, g) })),
+    ...M.others.map(o => ({ title: o.label, tab: o.tag, role: "other" })),
+  ];
+  const data = await smallCall({ ...rest, spec: PARTS.practice,
+    extra: "The mistake groups are set. Use these ids for `mistake`, and base the 4 core items on the group with role \"main\":\n" + JSON.stringify(groups) });
+  return practiceToLesson({ intro: data.practice.intro, core: data.practice.core, items: practiceItems(data.practice) });
+}
+
 /* the parts -> one draft in the shape draftToLesson reads */
-export function mergeParts({ structure, ideas, reading, mistakes, practice, frame }) {
-  const P = practice.practice;
+/* the practice part (three lists by kind) -> one list, core items first in the core order */
+function practiceItems(P) {
   const items = [
     ...P.choose.map(x => ({ ...x, type: "choose" })),
     ...P.tap.map(x => ({ ...x, type: "tap" })),
     ...P.build.map(x => ({ ...x, type: "build" })),
   ];
   const rank = id => { const k = P.core.indexOf(id); return k < 0 ? P.core.length : k; };
-  items.sort((a, b) => rank(a.id) - rank(b.id));        // core items first, in the core order (stable)
+  return items.sort((a, b) => rank(a.id) - rank(b.id));
+}
+/* practice in draft shape -> what the student page reads */
+function practiceToLesson(p) {
+  return {
+    intro: p.intro, core: p.core,
+    items: p.items.map(it => {
+      const base = { id: it.id, mistake: it.mistake, type: it.type, explain: it.explain };
+      if (it.type === "choose") return { ...base, q: it.q, ...(it.sentence ? { sentence: it.sentence } : {}), options: it.options || [], answer: it.answer ?? 0 };
+      if (it.type === "tap") return { ...base, q: it.q || "Chạm vào chữ sai", sentence: it.sentence || "", wrong: it.wrong || "", fix: it.fix || "" };
+      return { ...base, vi: it.vi || "", answer: it.answer_words || [], extra: it.extra || [] };
+    }),
+  };
+}
+
+export function mergeParts({ structure, ideas, reading, mistakes, practice, frame }) {
+  const P = practice.practice;
+  const items = practiceItems(P);
   const pc = reading.prompt_check;
   return {
     call_name: structure.call_name, framework: structure.framework, ideas: ideas.ideas,
@@ -376,10 +440,15 @@ export function mergeParts({ structure, ideas, reading, mistakes, practice, fram
   };
 }
 
+export const pointOf = t => ({ sids: t.sentence_ids, quote: t.quote || "", comment: t.comment || "" });
+
 /* ---------- draft + page -> lesson (what the student page reads) ---------- */
 export function draftToLesson(draft, { page, meta, teacher, zalo }) {
   const d = structuredClone(draft);
   const groups = d.mistakes.groups;
+  // a highlighted note in a group: her sentence(s), the teacher's comment, a better version
+  const fixes = Object.fromEntries((d.mistakes.note_fixes || []).map(f => [f.nid, f.better]));
+  const points = g => (g.nids || []).map(nid => page.task_comments[+nid.slice(1) - 1] && ({ nid, ...pointOf(page.task_comments[+nid.slice(1) - 1]), better: fixes[nid] || "" })).filter(Boolean);
   const taught = groups.filter(g => g.role !== "other");
   // the page teaches the first GRA pattern in order: put the main one first
   taught.sort((a, b) => (b.role === "main") - (a.role === "main"));
@@ -393,7 +462,8 @@ export function draftToLesson(draft, { page, meta, teacher, zalo }) {
       items: d.prompt_check.items.map(it => ({ ...it, ...(it.ask ? {} : { ask: undefined }) })),
     } } : {}),
     ideas: {
-      intro: d.ideas.intro, prompt_focus: d.ideas.prompt_focus, overview: d.ideas.overview,
+      intro: d.ideas.intro, prompt_focus: d.ideas.prompt_focus,
+      overview: d.ideas.overview.map(o => ({ ...o, ok: o.status === "ok" })),
       details: d.ideas.details.map(x => {
         const out = { tag: x.tag, title: x.title, sids: x.sids, chain: x.chain, bad_node: x.mode === "bad_link" && x.bad_node >= 0 ? x.bad_node : null,
           ask: x.ask, fix_intro: x.fix_intro, fix_chain: x.fix_chain, fix_en: x.fix_en, outro: x.outro };
@@ -405,21 +475,13 @@ export function draftToLesson(draft, { page, meta, teacher, zalo }) {
     linking: d.linking,
     mistakes: {
       total: Object.keys(page.corrections).length,
-      main: taught.map(g => ({ id: g.id, title: g.title, tag: g.tab === "LR" ? "Vocab" : "Grammar", cids: g.cids,
+      main: taught.map(g => ({ id: g.id, title: g.title, tag: g.tab === "LR" ? "Vocab" : "Grammar", cids: g.cids, points: points(g),
         count_line: g.count_line, ask: g.ask, reason: g.reason, board: g.board, rule: g.rule, example: g.example, tab: g.tab,
         ...(g.role === "core" && g.tab === "LR" ? { core: true } : {}) })),
-      others: groups.filter(g => g.role === "other").map(g => ({ label: g.title, cids: g.cids, tag: g.tab })),
+      others: groups.filter(g => g.role === "other").map(g => ({ label: g.title, cids: g.cids, points: points(g), tag: g.tab })),
       lr_intro: d.mistakes.lr_intro, gra_intro: d.mistakes.gra_intro,
     },
-    practice: {
-      intro: d.practice.intro, core: d.practice.core,
-      items: d.practice.items.map(it => {
-        const base = { id: it.id, mistake: it.mistake, type: it.type, explain: it.explain };
-        if (it.type === "choose") return { ...base, q: it.q, ...(it.sentence ? { sentence: it.sentence } : {}), options: it.options || [], answer: it.answer ?? 0 };
-        if (it.type === "tap") return { ...base, q: it.q || "Chạm vào chữ sai", sentence: it.sentence || "", wrong: it.wrong || "", fix: it.fix || "" };
-        return { ...base, vi: it.vi || "", answer: it.answer_words || [], extra: it.extra || [] };
-      }),
-    },
+    practice: practiceToLesson(d.practice),
     rewrite: d.rewrite,
     praise: [], praise_status: "draft",
     finish: { summary: d.finish.summary, takeaways: d.takeaway_candidates.slice(0, 4), extra_prompt: d.finish.extra_prompt, later: d.finish.later, done: d.finish.done, quote: null },

@@ -59,7 +59,7 @@ export function reviewUnits(L, { checklist } = {}) {
   if (verdictAgrees(L, checklist) !== true)
     units.push({ id: "verdict", module: "framework", label: "Kết luận framework", roots: ["framework.ok", "framework.verdict"] });
   if (L.prompt_check) units.push({ id: "prompt_check", module: "prompt_check", label: "Đọc đề", roots: ["prompt_check"] });
-  units.push({ id: "overview", module: "ideas", label: "Các ý: ✓/✗ và nhận xét", roots: ["ideas.overview"] });
+  units.push({ id: "overview", module: "ideas", label: "Các ý: ✓/~/✗ và nhận xét", roots: ["ideas.overview"] });
   L.ideas.details.forEach((d, i) => units.push({ id: "detail" + i, module: "ideas", label: `Ý cần sửa · ${d.tag}`, roots: [`ideas.details.${i}`] }));
   if ((L.linking.suggestions || []).length) units.push({ id: "linking", module: "linking", label: "Linking: gợi ý nâng cấp", roots: ["linking.suggestions"] });
   L.mistakes.main.forEach((m, i) => units.push({ id: "group" + i, module: "mistakes", label: `Nhóm lỗi · ${m.title}`, roots: [`mistakes.main.${i}`] }));
@@ -86,11 +86,17 @@ export function checks(L, { prompt, checkLesson } = {}) {
   const bands = [L.overall, ...Object.values(L.scores || {})].map(Number).filter(n => !isNaN(n));
   const okBands = [...bands, ...bands.map(b => b + 0.5), ...bands.map(b => b + 1)];
   (L.results.score || []).forEach((t, i) => { if (nums(t).some(n => !okBands.includes(n))) flag(`results.score.${i}`, "results", `Điểm không khớp trang chấm (overall ${L.overall})`); });
+  // a group's size = its corrections + its notes
+  const size = g => g.cids.length + (g.points || []).length;
   L.mistakes.main.forEach((m, i) => {
-    if (m.count_line && nums(m.count_line).some(n => n !== m.cids.length)) flag(`mistakes.main.${i}.count_line`, "mistakes", `Số lỗi không khớp: nhóm này có ${m.cids.length} chỗ sửa`);
+    if (m.count_line && nums(m.count_line).some(n => n !== size(m))) flag(`mistakes.main.${i}.count_line`, "mistakes", `Số lỗi không khớp: nhóm này có ${size(m)} chỗ`);
+    (m.points || []).forEach((p, j) => { if (!p.better) flag(`mistakes.main.${i}.points.${j}.better`, "mistakes", "Ghi chú chưa có câu viết lại"); });
   });
   const grouped = new Set([...L.mistakes.main, ...L.mistakes.others].flatMap(g => g.cids)).size;
-  const okCounts = [...bands, Object.keys(C).length, grouped, L.mistakes.main.length + L.mistakes.others.length, ...L.mistakes.main.map(m => m.cids.length), ...L.mistakes.others.map(o => o.cids.length)];
+  const all = [...L.mistakes.main.map(m => ({ tab: m.tab, g: m })), ...L.mistakes.others.map(o => ({ tab: o.tag, g: o }))];
+  const perTab = t => all.filter(x => x.tab === t);
+  const okCounts = [...bands, Object.keys(C).length, grouped, grouped + all.reduce((n, x) => n + (x.g.points || []).length, 0), all.length,
+    ...["LR", "GRA"].flatMap(t => [perTab(t).reduce((n, x) => n + size(x.g), 0), perTab(t).length]), ...all.map(x => size(x.g))];
   for (const k of ["lr_intro", "gra_intro"]) (L.mistakes[k] || []).forEach((t, i) => {
     if (nums(t).some(n => !okCounts.includes(n))) flag(`mistakes.${k}.${i}`, "mistakes", `Con số không khớp số chỗ sửa (${Object.keys(C).length})`);
   });

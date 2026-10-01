@@ -20,7 +20,7 @@ options) and add the Claude API key; the Netlify token is optional.
 1. **Tạo bài ôn Đậu** (orange button on a grading page) copies the page and opens the editor.
 2. **Bài**: week, track and prompt, detected from the homework title; the teacher confirms.
 3. **Framework**: tag the idea sentences, pick the rewrite target, tick the week's checklist.
-4. **Nháp**: Claude drafts the lesson in 3 parts, 3 streaming calls in parallel (`lib/draft.js`, structured JSON output; one schema for the whole lesson was too large for the API). A part that fails can be retried on its own.
+4. **Nháp**: Claude drafts the lesson in 6 small parts (`lib/draft.js`, structured JSON output; bigger schemas were refused by the API as "too large"). One part goes first so the essay is cached for the rest; exercises wait for the mistake groups. If the API still refuses a schema, that part is asked without it and checked in the editor. A part that fails can be retried on its own.
 5. **Chỉnh sửa**: every line is editable, with a live phone preview. AI lines stay purple until
    the teacher approves or edits them. Mistake groups: rename, re-tag, drag corrections between groups.
 6. **Xuất**: download the `.html` (built exactly like `build.py`), save the lesson `.json`,

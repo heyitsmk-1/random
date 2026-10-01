@@ -306,8 +306,8 @@ function renderDraft() {
       h("li", {}, `${tagged} ý đã gắn nhãn`, tagged < 4 ? h("span", { class: "warn" }, " (nên gắn đủ Ý 1 đến Ý 4)") : null),
       h("li", {}, `Checklist: ${S.checklist.filter(c => c.ok === true).length} ✓, ${S.checklist.filter(c => c.ok === false).length} ✗`),
       h("li", {}, S.rewriteTarget && S.rewriteTarget.sids.length ? `Viết lại: ${S.rewriteTarget.sids.join(", ")}` : "Viết lại: để Claude chọn")),
-    h("p", { class: "small muted" }, `Model ${MODEL}, 3 phần soạn cùng lúc. Thường mất 1 đến 3 phút.`),
-    S.partial && Object.keys(S.partial).length && !drafting ? h("div", { class: "notice" }, `Lần trước đã soạn xong ${Object.keys(S.partial).map(p => PARTS[p].label).join(", ")}.`,
+    h("p", { class: "small muted" }, `Model ${MODEL}, ${Object.keys(PARTS).length} phần soạn cùng lúc. Thường mất 1 đến 3 phút.`),
+    S.partial && Object.keys(S.partial).some(p => PARTS[p]) && !drafting ? h("div", { class: "notice" }, `Lần trước đã soạn xong ${Object.keys(S.partial).filter(p => PARTS[p]).map(p => PARTS[p].label).join(", ")}.`,
       h("button", { class: "btn small", type: "button", style: "margin-left:8px", onclick: () => runDraft({ retry: true }) }, "Soạn tiếp phần còn thiếu")) : null,
     !hasKey ? h("div", { class: "notice bad" }, "Chưa có Claude API key. ", h("a", { href: "options.html", target: "_blank" }, "Mở Cài đặt"), " rồi quay lại đây.") : null,
     S.lesson ? h("div", { class: "notice" }, "Bài này đã có bản nháp. Soạn lại sẽ thay toàn bộ bản nháp (những chỗ anh đã sửa cũng mất).") : null,
@@ -326,7 +326,7 @@ async function runDraft({ retry = false } = {}) {
   const status = $("#draftStatus");
   const todo = Object.keys(PARTS).filter(p => !(S.partial || {})[p]);
   const bar = h("progress", { max: String(10000 * todo.length), value: "0", style: "width:100%" });
-  status.replaceChildren(h("p", {}, `Claude đang soạn ${todo.length === 3 ? "3 phần cùng lúc" : todo.map(p => PARTS[p].label).join(", ")}…`),
+  status.replaceChildren(h("p", {}, `Claude đang soạn ${todo.length === Object.keys(PARTS).length ? todo.length + " phần" : todo.map(p => PARTS[p].label).join(", ")}…`),
     bar, h("p", { class: "small muted", id: "draftChars" }, ""));
   const ctrl = new AbortController();
   drafting = ctrl; renderSteps();
@@ -341,13 +341,17 @@ async function runDraft({ retry = false } = {}) {
         notes: S.notes, rewriteTarget: S.rewriteTarget && S.rewriteTarget.sids.length ? S.rewriteTarget : null,
       },
       onProgress: n => { bar.value = Math.min(n, +bar.max - 500); const el = $("#draftChars"); if (el) el.textContent = `${n.toLocaleString("vi-VN")} ký tự`; },
-      signal: ctrl.signal, done: S.partial || {},
+      signal: ctrl.signal, done: S.partial || {}, noStrict: SETTINGS.noStrict || [],
     });
   } catch (e) {
     result = { parts: S.partial || {}, failed: [{ label: "Bản nháp", message: e.message || String(e) }] };
   }
   drafting = null;
   S.partial = result.parts;
+  if (result.noStrict && result.noStrict.join() !== (SETTINGS.noStrict || []).join()) {
+    SETTINGS = { ...SETTINGS, noStrict: result.noStrict };
+    setSettings({ noStrict: result.noStrict });       // next time these parts skip the strict format
+  }
   if (result.usage) {
     const u = S.usage && retry ? S.usage : { input_tokens: 0, output_tokens: 0, cache_read_input_tokens: 0, cache_creation_input_tokens: 0 };
     for (const k of Object.keys(result.usage)) u[k] = (u[k] || 0) + result.usage[k];

@@ -6,10 +6,12 @@ import Anthropic from "../vendor/anthropic.mjs";
 export const MODEL = "claude-opus-5-5";
 
 /* ---------- output schemas ----------
-   The lesson is drafted in 3 parts, 3 calls in parallel: one schema for the whole lesson was too
-   large for structured outputs ("compiled grammar is too large"). Every object is closed and
-   every field required; no nullable fields (empty string / empty list / -1 mean "none"), and the
-   three exercise types are separate lists, which keeps each grammar small. */
+   One schema for the whole lesson, then 3 schemas of ~50 fields, were rejected by the API
+   ("compiled grammar is too large"); a ~22-field schema was accepted. So the lesson is drafted
+   in 6 parts of at most ~24 fields. Every object is closed and every field required; no nullable
+   fields (empty string / empty list / -1 mean "none"); the three exercise types are separate lists.
+   If a part's schema is still refused, that part is asked again without the strict format and
+   its JSON is checked here against the same schema (see draftPart). */
 const S = { type: "string" };
 const I = { type: "integer" };
 const B = { type: "boolean" };
@@ -19,10 +21,9 @@ const O = props => ({ type: "object", properties: props, required: Object.keys(p
 const ASK = O({ q: S, options: A(S), answer: I, right: S, wrong: S });
 
 export const PARTS = {
-  // what the student's essay does: structure, reading of the prompt, development of ideas
-  ideas: {
-    label: "Framework và phát triển ý",
-    fields: "call_name, framework, prompt_check, ideas",
+  structure: {
+    label: "Khung bài",
+    fields: "call_name, framework",
     schema: O({
       call_name: S,
       framework: O({
@@ -30,8 +31,12 @@ export const PARTS = {
         parts: A(O({ label: S, tone: E("orange", "mint", "sky"), sids: A(S), summary: S, short: S,
           ideas: A(O({ tag: S, sid: S, text: S, short: S })) })),
       }),
-      prompt_check: O({ intro: S, items: A(O({ sid: S, focus: S, prompt_focus: S, ask_q: S, ask_options: A(S), ask_answer: I,
-        ask_right: S, ask_wrong: S, line: S, fix: S, fix_line: S })) }),
+    }),
+  },
+  ideas: {
+    label: "Phát triển ý",
+    fields: "ideas",
+    schema: O({
       ideas: O({
         intro: A(S), prompt_focus: S,
         overview: A(O({ tag: S, text: S, ok: B, note: S, line: S })),
@@ -42,16 +47,23 @@ export const PARTS = {
       }),
     }),
   },
-  // language: linking devices, mistake groups, exercises
-  language: {
-    label: "Linking, lỗi sai và bài luyện",
-    fields: "linking, mistakes, practice",
+  reading: {
+    label: "Đọc đề và linking",
+    fields: "prompt_check, linking",
     schema: O({
+      prompt_check: O({ intro: S, items: A(O({ sid: S, focus: S, prompt_focus: S, ask_q: S, ask_options: A(S), ask_answer: I,
+        ask_right: S, ask_wrong: S, line: S, fix: S, fix_line: S })) }),
       linking: O({
         intro: A(S), count: I, result: A(S),
         groups: A(O({ label: S, items: A(O({ text: S, sid: S })) })),
         suggestions_intro: S, suggestions: A(O({ sid: S, from: S, to: S, why: S })),
       }),
+    }),
+  },
+  mistakes: {
+    label: "Lỗi sai",
+    fields: "mistakes",
+    schema: O({
       mistakes: O({
         groups: A(O({
           id: S, title: S, tab: E("LR", "GRA"), cids: A(S), role: E("main", "core", "optional", "other"),
@@ -60,6 +72,14 @@ export const PARTS = {
         })),
         lr_intro: A(S), gra_intro: A(S),
       }),
+    }),
+  },
+  // drafted after "mistakes": its exercises point at those mistake groups
+  practice: {
+    label: "Bài luyện",
+    fields: "practice",
+    after: "mistakes",
+    schema: O({
       practice: O({
         intro: A(S), core: A(S),
         choose: A(O({ id: S, mistake: S, q: S, sentence: S, options: A(S), answer: I, explain: S })),
@@ -68,7 +88,6 @@ export const PARTS = {
       }),
     }),
   },
-  // the frame around it: greeting, results, the rewrite task, compliments, takeaways, ending
   frame: {
     label: "Lời chào, viết lại, lời khen và kết thúc",
     fields: "hello, results, rewrite, praise_candidates, takeaway_candidates, finish",
@@ -86,9 +105,30 @@ export const PARTS = {
   },
 };
 
+/** Problems with `value` against one of the schemas above (for replies drafted without the strict format). */
+export function checkAgainst(schema, value, path = "$", out = []) {
+  if (out.length > 20) return out;
+  if (schema.enum) { if (!schema.enum.includes(value)) out.push(`${path}: phải là một trong ${schema.enum.join(", ")}`); return out; }
+  const t = schema.type;
+  if (t === "string" && typeof value !== "string") out.push(`${path}: cần chuỗi`);
+  else if (t === "integer" && !Number.isInteger(value)) out.push(`${path}: cần số nguyên`);
+  else if (t === "boolean" && typeof value !== "boolean") out.push(`${path}: cần true/false`);
+  else if (t === "array") {
+    if (!Array.isArray(value)) out.push(`${path}: cần danh sách`);
+    else value.forEach((v, i) => checkAgainst(schema.items, v, `${path}[${i}]`, out));
+  } else if (t === "object") {
+    if (!value || typeof value !== "object" || Array.isArray(value)) out.push(`${path}: cần object`);
+    else for (const k of schema.required) {
+      if (!(k in value)) out.push(`${path}.${k}: thiếu`);
+      else checkAgainst(schema.properties[k], value[k], `${path}.${k}`, out);
+    }
+  }
+  return out;
+}
+
 /* ---------- the instructions (stable per week, so they are cached) ---------- */
 export function systemBlocks(week, teacher) {
-  const general = `You prepare a short, friendly review of a student's marked IELTS Writing homework. The student reads it on a phone. It is spoken by "anh Đậu", a teaching assistant of ${teacher}. The lesson is written as JSON in 3 parts (each request asks for one part); the teacher then checks and edits every line before it goes to the student.
+  const general = `You prepare a short, friendly review of a student's marked IELTS Writing homework. The student reads it on a phone. It is spoken by "anh Đậu", a teaching assistant of ${teacher}. The lesson is written as JSON in several parts (each request asks for one part); the teacher then checks and edits every line before it goes to the student.
 
 # Who decides what
 - The teacher's marking is the source of truth: corrections, comments, the framework checklist the teacher ticked, and the teacher's overall comment. Build on it; never contradict it, never re-grade, never invent new corrections.
@@ -175,16 +215,17 @@ export function userMessage({ page, meta, tags, checklist, notes, rewriteTarget 
   return "Here is the marked homework.\n\n" + JSON.stringify(payload, null, 1);
 }
 
-/* the essay block is the same in all 3 calls (cached); the last block names the part */
-function partContent(essay, part) {
+/* the essay block is the same in every call (cached); the last block names the part */
+function partContent(essay, part, extra) {
   return [
     { type: "text", text: essay, cache_control: { type: "ephemeral" } },
-    { type: "text", text: `Draft this part of the lesson only: ${PARTS[part].fields}.` },
+    { type: "text", text: `Draft this part of the lesson only: ${PARTS[part].fields}.${extra ? "\n\n" + extra : ""}` },
   ];
 }
 
-/* ---------- the call ---------- */
+/* ---------- the calls ---------- */
 export class DraftError extends Error {}
+const TOO_BIG = /grammar is too large|schema is too (large|complex)/i;
 
 function friendly(e) {
   if (e instanceof DraftError) return e.message;
@@ -200,52 +241,117 @@ function friendly(e) {
   return String((e && e.message) || e);
 }
 
-async function draftPart(client, { part, system, essay, onChars, signal }) {
-  const stream = client.beta.messages.stream({
-    model: MODEL,
-    max_tokens: 32000,
-    betas: ["server-side-fallback-2026-07-01"],
-    fallbacks: "default",                            // a declined request is re-run on a fallback model
-    output_config: { effort: "high", format: { type: "json_schema", schema: PARTS[part].schema } },
-    system,
-    messages: [{ role: "user", content: partContent(essay, part) }],
-  }, { signal });
-  stream.on("text", t => onChars(t.length));
-  const msg = await stream.finalMessage();
-  if (msg.stop_reason === "refusal") throw new DraftError("Claude từ chối soạn phần này.");
-  if (msg.stop_reason === "max_tokens") throw new DraftError("Phần này dài quá nên bị cắt.");
-  const text = msg.content.filter(b => b.type === "text").map(b => b.text).join("");
-  try { return { data: JSON.parse(text), usage: msg.usage, model: msg.model }; }
-  catch (e) { throw new DraftError("Claude trả về không đúng định dạng."); }
+function parseJson(text) {
+  const t = text.replace(/^\s*```(?:json)?\s*/i, "").replace(/\s*```\s*$/, "");
+  try { return JSON.parse(t); } catch (e) { /* fall through */ }
+  const i = t.indexOf("{"), j = t.lastIndexOf("}");
+  if (i >= 0 && j > i) { try { return JSON.parse(t.slice(i, j + 1)); } catch (e) { /* fall through */ } }
+  return undefined;
+}
+
+/* one request. strict = structured outputs; otherwise the schema goes in the prompt and the
+   reply is checked here (once more with the problems listed if it doesn't fit) */
+async function requestPart(client, { part, system, essay, extra, strict, onChars, onFirstEvent, signal }) {
+  let hint = "";
+  for (let attempt = 0; attempt < (strict ? 1 : 2); attempt++) {
+    const ask = strict ? extra : [extra,
+      "Reply with only one JSON object that matches this JSON Schema exactly (every field present, no extra fields, no prose, no code fences):",
+      JSON.stringify(PARTS[part].schema), hint].filter(Boolean).join("\n\n");
+    const stream = client.beta.messages.stream({
+      model: MODEL,
+      max_tokens: 32000,
+      betas: ["server-side-fallback-2026-07-01"],
+      fallbacks: "default",                          // a declined request is re-run on a fallback model
+      output_config: strict ? { effort: "high", format: { type: "json_schema", schema: PARTS[part].schema } } : { effort: "high" },
+      system,
+      messages: [{ role: "user", content: partContent(essay, part, ask) }],
+    }, { signal });
+    let first = true;
+    stream.on("streamEvent", () => { if (first) { first = false; if (onFirstEvent) onFirstEvent(); } });
+    stream.on("text", t => onChars(t.length));
+    const msg = await stream.finalMessage();
+    if (msg.stop_reason === "refusal") throw new DraftError("Claude từ chối soạn phần này.");
+    if (msg.stop_reason === "max_tokens") throw new DraftError("Phần này dài quá nên bị cắt.");
+    const data = parseJson(msg.content.filter(b => b.type === "text").map(b => b.text).join(""));
+    const problems = data === undefined ? ["không phải JSON"] : checkAgainst(PARTS[part].schema, data);
+    if (!problems.length) return { data, usage: msg.usage, model: msg.model };
+    if (strict) throw new DraftError("Claude trả về không đúng định dạng.");
+    hint = "Your previous reply did not fit the schema: " + problems.slice(0, 10).join("; ") + ". Reply again with the complete JSON.";
+  }
+  throw new DraftError("Claude trả về không đúng định dạng, kể cả khi thử lại.");
 }
 
 /**
- * Draft the lesson: 3 calls in parallel, one per part. `done` holds parts already drafted
- * (from an earlier try), which are not asked again. Returns { parts, failed, usage, model }:
+ * Draft the lesson: one request per part (PARTS). `done` holds parts already drafted (from an
+ * earlier try), which are not asked again. `noStrict` lists parts whose schema the API refused
+ * before: they go straight to the checked-here mode. Returns { parts, failed, usage, model, noStrict }:
  * failed = [{ part, label, message }] for the parts that didn't work (retry just those).
  */
-export async function draftLesson({ apiKey, week, teacher, input, onProgress, fetchImpl, signal, done = {} }) {
+export async function draftLesson({ apiKey, week, teacher, input, onProgress, fetchImpl, signal, done = {}, noStrict = [] }) {
   const client = new Anthropic({ apiKey, dangerouslyAllowBrowser: true, ...(fetchImpl ? { fetch: fetchImpl } : {}) });
   const system = systemBlocks(week, teacher), essay = userMessage(input);
+  const refused = new Set(noStrict);
   let chars = 0;
   const onChars = n => { chars += n; if (onProgress) onProgress(chars); };
-  const todo = Object.keys(PARTS).filter(p => !done[p]);
-  const results = await Promise.allSettled(todo.map(part => draftPart(client, { part, system, essay, onChars, signal })));
-  const parts = { ...done }, failed = [], usage = { input_tokens: 0, output_tokens: 0, cache_read_input_tokens: 0, cache_creation_input_tokens: 0 };
+  const usage = { input_tokens: 0, output_tokens: 0, cache_read_input_tokens: 0, cache_creation_input_tokens: 0 };
   let model = MODEL;
+
+  // keep only finished parts that still fit the current schemas
+  const have = {};
+  for (const [k, v] of Object.entries(done)) if (PARTS[k] && !checkAgainst(PARTS[k].schema, v).length) have[k] = v;
+  const todo = Object.keys(PARTS).filter(p => !have[p]);
+
+  async function one(part, extra, onFirstEvent) {
+    const args = { part, system, essay, extra, onChars, onFirstEvent, signal };
+    let r;
+    if (!refused.has(part)) {
+      try { r = await requestPart(client, { ...args, strict: true }); }
+      catch (e) {
+        if (!(e instanceof Anthropic.BadRequestError && TOO_BIG.test(friendly(e)))) throw e;
+        refused.add(part);                           // the API can't compile this schema: check it here instead
+      }
+    }
+    if (!r) r = await requestPart(client, { ...args, strict: false });
+    model = r.model || model;
+    for (const k of Object.keys(usage)) usage[k] += r.usage[k] || 0;
+    return r.data;
+  }
+
+  const running = {};
+  const run = (part, onFirstEvent) => running[part] || (running[part] = (async () => {
+    const dep = PARTS[part].after;
+    let extra = "";
+    if (dep) {
+      let d;
+      try { d = have[dep] || await run(dep); }
+      catch (e) { throw new DraftError(`Cần phần "${PARTS[dep].label}" xong trước.`); }
+      extra = "The mistake groups are already drafted. Use these ids for `mistake`, and base the 4 core items on the group with role \"main\":\n" +
+        JSON.stringify(d.mistakes.groups.map(g => ({ id: g.id, title: g.title, tab: g.tab, role: g.role, cids: g.cids })));
+    }
+    return one(part, extra, onFirstEvent);
+  })());
+
+  // start one part first, and the others once its essay block is cached (its first event)
+  const lead = todo.find(p => !PARTS[p].after || have[PARTS[p].after]);
+  if (lead) {
+    let go;
+    const warm = new Promise(r => { go = r; });
+    run(lead, go).catch(() => {}).finally(go);
+    await warm;
+  }
+  const results = await Promise.allSettled(todo.map(p => run(p)));
+  const parts = { ...have }, failed = [];
   results.forEach((r, i) => {
     const part = todo[i];
-    if (r.status === "fulfilled") {
-      parts[part] = r.value.data; model = r.value.model || model;
-      for (const k of Object.keys(usage)) usage[k] += r.value.usage[k] || 0;
-    } else failed.push({ part, label: PARTS[part].label, message: friendly(r.reason) });
+    if (r.status === "fulfilled") parts[part] = r.value;
+    else failed.push({ part, label: PARTS[part].label, message: friendly(r.reason) });
   });
-  return { parts, failed, usage, model };
+  return { parts, failed, usage, model, noStrict: [...refused] };
 }
 
-/* the 3 parts -> one draft in the shape draftToLesson reads */
-export function mergeParts({ ideas, language, frame }) {
-  const P = language.practice;
+/* the parts -> one draft in the shape draftToLesson reads */
+export function mergeParts({ structure, ideas, reading, mistakes, practice, frame }) {
+  const P = practice.practice;
   const items = [
     ...P.choose.map(x => ({ ...x, type: "choose" })),
     ...P.tap.map(x => ({ ...x, type: "tap" })),
@@ -253,17 +359,18 @@ export function mergeParts({ ideas, language, frame }) {
   ];
   const rank = id => { const k = P.core.indexOf(id); return k < 0 ? P.core.length : k; };
   items.sort((a, b) => rank(a.id) - rank(b.id));        // core items first, in the core order (stable)
+  const pc = reading.prompt_check;
   return {
-    call_name: ideas.call_name, framework: ideas.framework, ideas: ideas.ideas,
-    prompt_check: ideas.prompt_check && ideas.prompt_check.items.length ? {
-      intro: ideas.prompt_check.intro,
-      items: ideas.prompt_check.items.map(it => ({
+    call_name: structure.call_name, framework: structure.framework, ideas: ideas.ideas,
+    prompt_check: pc && pc.items.length ? {
+      intro: pc.intro,
+      items: pc.items.map(it => ({
         sid: it.sid, focus: it.focus, prompt_focus: it.prompt_focus,
         ask: it.ask_q ? { q: it.ask_q, options: it.ask_options, answer: it.ask_answer, right: it.ask_right, wrong: it.ask_wrong } : null,
         line: it.line, fix: it.fix, fix_line: it.fix_line,
       })),
     } : null,
-    linking: language.linking, mistakes: language.mistakes,
+    linking: reading.linking, mistakes: mistakes.mistakes,
     practice: { intro: P.intro, core: P.core, items },
     ...frame,
   };

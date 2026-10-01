@@ -21,6 +21,17 @@ const ok = (cond, what) => { console.log((cond ? "ok   " : "FAIL ") + what); if 
 
 /* ---------- the fake Claude reply: the lesson split into the 3 parts the editor asks for ---------- */
 function partsFromLesson(L) {
+  const three = threePartsFromLesson(L);
+  return {
+    structure: { call_name: three.ideas.call_name, framework: three.ideas.framework },
+    ideas: { ideas: three.ideas.ideas },
+    reading: { prompt_check: three.ideas.prompt_check, linking: three.language.linking },
+    mistakes: { mistakes: three.language.mistakes },
+    practice: { practice: three.language.practice },
+    frame: three.frame,
+  };
+}
+function threePartsFromLesson(L) {
   let firstGra = true;
   const blankAsk = { q: "", options: [], answer: 0 };
   const P = L.practice.items, pick = (t, f) => P.filter(it => it.type === t).map(f);
@@ -127,22 +138,32 @@ async function serve(route) {
 
 const lesson = JSON.parse(readFileSync(LESSON, "utf8"));
 const fakeParts = partsFromLesson(lesson);
-let claudeMode = "ok", claudeBodies = [];
+const FIRST_FIELD = { call_name: "structure", ideas: "ideas", prompt_check: "reading", mistakes: "mistakes", practice: "practice", hello: "frame" };
+// modes: Set of "401", "refuse-ideas-schema" (the API can't compile that schema), "fail-mistakes-once"
+let claudeMode = new Set(), claudeBodies = [], nonStrictReplies = 0;
+const partOf = body => FIRST_FIELD[/only: (\w+)/.exec(body.messages[0].content.at(-1).text)[1]];
 async function claude(route) {
   const req = route.request(), cors = { "access-control-allow-origin": "*", "access-control-allow-headers": "*", "access-control-allow-methods": "*" };
   if (req.method() === "OPTIONS") return route.fulfill({ status: 204, headers: cors });
   const body = JSON.parse(req.postData());
   claudeBodies.push(body);
-  const ask = body.messages[0].content.at(-1).text;
-  const part = Object.keys(fakeParts).find(k => ask.includes(Object.keys(fakeParts[k])[0]));
+  const part = partOf(body), strict = !!body.output_config?.format;
   const error = (status, type, message) => route.fulfill({ status, headers: cors, contentType: "application/json",
     body: JSON.stringify({ type: "error", error: { type, message }, request_id: "req_test" }) });
-  if (claudeMode === "401") return error(401, "authentication_error", "invalid x-api-key");
-  if (claudeMode === "fail-language-once" && part === "language") {
-    claudeMode = "ok";
+  if (claudeMode.has("401")) return error(401, "authentication_error", "invalid x-api-key");
+  if (claudeMode.has("refuse-ideas-schema") && part === "ideas" && strict)
     return error(400, "invalid_request_error", "The compiled grammar is too large, which would cause performance issues. Simplify your tool schemas or reduce the number of strict tools.");
+  if (claudeMode.has("fail-mistakes-once") && part === "mistakes") {
+    claudeMode.delete("fail-mistakes-once");
+    return error(400, "invalid_request_error", "Something else went wrong");
   }
-  return route.fulfill({ status: 200, headers: { ...cors, "content-type": "text/event-stream" }, body: sse(JSON.stringify(fakeParts[part])) });
+  let text = JSON.stringify(fakeParts[part]);
+  if (!strict) {                                     // free-form reply: fenced, and the first one is missing a field
+    const bad = structuredClone(fakeParts[part]);
+    if (nonStrictReplies++ === 0) delete bad.ideas.prompt_focus;
+    text = "```json\n" + JSON.stringify(bad) + "\n```";
+  }
+  return route.fulfill({ status: 200, headers: { ...cors, "content-type": "text/event-stream" }, body: sse(text) });
 }
 
 async function setup(browser) {
@@ -221,23 +242,34 @@ try {
     return { bad, sizes: Object.fromEntries(Object.entries(PARTS).map(([k, p]) => [k, JSON.stringify(p.schema).match(/"type":"(string|integer|boolean)"/g).length])) };
   });
   ok(schemaReport.bad.length === 0, "schemas closed, all required, no nullable fields " + schemaReport.bad.join(", "));
-  ok(Object.values(schemaReport.sizes).every(n => n <= 60), "each schema at most 60 fields (the single one had 114): " + JSON.stringify(schemaReport.sizes));
+  ok(Object.values(schemaReport.sizes).every(n => n <= 25), "each schema at most 25 fields (accepted: 22; refused: 49+): " + JSON.stringify(schemaReport.sizes));
 
-  // first try: the language part is rejected with the real error; the other two are kept
-  claudeMode = "fail-language-once";
+  // first try: "mistakes" fails (so "practice", which needs it, can't start); the API can't compile
+  // the "ideas" schema, so that part is asked again without it and checked in the editor
+  claudeMode = new Set(["refuse-ideas-schema", "fail-mistakes-once"]);
   await page.getByRole("button", { name: "Soạn nháp" }).click();
   await page.getByRole("button", { name: "Thử lại phần lỗi" }).waitFor({ timeout: 15000 });
   const failText = await page.locator("#draftStatus").textContent();
-  ok(/Linking, lỗi sai và bài luyện/.test(failText) && /compiled grammar is too large/.test(failText) && !/\{"type"/.test(failText), "failed part named, error readable");
-  ok(/Đã xong: .*Framework.*Lời chào/.test(failText), "the parts that worked are kept");
+  ok(/Lỗi sai: Claude báo lỗi \(400\): Something else went wrong/.test(failText) && !/\{"type"/.test(failText), "failed part named, error readable");
+  ok(/Bài luyện: Cần phần "Lỗi sai" xong trước/.test(failText), "practice waits for the mistake groups");
+  ok(/Đã xong: Khung bài, Phát triển ý, Đọc đề và linking, Lời chào/.test(failText), "the parts that worked are kept (incl. ideas via the fallback)");
   await page.screenshot({ path: join(OUT, "03b-part-failed.png") });
-  ok(claudeBodies.length === 3, "3 calls (one per part): " + claudeBodies.length);
+  const ideaCalls = claudeBodies.filter(b => partOf(b) === "ideas");
+  ok(ideaCalls.length === 3 && ideaCalls[0].output_config.format && !ideaCalls[1].output_config.format && /JSON Schema/.test(ideaCalls[1].messages[0].content.at(-1).text),
+    "refused schema: asked again without the strict format, schema in the prompt");
+  ok(/did not fit the schema: \$\.ideas\.prompt_focus: thiếu/.test(ideaCalls[2].messages[0].content.at(-1).text), "a reply that doesn't fit is asked again with the problems listed");
+  ok(partOf(claudeBodies[0]) === "structure" && claudeBodies.filter(b => partOf(b) === "practice").length === 0, "one part first (warms the cache); no practice call without its groups");
+  const refusedSaved = await page.evaluate(() => JSON.parse(localStorage.getItem("dau:settings")).noStrict);
+  ok(JSON.stringify(refusedSaved) === '["ideas"]', "remembers which schema the API refused: " + JSON.stringify(refusedSaved));
+  const before = claudeBodies.length;
   await page.getByRole("button", { name: "Thử lại phần lỗi" }).click();
   await page.locator(".edit").waitFor({ timeout: 15000 });
-  ok(claudeBodies.length === 4 && claudeBodies[3].messages[0].content.at(-1).text.includes("linking"), "retry asks only for the failed part");
+  const retried = claudeBodies.slice(before).map(partOf);
+  ok(JSON.stringify(retried) === '["mistakes","practice"]', "retry asks only for the missing parts, in order: " + retried);
+  ok(/"id":"/.test(claudeBodies.at(-1).messages[0].content.at(-1).text) && /mistake/.test(claudeBodies.at(-1).messages[0].content.at(-1).text), "practice is given the mistake group ids");
   const claudeBody = claudeBodies[0];
   ok(claudeBodies.every(b => b.model === "claude-opus-5-5" && b.stream === true), "streaming calls to claude-opus-5-5");
-  ok(claudeBodies.every(b => b.output_config?.format?.type === "json_schema"), "structured output (json_schema)");
+  ok(claudeBodies.filter(b => partOf(b) !== "ideas").every(b => b.output_config?.format?.type === "json_schema"), "structured output (json_schema) for the other parts");
   ok(claudeBody.system?.some(b => b.cache_control?.type === "ephemeral"), "course block is cached");
   ok(claudeBodies.every(b => b.messages[0].content[0].cache_control?.type === "ephemeral" && b.messages[0].content[0].text === claudeBody.messages[0].content[0].text), "essay block identical and cached in every call");
   const um = claudeBody.messages[0].content[0].text;
@@ -338,7 +370,7 @@ try {
 
   /* 3. a wrong API key */
   {
-    claudeMode = "401";
+    claudeMode = new Set(["401"]);
     const { page, errors } = await setup(browser);
     await page.goto("https://dau.test/editor.html?html=/fixture/page.html");
     await page.getByRole("button", { name: "3 · Nháp" }).click();

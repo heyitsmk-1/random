@@ -1,7 +1,7 @@
 /* Đậu's lesson editor: page -> framework tagging -> Claude draft -> edit with live preview -> export. */
 import { extractPage } from "./lib/extract.js";
 import { buildPage, checkLesson } from "./lib/build.js";
-import { draftLesson, draftToLesson, MODEL } from "./lib/draft.js";
+import { draftLesson, draftToLesson, mergeParts, PARTS, MODEL } from "./lib/draft.js";
 import { getSettings, setSettings, takePage, saveDraft, loadDraft, listDrafts } from "./lib/store.js";
 import { publishPage } from "./lib/netlify.js";
 
@@ -86,7 +86,7 @@ function touch() {
 // don't lose the last few keystrokes when the tab closes
 addEventListener("pagehide", () => { if (saveTimer) flush(); });
 document.addEventListener("visibilitychange", () => { if (document.hidden && saveTimer) flush(); });
-const snapshot = () => ({ page: S.page, meta: S.meta, tags: S.tags, checklist: S.checklist, notes: S.notes, rewriteTarget: S.rewriteTarget, lesson: S.lesson, src: S.src, ok: S.ok, usage: S.usage, step: S.step });
+const snapshot = () => ({ page: S.page, meta: S.meta, tags: S.tags, checklist: S.checklist, notes: S.notes, rewriteTarget: S.rewriteTarget, lesson: S.lesson, partial: S.partial, src: S.src, ok: S.ok, usage: S.usage, step: S.step });
 function restore(snap) { Object.assign(S, snap); }
 
 /* ---------- boot ---------- */
@@ -151,7 +151,7 @@ async function openPageHtml(html, url) {
   if (existing && existing.lesson && existing.lesson.page && confirm("Bài này đang soạn dở. Tiếp tục bản đang soạn? (Bấm Hủy để soạn lại từ đầu)")) {
     restore(existing.lesson); S.key = key; return go(S.step || "page");
   }
-  S.key = key; S.page = page; S.lesson = null; S.src = {}; S.ok = {}; S.tags = {}; S.usage = null;
+  S.key = key; S.page = page; S.lesson = null; S.partial = {}; S.src = {}; S.ok = {}; S.tags = {}; S.usage = null;
   const week = weekOf(page.homework);
   setWeek(week);
   S.meta.student_full = page.student_full || "";
@@ -306,25 +306,33 @@ function renderDraft() {
       h("li", {}, `${tagged} ý đã gắn nhãn`, tagged < 4 ? h("span", { class: "warn" }, " (nên gắn đủ Ý 1 đến Ý 4)") : null),
       h("li", {}, `Checklist: ${S.checklist.filter(c => c.ok === true).length} ✓, ${S.checklist.filter(c => c.ok === false).length} ✗`),
       h("li", {}, S.rewriteTarget && S.rewriteTarget.sids.length ? `Viết lại: ${S.rewriteTarget.sids.join(", ")}` : "Viết lại: để Claude chọn")),
-    h("p", { class: "small muted" }, `Model ${MODEL}. Một lần soạn thường mất 1 đến 3 phút.`),
+    h("p", { class: "small muted" }, `Model ${MODEL}, 3 phần soạn cùng lúc. Thường mất 1 đến 3 phút.`),
+    S.partial && Object.keys(S.partial).length && !drafting ? h("div", { class: "notice" }, `Lần trước đã soạn xong ${Object.keys(S.partial).map(p => PARTS[p].label).join(", ")}.`,
+      h("button", { class: "btn small", type: "button", style: "margin-left:8px", onclick: () => runDraft({ retry: true }) }, "Soạn tiếp phần còn thiếu")) : null,
     !hasKey ? h("div", { class: "notice bad" }, "Chưa có Claude API key. ", h("a", { href: "options.html", target: "_blank" }, "Mở Cài đặt"), " rồi quay lại đây.") : null,
     S.lesson ? h("div", { class: "notice" }, "Bài này đã có bản nháp. Soạn lại sẽ thay toàn bộ bản nháp (những chỗ anh đã sửa cũng mất).") : null,
     h("div", { class: "row" },
-      h("button", { class: "btn primary", type: "button", disabled: !hasKey || !!drafting, onclick: runDraft }, S.lesson ? "Soạn lại" : "Soạn nháp"),
+      h("button", { class: "btn primary", type: "button", disabled: !hasKey || !!drafting, onclick: () => runDraft() }, S.lesson ? "Soạn lại" : "Soạn nháp"),
       S.lesson ? h("button", { class: "btn", type: "button", onclick: () => go("edit") }, "Tới phần chỉnh sửa") : null),
     status)));
 }
 
-async function runDraft() {
-  if (S.lesson && !confirm("Soạn lại sẽ thay toàn bộ bản nháp. Tiếp tục?")) return;
+async function runDraft({ retry = false } = {}) {
+  if (!retry) {
+    if (S.lesson && !confirm("Soạn lại sẽ thay toàn bộ bản nháp. Tiếp tục?")) return;
+    S.partial = {};                                  // a fresh draft: forget parts from an earlier try
+  }
   const w = COURSE.weeks.find(x => x.week === S.meta.week);
   const status = $("#draftStatus");
-  const bar = h("progress", { max: "30000", value: "0", style: "width:100%" });
-  status.replaceChildren(h("p", {}, "Claude đang soạn…"), bar, h("p", { class: "small muted", id: "draftChars" }, ""));
+  const todo = Object.keys(PARTS).filter(p => !(S.partial || {})[p]);
+  const bar = h("progress", { max: String(10000 * todo.length), value: "0", style: "width:100%" });
+  status.replaceChildren(h("p", {}, `Claude đang soạn ${todo.length === 3 ? "3 phần cùng lúc" : todo.map(p => PARTS[p].label).join(", ")}…`),
+    bar, h("p", { class: "small muted", id: "draftChars" }, ""));
   const ctrl = new AbortController();
   drafting = ctrl; renderSteps();
+  let result;
   try {
-    const { draft, usage, model } = await draftLesson({
+    result = await draftLesson({
       apiKey: SETTINGS.apiKey, week: { ...w, prompts: [{ label: w.essay_type, prompt: S.meta.prompt }] }, teacher: SETTINGS.teacher,
       input: {
         page: S.page, meta: S.meta,
@@ -332,18 +340,44 @@ async function runDraft() {
         checklist: S.checklist.map(c => ({ item: c.item, ok: c.ok, note: c.note })),
         notes: S.notes, rewriteTarget: S.rewriteTarget && S.rewriteTarget.sids.length ? S.rewriteTarget : null,
       },
-      onProgress: n => { bar.value = Math.min(n, 29000); const el = $("#draftChars"); if (el) el.textContent = `${n.toLocaleString("vi-VN")} ký tự`; },
-      signal: ctrl.signal,
+      onProgress: n => { bar.value = Math.min(n, +bar.max - 500); const el = $("#draftChars"); if (el) el.textContent = `${n.toLocaleString("vi-VN")} ký tự`; },
+      signal: ctrl.signal, done: S.partial || {},
     });
-    S.lesson = draftToLesson(draft, { page: S.page, meta: { ...S.meta, word_target: 250 }, teacher: SETTINGS.teacher, zalo: SETTINGS.zalo });
-    S.src = { "": "ai", scores: "page", word_count: "page", essay: "page", corrections: "page", task_comments: "page", student: "teacher", teacher: "teacher", zalo: "teacher", homework: "page", prompt: "teacher", essay_type: "page", overall: "page", word_target: "page" };
-    S.ok = {};
-    S.usage = { ...usage, model };
-    drafting = null; touch(); go("edit");
   } catch (e) {
-    drafting = null; renderSteps();
-    status.replaceChildren(h("div", { class: "notice bad" }, e.message || String(e)), h("button", { class: "btn", type: "button", onclick: () => go("draft") }, "Thử lại"));
+    result = { parts: S.partial || {}, failed: [{ label: "Bản nháp", message: e.message || String(e) }] };
   }
+  drafting = null;
+  S.partial = result.parts;
+  if (result.usage) {
+    const u = S.usage && retry ? S.usage : { input_tokens: 0, output_tokens: 0, cache_read_input_tokens: 0, cache_creation_input_tokens: 0 };
+    for (const k of Object.keys(result.usage)) u[k] = (u[k] || 0) + result.usage[k];
+    S.usage = { ...u, model: result.model };
+  }
+  touch();
+  if (result.failed.length) {
+    renderSteps();
+    const ok = Object.keys(PARTS).filter(p => S.partial[p]).map(p => PARTS[p].label);
+    status.replaceChildren(h("div", { class: "notice bad" },
+      h("b", {}, "Chưa soạn xong:"), h("ul", { class: "problems" }, result.failed.map(f => h("li", {}, h("b", {}, f.label + ": "), f.message))),
+      ok.length ? h("p", { class: "small" }, "Đã xong: " + ok.join(", ") + ". Thử lại chỉ soạn phần còn thiếu.") : null),
+      h("div", { class: "row" },
+        h("button", { class: "btn primary", type: "button", onclick: () => runDraft({ retry: true }) }, "Thử lại phần lỗi"),
+        h("button", { class: "btn", type: "button", onclick: () => { S.partial = {}; touch(); go("draft"); } }, "Bỏ, soạn lại từ đầu")));
+    return;
+  }
+  try {
+    const draft = mergeParts(S.partial);
+    S.lesson = draftToLesson(draft, { page: S.page, meta: { ...S.meta, word_target: 250 }, teacher: SETTINGS.teacher, zalo: SETTINGS.zalo });
+  } catch (e) {
+    S.partial = {};
+    status.replaceChildren(h("div", { class: "notice bad" }, "Bản nháp của Claude thiếu thông tin (" + e.message + "). Soạn lại nha."),
+      h("button", { class: "btn", type: "button", onclick: () => go("draft") }, "Soạn lại"));
+    renderSteps(); return;
+  }
+  S.partial = {};
+  S.src = { "": "ai", scores: "page", word_count: "page", essay: "page", corrections: "page", task_comments: "page", student: "teacher", teacher: "teacher", zalo: "teacher", homework: "page", prompt: "teacher", essay_type: "page", overall: "page", word_target: "page" };
+  S.ok = {};
+  touch(); go("edit");
 }
 
 /* ---------- 4. edit ---------- */

@@ -19,41 +19,50 @@ mkdirSync(OUT, { recursive: true });
 let failures = 0;
 const ok = (cond, what) => { console.log((cond ? "ok   " : "FAIL ") + what); if (!cond) failures++; };
 
-/* ---------- the fake Claude reply ---------- */
-function draftFromLesson(L) {
+/* ---------- the fake Claude reply: the lesson split into the 3 parts the editor asks for ---------- */
+function partsFromLesson(L) {
   let firstGra = true;
   const blankAsk = { q: "", options: [], answer: 0 };
+  const P = L.practice.items, pick = (t, f) => P.filter(it => it.type === t).map(f);
   return {
-    call_name: L.student, hello: L.hello, results: L.results,
-    framework: { intro: L.framework.intro, reveal_intro: L.framework.reveal_intro, ok: L.framework.ok, verdict: L.framework.verdict,
-      parts: L.framework.parts.map(p => ({ label: p.label, tone: p.tone, sids: p.sids, summary: p.summary, short: p.short || "", ideas: p.ideas || [] })) },
-    prompt_check: L.prompt_check ? { intro: L.prompt_check.intro, items: L.prompt_check.items.map(it => ({ sid: it.sid, focus: it.focus, prompt_focus: it.prompt_focus,
-      ask: it.ask || null, line: it.line || "", fix: it.fix || "", fix_line: it.fix_line || "" })) } : null,
-    ideas: { intro: L.ideas.intro, prompt_focus: L.ideas.prompt_focus || "", overview: L.ideas.overview,
-      details: L.ideas.details.map(d => ({ tag: d.tag, title: d.title, sids: d.sids, chain: d.chain,
-        mode: d.replace ? "replace" : d.gap_after != null ? "gap" : d.bad_node != null ? "bad_link" : "missing_end",
-        bad_node: d.bad_node ?? null, gap_after: d.gap_after ?? null, ask: d.ask, fix_intro: d.fix_intro, fix_chain: d.fix_chain,
-        fix_label: d.replace || d.fix_label || "", fix_en: d.fix_en, outro: d.outro })) },
-    linking: L.linking,
-    mistakes: {
-      groups: [
-        ...L.mistakes.main.map(m => ({ id: m.id, title: m.title, tab: m.tab, cids: m.cids,
-          role: m.tab === "GRA" ? (firstGra ? (firstGra = false, "main") : "optional") : m.core ? "core" : "optional",
-          count_line: m.count_line, ask: m.ask, reason: m.reason, board: m.board, rule: m.rule, example: m.example })),
-        ...L.mistakes.others.map((o, i) => ({ id: "o" + i, title: o.label, tab: o.tag, cids: o.cids, role: "other", count_line: "", ask: blankAsk,
-          reason: "", board: [], rule: [], example: { bad: "", good: "" } })),
-      ],
-      lr_intro: L.mistakes.lr_intro, gra_intro: L.mistakes.gra_intro,
+    ideas: {
+      call_name: L.student,
+      framework: { intro: L.framework.intro, reveal_intro: L.framework.reveal_intro, ok: L.framework.ok, verdict: L.framework.verdict,
+        parts: L.framework.parts.map(p => ({ label: p.label, tone: p.tone, sids: p.sids, summary: p.summary, short: p.short || "", ideas: p.ideas || [] })) },
+      prompt_check: L.prompt_check ? { intro: L.prompt_check.intro, items: L.prompt_check.items.map(it => ({ sid: it.sid, focus: it.focus, prompt_focus: it.prompt_focus,
+        ask_q: it.ask ? it.ask.q : "", ask_options: it.ask ? it.ask.options : [], ask_answer: it.ask ? it.ask.answer : 0,
+        ask_right: it.ask ? it.ask.right : "", ask_wrong: it.ask ? it.ask.wrong : "",
+        line: it.line || "", fix: it.fix || "", fix_line: it.fix_line || "" })) } : { intro: "", items: [] },
+      ideas: { intro: L.ideas.intro, prompt_focus: L.ideas.prompt_focus || "", overview: L.ideas.overview,
+        details: L.ideas.details.map(d => ({ tag: d.tag, title: d.title, sids: d.sids, chain: d.chain,
+          mode: d.replace ? "replace" : d.gap_after != null ? "gap" : d.bad_node != null ? "bad_link" : "missing_end",
+          bad_node: d.bad_node ?? -1, gap_after: d.gap_after ?? -1, ask: d.ask, fix_intro: d.fix_intro, fix_chain: d.fix_chain,
+          fix_label: d.replace || d.fix_label || "", fix_en: d.fix_en, outro: d.outro })) },
     },
-    practice: { intro: L.practice.intro, core: L.practice.core, items: L.practice.items.map(it => ({
-      id: it.id, mistake: it.mistake, type: it.type, q: it.q || "", sentence: it.sentence ?? null,
-      options: it.type === "choose" ? it.options : null, answer_index: it.type === "choose" ? it.answer : null,
-      wrong: it.wrong ?? null, fix: it.fix ?? null, vi: it.vi ?? null,
-      answer_words: it.type === "build" ? it.answer : null, extra: it.extra ?? null, explain: it.explain })) },
-    rewrite: L.rewrite,
-    praise_candidates: [...(L.praise || []).map(p => ({ ...p, evidence: "(test)" })), { at: "linking", line: "Linking của em đa dạng ghê", evidence: "(test)" }],
-    takeaway_candidates: [...L.finish.takeaways, "Đọc kỹ đề trước khi viết", "Mỗi ý cần kết quả cuối"],
-    finish: { summary: L.finish.summary, extra_prompt: L.finish.extra_prompt, later: L.finish.later, done: L.finish.done },
+    language: {
+      linking: L.linking,
+      mistakes: {
+        groups: [
+          ...L.mistakes.main.map(m => ({ id: m.id, title: m.title, tab: m.tab, cids: m.cids,
+            role: m.tab === "GRA" ? (firstGra ? (firstGra = false, "main") : "optional") : m.core ? "core" : "optional",
+            count_line: m.count_line, ask: m.ask, reason: m.reason, board: m.board, rule: m.rule, example: m.example })),
+          ...L.mistakes.others.map((o, i) => ({ id: "o" + i, title: o.label, tab: o.tag, cids: o.cids, role: "other", count_line: "", ask: blankAsk,
+            reason: "", board: [], rule: [], example: { bad: "", good: "" } })),
+        ],
+        lr_intro: L.mistakes.lr_intro, gra_intro: L.mistakes.gra_intro,
+      },
+      practice: { intro: L.practice.intro, core: L.practice.core,
+        // listed by kind, as Claude returns them; the editor puts the core ones back first
+        choose: pick("choose", it => ({ id: it.id, mistake: it.mistake, q: it.q || "", sentence: it.sentence || "", options: it.options, answer: it.answer, explain: it.explain })),
+        tap: pick("tap", it => ({ id: it.id, mistake: it.mistake, q: it.q || "", sentence: it.sentence, wrong: it.wrong, fix: it.fix, explain: it.explain })),
+        build: pick("build", it => ({ id: it.id, mistake: it.mistake, vi: it.vi, answer_words: it.answer, extra: it.extra || [], explain: it.explain })) },
+    },
+    frame: {
+      hello: L.hello, results: L.results, rewrite: L.rewrite,
+      praise_candidates: [...(L.praise || []).map(p => ({ ...p, evidence: "(test)" })), { at: "linking", line: "Linking của em đa dạng ghê", evidence: "(test)" }],
+      takeaway_candidates: [...L.finish.takeaways, "Đọc kỹ đề trước khi viết", "Mỗi ý cần kết quả cuối"],
+      finish: { summary: L.finish.summary, extra_prompt: L.finish.extra_prompt, later: L.finish.later, done: L.finish.done },
+    },
   };
 }
 function sse(text) {
@@ -117,15 +126,23 @@ async function serve(route) {
 }
 
 const lesson = JSON.parse(readFileSync(LESSON, "utf8"));
-const draftText = JSON.stringify(draftFromLesson(lesson));
-let claudeMode = "ok", claudeBody = null;
+const fakeParts = partsFromLesson(lesson);
+let claudeMode = "ok", claudeBodies = [];
 async function claude(route) {
   const req = route.request(), cors = { "access-control-allow-origin": "*", "access-control-allow-headers": "*", "access-control-allow-methods": "*" };
   if (req.method() === "OPTIONS") return route.fulfill({ status: 204, headers: cors });
-  claudeBody = JSON.parse(req.postData());
-  if (claudeMode === "401") return route.fulfill({ status: 401, headers: cors, contentType: "application/json",
-    body: JSON.stringify({ type: "error", error: { type: "authentication_error", message: "invalid x-api-key" } }) });
-  return route.fulfill({ status: 200, headers: { ...cors, "content-type": "text/event-stream" }, body: sse(draftText) });
+  const body = JSON.parse(req.postData());
+  claudeBodies.push(body);
+  const ask = body.messages[0].content.at(-1).text;
+  const part = Object.keys(fakeParts).find(k => ask.includes(Object.keys(fakeParts[k])[0]));
+  const error = (status, type, message) => route.fulfill({ status, headers: cors, contentType: "application/json",
+    body: JSON.stringify({ type: "error", error: { type, message }, request_id: "req_test" }) });
+  if (claudeMode === "401") return error(401, "authentication_error", "invalid x-api-key");
+  if (claudeMode === "fail-language-once" && part === "language") {
+    claudeMode = "ok";
+    return error(400, "invalid_request_error", "The compiled grammar is too large, which would cause performance issues. Simplify your tool schemas or reduce the number of strict tools.");
+  }
+  return route.fulfill({ status: 200, headers: { ...cors, "content-type": "text/event-stream" }, body: sse(JSON.stringify(fakeParts[part])) });
 }
 
 async function setup(browser) {
@@ -186,14 +203,49 @@ try {
   await page.screenshot({ path: join(OUT, "03-framework.png"), fullPage: true });
   await page.getByRole("button", { name: "Tiếp: Soạn nháp" }).click();
 
+  // the schemas: small, closed, no nullable fields (the grammar limit that broke the single call)
+  const schemaReport = await page.evaluate(async () => {
+    const { PARTS } = await import("/lib/draft.js");
+    const bad = [];
+    const walk = (o, path) => {
+      if (!o || typeof o !== "object") return;
+      if (o.anyOf) bad.push(path + ": anyOf");
+      if (o.type === "object") {
+        if (o.additionalProperties !== false) bad.push(path + ": open object");
+        if (JSON.stringify(Object.keys(o.properties).sort()) !== JSON.stringify([...o.required].sort())) bad.push(path + ": not all required");
+        for (const [k, v] of Object.entries(o.properties)) walk(v, path + "." + k);
+      }
+      if (o.items) walk(o.items, path + "[]");
+    };
+    for (const [k, p] of Object.entries(PARTS)) walk(p.schema, k);
+    return { bad, sizes: Object.fromEntries(Object.entries(PARTS).map(([k, p]) => [k, JSON.stringify(p.schema).match(/"type":"(string|integer|boolean)"/g).length])) };
+  });
+  ok(schemaReport.bad.length === 0, "schemas closed, all required, no nullable fields " + schemaReport.bad.join(", "));
+  ok(Object.values(schemaReport.sizes).every(n => n <= 60), "each schema at most 60 fields (the single one had 114): " + JSON.stringify(schemaReport.sizes));
+
+  // first try: the language part is rejected with the real error; the other two are kept
+  claudeMode = "fail-language-once";
   await page.getByRole("button", { name: "Soạn nháp" }).click();
+  await page.getByRole("button", { name: "Thử lại phần lỗi" }).waitFor({ timeout: 15000 });
+  const failText = await page.locator("#draftStatus").textContent();
+  ok(/Linking, lỗi sai và bài luyện/.test(failText) && /compiled grammar is too large/.test(failText) && !/\{"type"/.test(failText), "failed part named, error readable");
+  ok(/Đã xong: .*Framework.*Lời chào/.test(failText), "the parts that worked are kept");
+  await page.screenshot({ path: join(OUT, "03b-part-failed.png") });
+  ok(claudeBodies.length === 3, "3 calls (one per part): " + claudeBodies.length);
+  await page.getByRole("button", { name: "Thử lại phần lỗi" }).click();
   await page.locator(".edit").waitFor({ timeout: 15000 });
-  ok(claudeBody && claudeBody.model === "claude-opus-5-5" && claudeBody.stream === true, "one streaming call to claude-opus-5-5");
-  ok(claudeBody.output_config?.format?.type === "json_schema", "structured output (json_schema)");
+  ok(claudeBodies.length === 4 && claudeBodies[3].messages[0].content.at(-1).text.includes("linking"), "retry asks only for the failed part");
+  const claudeBody = claudeBodies[0];
+  ok(claudeBodies.every(b => b.model === "claude-opus-5-5" && b.stream === true), "streaming calls to claude-opus-5-5");
+  ok(claudeBodies.every(b => b.output_config?.format?.type === "json_schema"), "structured output (json_schema)");
   ok(claudeBody.system?.some(b => b.cache_control?.type === "ephemeral"), "course block is cached");
-  const um = claudeBody.messages[0].content;
+  ok(claudeBodies.every(b => b.messages[0].content[0].cache_control?.type === "ephemeral" && b.messages[0].content[0].text === claudeBody.messages[0].content[0].text), "essay block identical and cached in every call");
+  const um = claudeBody.messages[0].content[0].text;
   ok(/"tag": "Ý 1"/.test(um) && /"ok": true/.test(um) && /"rewrite_target"/.test(um), "tags, checklist and rewrite target are sent");
-  ok(!/sk-ant-test/.test(JSON.stringify(claudeBody)), "API key not in the body");
+  ok(!/sk-ant-test/.test(JSON.stringify(claudeBodies)), "API key not in the body");
+  await page.waitForTimeout(600);                    // autosave
+  const order = await page.evaluate(() => JSON.parse(localStorage.getItem(Object.keys(localStorage).find(k => k.startsWith("dau:draft:")))).lesson.lesson.practice.items.map(x => x.id));
+  ok(JSON.stringify(order.slice(0, 4)) === JSON.stringify(lesson.practice.core), "core exercises first, in order: " + order.join(","));
 
   let f = await frameReady(page);
   ok(await page.locator(".mod-btn .count").count() > 5, "AI lines are counted per module");

@@ -27,7 +27,7 @@ export const PARTS = {
     schema: O({
       call_name: S,
       framework: O({
-        intro: A(S), reveal_intro: A(S), ok: B, verdict: A(S),
+        intro: A(S), reveal_intro: A(S), ok: B, verdict: A(S), focus: S,
         parts: A(O({ label: S, tone: E("orange", "mint", "sky"), sids: A(S), summary: S, short: S,
           ideas: A(O({ tag: S, sid: S, text: S, short: S })) })),
       }),
@@ -39,7 +39,7 @@ export const PARTS = {
     schema: O({
       ideas: O({
         intro: A(S), prompt_focus: S,
-        overview: A(O({ tag: S, text: S, status: E("ok", "improve", "fix"), note: S, line: S })),
+        overview: A(O({ tag: S, text: S, status: E("ok", "improve", "fix"), note: S })),
         details: A(O({
           tag: S, title: S, sids: A(S), chain: A(S), mode: E("missing_end", "bad_link", "gap", "replace"),
           bad_node: I, gap_after: I, ask: ASK, fix_intro: S, fix_chain: A(S), fix_label: S, fix_en: S, outro: S,
@@ -94,7 +94,7 @@ export const PARTS = {
     fields: "hello, results, rewrite, praise_candidates, takeaway_candidates, finish",
     schema: O({
       hello: A(S),
-      results: O({ words: A(S), score: A(S), criteria: S }),
+      results: O({ score: A(S), criteria: S }),
       rewrite: O({
         target: E("idea", "paragraph", "skeleton"), label: S, sids: A(S), intro: A(S), task: S,
         flow: S, starters: A(S), phrases: A(S), checklist: A(S), model: S,
@@ -149,10 +149,10 @@ export function systemBlocks(week, teacher) {
 # The lesson, module by module
 - call_name: what Đậu calls the student (the given name at the end of the full name; two words if the last word alone is a common second part such as "Anh").
 - hello: 2 lines. Line 1 introduces Đậu as ${teacher}'s TA. Line 2 says you'll look at the homework together.
-- results: words = 2 lines about the word count (target 250 for Task 2), score = 2 lines (the overall band, then what's next), criteria = 1 line introducing the 4 scores.
-- framework: intro = 2 lines naming the essay type and what the structure should be. reveal_intro = 1 line ("Em đã lập luận như sau"). parts = the essay's parts in order (Mở bài, Body 1 · <short label>, Body 2 · <short label>, Kết bài) with the teacher's sentence tags deciding which sentences belong where. Tones: intro and conclusion "orange", Body 1 "mint", Body 2 "sky". summary = 1 line saying in plain Vietnamese what that part does; short = 2-5 words. ideas (bodies only) = the supporting ideas with tag "Ý 1".."Ý 4" in order across both bodies, sid of the sentence that states the idea, text = the idea in Vietnamese (under 10 words), short = 2-4 words. ok = the structure matches the framework per the teacher's checklist. verdict = 2 lines.
+- results: criteria = 1 line introducing the 4 scores, score = 2 lines (the overall band, then what's next). No word count.
+- framework: intro = 2 lines naming the essay type and what the structure should be. reveal_intro = 1 line ("Em đã lập luận như sau"). parts = the essay's parts in order (Mở bài, Body 1 · <short label>, Body 2 · <short label>, Kết bài) with the teacher's sentence tags deciding which sentences belong where. Tones: intro and conclusion "orange", Body 1 "mint", Body 2 "sky". summary = 1 line saying in plain Vietnamese what that part does; short = 2-5 words. ideas (bodies only) = the supporting ideas with tag "Ý 1".."Ý 4" in order across both bodies, sid of the sentence that states the idea, text = the idea in Vietnamese (under 10 words), short = 2-4 words. ok = the structure matches the framework per the teacher's checklist. verdict = 2 lines (the last one names what needs work most). focus = that in 2-6 Vietnamese words, shown big on screen (e.g. "cách phát triển từng ý"); "" if nothing needs work.
 - prompt_check: only when the teacher's marking shows she misread or didn't answer the question (a wrong reading of the prompt, a thesis/conclusion that doesn't answer the question type); otherwise intro "" and items []. Each item quotes her sentence (sid), focus = the exact words in her sentence (verbatim from the original text), prompt_focus = the exact words in the prompt (verbatim), an optional multiple-choice question (ask_q, ask_options, ask_answer = right index, ask_right/ask_wrong = Đậu's replies; ask_q "" and ask_options [] when there is no question), line = what's wrong (used when there is no question), fix = the corrected sentence (in English, following the framework), fix_line = 1 short line.
-- ideas: intro = 3 lines (what the prompt asks, what every idea must reach, then a count such as "2 ý ổn, 1 ý nâng cấp thêm, 1 ý cần sửa"). prompt_focus = the key words of the prompt, verbatim. overview = one row per idea (same tags) with a status: "fix" = the logic breaks (off-topic, a wrong or missing link, the chain never reaches the point; anything the teacher commented on as a problem); "improve" = the logic holds but it could go deeper (an example, a mechanism, a clearer final effect); "ok" = nothing to add. note = 3-7 words; line = one Đậu line about it (for "improve", say it's already fine and can go further). details = one for every idea with status "improve" or "fix", in order (for "improve", the chain is not broken: use mode "missing_end" or "gap" for the step up, and frame ask/fix_intro/outro as an upgrade):
+- ideas: intro = 3 lines (what the prompt asks, what every idea must reach, then a count such as "2 ý ổn, 1 ý nâng cấp thêm, 1 ý cần sửa"). prompt_focus = the key words of the prompt, verbatim. overview = one row per idea (same tags) with a status: "fix" = the logic breaks (off-topic, a wrong or missing link, the chain never reaches the point; anything the teacher commented on as a problem); "improve" = the logic holds but it could go deeper (an example, a mechanism, a clearer final effect); "ok" = nothing to add. note = 3-7 words (shown on the card; Đậu says nothing per idea). details = one for every idea with status "improve" or "fix", in order (for "improve", the chain is not broken: use mode "missing_end" or "gap" for the step up, and frame ask/fix_intro/outro as an upgrade):
   - sids = the idea's sentences; chain = her reasoning as 2-5 short Vietnamese links (under 9 words each), paraphrased faithfully.
   - bad_node and gap_after are -1 unless the mode uses them.
   - mode "missing_end": the chain stops before reaching the point; fix_chain = links to add at the end.

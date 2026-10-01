@@ -80,9 +80,7 @@ export function checks(L, { prompt, checkLesson } = {}) {
   const C = L.corrections || {};
 
   // numbers Đậu says must match the page
-  const wc = L.word_count, target = L.word_target || 250;
-  const okWords = [wc, target, Math.abs(wc - target)];
-  (L.results.words || []).forEach((t, i) => { if (nums(t).some(n => !okWords.includes(n))) flag(`results.words.${i}`, "results", `Số chữ không khớp trang chấm (em viết ${wc}, mục tiêu ${target})`); });
+  // (the word count is no longer shown)
   const bands = [L.overall, ...Object.values(L.scores || {})].map(Number).filter(n => !isNaN(n));
   const okBands = [...bands, ...bands.map(b => b + 0.5), ...bands.map(b => b + 1)];
   (L.results.score || []).forEach((t, i) => { if (nums(t).some(n => !okBands.includes(n))) flag(`results.score.${i}`, "results", `Điểm không khớp trang chấm (overall ${L.overall})`); });

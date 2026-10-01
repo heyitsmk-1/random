@@ -38,7 +38,7 @@ function threePartsFromLesson(L) {
   return {
     ideas: {
       call_name: L.student,
-      framework: { intro: L.framework.intro, reveal_intro: L.framework.reveal_intro, ok: L.framework.ok, verdict: L.framework.verdict,
+      framework: { intro: L.framework.intro, reveal_intro: L.framework.reveal_intro, ok: L.framework.ok, verdict: L.framework.verdict, focus: "cách phát triển từng ý",
         parts: L.framework.parts.map(p => ({ label: p.label, tone: p.tone, sids: p.sids, summary: p.summary, short: p.short || "", ideas: p.ideas || [] })) },
       prompt_check: L.prompt_check ? { intro: L.prompt_check.intro, items: L.prompt_check.items.map(it => ({ sid: it.sid, focus: it.focus, prompt_focus: it.prompt_focus,
         ask_q: it.ask ? it.ask.q : "", ask_options: it.ask ? it.ask.options : [], ask_answer: it.ask ? it.ask.answer : 0,
@@ -260,7 +260,7 @@ try {
   const failText = await page.locator("#draftStatus").textContent();
   ok(/Lỗi sai: Claude báo lỗi \(400\): Something else went wrong/.test(failText) && !/\{"type"/.test(failText), "failed part named, error readable");
   ok(/Bài luyện: Cần phần "Lỗi sai" xong trước/.test(failText), "practice waits for the mistake groups");
-  ok(/Đã xong: Khung bài, Phát triển ý, Đọc đề và linking, Lời chào/.test(failText), "the parts that worked are kept (incl. ideas via the fallback)");
+  ok(/Đã xong: Khung bài, Phát triển ý, Đọc đề và linking, Lời chào/.test(failText), "the parts that worked are kept (incl. ideas via the fallback): " + failText.slice(0, 400));
   await page.screenshot({ path: join(OUT, "03b-part-failed.png") });
   const ideaCalls = claudeBodies.filter(b => partOf(b) === "ideas");
   ok(ideaCalls.length === 3 && ideaCalls[0].output_config.format && !ideaCalls[1].output_config.format && /JSON Schema/.test(ideaCalls[1].messages[0].content.at(-1).text),
@@ -306,9 +306,9 @@ try {
   ok(await page.locator(".mod-btn", { hasText: "Từ vựng" }).getAttribute("aria-current") === "true" && await page.locator(".form .flash").count() === 1, "Sửa jumps to the card in its module");
   // a wrong number in Đậu's line is caught
   await page.locator(".mod-btn", { hasText: "Kết quả" }).click();
-  await page.locator(".form .lines input").first().fill("Em viết 999 chữ á");
-  ok(/Số chữ không khớp/.test(await page.locator(".form .lines .lint").first().textContent()), "a wrong word count is flagged in the field");
-  await page.locator(".form .lines input").first().fill(lesson.results.words[0]);
+  await page.locator(".form .lines input").first().fill("Overall của em là 9.5 á");
+  ok(/Điểm không khớp/.test(await page.locator(".form .lines .lint").first().textContent()), "a wrong band score is flagged in the field");
+  await page.locator(".form .lines input").first().fill(lesson.results.score[0]);
   await page.locator(".mod-btn", { hasText: "Chào" }).click();
   await page.screenshot({ path: join(OUT, "04-edit-hello.png") });
 

@@ -461,8 +461,8 @@ const MODULES = [
   ["review", "Cần duyệt", [], ["intro", 0]],
   ["hello", "Chào", ["hello"], ["intro", 0]],
   ["results", "Kết quả", ["results"], ["intro", 1]],
-  ["framework", "Framework", ["framework"], ["TR", 0]],
-  ["prompt_check", "Đọc đề", ["prompt_check"], ["TR", 1]],
+  ["framework", "Framework", ["framework"], ["TR", 2]],
+  ["prompt_check", "Đọc đề", ["prompt_check"], ["TR", 3]],
   ["ideas", "Phát triển ý", ["ideas"], ["TR", -1]],
   ["linking", "Linking", ["linking"], ["CC", 0]],
   ["mistakes", "Từ vựng & ngữ pháp", ["mistakes"], ["LR", 0]],
@@ -499,7 +499,7 @@ function refreshPreview(now) {
     const f = $("#pv"); if (!f || !S.lesson) return;
     const m = MODULES.find(x => x[0] === S.mod);
     let [sec, off] = m[3];
-    if (off === -1) off = S.lesson.prompt_check ? 2 : 1;
+    if (off === -1) off = S.lesson.prompt_check ? 4 : 3;      // TR: the framework question, review, overview
     if (S.mod === "mistakes" && !S.lesson.mistakes.main.some(x => x.tab === "LR")) sec = "GRA";
     const lesson = { ...structuredClone(S.lesson), __preview: true, __start: sec, __startOffset: off, ...(S.pvEssay ? { __essay: S.pvEssay } : {}) };
     try { const { html } = await buildPage(lesson, BUNDLE); f.srcdoc = html; } catch (e) { f.srcdoc = `<p style="font:14px sans-serif;padding:16px">Chưa xem trước được: ${e.message}</p>`; }
@@ -625,9 +625,10 @@ function moduleForm(id) {
     case "hello": return [head("Chào", ["hello"]),
       fLine("student", "Tên Đậu gọi em", { voice: false }), fLines("hello", "Đậu nói")];
     case "results": return [head("Kết quả", ["results"]),
-      fLines("results.words", "Về số chữ"), fLine("results.criteria", "Trước 4 tiêu chí"), fLines("results.score", "Về điểm")];
+      fLine("results.criteria", "Trước 4 tiêu chí"), fLines("results.score", "Về điểm")];
     case "framework": return [head("Framework", ["framework"], "Mỗi phần của bài: câu nào thuộc phần nào, và một câu tóm tắt."),
       fLines("framework.intro", "Mở đầu"), fLines("framework.reveal_intro", "Trước khi hiện từng phần"),
+      fLine("framework.focus", "Cần chỉnh (hiện to trên màn hình, 2-6 chữ)"),
       cards("framework.parts", p => p.label, (p, part) => [
         h("div", { class: "grid2" }, fLine(`${p}.label`, "Tên phần", { voice: false }), fSelect(`${p}.tone`, "Màu", [["orange", "Cam (mở/kết)"], ["mint", "Xanh lá (Body 1)"], ["sky", "Xanh dương (Body 2)"]])),
         fSids(`${p}.sids`, "Câu"), fLine(`${p}.summary`, "Tóm tắt"), fLine(`${p}.short`, "Tóm tắt ngắn (bản đồ)", { voice: false }),
@@ -650,7 +651,7 @@ function moduleForm(id) {
       h("h3", {}, "Từng ý"),
       cards("ideas.overview", o => `${o.tag} · ${o.text}`, p => [
         h("div", { class: "grid2" }, fLine(`${p}.text`, "Ý", { voice: false }), fLine(`${p}.note`, "Ghi chú ngắn", { voice: false })),
-        fStatus(p), fLine(`${p}.line`, "Đậu nói")], { remove: false }),
+        fStatus(p)], { remove: false }),
       h("h3", {}, "Các ý cần sửa"),
       cards("ideas.details", d => `${d.tag} · ${d.title}`, (p, d) => {
         const mode = d.replace ? "replace" : d.gap_after != null ? "gap" : d.bad_node != null ? "bad_link" : "missing_end";

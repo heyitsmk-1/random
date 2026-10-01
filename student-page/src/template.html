@@ -69,7 +69,24 @@ button { font: inherit; color: inherit; }
 .top { position: relative; z-index: 9; padding: calc(env(safe-area-inset-top, 0px) + 10px) 16px 6px; display: flex; flex-direction: column; gap: 8px; }
 .top-row { display: flex; align-items: center; gap: 10px; }
 .tabs { flex: 1; min-width: 0; display: flex; gap: 4px; }
-.tab { flex: 1; min-width: 0; border: 1.5px solid var(--line); background: var(--paper); border-radius: 12px; padding: 4px 2px 3px; display: flex; flex-direction: column; align-items: center; gap: 1px; cursor: pointer; transition: background .25s, border-color .25s; }
+.tab { flex: 1; min-width: 0; border: 1.5px solid var(--line); background: var(--paper); border-radius: 12px; padding: 4px 2px 3px; display: flex; flex-direction: column; align-items: center; gap: 1px; cursor: pointer; transition: background .25s, border-color .25s, flex-grow .45s ease, transform .15s ease; }
+@media (hover: hover) { .tab:hover { transform: scale(1.06); } }
+.tab:active { transform: scale(.94); }
+.tab.pulse { animation: tabPulse .6s ease; }
+@keyframes tabPulse { 40% { transform: scale(1.14); } }
+.burst { position: fixed; z-index: 60; width: 0; height: 0; pointer-events: none; }
+.burst i { position: absolute; width: 7px; height: 7px; margin: -3.5px; border-radius: 50%; animation: burstOut .8s cubic-bezier(.2, .8, .3, 1) forwards; }
+@keyframes burstOut { to { transform: translate(var(--dx), var(--dy)) scale(.4); opacity: 0; } }
+/* the roadmap: the four parts in order */
+.roadmap { display: flex; flex-direction: column; gap: 8px; }
+.road { display: flex; align-items: center; gap: 12px; padding: .7em .9em; animation: rise .4s both; }
+.road b { font: 800 1.25em/1 var(--font-display); color: var(--orange-deep); width: 2.6em; }
+.road span { font-weight: 600; }
+.road em { margin-left: auto; font-style: normal; color: var(--muted); font-size: .85em; }
+.road-arrow { text-align: center; color: var(--muted); line-height: 1; }
+.focus-callout { display: flex; gap: .7em; align-items: center; border: 2px solid var(--orange); background: var(--orange-soft); animation: popIn .45s cubic-bezier(.3, 1.5, .5, 1) both; }
+.focus-callout .label { color: var(--orange-deep); }
+.focus-callout b { font: 800 1.15em/1.3 var(--font-display); }
 .tab b { font: 800 12px/1 var(--font-display); letter-spacing: .04em; color: var(--muted); }
 .tab span { font: 700 11px/1 var(--font-body); color: var(--muted); font-variant-numeric: tabular-nums; }
 .tab[aria-current="true"] { background: var(--orange-soft); border-color: var(--orange); }
@@ -300,6 +317,11 @@ mark.hl { background: linear-gradient(transparent 55%, var(--orange-soft) 55%); 
 @keyframes hintIn { from { opacity: 0; } }
 .idea-name { font-weight: 700; font-size: .92em; }
 .tr-note + .tr-note { margin-top: .9em; }
+.cpop-quote { font-weight: 700; font-style: italic; margin-bottom: .35em; white-space: normal; }
+.tr-hl { background: rgba(255, 190, 60, .22); border-bottom: 2px dotted var(--orange); border-radius: 3px; cursor: pointer; }
+.tr-hl.active { background: var(--orange-soft); outline: 2px solid var(--orange); }
+.tr-add { border: 0; background: var(--mint-soft); color: var(--mint-deep); font: inherit; font-weight: 600; border-radius: 6px; padding: 0 5px; cursor: pointer; }
+.tr-add.active { outline: 2px solid var(--orange); }
 .pt-comment { font-size: .86em; margin-top: .5em; color: var(--muted); }
 .pt-comment b { color: var(--ink); font-weight: 600; }
 .pt-better { margin-top: .45em; padding: .5em .7em; border-radius: 10px; background: var(--mint-soft); font-size: .92em; }
@@ -776,7 +798,8 @@ function makeCtx(id) {
       setMode("talk"); face("talk");
       spotlight("spot" in opts ? opts.spot : autoSpot());
       dline.replaceChildren();
-      if (!replay && !fast && !REDUCED) dline.append(h("span", { class: "typing", "aria-hidden": "true" }, h("i"), h("i"), h("i")));
+      // the dots only when he is already on screen: coming in, the peek is his pause
+      if (!entering && !replay && !fast && !REDUCED) dline.append(h("span", { class: "typing", "aria-hidden": "true" }, h("i"), h("i"), h("i")));
       if (entering) { group.classList.add("nomove"); place(); void group.offsetWidth; group.classList.remove("nomove"); } else place();
       if (peek) {
         // head round the corner, a look and a blink, then in he hops
@@ -788,7 +811,7 @@ function makeCtx(id) {
         } finally { if (n === sayN) app.classList.remove("peek"); }
       }
       sayBox.classList.remove("pop"); void sayBox.offsetWidth; sayBox.classList.add("pop");
-      await wait(Math.min(1100, (entering ? 550 : 250) + text.length * 8));
+      await wait(entering ? 120 : Math.min(1100, 250 + text.length * 8));
       if (id === runId && n === sayN) {
         dline.textContent = text; typed = true; place(); setBtn();
         idleTimer = setTimeout(() => face("rest"), replay || REDUCED ? 0 : 1300);
@@ -861,6 +884,23 @@ const TABS = [["TR", "TR"], ["CC", "CC"], ["LR", "LR"], ["GRA", "GR"]];
 const tabBtns = TABS.map(([t, k]) => h("button", { class: "tab", type: "button", "aria-label": `${t}, band ${L.scores[k]}`, onclick: () => { if (tabIdx[t] != null) jump(tabIdx[t]); } }, h("b", {}, t), h("span", {}, L.scores[k])));
 $("#tabs").append(...tabBtns);
 const add = (sec, script, opts = {}) => screens.push({ sec, script, ...opts });
+/* the order shows in the tabs: the current section is biggest, the ones still to come a little
+   smaller in order, the ones done smallest (before TR starts, TR is the biggest) */
+function sizeTabs(sec) {
+  const at = TABS.findIndex(t => t[0] === sec), base = at >= 0 ? at : sec === "intro" ? -1 : null;
+  tabBtns.forEach((b, k) => { b.style.flexGrow = base === null || k < base ? 1 : k === base ? 1.6 : Math.max(1, 1.35 - .13 * (k - base - 1)); });
+}
+function burst(el) {
+  el.classList.remove("pulse"); void el.offsetWidth; el.classList.add("pulse");
+  if (REDUCED) return;
+  const r = rectOf(el), box = h("div", { class: "burst", style: `left:${r.left + r.width / 2}px;top:${r.top + r.height / 2}px`, "aria-hidden": "true" });
+  for (let k = 0; k < 12; k++) {
+    const a = k / 12 * Math.PI * 2 + Math.random() * .4, d = 34 + Math.random() * 26;
+    box.append(h("i", { style: `--dx:${Math.cos(a) * d}px;--dy:${Math.sin(a) * d}px;background:${["#FF9800", "#8DD9B8", "#F9B8AE", "#FFD166", "#6FB7F2"][k % 5]}` }));
+  }
+  document.body.append(box);
+  setTimeout(() => box.remove(), 900);
+}
 
 async function run(i, tgt = 0, dir = 1) {
   runId++; const id = runId;
@@ -876,6 +916,10 @@ async function run(i, tgt = 0, dir = 1) {
   fitRO.disconnect(); fitMO.disconnect();
   fitRO.observe(scene); fitMO.observe(scene, { childList: true, subtree: true, characterData: true });
   tabBtns.forEach((b, k) => b.setAttribute("aria-current", String(TABS[k][0] === sc.sec)));
+  sizeTabs(sc.sec);
+  // a new section (TR, CC, LR, GRA) starts: a little burst on its tab
+  const tk = TABS.findIndex(t => t[0] === sc.sec);
+  if (tk >= 0 && !replay && dir > 0 && (i === 0 || screens[i - 1].sec !== sc.sec)) burst(tabBtns[tk]);
   scheduleAway();
   progress(); setBtn();
   try { await sc.script(makeCtx(id)); }
@@ -995,24 +1039,9 @@ add("intro", async c => {
   for (const line of L.hello.slice(1)) { await c.gate(); await c.say(line); }
 }, { label: "Bắt đầu nha", noSave: true });
 
-// results: word count, then each score ticks up one at a time, then overall
+// results: each score ticks up one at a time, then overall (no word count: it isn't what matters)
 add("intro", async c => {
-  const num = h("span", {}, "0"), fill = h("div", { class: "meter-fill" });
-  const max = Math.max(L.word_count, L.word_target) * 1.15;
-  c.show(h("div", { class: "card" }, h("div", { class: "big-num" }, num, h("small", {}, "chữ")),
-    h("div", { class: "meter" }, fill, h("div", { class: "meter-mark", style: `left:${L.word_target / max * 100}%` }, h("span", {}, "Yêu cầu " + L.word_target)))));
-  const said = c.say(L.results.words[0], "thumbsup");
-  await c.wait(300);
-  fill.style.width = (L.word_count / max * 100) + "%";
-  const t0 = performance.now(), dur = replay || REDUCED ? 1 : 1500;
-  await new Promise(r => (function f(t) {
-    const k = Math.min(1, (t - t0) / dur);
-    num.textContent = Math.round(L.word_count * (1 - Math.pow(1 - k, 3)));
-    if (fast || k >= 1 || c.id !== runId) { num.textContent = L.word_count; r(); } else requestAnimationFrame(f);
-  })(performance.now()));
-  await said;
-  await c.gate(); await c.say(L.results.words[1]);
-  await c.gate();
+  c.show(h("h1", { class: "h" }, "Kết quả của em"));
   await c.say(L.results.criteria, "explaining");
   const grid = h("div", { class: "scores" });
   c.show(grid);
@@ -1033,6 +1062,20 @@ add("intro", async c => {
   await praise(c, "results");
 }, { label: "Xem chi tiết" });
 
+// the plan: four parts, in order
+add("intro", async c => {
+  c.show(h("h1", { class: "h" }, "Mình sẽ đi qua 4 phần"));
+  const road = c.show(h("div", { class: "roadmap" }));
+  const parts = [["TR", "Ý tưởng", "TR"], ["CC", "Liên kết", "CC"], ["LR", "Từ vựng", "LR"], ["GRA", "Ngữ pháp", "GR"]];
+  for (const [k, [code, name, sk]] of parts.entries()) {
+    await c.wait(k ? 260 : 150);
+    if (k) road.append(h("div", { class: "road-arrow", "aria-hidden": "true" }, "↓"));
+    road.append(h("div", { class: "card road" }, h("b", {}, code), h("span", {}, name), h("em", {}, "band " + L.scores[sk])));
+    fit();
+  }
+  await c.say("Mình đi lần lượt 4 phần nha, bắt đầu từ ý tưởng (TR)", "explaining");
+}, { label: "Bắt đầu TR" });
+
 // ---------------- TR: framework ----------------
 const tabIdx = {};
 /* an idea is ✓ "ok", ~ "improve" or ✗ "fix" (older lessons only say ok: true/false) */
@@ -1043,6 +1086,15 @@ const markFocus = (text, focus) => {
   return i < 0 ? [text] : [text.slice(0, i), h("mark", { class: "hl" }, focus), text.slice(i + focus.length)];
 };
 tabIdx.TR = screens.length;
+// first a choice: go over the framework and her essay again, or straight to the overview
+add("TR", async c => {
+  const wasReplay = replay;
+  c.show(h("h1", { class: "h" }, "Framework " + L.essay_type));
+  await c.say("Em có muốn ôn lại Framework và nhìn lại bài mình viết trước khi sửa không?", "explaining");
+  const i = await c.ask(["Có, ôn lại nha", "Bỏ qua, xem tổng quan luôn"], { key: "fw-review", q: "Ôn lại Framework và bài em viết trước khi sửa nha?" });
+  if (!wasReplay) jump(i === 0 ? fwReviewIdx : fwOverviewIdx);
+});
+const fwReviewIdx = screens.length;
 add("TR", async c => {
   const F = L.framework;
   c.show(h("h1", { class: "h" }, "Framework " + L.essay_type));
@@ -1064,7 +1116,10 @@ add("TR", async c => {
     await c.wait(500);
     card.append(cite(part.sids[0])); fit();
   }
-  await c.gate();
+});
+const fwOverviewIdx = screens.length;
+add("TR", async c => {
+  const F = L.framework;
   const [intro, b1, b2, concl] = F.parts;
   const map = h("div", { class: "map" });
   c.show(h("div", { class: "card stack" }, h("div", { class: "label" }, "Tổng quan bài của em"), map), { replace: true });
@@ -1079,7 +1134,15 @@ add("TR", async c => {
   await c.wait(400);
   if (F.ok) confetti();
   await c.say(F.verdict[0], F.ok ? "cheering" : "oops");
-  for (const line of F.verdict.slice(1)) { await c.gate(); await c.say(line, "thumbsup"); }
+  // what needs work, said and shown big
+  const rest = F.verdict.slice(1);
+  for (const [k, line] of rest.entries()) {
+    await c.gate();
+    const last = k === rest.length - 1 && F.focus;
+    const callout = last ? c.show(h("div", { class: "card focus-callout" }, img("icon_bulb", "icon"), h("div", {}, h("div", { class: "label" }, "Cần chỉnh"), h("b", {}, F.focus)))) : null;
+    await c.say(line, "thumbsup", callout ? { spot: callout } : {});
+  }
+  if (!rest.length && F.focus) { await c.gate(); c.show(h("div", { class: "card focus-callout" }, img("icon_bulb", "icon"), h("div", {}, h("div", { class: "label" }, "Cần chỉnh"), h("b", {}, F.focus)))); }
   await praise(c, "framework");
 });
 
@@ -1126,16 +1189,20 @@ add("TR", async c => {
   const ovInner = (o, hint) => [statusIcon(ideaStatus(o)),
     h("div", { class: "t" }, h("b", {}, o.tag + " · " + o.text), h("span", {}, o.note, hint ? h("span", { class: "go" }, " · chạm để xem") : null))];
   const later = [];
-  for (const o of I.overview) {
-    await c.gate();
+  await c.gate();
+  if (mode === "talk") setMode("away");          // he steps aside while the ideas drop in
+  for (const [k, o] of I.overview.entries()) {
+    await c.wait(k ? 420 : 150);
     const st = ideaStatus(o);
     const card = c.show(h("div", { class: "card ov" }, ovInner(o, false)));
     if (st !== "ok" && detailIdx[o.tag] != null) later.push([card, o]);
-    await c.say(o.line || o.note, st === "fix" ? "thinking" : "thumbsup");
-    await praise(c, "idea:" + o.tag);
   }
+  await c.wait(350);
+  // compliments on an idea come first, then what to fix
+  for (const [i, line] of I.overview.flatMap(o => praiseAt("idea:" + o.tag)).entries()) { if (i) await c.gate(); await c.say(line, "cheering"); }
+  if (I.overview.some(o => praiseAt("idea:" + o.tag).length)) await c.gate();
+  if (!later.length) await c.say("Ý nào em cũng phát triển ổn rồi nè", "thumbsup");
   if (later.length) {
-    await c.gate();
     for (const [card, o] of later) card.replaceWith(h("button", { class: "card ov tap reveal " + ideaStatus(o), type: "button", onclick: () => jump(detailIdx[o.tag]) },
       ovInner(o, true), h("span", { class: "chev", "aria-hidden": "true" }, "›")));
     fit();
@@ -1304,6 +1371,8 @@ function addMistake(m, optional) {
 }
 
 // LR: vocab mistakes are optional unless marked core; the grammar's most important mistake is taught step by step
+// a tab with just one group (and no small ones): no list to tap, straight into it
+const single = t => byTab(t).length === 1 && !othersOf(t).length;
 tabIdx.LR = screens.length;
 add("LR", async c => {
   const M = L.mistakes;
@@ -1311,6 +1380,7 @@ add("LR", async c => {
   await c.say(M.lr_intro[0], "explaining");
   for (const line of M.lr_intro.slice(1, -1)) { await c.gate(); await c.say(line, "thumbsup"); }
   await praise(c, "lr");
+  if (single("LR")) return;
   await c.gate();
   const cards = byTab("LR").map(m => c.show(m.core ? mainCard(m) : minorCard(m)));
   const ob = othersBtn("LR"); if (ob) c.show(ob);
@@ -1318,18 +1388,19 @@ add("LR", async c => {
   const core = byTab("LR").findIndex(m => m.core);
   await c.say(M.lr_intro[M.lr_intro.length - 1], "explaining", core >= 0 ? { spot: cards[core] } : {});
 }, { end: "dock" });
-byTab("LR").forEach(m => addMistake(m, !m.core));  // vocab is optional unless the lesson marks it core
+byTab("LR").forEach(m => addMistake(m, !m.core && !single("LR")));  // vocab is optional unless the lesson marks it core (or it's the only one)
 
 tabIdx.GRA = screens.length;
 add("GRA", async c => {
   const M = L.mistakes;
   const [main, ...rest] = byTab("GRA");
   c.show(h("h1", { class: "h" }, "Ngữ pháp"));
-  c.show(mainCard(main));
+  if (!single("GRA")) c.show(mainCard(main));
   await c.say(M.gra_intro[0], "explaining");
   await praise(c, "gra");
   await c.gate();
   await c.say(M.gra_intro[1], "thumbsup");
+  if (single("GRA")) return;
   await c.gate();
   if (rest.length) c.show(h("div", { class: "label" }, "Xem thêm nếu em muốn"));
   rest.forEach(m => c.show(minorCard(m)));
@@ -1668,6 +1739,31 @@ function sheet(title, head, body) {
   el.tabIndex = -1; el.focus({ preventScroll: true });
   return el;
 }
+/* wrap the words `quote` (her original text, so corrections' new words are skipped) in a tappable
+   highlight; a note over whole sentences marks them whole */
+function markIn(root, quote, onTap) {
+  const nodes = [], walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  for (let n = walker.nextNode(); n; n = walker.nextNode()) if (!n.parentElement.closest("ins")) nodes.push(n);
+  const full = nodes.map(n => n.data).join(""), q = quote.replace(/\s+/g, " ").trim(), flat = full.replace(/\s+/g, " ");
+  let a = flat.indexOf(q), b = a + q.length;
+  if (a < 0) { if (flat.trim() && q.includes(flat.trim())) { a = flat.indexOf(flat.trim()); b = a + flat.trim().length; } else return; }
+  // positions in the whitespace-collapsed text -> positions in the real text
+  const map = []; let prevSpace = false;
+  for (let i = 0; i < full.length; i++) { const sp = /\s/.test(full[i]); if (!(sp && prevSpace)) map.push(i); prevSpace = sp; }
+  const A = map[a], B = b < map.length ? map[b] : full.length;
+  let pos = 0;
+  for (const n of nodes) {
+    const s0 = pos, s1 = pos + n.data.length; pos = s1;
+    const x = Math.max(A, s0), y = Math.min(B, s1);
+    if (x >= y || n.parentElement.closest(".corr")) continue;    // a correction keeps its own tap
+    let mid = n;
+    if (x > s0) mid = mid.splitText(x - s0);
+    if (y < s1) mid.splitText(y - x);
+    const mark = h("span", { class: "tr-hl" });
+    mid.replaceWith(mark); mark.append(mid);
+    mark.addEventListener("click", e => { e.stopPropagation(); onTap(mark); });
+  }
+}
 function openOthers(tab) {
   const body = h("div", { class: "sheet-body" });
   othersOf(tab).forEach(o => body.append(h("div", { class: "other-row" }, h("div", { style: "font-weight:600" }, `${o.label} · ${mCount(o)}`),
@@ -1679,8 +1775,16 @@ function openEssay({ sid = null, cids = null }) {
   let mode = "diff";
   const body = h("div", { class: "sheet-body" });
   const segBtns = [["orig", "Bài gốc"], ["diff", "Bài sửa"]].map(([k, t]) => h("button", { type: "button", "data-k": k, "aria-pressed": String(k === mode), onclick: () => { mode = k; segBtns.forEach(b => b.setAttribute("aria-pressed", String(b.dataset.k === k))); draw(); } }, t));
-  const trBy = {};
-  L.task_comments.forEach(t => { const last = t.sentence_ids[t.sentence_ids.length - 1]; if (last) (trBy[last] = trBy[last] || []).push(t); });
+  const trBy = {}, notesBy = {};
+  L.task_comments.forEach(t => {
+    const last = t.sentence_ids[t.sentence_ids.length - 1]; if (last) (trBy[last] = trBy[last] || []).push(t);
+    t.sentence_ids.forEach(sid => (notesBy[sid] = notesBy[sid] || []).push(t));
+  });
+  // a note in the pop-up: the words the teacher highlighted (or typed in), the comment, her rewrite
+  const typedIn = t => t.added && !t.added.startsWith("=>") ? t.added.replace(/[,.;:]+$/, "").toLowerCase() : "";
+  const noteBody = t => h("div", { class: "tr-note" },
+    t.quote ? h("div", { class: "cpop-quote en" }, "“" + (t.quote.length > 140 ? t.quote.slice(0, 137) + "…" : t.quote) + "”") : typedIn(t) ? h("div", { class: "cpop-quote en" }, "+ " + typedIn(t)) : null,
+    t.comment, t.fix ? h("div", { class: "pt-better" }, h("span", { class: "lbl" }, "Viết lại"), h("span", { class: "en" }, t.fix)) : null);
   // a comment opens in a pop-up at the word (or the 💡), not under the paragraph
   let popEl = null, popAnchor = null;
   const closePop = () => { if (popEl) popEl.remove(); if (popAnchor) popAnchor.classList.remove("active"); popEl = popAnchor = null; };
@@ -1704,7 +1808,7 @@ function openEssay({ sid = null, cids = null }) {
     if (bottom > body.scrollTop + body.clientHeight) body.scrollTo({ top: bottom - body.clientHeight + 12, behavior: REDUCED ? "auto" : "smooth" });
     else if (top < body.scrollTop) body.scrollTo({ top: top - 12, behavior: REDUCED ? "auto" : "smooth" });
   }
-  body.addEventListener("click", e => { if (!e.target.closest(".cpop, .corr, .tr-mark")) closePop(); });
+  body.addEventListener("click", e => { if (!e.target.closest(".cpop, .corr, .tr-mark, .tr-hl, .tr-add")) closePop(); });
   function draw() {
     closePop();
     const essay = h("div", { class: "essay" });
@@ -1717,13 +1821,15 @@ function openEssay({ sid = null, cids = null }) {
           const cc = C[x.dataset.c];
           pop(x, h("div", { class: "nh" }, (cc.orig.trim() || "…") + "  →  " + (cc.fix.trim() || "bỏ")), cc.comment || null);
         }));
+        // the highlighted words themselves open their comment
+        for (const t of notesBy[s.id] || []) if (t.quote) markIn(span, t.quote, m => pop(m, noteBody(t)));
         if (s.id === sid) span.classList.add("hl");
         if (cids) span.querySelectorAll(".corr").forEach(x => { if (cids.includes(x.dataset.c)) x.classList.add("focus"); });
         para.append(span);
         if (trBy[s.id]) para.append(h("button", { class: "tr-mark", type: "button", "aria-label": "Nhận xét về ý", onclick: e => pop(e.currentTarget,
-          // each comment, and the teacher's own rewrite of her words when there is one
-          ...trBy[s.id].map(t => h("div", { class: "tr-note" }, (t.added && !t.added.startsWith("=>") ? t.added.replace(/[,.;:]+$/, "") + ": " : "") + t.comment,
-            t.fix ? h("div", { class: "pt-better" }, h("span", { class: "lbl" }, "Viết lại"), h("span", { class: "en" }, (t.quote ? t.quote + "  →  " : "") + t.fix)) : null))) }, img("icon_bulb")));
+          ...trBy[s.id].map(noteBody)) }, img("icon_bulb")));
+        // words the teacher typed in after this sentence, shown where they go
+        for (const t of trBy[s.id] || []) if (!t.quote && typedIn(t)) para.append(" ", h("button", { class: "tr-add en", type: "button", onclick: e => pop(e.currentTarget, noteBody(t)) }, "+ " + typedIn(t)));
       });
       essay.append(para);
     });

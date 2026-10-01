@@ -112,6 +112,7 @@ textarea { min-height: 70px; resize: vertical; }
 .crow-text ins.none { color: var(--muted); font-weight: 400; }
 .crow-text mark { background: var(--orange-soft); color: inherit; border-bottom: 2px solid var(--orange); }
 .crow-comment { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
+.crow-comment.none { font-style: italic; opacity: .7; }
 .crow-better { font-size: 13px; color: var(--mint); margin-top: 2px; }
 .crow.point { cursor: default; }
 .crow.point[draggable="true"] { cursor: grab; }

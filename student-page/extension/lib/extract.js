@@ -162,11 +162,64 @@ function studentMask(stream, original) {      // for each code point of stream: 
 }
 
 const norm = t => t.replace(/\s+/g, " ").trim();
+const isUpper = c => c !== c.toLowerCase() && c === c.toUpperCase();
+const isLower = c => c !== c.toUpperCase() && c === c.toLowerCase();
+
+/* Highlights in the TR/CC editor where the teacher typed over the student's words (in CAPS, e.g.
+   "factors CAUSED BY EXPANDING PRODUCT THAT bringS about" for "factors bringing about"). The TR/CC
+   editor is read as the student's original, so there her words would be lost: for such a highlight,
+   take her words from the corrected copy (stream). Same as teacher_rewrites() in extract_page.py. */
+function teacherRewrites(stream, original, highlights) {
+  const spans = [];
+  let cursor = 0;
+  for (const el of highlights) {                // each highlight's place in the original, in document order
+    const t = cps(textWithBreaks(el));
+    const k = t.length ? indexOfCps(original, t, cursor) : -1;
+    spans.push(k >= 0 ? [k, k + t.length] : null);
+    if (k >= 0) cursor = k + t.length;
+  }
+  const opcodes = new SequenceMatcher(stream, original).getOpcodes();
+  const ops = opcodes.filter(op => op[0] !== "equal");
+  const owner = new Map();                      // opcode -> highlight index
+  spans.forEach((sp, h) => {
+    if (!sp) return;
+    const [s, e] = sp;
+    const inside = [...ops.filter(op => op[3] < op[4] && s <= op[3] && op[4] <= e), ...ops.filter(op => op[3] === op[4] && s <= op[3] && op[3] <= e)];
+    const typed = inside.flatMap(op => original.slice(op[3], op[4]));
+    if (inside.length && inside.some(op => op[1] < op[2]) && typed.some(isUpper) && !typed.some(isLower)) for (const op of inside) owner.set(op, h);
+  });
+  if (!owner.size) return { original, rewrites: new Map() };
+  const out = [], at = new Map();               // at: original position -> patched position, for the highlight edges
+  let base = 0;
+  for (const op of opcodes) {
+    const [tag, i1, i2, j1, j2] = op, mine = owner.has(op);
+    for (let j = j1; j <= j2; j++) if (!at.has(j)) at.set(j, base + (tag === "equal" || !mine ? j - j1 : j === j1 ? 0 : i2 - i1));
+    const piece = mine ? stream.slice(i1, i2) : original.slice(j1, j2);
+    out.push(...piece); base += piece.length;
+  }
+  const rewrites = new Map();
+  for (const h of new Set(owner.values())) {
+    const [s, e] = spans[h];
+    const mine = out.slice(at.get(s), at.get(e)).join("");
+    const typed = new Set();
+    for (const [op, hh] of owner) if (hh === h) for (let j = op[3]; j < op[4]; j++) typed.add(j);
+    const theirs = original.slice(s, e).map((c, k) => typed.has(s + k) ? c.toLowerCase() : c).join("");
+    rewrites.set(h, [mine, theirs]);
+  }
+  return { original: out, rewrites };
+}
+function indexOfCps(hay, needle, from) {
+  outer: for (let i = from; i + needle.length <= hay.length; i++) {
+    for (let k = 0; k < needle.length; k++) if (hay[i + k] !== needle[k]) continue outer;
+    return i;
+  }
+  return -1;
+}
 
 export function extractPage(html) {
   const doc = new DOMParser().parseFromString(html, "text/html");
   const blocks = [...doc.querySelectorAll("#lrgr #editorjs .ce-paragraph")];
-  const original = cps([...doc.querySelectorAll("#trcc .ce-paragraph")].map(textWithBreaks).join("\n"));
+  let original = cps([...doc.querySelectorAll("#trcc .ce-paragraph")].map(textWithBreaks).join("\n"));
   const kindOf = tok => [...tok.classList].find(k => k !== "comment-inline" && k !== "focus") || "other";
   const byId = id => doc.getElementById(id);
 
@@ -213,6 +266,11 @@ export function extractPage(html) {
       items = out;
     }
   }
+
+  // 1c. highlights where the teacher typed over her words in the TR/CC editor: her words win
+  const trccMarks = [...doc.querySelectorAll("#trcc .comment-inline")];
+  let rewrites = new Map();
+  if (original.length) ({ original, rewrites } = teacherRewrites(cps(items.map(textOf).join("")), original, trccMarks));
 
   // 2. which characters of what the student wrote (plain text, <s>, note text) are really hers
   const streams = items.map(it => cps(it === null ? "\n" : ["t", "c", "n"].includes(it[0]) ? it[1] : ""));
@@ -341,12 +399,16 @@ export function extractPage(html) {
 
   const sentenceText = s => s.segs.map(x => typeof x === "string" ? x : corrections[x.c].orig).join("");
   const taskComments = [];
-  for (const sp of doc.querySelectorAll("#trcc span.comment-inline")) {
+  for (const [h, sp] of trccMarks.entries()) {
     const box = byId("comment-" + sp.getAttribute("id"));
-    let text = norm(sp.textContent);
+    let text = rewrites.has(h) ? norm(rewrites.get(h)[0]) : norm(sp.textContent);
     // whole sentences inside the highlight, or the one sentence a partial highlight sits in
     let ids = paragraphs.flatMap(p => p.sentences).filter(s => { const st = norm(sentenceText(s)); return st && (text.includes(st) || st.includes(text)); }).map(s => s.id);
     let added = "";
+    if (rewrites.has(h)) {
+      taskComments.push({ sentence_ids: ids, comment: commentText(box), kind: "trcc", quote: text, added: "", fix: norm(rewrites.get(h)[1]) });
+      continue;
+    }
     if (!ids.length) {
       // text the teacher typed into the essay (a sentence the student should add): hang it on the
       // sentence it follows in the TR/CC editor

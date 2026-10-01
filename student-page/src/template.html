@@ -299,6 +299,7 @@ mark.hl { background: linear-gradient(transparent 55%, var(--orange-soft) 55%); 
 .ov.reveal .go, .ov.reveal .chev { animation: hintIn .5s ease both; }
 @keyframes hintIn { from { opacity: 0; } }
 .idea-name { font-weight: 700; font-size: .92em; }
+.tr-note + .tr-note { margin-top: .9em; }
 .pt-comment { font-size: .86em; margin-top: .5em; color: var(--muted); }
 .pt-comment b { color: var(--ink); font-weight: 600; }
 .pt-better { margin-top: .45em; padding: .5em .7em; border-radius: 10px; background: var(--mint-soft); font-size: .92em; }
@@ -1720,7 +1721,9 @@ function openEssay({ sid = null, cids = null }) {
         if (cids) span.querySelectorAll(".corr").forEach(x => { if (cids.includes(x.dataset.c)) x.classList.add("focus"); });
         para.append(span);
         if (trBy[s.id]) para.append(h("button", { class: "tr-mark", type: "button", "aria-label": "Nhận xét về ý", onclick: e => pop(e.currentTarget,
-          trBy[s.id].map(t => (t.added && !t.added.startsWith("=>") ? t.added.replace(/[,.;:]+$/, "") + ": " : "") + t.comment).join("\n\n")) }, img("icon_bulb")));
+          // each comment, and the teacher's own rewrite of her words when there is one
+          ...trBy[s.id].map(t => h("div", { class: "tr-note" }, (t.added && !t.added.startsWith("=>") ? t.added.replace(/[,.;:]+$/, "") + ": " : "") + t.comment,
+            t.fix ? h("div", { class: "pt-better" }, h("span", { class: "lbl" }, "Viết lại"), h("span", { class: "en" }, (t.quote ? t.quote + "  →  " : "") + t.fix)) : null))) }, img("icon_bulb")));
       });
       essay.append(para);
     });

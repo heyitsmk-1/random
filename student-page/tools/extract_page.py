@@ -114,6 +114,56 @@ def student_mask(stream, original):
     return keep
 
 
+def brtext(el):  # get_text() with <br> as a newline
+    return BeautifulSoup(re.sub(r"<br\s*/?>", "\n", str(el)), "html.parser").get_text()
+
+
+def teacher_rewrites(stream, original, highlights):
+    """Highlights in the TR/CC editor where the teacher typed over the student's words (in CAPS,
+    e.g. "factors CAUSED BY EXPANDING PRODUCT THAT bringS about" for "factors bringing about").
+    The TR/CC editor is read as the student's original, so there her words would be lost: for such a
+    highlight, take her words from the corrected copy (stream). Returns the patched original and
+    {highlight index: (her words, the teacher's version, lowercased)}."""
+    spans, cursor = [], 0
+    for el in highlights:  # each highlight's place in the original, in document order
+        t = brtext(el)
+        k = original.find(t, cursor) if t else -1
+        spans.append((k, k + len(t)) if k >= 0 else None)
+        if k >= 0:
+            cursor = k + len(t)
+    ops = [op for op in difflib.SequenceMatcher(None, stream, original, autojunk=False).get_opcodes() if op[0] != "equal"]
+    owner = {}  # opcode -> highlight index
+    for h, sp in enumerate(spans):
+        if not sp:
+            continue
+        s, e = sp
+        inside = [op for op in ops if (s <= op[3] and op[4] <= e) if op[3] < op[4]] + [op for op in ops if op[3] == op[4] and s <= op[3] <= e]
+        typed = "".join(original[op[3]:op[4]] for op in inside)
+        if inside and any(op[1] < op[2] for op in inside) and any(c.isupper() for c in typed) and not any(c.islower() for c in typed):
+            for op in inside:
+                owner[op] = h
+    if not owner:
+        return original, {}
+    out, at = [], {}  # at: original position -> patched position, for the highlight edges
+    for tag, i1, i2, j1, j2 in difflib.SequenceMatcher(None, stream, original, autojunk=False).get_opcodes():
+        base = sum(len(x) for x in out)
+        for j in range(j1, j2 + 1):
+            at.setdefault(j, base + (j - j1 if tag == "equal" or (tag, i1, i2, j1, j2) not in owner else (0 if j == j1 else i2 - i1)))
+        out.append(stream[i1:i2] if (tag, i1, i2, j1, j2) in owner else original[j1:j2])
+    patched = "".join(out)
+    found = {}
+    for h in set(owner.values()):
+        s, e = spans[h]
+        mine = patched[at[s]:at[e]]
+        typed = set()
+        for op, hh in owner.items():
+            if hh == h:
+                typed.update(range(op[3], op[4]))
+        theirs = "".join(c.lower() if j in typed else c for j, c in enumerate(original[s:e], start=s))
+        found[h] = (mine, theirs)
+    return patched, found
+
+
 def main(src, dst):
     soup = BeautifulSoup(open(src, encoding="utf-8").read(), "html.parser")
     blocks = soup.select("#lrgr #editorjs .ce-paragraph")  # the editor may split the essay into blocks
@@ -168,6 +218,13 @@ def main(src, dst):
                     out.append(it)
                 pos += len(text)
             items = out
+
+    # 1c. highlights where the teacher typed over her words in the TR/CC editor: her words win
+    trcc_marks = soup.select("#trcc .comment-inline")
+    if original:
+        original, rewrites = teacher_rewrites("".join("\n" if it is None else it[1] for it in items), original, trcc_marks)
+    else:
+        rewrites = {}
 
     # 2. which characters of what the student wrote (plain text, <s>, note text) are really hers
     stream, owner = [], []
@@ -312,13 +369,16 @@ def main(src, dst):
 
     norm = lambda t: re.sub(r"\s+", " ", t).strip()
     task_comments = []
-    for sp in soup.select("#trcc span.comment-inline"):
+    for h, sp in enumerate(trcc_marks):
         box = soup.find(id=f"comment-{sp.get('id')}")
-        text = norm(sp.get_text())
+        text = norm(rewrites[h][0]) if h in rewrites else norm(sp.get_text())
         # whole sentences inside the highlight, or the one sentence a partial highlight sits in
         ids = [s["id"] for p in paragraphs for s in p["sentences"]
                if norm(sentence_text(s)) and (norm(sentence_text(s)) in text or text in norm(sentence_text(s)))]
         added = ""
+        if h in rewrites:
+            task_comments.append({"sentence_ids": ids, "comment": comment_text(box), "kind": "trcc", "quote": text, "added": "", "fix": norm(rewrites[h][1])})
+            continue
         if not ids:
             # text the teacher typed into the essay (a sentence the student should add): hang it on the
             # sentence it follows in the TR/CC editor

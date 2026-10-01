@@ -2,7 +2,10 @@
    it copies the page, with the typed-in values of inputs written into the copy, and hands it
    to the extension. */
 (function () {
-  if (document.getElementById("dau-make-review")) return;
+  // once per page; a leftover button (e.g. in a page saved while the extension was on) is replaced
+  if (window.__dauButton) return;
+  window.__dauButton = true;
+  document.querySelectorAll("#dau-make-review").forEach(n => n.remove());
   const btn = document.createElement("button");
   btn.id = "dau-make-review";
   btn.type = "button";

@@ -36,6 +36,7 @@ try {
   await page.goto("https://admin.ielts1984.vn/writing/12345", { waitUntil: "domcontentloaded" });
   const btn = page.locator("#dau-make-review");
   await btn.waitFor({ timeout: 10000 });
+  await page.waitForLoadState("load"); await page.waitForTimeout(800);   // the content script runs at document_idle
   ok(await btn.textContent() === "Tạo bài ôn Đậu", "button on the grading page");
   const htmlBefore = await page.evaluate(() => document.body.innerHTML.length);
   const [editor] = await Promise.all([ctx.waitForEvent("page"), btn.click()]);

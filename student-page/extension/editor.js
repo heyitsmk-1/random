@@ -449,6 +449,7 @@ async function runDraft({ retry = false } = {}) {
   // a note in a group: her sentence and the teacher's comment come from the page; only the better version is Claude's
   for (const where of ["main", "others"]) S.lesson.mistakes[where].forEach((g, i) => (g.points || []).forEach((_, j) => {
     for (const f of ["sids", "quote", "comment"]) S.src[`mistakes.${where}.${i}.points.${j}.${f}`] = "page";
+    if (g.points[j].fix) S.src[`mistakes.${where}.${i}.points.${j}.better`] = "page";      // the teacher's own rewrite
   }));
   S.ok = {};
   S.mod = "review";
@@ -842,11 +843,15 @@ function corrSnippet(cid) {
 function previewEssay(sid, cids) { if (!sid) return; S.pvEssay = { sid, cids: cids || null }; refreshPreview(true); }
 function corrRow(cid, { drag = true } = {}) {
   const c = S.lesson.corrections[cid] || { orig: "", fix: "", comment: "" }, sn = corrSnippet(cid);
+  // a change inside a word ("bring|ing", "children|'s"): show the whole word, before and after
+  const wl = /[\p{L}\p{N}'’-]+$/u.exec(sn.pre), wr = /^[\p{L}\p{N}'’-]+/u.exec(sn.post);
+  const L0 = wl ? wl[0] : "", R0 = wr ? wr[0] : "";
+  const o = (L0 || R0) ? L0 + c.orig.trim() + R0 : c.orig.trim(), x = (L0 || R0) ? L0 + c.fix.trim() + R0 : c.fix.trim();
   return h("div", { class: "crow", draggable: drag ? "true" : null, "data-item": "c:" + cid, title: "Bấm để xem câu này trong bài",
     ondragstart: drag ? e => e.dataTransfer.setData("text/plain", "c:" + cid) : null, onclick: () => previewEssay(sn.sid, [cid]) },
-    h("div", { class: "crow-text", lang: "en" }, sn.pre, c.orig.trim() ? h("s", {}, c.orig.trim()) : null, c.orig.trim() && c.fix.trim() ? " " : null,
-      c.fix.trim() ? h("ins", {}, c.fix.trim()) : h("ins", { class: "none" }, "(bỏ)"), sn.post),
-    c.comment ? h("div", { class: "crow-comment" }, c.comment) : null);
+    h("div", { class: "crow-text", lang: "en" }, sn.pre.slice(0, sn.pre.length - L0.length), o ? h("s", {}, o) : null, o && x ? " " : null,
+      x ? h("ins", {}, x) : h("ins", { class: "none" }, "(bỏ)"), sn.post.slice(R0.length)),
+    h("div", { class: "crow-comment" + (c.comment ? "" : " none") }, c.comment || "(không có ghi chú)"));
 }
 /* a highlighted note (or a sentence the teacher added) as a row: her sentence(s), the comment, the better version */
 function pointRow(pt, { path, drag = null, remove = null, editable = false }) {

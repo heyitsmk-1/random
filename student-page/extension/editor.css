@@ -79,6 +79,27 @@ textarea { min-height: 70px; resize: vertical; }
 .src.ai { background: var(--ai-soft); color: var(--ai); }
 .src.teacher { background: var(--mint-soft); color: var(--mint); }
 .src.page { background: var(--sky-soft); color: var(--sky); }
+.src.done { background: var(--line); color: var(--muted); }
+.ok-btn { border-color: var(--mint); color: var(--mint); }
+.flash { outline: 3px solid var(--orange); outline-offset: 2px; transition: outline-color 1s; }
+.sub.rv { background: var(--paper); }
+.sub.rv.flag { border-color: var(--coral); }
+.rv .kv { display: flex; gap: 8px; margin: 3px 0; font-size: 13px; }
+.rv .kv .k { flex: none; width: 110px; color: var(--muted); font-weight: 600; }
+.rv .en-text { font-style: italic; }
+.rv .say-line { margin: 3px 0; font-size: 13px; }
+.rv .say-line .who { display: inline-block; font: 700 10px/1 var(--font); background: var(--orange-soft); color: var(--orange-deep); border-radius: 999px; padding: 3px 6px; margin-right: 6px; }
+.rv .rv-sub { padding: 6px 0; border-top: 1px dashed var(--line); }
+.rv .rv-sub:first-of-type { border-top: 0; }
+.rv .rv-chain { display: flex; flex-wrap: wrap; gap: 4px; margin: 4px 0 6px; }
+.rv .rv-chain .node { border: 1px solid var(--line); border-radius: 8px; padding: 2px 8px; font-size: 13px; }
+.rv .rv-chain .node + .node::before { content: "→ "; color: var(--muted); }
+.rv .rv-chain .node.bad { border-color: var(--coral); background: var(--coral-soft); }
+.rv .rv-opts { margin: 4px 0; padding-left: 22px; font-size: 13px; }
+.rv .rv-opts .right { color: var(--mint); font-weight: 600; }
+.rv .rv-quote { font-size: 13px; margin-top: 4px; }
+.chips.static { border-style: solid; min-height: 0; margin: 4px 0; }
+.chips.static .cchip { cursor: default; }
 .field.pending input, .field.pending textarea { border-color: var(--ai); background: var(--ai-soft); }
 .lint { color: var(--coral); font-size: 12px; margin-top: 2px; }
 .lines .line { display: flex; gap: 6px; margin-bottom: 4px; }

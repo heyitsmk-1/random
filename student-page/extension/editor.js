@@ -4,6 +4,7 @@ import { buildPage, checkLesson } from "./lib/build.js";
 import { draftLesson, draftToLesson, mergeParts, PARTS, MODEL } from "./lib/draft.js";
 import { getSettings, setSettings, takePage, saveDraft, loadDraft, listDrafts } from "./lib/store.js";
 import { publishPage } from "./lib/netlify.js";
+import { reviewUnits, checks, lint } from "./lib/review.js";
 
 /* ---------- tiny DOM helper ---------- */
 function h(tag, attrs, ...kids) {
@@ -62,8 +63,55 @@ function approved(p) {
     if (q === "") return false;
   }
 }
-// Socratic questions are approved unless the teacher changes them
-const pending = p => srcOf(p) === "ai" && !approved(p) && !/(^|\.)ask(\.|$)/.test(p);
+/* What needs the teacher (lib/review.js): Claude's text is approved by default, except the review
+   units (cards that judge her work or teach content) and fields that fail an automatic check.
+   Socratic questions are approved unless the teacher changes them. */
+const isAsk = p => /(^|\.)ask(\.|$)/.test(p);
+const aiOpen = p => srcOf(p) === "ai" && !approved(p) && !isAsk(p);
+let RV = null;                                       // review units + flags, recomputed after every change
+function review() {
+  if (!RV && S.lesson) RV = { units: reviewUnits(S.lesson, { checklist: S.checklist }), flags: checks(S.lesson, { prompt: S.lesson.prompt, checkLesson }) };
+  return RV || { units: [], flags: [] };
+}
+const under = (p, r) => !!p && (p === r || p.startsWith(r + "."));
+const inUnit = p => review().units.some(u => u.roots.some(r => under(p, r)));
+const pending = p => aiOpen(p) && (inUnit(p) || review().flags.some(f => !f.fixOnly && f.path === p));
+function unitOpen(u) {
+  return u.roots.some(r => { const v = getP(S.lesson, r); return (v !== null && typeof v === "object" ? leaves(v, r) : [r]).some(aiOpen); });
+}
+const flagOpen = f => f.fixOnly || aiOpen(f.path);
+/** everything still waiting for the teacher: [{ kind: "unit"|"flag"|"praise", module, u?, f?, flags? }] */
+function openItems() {
+  if (!S.lesson) return [];
+  const { units, flags } = review();
+  const open = units.filter(unitOpen);
+  const items = open.map(u => ({ kind: "unit", u, module: u.module, flags: flags.filter(f => flagOpen(f) && u.roots.some(r => under(f.path, r))) }));
+  for (const f of flags) if (flagOpen(f) && !open.some(u => u.roots.some(r => under(f.path, r)))) items.push({ kind: "flag", f, module: f.module });
+  if (S.lesson.praise_status === "draft") items.push({ kind: "praise", module: "praise" });
+  return items;
+}
+function approveItems(items) {
+  for (const x of items) {
+    if (x.kind === "unit") x.u.roots.forEach(r => { S.ok[r] = true; });
+    else if (x.kind === "flag" && !x.f.fixOnly) S.ok[x.f.path] = true;
+  }
+  touch(); renderEdit();
+}
+/* keep approvals and sources with their items when an array is reordered: order[newIndex] = oldIndex */
+function reorderKeys(path, order) {
+  for (const map of [S.ok, S.src]) {
+    const moved = {};
+    for (const k of Object.keys(map)) {
+      if (!k.startsWith(path + ".")) continue;
+      const m = /^(\d+)(.*)$/.exec(k.slice(path.length + 1));
+      if (!m) continue;
+      const ni = order.indexOf(+m[1]);
+      if (ni >= 0) moved[`${path}.${ni}${m[2]}`] = map[k];
+      delete map[k];
+    }
+    Object.assign(map, moved);
+  }
+}
 function leaves(obj, base, out = []) {
   if (typeof obj === "string" || typeof obj === "number" || typeof obj === "boolean") out.push(base);
   else if (Array.isArray(obj)) obj.forEach((x, i) => leaves(x, base ? `${base}.${i}` : String(i), out));
@@ -80,6 +128,7 @@ async function flush() {
   $("#saved").textContent = "Đã lưu " + new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
 }
 function touch() {
+  RV = null;
   clearTimeout(saveTimer);
   saveTimer = setTimeout(flush, 400);
 }
@@ -381,11 +430,13 @@ async function runDraft({ retry = false } = {}) {
   S.partial = {};
   S.src = { "": "ai", scores: "page", word_count: "page", essay: "page", corrections: "page", task_comments: "page", student: "teacher", teacher: "teacher", zalo: "teacher", homework: "page", prompt: "teacher", essay_type: "page", overall: "page", word_target: "page" };
   S.ok = {};
+  S.mod = "review";
   touch(); go("edit");
 }
 
 /* ---------- 4. edit ---------- */
 const MODULES = [
+  ["review", "Cần duyệt", [], ["intro", 0]],
   ["hello", "Chào", ["hello"], ["intro", 0]],
   ["results", "Kết quả", ["results"], ["intro", 1]],
   ["framework", "Framework", ["framework"], ["TR", 0]],
@@ -398,17 +449,16 @@ const MODULES = [
   ["praise", "Lời khen", ["praise"], ["intro", 1]],
   ["finish", "Kết thúc", ["finish"], ["end", 0]],
 ];
-const pendingIn = roots => roots.reduce((n, r) => n + (S.lesson[r] ? leaves(S.lesson[r], r).filter(pending).length : 0), 0);
 function modPending(id) {
-  if (id === "praise") return S.lesson.praise_status === "draft" ? 1 : 0;
-  const m = MODULES.find(x => x[0] === id); return pendingIn(m[2]);
+  const items = openItems();
+  return id === "review" ? items.length : items.filter(x => x.module === id).length;
 }
 
 function renderEdit() {
-  if (!MODULES.some(m => m[0] === S.mod)) S.mod = "hello";
+  if (!MODULES.some(m => m[0] === S.mod)) S.mod = "review";
   const mods = h("nav", { class: "mods" }, MODULES.filter(([id]) => id !== "prompt_check" || S.lesson.prompt_check).map(([id, label]) => {
     const n = modPending(id);
-    return h("button", { class: "mod-btn", type: "button", "aria-current": String(S.mod === id), onclick: () => { S.mod = id; renderEdit(); } }, label, n ? h("span", { class: "count", title: "dòng AI chưa duyệt" }, n) : null);
+    return h("button", { class: "mod-btn", type: "button", "aria-current": String(S.mod === id), onclick: () => { S.mod = id; renderEdit(); } }, label, n ? h("span", { class: "count", title: "mục cần duyệt" }, n) : null);
   }));
   const form = h("div", { class: "form" }, moduleForm(S.mod));
   const frame = h("iframe", { id: "pv", title: "Xem trước trên điện thoại" });
@@ -435,9 +485,9 @@ function refreshPreview(now) {
 }
 
 /* one change from the teacher: it's theirs now */
-function changed(path, value, { rerender } = {}) {
+function changed(path, value, { rerender, mark = true } = {}) {
   setP(S.lesson, path, value);
-  S.src[path] = "teacher";
+  if (mark) S.src[path] = "teacher";
   touch(); refreshPreview();
   if (rerender) renderEdit(); else updateCounts();
 }
@@ -451,27 +501,22 @@ function updateCounts() {
   });
 }
 
-/* voice rules for Đậu's lines */
+/* voice rules for Đậu's lines: lint() from lib/review.js */
 const EMOTICON = /:\s?\)+|:\s?\]+/g;
-function lint(text) {
-  const out = [];
-  if (/\p{Extended_Pictographic}/u.test(text)) out.push("không dùng emoji");
-  const t = text.replace(/…|\.\.\./g, "");
-  if (/[^.]\.\s*$/.test(t) || /[^\s.]\.\s+\S/.test(t.replace(/\b(e\.g|i\.e|etc|vs)\./gi, ""))) out.push("Đậu không dùng dấu chấm");
-  if (/:D|:P|xD|=\)/i.test(text)) out.push('chỉ dùng ": )", ": ]]" hoặc ":)))))"');
-  if (/!{2,}/.test(text)) out.push("bớt dấu chấm than");
-  return out;
-}
 function emoticonCount() { return JSON.stringify(S.lesson).match(EMOTICON)?.length || 0; }
 
 /* field widgets */
 function srcBadge(path) {
   const s = srcOf(path);
-  if (pending(path)) return h("span", { class: "src ai", title: "Claude viết, chưa duyệt" }, "AI");
-  return h("span", { class: "src " + s }, s === "page" ? "Trang" : s === "ai" ? "AI ✓" : "Thầy");
+  if (pending(path)) return h("span", { class: "src ai", title: "Claude viết, cần anh duyệt" }, "AI");
+  return h("span", { class: "src " + (s === "ai" ? "done" : s), title: s === "ai" ? "Claude viết, đã duyệt" : null }, s === "page" ? "Trang" : s === "ai" ? "AI ✓" : "Thầy");
 }
+// what the automatic checks say about a field (voice problems are shown by the field itself)
+const flagText = p => review().flags.filter(f => f.path === p && !/^Giọng Đậu/.test(f.msg)).map(f => f.msg).join(" · ");
 function wrapField(path, label, input, extra) {
-  return h("div", { class: "field" + (pending(path) ? " pending" : "") }, h("div", { class: "lbl" }, label, srcBadge(path)), input, extra);
+  const fl = flagText(path);
+  return h("div", { class: "field" + (pending(path) ? " pending" : ""), "data-path": path }, h("div", { class: "lbl" }, label, srcBadge(path)), input, extra,
+    fl ? h("div", { class: "lint" }, fl) : null);
 }
 function fLine(path, label, { voice = true, long = false, en = false } = {}) {
   const v = getP(S.lesson, path) ?? "";
@@ -486,13 +531,17 @@ function fLine(path, label, { voice = true, long = false, en = false } = {}) {
 function fLines(path, label, opts = {}) {
   const arr = getP(S.lesson, path) || [];
   const box = h("div", { class: "lines" }, arr.map((v, i) => {
-    const p = `${path}.${i}`, warn = h("div", { class: "lint" }, opts.voice === false ? "" : lint(v).join(" · "));
+    const p = `${path}.${i}`, warnText = t => [...(opts.voice === false ? [] : lint(t)), flagText(p)].filter(Boolean).join(" · ");
+    const warn = h("div", { class: "lint" }, warnText(v));
     return h("div", {}, h("div", { class: "line" + (pending(p) ? " pending" : "") },
-      h("input", { value: v, lang: opts.en ? "en" : "vi", class: pending(p) ? "pending" : null, oninput: e => { changed(p, e.target.value); if (opts.voice !== false) warn.textContent = lint(e.target.value).join(" · "); e.target.classList.remove("pending"); } }),
-      h("button", { class: "btn small", type: "button", title: "Xóa dòng", onclick: () => { arr.splice(i, 1); changed(path, arr, { rerender: true }); } }, "×")), warn);
-  }), h("button", { class: "btn small", type: "button", onclick: () => { arr.push(""); changed(path, arr, { rerender: true }); } }, "+ Thêm dòng"));
+      h("input", { value: v, lang: opts.en ? "en" : "vi", class: pending(p) ? "pending" : null, oninput: e => { changed(p, e.target.value); warn.textContent = warnText(e.target.value); e.target.classList.remove("pending"); } }),
+      h("button", { class: "btn small", type: "button", title: "Xóa dòng", onclick: () => {
+        const order = arr.map((_, j) => j).filter(j => j !== i);
+        arr.splice(i, 1); reorderKeys(path, order); changed(path, arr, { rerender: true, mark: false });
+      } }, "×")), warn);
+  }), h("button", { class: "btn small", type: "button", onclick: () => { arr.push(""); S.src[`${path}.${arr.length - 1}`] = "teacher"; changed(path, arr, { rerender: true, mark: false }); } }, "+ Thêm dòng"));
   const anyPending = arr.some((_, i) => pending(`${path}.${i}`));
-  return h("div", { class: "field" + (anyPending ? " pending" : "") }, h("div", { class: "lbl" }, label, srcBadge(anyPending ? `${path}.0` : path)), box);
+  return h("div", { class: "field" + (anyPending ? " pending" : ""), "data-path": path }, h("div", { class: "lbl" }, label, srcBadge(anyPending ? `${path}.0` : path)), box);
 }
 function fBool(path, label) {
   return h("label", { class: "inline" }, h("input", { type: "checkbox", checked: !!getP(S.lesson, path), onchange: e => changed(path, e.target.checked) }), label);
@@ -515,23 +564,34 @@ function fSids(path, label) {
 }
 function cards(path, title, render, { add, remove = true } = {}) {
   const arr = getP(S.lesson, path) || [];
-  return h("div", {}, arr.map((item, i) => h("div", { class: "sub" },
-    h("div", { class: "head" }, h("span", { class: "grow" }, title(item, i)),
-      remove ? h("button", { class: "btn small", type: "button", onclick: () => { if (confirm("Xóa mục này?")) { arr.splice(i, 1); changed(path, arr, { rerender: true }); } } }, "Xóa") : null),
+  return h("div", {}, arr.map((item, i) => h("div", { class: "sub", "data-path": `${path}.${i}` },
+    h("div", { class: "head" }, h("span", { class: "grow" }, title(item, i)), approveBtn(`${path}.${i}`),
+      remove ? h("button", { class: "btn small", type: "button", onclick: () => {
+        if (!confirm("Xóa mục này?")) return;
+        const order = arr.map((_, j) => j).filter(j => j !== i);
+        arr.splice(i, 1); reorderKeys(path, order); changed(path, arr, { rerender: true, mark: false });
+      } }, "Xóa") : null),
     render(`${path}.${i}`, item, i))),
-    add ? h("button", { class: "btn small", type: "button", onclick: () => { arr.push(structuredClone(add())); changed(path, arr, { rerender: true }); } }, "+ Thêm") : null);
+    add ? h("button", { class: "btn small", type: "button", onclick: () => { arr.push(structuredClone(add())); S.src[`${path}.${arr.length - 1}`] = "teacher"; changed(path, arr, { rerender: true, mark: false }); } }, "+ Thêm") : null);
 }
-function approveBar(roots, label = "Duyệt cả phần này") {
-  const n = pendingIn(roots);
+/* a ✓ for a card that is a review unit and still open */
+function approveBtn(root) {
+  const u = review().units.find(x => x.roots.length === 1 && x.roots[0] === root);
+  return u && unitOpen(u) ? h("button", { class: "btn small ok-btn", type: "button", onclick: () => approveItems([{ kind: "unit", u }]) }, "✓ Duyệt") : null;
+}
+function approveBar() {
+  const items = openItems().filter(x => x.module === S.mod);
+  const can = items.filter(x => x.kind === "unit" || (x.kind === "flag" && !x.f.fixOnly));
   return h("div", { class: "row", style: "margin-bottom:10px" },
-    n ? h("span", { class: "small" }, h("span", { class: "src ai" }, "AI"), ` ${n} dòng chưa duyệt`) : h("span", { class: "small ok" }, "Đã duyệt hết"),
-    n ? h("button", { class: "btn small", type: "button", onclick: () => { roots.forEach(r => { S.ok[r] = true; }); touch(); renderEdit(); } }, label) : null);
+    items.length ? h("span", { class: "small" }, h("span", { class: "src ai" }, "AI"), ` ${items.length} mục cần duyệt`) : h("span", { class: "small ok" }, "Không còn gì cần duyệt"),
+    can.length ? h("button", { class: "btn small", type: "button", onclick: () => approveItems(can) }, "Duyệt cả phần này") : null);
 }
 
 function moduleForm(id) {
   const L = S.lesson;
   const head = (title, roots, note) => [h("h2", {}, title), note ? h("p", { class: "muted small" }, note) : null, roots ? approveBar(roots) : null];
   switch (id) {
+    case "review": return reviewForm();
     case "hello": return [head("Chào", ["hello"]),
       fLine("student", "Tên Đậu gọi em", { voice: false }), fLines("hello", "Đậu nói")];
     case "results": return [head("Kết quả", ["results"]),
@@ -610,6 +670,82 @@ function moduleForm(id) {
   }
 }
 
+/* ---------- "Cần duyệt": everything waiting for the teacher, on one page ---------- */
+function goTo(module, path) {
+  S.mod = module; renderEdit();
+  requestAnimationFrame(() => {
+    const el = path && (document.querySelector(`.form [data-path="${CSS.escape(path)}"]`) || document.querySelector(`.form [data-path^="${CSS.escape(path)}."]`));
+    if (el) { el.scrollIntoView({ block: "center" }); el.classList.add("flash"); setTimeout(() => el.classList.remove("flash"), 1600); }
+  });
+}
+const sayLine = t => h("div", { class: "say-line" }, h("span", { class: "who" }, "Đậu"), t);
+const kv = (k, v) => v == null || v === "" || (Array.isArray(v) && !v.length) ? null
+  : h("div", { class: "kv" }, h("span", { class: "k" }, k), h("span", {}, Array.isArray(v) && v.every(x => typeof x === "string") ? v.join(" · ") : v));
+const enText = t => h("span", { lang: "en", class: "en-text" }, t);
+function unitSummary(u) {
+  const L = S.lesson, C = L.corrections;
+  const at = p => getP(L, p);
+  if (u.id === "verdict") return [
+    kv("Đúng framework", L.framework.ok ? "có (có pháo hoa)" : "chưa"),
+    ...L.framework.verdict.map(sayLine),
+    h("div", { class: "small warn" }, "Không khớp checklist của anh: " + (S.checklist.filter(c => c.ok === false).map(c => "✗ " + c.item).join("; ") || "anh chưa đánh dấu ✗ mục nào"))];
+  if (u.id === "prompt_check") return [sayLine(L.prompt_check.intro), ...L.prompt_check.items.map(it => h("div", { class: "rv-sub" },
+    kv("Câu " + it.sid, it.focus), kv("Trong đề", it.prompt_focus), it.ask ? kv("Hỏi", it.ask.q) : sayLine(it.line), kv("Viết lại", enText(it.fix))))];
+  if (u.id === "overview") return L.ideas.overview.map(o => h("div", { class: "rv-sub" },
+    h("b", {}, (o.ok ? "✓ " : "✗ ") + o.tag + " · " + o.text), h("span", { class: "muted" }, " · " + o.note), o.line ? sayLine(o.line) : null));
+  const m = /^(detail|group|item)(\d+)$/.exec(u.id);
+  if (m && m[1] === "detail") {
+    const d = L.ideas.details[+m[2]];
+    const chain = h("div", { class: "rv-chain" }, d.chain.map((n, i) => h("span", { class: "node" + (d.bad_node === i ? " bad" : "") }, n)));
+    const mode = d.replace ? "viết gọn lại cả chuỗi" : d.gap_after != null ? `thiếu mắt xích sau số ${d.gap_after + 1}` : d.bad_node != null ? `mắt xích ${d.bad_node + 1} sai` : "thiếu mắt xích ở cuối";
+    return [h("div", { class: "kv" }, h("span", { class: "k" }, "Chuỗi ý của em")), chain, kv("Vấn đề", mode), kv("Sửa thành", d.fix_chain), kv("Flow", enText(d.fix_en)), sayLine(d.fix_intro)];
+  }
+  if (m && m[1] === "group") {
+    const g = L.mistakes.main[+m[2]];
+    return [kv("Nhóm", `${g.title} · ${g.tab === "LR" ? "từ vựng" : "ngữ pháp"}${g === L.mistakes.main.find(x => x.tab === "GRA") ? " · dạy chính" : g.core ? " · bắt buộc" : ""}`),
+      h("div", { class: "chips static" }, g.cids.map(c => h("span", { class: "cchip" }, h("s", {}, (C[c] && C[c].orig.trim()) || "…"), " → ", h("ins", {}, (C[c] && C[c].fix.trim()) || "bỏ")))),
+      kv("Vì sao", g.reason), kv("Quy tắc", g.rule), kv("Bảng", g.board), kv("Ví dụ", [enText("✗ " + g.example.bad), " ", enText("✓ " + g.example.good)])];
+  }
+  if (m && m[1] === "item") {
+    const it = L.practice.items[+m[2]];
+    const group = L.mistakes.main.find(x => x.id === it.mistake);
+    const base = [kv("Lỗi", group ? group.title : it.mistake)];
+    if (it.type === "choose") return [...base, kv("Hỏi", it.q), it.sentence ? kv("Câu", enText(it.sentence)) : null,
+      h("ol", { class: "rv-opts" }, it.options.map((o, i) => h("li", { class: i === it.answer ? "right" : null, lang: "en" }, o, i === it.answer ? "  ✓" : ""))), kv("Giải thích", it.explain)];
+    if (it.type === "tap") return [...base, kv("Câu", enText(it.sentence)), kv("Chữ sai → đúng", enText(`${it.wrong} → ${it.fix}`)), kv("Giải thích", it.explain)];
+    return [...base, kv("Tiếng Việt", it.vi), kv("Đáp án", enText(it.answer.join(" "))), kv("Cụm nhiễu", it.extra), kv("Giải thích", it.explain)];
+  }
+  if (u.id === "linking") return L.linking.suggestions.map(x => h("div", { class: "rv-sub" }, kv(x.sid, enText(`${x.from} → ${x.to}`)), x.why ? sayLine(x.why) : null));
+  if (u.id === "rewrite") return [kv("Mạch ý", enText(at("rewrite.flow"))), kv("Câu mở đầu", at("rewrite.starters")), kv("Từ hay", at("rewrite.phrases")), kv("Bài mẫu", enText(at("rewrite.model")))];
+  return [];
+}
+function reviewForm() {
+  const items = openItems();
+  const order = MODULES.map(m => m[0]);
+  items.sort((a, b) => order.indexOf(a.module) - order.indexOf(b.module));
+  const card = x => {
+    if (x.kind === "praise") return h("div", { class: "sub rv" },
+      h("div", { class: "head" }, h("span", { class: "grow" }, "Lời khen"), h("button", { class: "btn small", type: "button", onclick: () => goTo("praise") }, "Chọn")),
+      h("div", { class: "small" }, `Chọn 2–3 lời khen rồi bấm "Duyệt lời khen" (đang chọn ${S.lesson.praise.length}).`));
+    if (x.kind === "flag") return h("div", { class: "sub rv flag" },
+      h("div", { class: "head" }, h("span", { class: "grow" }, x.f.fixOnly ? "Cần sửa" : "Cần xem lại"),
+        !x.f.fixOnly ? h("button", { class: "btn small ok-btn", type: "button", onclick: () => approveItems([x]) }, "✓ Giữ nguyên") : null,
+        h("button", { class: "btn small", type: "button", onclick: () => goTo(x.module, x.f.path) }, "Sửa")),
+      h("div", { class: "lint" }, x.f.msg),
+      x.f.path && typeof getP(S.lesson, x.f.path) === "string" ? h("div", { class: "rv-quote" }, getP(S.lesson, x.f.path)) : null);
+    return h("div", { class: "sub rv" },
+      h("div", { class: "head" }, h("span", { class: "grow" }, x.u.label),
+        h("button", { class: "btn small ok-btn", type: "button", onclick: () => approveItems([x]) }, "✓ Duyệt"),
+        h("button", { class: "btn small", type: "button", onclick: () => goTo(x.module, x.u.roots[0]) }, "Sửa")),
+      x.flags.map(f => h("div", { class: "lint" }, f.msg)),
+      unitSummary(x.u));
+  };
+  return [h("h2", {}, "Cần duyệt"),
+    h("p", { class: "muted small" }, "Chỉ những chỗ Claude nhận xét bài của em hoặc dạy kiến thức mới (một dấu ✓ cho mỗi thẻ), và những dòng không qua được kiểm tra tự động. Phần còn lại đã tự duyệt, anh vẫn sửa được trong từng mục bên trái."),
+    items.length ? h("p", { class: "small" }, `${items.length} mục`) : h("div", { class: "notice good" }, "Xong, không còn gì cần duyệt. Qua bước 5 · Xuất nha."),
+    items.map(card)];
+}
+
 /* mistakes: groups the teacher can rename, re-tag, and drag corrections between */
 function mistakeGroups() {
   const M = S.lesson.mistakes, roles = S.lesson.__mistake_roles || {};
@@ -623,12 +759,14 @@ function setRole(g, role) {
   const M = S.lesson.mistakes;
   S.lesson.__mistake_roles = S.lesson.__mistake_roles || {};
   if (g.where === "others" && role !== "other") {
+    reorderKeys("mistakes.others", M.others.map((_, j) => j).filter(j => j !== g.i));
     const o = M.others.splice(g.i, 1)[0];
     const id = "g" + Date.now().toString(36);
     const m = { id, title: o.label, tag: o.tag === "LR" ? "Vocab" : "Grammar", tab: o.tag, cids: o.cids, count_line: `Em mắc lỗi này ${o.cids.length} lần`,
       ask: { q: `${o.cids.length} chỗ này có lỗi gì giống nhau?`, options: [o.label, "", ""], answer: 0 }, reason: "", board: [], rule: ["", "", ""], example: { bad: "", good: "" } };
     M.main.push(m); S.lesson.__mistake_roles[id] = role; S.src[`mistakes.main.${M.main.length - 1}`] = "teacher";
   } else if (g.where === "main" && role === "other") {
+    reorderKeys("mistakes.main", M.main.map((_, j) => j).filter(j => j !== g.i));
     const m = M.main.splice(g.i, 1)[0];
     M.others.push({ label: m.title, cids: m.cids, tag: m.tab });
   } else if (g.where === "main") {
@@ -636,6 +774,7 @@ function setRole(g, role) {
     if (role === "core") g.m.core = true; else delete g.m.core;
     if (role === "main") {                         // only one main: the others become optional, main goes first
       for (const x of M.main) if (x !== g.m && S.lesson.__mistake_roles[x.id] === "main") S.lesson.__mistake_roles[x.id] = "optional";
+      reorderKeys("mistakes.main", [g.i, ...M.main.map((_, j) => j).filter(j => j !== g.i)]);
       M.main.splice(g.i, 1); M.main.unshift(g.m);
       if (g.m.tab !== "GRA") g.m.tab = "GRA";
     }
@@ -676,8 +815,8 @@ function mistakesForm() {
     h("p", { class: "muted small" }, "Kéo từng chỗ sửa sang nhóm khác. Đặt tên nhóm, chọn nhóm dạy chính. Nhóm “Dạy chính” (ngữ pháp) và “Bắt buộc” (từ vựng) được dạy trong bài; “Xem thêm” là tùy chọn; “Lỗi nhỏ khác” chỉ liệt kê."),
     approveBar(["mistakes"]),
     fLines("mistakes.lr_intro", "Mở đầu phần từ vựng"), fLines("mistakes.gra_intro", "Mở đầu phần ngữ pháp"),
-    groups.map(g => h("div", { class: "sub" },
-      h("div", { class: "head" },
+    groups.map(g => h("div", { class: "sub", "data-path": `mistakes.${g.where}.${g.i}` },
+      h("div", { class: "head" }, g.where === "main" ? approveBtn(`mistakes.main.${g.i}`) : null,
         h("input", { value: g.where === "main" ? g.m.title : g.m.label, style: "flex:1", "aria-label": "Tên nhóm",
           oninput: e => { if (g.where === "main") changed(P(g, "title"), e.target.value); else changed(P(g, "label"), e.target.value); } }),
         h("select", { "aria-label": "Từ vựng hay ngữ pháp", onchange: e => { if (g.where === "main") { g.m.tab = e.target.value; g.m.tag = e.target.value === "LR" ? "Vocab" : "Grammar"; } else g.m.tag = e.target.value; touch(); refreshPreview(); renderEdit(); } },
@@ -772,7 +911,7 @@ function download(name, text, type) {
 async function renderExport() {
   const L = S.lesson;
   const problems = checkLesson(L);
-  const aiLeft = MODULES.reduce((n, [id]) => n + (id === "prompt_check" && !L.prompt_check ? 0 : modPending(id)), 0);
+  const aiLeft = openItems().length;
   const warns = [];
   if (L.praise_status === "draft") warns.push("Lời khen chưa duyệt");
   if (L.praise.length < 2 || L.praise.length > 3) warns.push(`Đang có ${L.praise.length} lời khen (nên 2 đến 3)`);
@@ -784,7 +923,7 @@ async function renderExport() {
   $("#main").replaceChildren(h("div", { class: "panel" }, h("div", { class: "card" },
     h("h1", {}, "Xuất bài ôn"),
     problems.length ? h("div", { class: "notice bad" }, h("b", {}, "Phải sửa trước khi xuất:"), h("ul", { class: "problems" }, problems.map(p => h("li", {}, p)))) : h("div", { class: "notice good" }, "Bài ôn dựng được."),
-    aiLeft ? h("div", { class: "notice" }, `Còn ${aiLeft} dòng AI chưa duyệt. Vẫn xuất được, nhưng anh nên đọc qua.`) : null,
+    aiLeft ? h("div", { class: "notice" }, `Còn ${aiLeft} mục cần duyệt (xem "Cần duyệt"). Vẫn xuất được, nhưng anh nên đọc qua.`) : null,
     warns.length ? h("div", { class: "notice" }, h("ul", { class: "problems" }, warns.map(w => h("li", {}, w)))) : null,
     S.usage ? h("p", { class: "small muted" }, `Lần soạn nháp: ${S.usage.input_tokens + (S.usage.cache_read_input_tokens || 0) + (S.usage.cache_creation_input_tokens || 0)} token vào, ${S.usage.output_tokens} token ra (${S.usage.model}).`) : null,
     h("div", { class: "row" },

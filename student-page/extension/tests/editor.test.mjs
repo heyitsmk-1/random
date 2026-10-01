@@ -280,7 +280,28 @@ try {
   ok(JSON.stringify(order.slice(0, 4)) === JSON.stringify(lesson.practice.core), "core exercises first, in order: " + order.join(","));
 
   let f = await frameReady(page);
-  ok(await page.locator(".mod-btn .count").count() > 5, "AI lines are counted per module");
+  // the review list: only the cards that judge her work or teach, plus failed checks
+  const reviewBtn = page.locator(".mod-btn", { hasText: "Cần duyệt" });
+  ok(await reviewBtn.getAttribute("aria-current") === "true", "editing opens on Cần duyệt");
+  const nReview = +(await reviewBtn.locator(".count").textContent());
+  const expected = 1 + lesson.ideas.details.length + lesson.mistakes.main.length + lesson.practice.items.length + 1 /* rewrite */ + 1 /* praise */;
+  const flagsShown = await page.locator(".sub.rv.flag").count();
+  console.log("     review list: " + nReview + " (" + expected + " cards + " + flagsShown + " flagged): " +
+    (await page.locator(".sub.rv.flag .lint").allTextContents()).join(" | "));
+  ok(nReview >= expected && nReview <= expected + 6, `about ${expected} cards to review instead of hundreds of lines: ${nReview}`);
+  await page.screenshot({ path: join(OUT, "04a-review.png"), fullPage: true });
+  const firstItem = page.locator(".sub.rv", { hasText: /Bài luyện 1 [(·]/ });
+  ok(/✓/.test(await firstItem.textContent()), "an exercise card shows its answer");
+  await firstItem.getByRole("button", { name: "✓ Duyệt" }).click();
+  ok(+(await reviewBtn.locator(".count").textContent()) === nReview - 1, "✓ on a card removes it from the list");
+  await page.locator(".sub.rv", { hasText: "Nhóm lỗi" }).first().getByRole("button", { name: "Sửa" }).click();
+  ok(await page.locator(".mod-btn", { hasText: "Từ vựng" }).getAttribute("aria-current") === "true" && await page.locator(".form .flash").count() === 1, "Sửa jumps to the card in its module");
+  // a wrong number in Đậu's line is caught
+  await page.locator(".mod-btn", { hasText: "Kết quả" }).click();
+  await page.locator(".form .lines input").first().fill("Em viết 999 chữ á");
+  ok(/Số chữ không khớp/.test(await page.locator(".form .lines .lint").first().textContent()), "a wrong word count is flagged in the field");
+  await page.locator(".form .lines input").first().fill(lesson.results.words[0]);
+  await page.locator(".mod-btn", { hasText: "Chào" }).click();
   await page.screenshot({ path: join(OUT, "04-edit-hello.png") });
 
   // edit a line: lint, then it becomes the teacher's
@@ -324,7 +345,7 @@ try {
   await page.getByRole("button", { name: "Duyệt lời khen" }).click();
   ok(await page.getByText("Đã duyệt lời khen").count() === 1, "praise approved");
   ok(await boxes.count() >= 2, `praise candidates listed (${await boxes.count()}, lesson had ${(lesson.praise || []).length})`);
-  ok(await page.locator(".mod-btn .count").count() === 0, "nothing left unapproved");
+  ok(await page.locator(".mod-btn .count").count() === 0, "nothing left to review: " + (await page.locator(".mod-btn .count").count() ? await page.locator(".mod-btn", { has: page.locator(".count") }).allTextContents() : ""));
 
   /* export */
   await page.getByRole("button", { name: "5 · Xuất" }).click();

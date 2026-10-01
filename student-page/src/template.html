@@ -94,7 +94,6 @@ button { font: inherit; color: inherit; }
 /* focus instead of a dark overlay: what he is talking about stays crisp and lifts a little,
    everything else fades back */
 .content > * { transition: opacity .35s ease, filter .35s ease, box-shadow .35s ease, translate .35s ease; }
-.app.dau-talk .content > *:not(.spot) { opacity: .28; filter: blur(1.5px) saturate(.6); }
 .app.dau-talk .content > .spot { translate: 0 -3px; }
 .app.dau-talk .content > .spot.card { box-shadow: 0 2px 4px rgba(60, 40, 20, .06), 0 18px 40px rgba(60, 40, 20, .16); }
 /* while there is a question on the page, nothing fades: the question, its answers and what it is about */
@@ -293,6 +292,10 @@ mark.hl { background: linear-gradient(transparent 55%, var(--orange-soft) 55%); 
 .ov.tap:active { transform: translateY(2px); }
 .chev { flex: none; font: 800 1.5em/1 var(--font-display); color: var(--coral); }
 .ov.tap .go { color: var(--coral); font-weight: 600; }
+.ov.reveal .go, .ov.reveal .chev { animation: hintIn .5s ease both; }
+@keyframes hintIn { from { opacity: 0; } }
+.idea-name { font-weight: 700; font-size: .92em; }
+.explain { font-size: .9em; padding: .55em .8em; border-radius: 12px; background: var(--orange-soft); border-left: 3px solid var(--orange); animation: rise .35s both; }
 button.mcard { width: 100%; text-align: left; font: inherit; color: inherit; cursor: pointer; }
 .mcard.main { border: 2px solid var(--orange); background: var(--orange-soft); padding: .9em 1em; }
 .mcard.main .n { background: var(--orange); color: #3A1D00; }
@@ -502,7 +505,6 @@ const A = JSON.parse(document.getElementById("asset-data").textContent);
 const NAME = L.student;
 const REDUCED = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const $ = s => document.querySelector(s);
-const lower1 = t => t.charAt(0).toLowerCase() + t.slice(1);
 
 /* ---------- essay index ---------- */
 const SENT = {};
@@ -596,8 +598,8 @@ let waiting = null, needAnswer = null, atEnd = false, resumed = false;
 let scene, content;
 const pending = new Set();
 
-/* anh Đậu is not part of the page. When he talks the page dims, the card he means stays lit,
-   and he leans in from the left edge; a tap anywhere moves him on. When the student has to
+/* anh Đậu is not part of the page. When he talks, the card he means lifts a little (nothing
+   else fades: titles and earlier cards stay readable), and he leans in from the left edge; a tap anywhere moves him on. When the student has to
    do something (answer, type, tap a card) the tap sends him away instead. */
 const app = $("#app"), layer = $("#dauLayer"), group = $("#dgroup"), dau = $("#dau"), rig = $("#dauRig"), sayBox = $("#say"), dline = $("#dauLine");
 let sayN = 0;
@@ -1090,14 +1092,24 @@ add("TR", async c => {
   await c.gate();
   prompt.remove(); fit();
   await c.say(I.intro[I.intro.length - 1], "explaining");
-  // one idea per tap, each with a word from Đậu
+  // one idea per tap, each with a word from Đậu. The ✗ ideas become tappable ("chạm để xem")
+  // only once he has been through all of them, so the hint never cuts him short
+  const ovInner = (o, hint) => [img(o.ok ? "icon_check" : "icon_cross", "icon"),
+    h("div", { class: "t" }, h("b", {}, o.tag + " · " + o.text), h("span", {}, o.note, hint ? h("span", { class: "go" }, " · chạm để xem") : null))];
+  const later = [];
   for (const o of I.overview) {
     await c.gate();
-    const inner = [img(o.ok ? "icon_check" : "icon_cross", "icon"), h("div", { class: "t" }, h("b", {}, o.tag + " · " + o.text), h("span", {}, o.note, o.ok ? null : h("span", { class: "go" }, " · chạm để xem")))];
-    c.show(o.ok || detailIdx[o.tag] == null ? h("div", { class: "card ov" }, inner)
-      : h("button", { class: "card ov tap", type: "button", onclick: () => jump(detailIdx[o.tag]) }, inner, h("span", { class: "chev", "aria-hidden": "true" }, "›")));
+    const card = c.show(h("div", { class: "card ov" }, ovInner(o, false)));
+    if (!o.ok && detailIdx[o.tag] != null) later.push([card, o]);
     await c.say(o.line || o.note, o.ok ? "thumbsup" : "thinking");
     await praise(c, "idea:" + o.tag);
+  }
+  if (later.length) {
+    await c.gate();
+    for (const [card, o] of later) card.replaceWith(h("button", { class: "card ov tap reveal", type: "button", onclick: () => jump(detailIdx[o.tag]) },
+      ovInner(o, true), h("span", { class: "chev", "aria-hidden": "true" }, "›")));
+    fit();
+    await c.say(later.length > 1 ? "Mấy ý có dấu ✗ mình sửa từng cái nha, em chạm vào ý nào cũng được" : "Ý có dấu ✗ mình xem cách sửa nha, em chạm vào để xem", "explaining");
   }
 }, { end: "dock" });
 
@@ -1105,8 +1117,10 @@ add("TR", async c => {
 const detailIdx = {};
 L.ideas.details.forEach((D, k) => (detailIdx[D.tag] = screens.length, add("TR", async c => {
   c.show(h("span", { class: "pill tone-blush" }, `Cần sửa ${k + 1}/${L.ideas.details.length} · ${D.tag}`));
-  await c.say(`Đây là ý ${lower1(D.title)} của em nè`, "magnify");
-  c.show(h("div", { class: "card stack" }, h("div", { class: "quote en" }, D.sids.map(origText).join(" ")), cite(D.sids[D.sids.length - 1])));
+  await c.say(`Mình xem kỹ ${D.tag} của em nha`, "magnify");
+  const ideaName = (L.ideas.overview.find(o => o.tag === D.tag) || {}).text || D.title;
+  c.show(h("div", { class: "card stack" }, h("div", { class: "idea-name" }, D.tag + " · " + ideaName),
+    h("div", { class: "quote en" }, D.sids.map(origText).join(" ")), cite(D.sids[D.sids.length - 1])));
   await c.gate();
   const chain = h("div", { class: "chain" }), chainLabel = h("div", { class: "label", style: "margin-bottom:.4em" }, "Chuỗi ý của em");
   c.show(h("div", { class: "card" }, chainLabel, chain), { replace: true });
@@ -1210,7 +1224,7 @@ function addMistake(m, optional) {
     await c.gate();
     await c.say(m.ask.q, "thinking");
     const i = await c.ask(m.ask.options, { answer: m.ask.answer, key: "m-" + m.id, q: m.ask.q });
-    await c.say(i === m.ask.answer ? "Đúng rồi á em" : `Chưa đúng nè ${NAME}, là ${lower1(m.ask.options[m.ask.answer])} á`, i === m.ask.answer ? "thumbsup" : "oops");
+    await c.say(i === m.ask.answer ? "Đúng rồi á em" : `Chưa đúng nè ${NAME}, đáp án đúng là câu tô xanh á`, i === m.ask.answer ? "thumbsup" : "oops");
     await c.gate();
     content.querySelector(".ask").remove(); fit();
     await c.say(m.count_line, "explaining");
@@ -1301,13 +1315,15 @@ function exercise(c, item, key, counter) {
   if (!rec.done) c.say(q, "magnify");
   return new Promise(resolve => {
     let finished = false, reveal = () => {};
+    // the explanation, as its own card under the exercise (never spliced into Đậu's line)
+    const explain = () => { if (item.explain && !body.querySelector(".explain")) { body.append(h("div", { class: "explain" }, item.explain)); fit(); } };
     const lock = () => body.querySelectorAll(".tok, .wchip, .choice").forEach(b => { b.disabled = true; });
     const end = ok => { finished = true; rec.done = true; save(); lock(); needAnswer = null; setBtn(); resolve(ok); };
     async function result(ok) {
       if (finished) return;
       rec.tries++; if (rec.first == null) rec.first = ok; save();
-      if (ok) { end(true); await c.say(rec.tries > 1 ? RIGHT[rightCount++ % RIGHT.length] : RIGHT[rightCount++ % RIGHT.length] + ", " + lower1(item.explain), "thumbsup"); }
-      else if (rec.tries < 2) await c.say(`Chưa đúng nè ${NAME}, ${lower1(item.explain)}, em thử lại nhen`, "oops");
+      if (ok) { end(true); if (rec.tries === 1) explain(); await c.say(RIGHT[rightCount++ % RIGHT.length], "thumbsup"); }
+      else if (rec.tries < 2) { explain(); await c.say(`Chưa đúng nè ${NAME}, em thử lại nhen`, "oops"); }
       else { reveal(); end(false); await c.say("Đáp án ở đây nè, câu này mình ôn lại cuối bài nha", "thinking"); }
     }
     if (item.type === "choose") {

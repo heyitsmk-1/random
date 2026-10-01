@@ -502,7 +502,7 @@ function updateCounts() {
 }
 
 /* voice rules for Đậu's lines: lint() from lib/review.js */
-const EMOTICON = /:\s?\)+|:\s?\]+/g;
+const EMOTICON = /:\s?\)+|:\s?\]+|:D\b/g;
 function emoticonCount() { return JSON.stringify(S.lesson).match(EMOTICON)?.length || 0; }
 
 /* field widgets */

@@ -6,6 +6,7 @@
    fails a check needs a look even when it is otherwise auto-approved. */
 
 const get = (obj, path) => path.split(".").reduce((o, k) => (o == null ? undefined : o[/^\d+$/.test(k) ? +k : k]), obj);
+const BOARD_MAX = 22;                                 // characters per chalkboard line
 const nums = t => (String(t).match(/\d+(?:[.,]\d+)?/g) || []).map(x => +x.replace(",", "."));
 const norm = t => String(t).toLowerCase().replace(/[‘’]/g, "'").replace(/\s+/g, " ").trim();
 
@@ -15,7 +16,7 @@ export function lint(text) {
   if (/\p{Extended_Pictographic}/u.test(text)) out.push("không dùng emoji");
   const t = String(text).replace(/…|\.\.\./g, "");
   if (/[^.]\.\s*$/.test(t) || /[^\s.]\.\s+\S/.test(t.replace(/\b(e\.g|i\.e|etc|vs)\./gi, ""))) out.push("Đậu không dùng dấu chấm");
-  if (/:D|:P|xD|=\)/i.test(text)) out.push('chỉ dùng ": )", ": ]]" hoặc ":)))))"');
+  if (/:P|xD|=\)/i.test(text)) out.push('chỉ dùng ": )", ": ]]", ":)))))" hoặc ":D"');
   if (/!{2,}/.test(text)) out.push("bớt dấu chấm than");
   return out;
 }
@@ -122,6 +123,14 @@ export function checks(L, { prompt, checkLesson } = {}) {
   // leaving a correction out on purpose is allowed ("✓ Giữ nguyên"); the approval is for exactly these ones
   if (none.length) flag(`mistakes.unassigned.${none.join("+")}`, "mistakes", `${none.length} chỗ sửa chưa thuộc nhóm nào (kéo vào một nhóm, hoặc giữ nguyên để bỏ ra khỏi bài ôn): ${none.map(c => (C[c] && C[c].orig.trim()) || c).join(", ")}`);
   if (twice.length) flag("mistakes", "mistakes", `${twice.length} chỗ sửa nằm ở 2 nhóm: ${twice.map(c => (C[c] && C[c].orig.trim()) || c).join(", ")}`, true);
+
+  // the drawn chalkboard is small: long lines get tiny chalk, or fall back to a plain board
+  L.mistakes.main.forEach((m, i) => (m.board || []).forEach((t, j) => {
+    if (t.length > BOARD_MAX) flag(`mistakes.main.${i}.board.${j}`, "mistakes", `Bảng: dòng quá dài (${t.length} ký tự, nên dưới ${BOARD_MAX}), sẽ không vừa bảng`);
+  }));
+  if (L.mistakes.main.some(m => (m.board || []).length > 2)) L.mistakes.main.forEach((m, i) => {
+    if ((m.board || []).length > 2) flag(`mistakes.main.${i}.board`, "mistakes", "Bảng: nhiều hơn 2 dòng sẽ không vừa bảng");
+  });
 
   // exercises that can't work
   L.practice.items.forEach((it, i) => {

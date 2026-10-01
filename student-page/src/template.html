@@ -339,9 +339,16 @@ button.mcard { width: 100%; text-align: left; font: inherit; color: inherit; cur
 /* chalkboard */
 .board-wrap { position: relative; container-type: inline-size; width: calc(72% * var(--k)); max-width: 300px; align-self: center; flex: none; }
 .board-wrap img { width: 100%; display: block; }
-.board-text { position: absolute; left: 59%; top: 33.5%; width: 33%; height: 13.5%; display: flex; flex-direction: column; justify-content: center; align-items: center; font: 400 5.2cqw/1.05 var(--font-chalk); color: var(--chalk); text-align: center; white-space: nowrap; }
+/* the board's inner area in dau_explaining is x 57-93%, y 33-68%; Đậu's pointer crosses it below ~50%,
+   so the chalk stays in the strip above it, one formula per line */
+.board-text { position: absolute; left: 59%; top: 33.5%; width: 33%; height: 16.5%; display: flex; flex-direction: column; justify-content: center; align-items: center; font: 400 5.2cqw/1.05 var(--font-chalk); color: var(--chalk); text-align: center; white-space: nowrap; }
+.board-wrap.big { width: calc(92% * var(--k)); max-width: 100%; }
 .board-text.one { font-size: 7.5cqw; }
 .board-text span { opacity: 0; animation: chalk .5s forwards; }
+.board-text span.later, .board-card span.later { animation: none; opacity: 0; }
+.board-card { align-self: center; max-width: 100%; background: #2F4A3F; color: var(--chalk); border: 7px solid #B8763A; border-radius: 12px; padding: 12px 18px;
+  font: 400 19px/1.35 var(--font-chalk); text-align: center; box-shadow: var(--shadow); }
+.board-card span { display: block; opacity: 0; animation: chalk .5s forwards; }
 @keyframes chalk { from { opacity: 0; filter: blur(2px); } to { opacity: 1; filter: none; } }
 .rules { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .55em; }
 .rules li { display: flex; gap: .6em; font-size: .95em; animation: rise .45s both; }
@@ -425,8 +432,18 @@ textarea.write:focus { outline: none; border-color: var(--orange); }
 .essay .corr.focus ins, .essay .corr.focus s { outline: 2px solid var(--orange); outline-offset: 1px; }
 .tr-mark { display: inline-flex; vertical-align: -3px; margin-left: 4px; border: 0; background: var(--coral-soft); border-radius: 8px; padding: 2px 5px; cursor: pointer; }
 .tr-mark img { width: 18px; height: 18px; }
-.note { margin: 8px 0 14px; padding: 12px 14px; border-radius: 14px; background: var(--orange-soft); font-size: 14px; line-height: 1.6; white-space: pre-line; animation: rise .3s both; }
-.note .nh { font-weight: 700; font-style: italic; margin-bottom: 4px; white-space: normal; }
+.sheet-body { position: relative; }
+.cpop { position: absolute; left: 12px; right: 12px; z-index: 3; background: var(--paper); border: 1.5px solid var(--orange); border-radius: 14px;
+  box-shadow: 0 10px 30px rgba(40, 25, 10, .22); padding: 12px 38px 12px 14px; font-size: 14px; line-height: 1.6; animation: cpopUp .18s ease both; }
+.cpop-body { max-height: 40vh; overflow-y: auto; white-space: pre-line; }
+.cpop .nh { font-weight: 700; font-style: italic; margin-bottom: 4px; white-space: normal; }
+.cpop-arrow { position: absolute; top: -8.5px; width: 14px; height: 14px; margin-left: -7px; background: var(--paper);
+  border-left: 1.5px solid var(--orange); border-top: 1.5px solid var(--orange); transform: rotate(45deg); }
+.pop.up .cpop-arrow { top: auto; bottom: -8.5px; transform: rotate(225deg); }
+.cpop-x { position: absolute; top: 6px; right: 6px; width: 30px; height: 30px; border: 0; background: none; font-size: 20px; line-height: 1; color: var(--muted); cursor: pointer; border-radius: 8px; }
+@keyframes cpopUp { from { opacity: 0; transform: translateY(4px); } }
+.essay .corr.active s, .essay .corr.active ins { outline: 2px solid var(--orange); outline-offset: 1px; background-color: var(--orange-soft); }
+.tr-mark.active { outline: 2px solid var(--orange); }
 .other-row { padding: 12px 0; border-top: 1px solid var(--line); font-size: 15px; }
 .other-row:first-child { border-top: 0; }
 .other-row .ex { color: var(--muted); font-size: 14px; margin-top: 2px; }
@@ -1237,9 +1254,16 @@ function addMistake(m, optional) {
   add(m.tab, async c => {
     c.show(head("Quy tắc"));
     c.show(h("h2", { class: "h2" }, m.title));
-    const text = h("div", { class: "board-text" + (m.board.length === 1 ? " one" : ""), "aria-label": m.board.join(", ") });
-    c.show(h("div", { class: "board-wrap" }, img("dau_explaining", "", "anh Đậu chỉ lên bảng"), text));
-    for (const [i, line] of m.board.entries()) { await c.wait(i ? 450 : 600); text.append(h("span", {}, line)); }
+    // all lines are laid out first (invisible) so the chalk can be sized to fit the board
+    const lines = m.board.map(line => h("span", { class: "later" }, line));
+    const text = h("div", { class: "board-text" + (m.board.length === 1 ? " one" : ""), "aria-label": m.board.join(", ") }, lines);
+    const pic = img("dau_explaining", "", "anh Đậu chỉ lên bảng");
+    const wrap = c.show(h("div", { class: "board-wrap" }, pic, text));
+    if (!(await fitBoard(wrap, text, pic))) {
+      // too long for the drawn board even in small chalk: a plain board that grows with its lines
+      wrap.replaceWith(h("div", { class: "board-card", "aria-label": m.board.join(", ") }, lines)); fit();
+    }
+    for (const [i, line] of lines.entries()) { await c.wait(i ? 450 : 600); line.classList.remove("later"); }
     const ul = h("ul", { class: "rules" });
     c.show(h("div", { class: "card" }, ul));
     for (const [i, r] of m.rule.entries()) { if (i) await c.gate(); else await c.wait(700); ul.append(h("li", {}, r)); fit(); }
@@ -1578,6 +1602,27 @@ add("end", async c => {
     h("button", { class: "btn btn-ghost", type: "button", onclick: () => jump(nextIndex(extraIdx - 1, 1)) }, "Luyện thêm")));
 }, { last: true, optional: true, group: "later", end: "choose", backTo: () => summaryIdx });
 
+/* the chalk on the drawn board: shrink until every line fits, never below 12px (readable on a phone);
+   if that's not enough, make the picture full width and try again; false = use a plain board */
+async function fitBoard(wrap, text, pic) {
+  const settle = p => Promise.race([p, new Promise(r => setTimeout(r, 1500))]);
+  if (!pic.complete) await settle(new Promise(r => { pic.onload = pic.onerror = r; }));
+  if (document.fonts && document.fonts.ready) await settle(document.fonts.ready);
+  const over = () => text.scrollWidth > text.clientWidth + 1 || text.scrollHeight > text.clientHeight + 1;
+  const tryFit = () => {
+    const minK = 12 / (wrap.clientWidth || 1) * 100;               // cqw: % of the board picture's width
+    let k = text.classList.contains("one") ? 7.5 : 5.2;
+    text.style.fontSize = k + "cqw";
+    while (over() && k - 0.2 >= minK) { k -= 0.2; text.style.fontSize = k + "cqw"; }
+    return !over();
+  };
+  if (tryFit()) return true;
+  wrap.classList.add("big"); fit();
+  if (tryFit()) return true;
+  wrap.classList.remove("big");
+  return false;
+}
+
 /* ---------- sheets ---------- */
 function sheet(title, head, body) {
   const back = h("div", { class: "sheet-back" });
@@ -1606,8 +1651,32 @@ function openEssay({ sid = null, cids = null }) {
   const segBtns = [["orig", "Bài gốc"], ["diff", "Bài sửa"]].map(([k, t]) => h("button", { type: "button", "data-k": k, "aria-pressed": String(k === mode), onclick: () => { mode = k; segBtns.forEach(b => b.setAttribute("aria-pressed", String(b.dataset.k === k))); draw(); } }, t));
   const trBy = {};
   L.task_comments.forEach(t => { const last = t.sentence_ids[t.sentence_ids.length - 1]; if (last) (trBy[last] = trBy[last] || []).push(t); });
-  const clearNotes = () => body.querySelectorAll(".note").forEach(n => n.remove());
+  // a comment opens in a pop-up at the word (or the 💡), not under the paragraph
+  let popEl = null, popAnchor = null;
+  const closePop = () => { if (popEl) popEl.remove(); if (popAnchor) popAnchor.classList.remove("active"); popEl = popAnchor = null; };
+  function pop(anchor, ...kids) {
+    closePop();
+    popAnchor = anchor; anchor.classList.add("active");
+    const arrow = h("span", { class: "cpop-arrow", "aria-hidden": "true" });
+    popEl = h("div", { class: "cpop", role: "dialog", "aria-label": "Nhận xét" }, arrow,
+      h("button", { class: "cpop-x", type: "button", "aria-label": "Đóng", onclick: closePop }, "×"), h("div", { class: "cpop-body" }, kids));
+    body.append(popEl);
+    const z = rectZ(), br = body.getBoundingClientRect(), rects = anchor.getClientRects();
+    const first = rects[0] || anchor.getBoundingClientRect(), last = rects[rects.length - 1] || first;
+    const y = v => (v - br.top) / z + body.scrollTop, x = v => (v - br.left) / z;
+    const ph = popEl.offsetHeight, below = y(last.bottom) + 10;
+    const up = below + ph > body.scrollTop + body.clientHeight && y(first.top) - body.scrollTop > ph + 10;
+    popEl.classList.toggle("up", up);
+    popEl.style.top = (up ? y(first.top) - 10 - ph : below) + "px";
+    const at = up ? first : last;
+    arrow.style.left = Math.max(16, Math.min(popEl.offsetWidth - 16, x(at.left + at.width / 2) - popEl.offsetLeft)) + "px";
+    const top = popEl.offsetTop, bottom = top + ph;
+    if (bottom > body.scrollTop + body.clientHeight) body.scrollTo({ top: bottom - body.clientHeight + 12, behavior: REDUCED ? "auto" : "smooth" });
+    else if (top < body.scrollTop) body.scrollTo({ top: top - 12, behavior: REDUCED ? "auto" : "smooth" });
+  }
+  body.addEventListener("click", e => { if (!e.target.closest(".cpop, .corr, .tr-mark")) closePop(); });
   function draw() {
+    closePop();
     const essay = h("div", { class: "essay" });
     L.essay.paragraphs.forEach(p => {
       const para = h("p", {});
@@ -1615,13 +1684,14 @@ function openEssay({ sid = null, cids = null }) {
         if (i) para.append(" ");
         const span = sentence(s.id, { mode: mode === "diff" ? "diff" : "orig" });
         span.querySelectorAll(".corr").forEach(x => x.addEventListener("click", () => {
-          clearNotes(); const cc = C[x.dataset.c];
-          para.after(h("div", { class: "note" }, h("div", { class: "nh" }, (cc.orig.trim() || "…") + "  →  " + (cc.fix.trim() || "bỏ")), cc.comment));
+          const cc = C[x.dataset.c];
+          pop(x, h("div", { class: "nh" }, (cc.orig.trim() || "…") + "  →  " + (cc.fix.trim() || "bỏ")), cc.comment || null);
         }));
         if (s.id === sid) span.classList.add("hl");
         if (cids) span.querySelectorAll(".corr").forEach(x => { if (cids.includes(x.dataset.c)) x.classList.add("focus"); });
         para.append(span);
-        if (trBy[s.id]) para.append(h("button", { class: "tr-mark", type: "button", "aria-label": "Nhận xét về ý", onclick: () => { clearNotes(); para.after(h("div", { class: "note" }, trBy[s.id].map(t => (t.added && !t.added.startsWith("=>") ? t.added.replace(/[,.;:]+$/, "") + ": " : "") + t.comment).join("\n\n"))); } }, img("icon_bulb")));
+        if (trBy[s.id]) para.append(h("button", { class: "tr-mark", type: "button", "aria-label": "Nhận xét về ý", onclick: e => pop(e.currentTarget,
+          trBy[s.id].map(t => (t.added && !t.added.startsWith("=>") ? t.added.replace(/[,.;:]+$/, "") + ": " : "") + t.comment).join("\n\n")) }, img("icon_bulb")));
       });
       essay.append(para);
     });

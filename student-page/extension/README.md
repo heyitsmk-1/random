@@ -29,6 +29,12 @@ options) and add the Claude API key; the Netlify token is optional.
 
 Drafts autosave in `chrome.storage.local`, keyed by the CRM writing id.
 
+**Nhật ký (editing log, `lib/telemetry.js`):** when a Claude-drafted lesson is exported or published,
+the editor records what the teacher kept, edited, deleted or added versus Claude's draft, the mistake
+groups before/after, picks, and actions (drags, roles, ✓/~/✗, approvals, undo, optional reason chips).
+Student names are replaced by codes (HV1, HV2…). It stays in Chrome; Cài đặt → **Tải nhật ký** downloads
+it as one JSON file.
+
 ## Tests
 All run in headless Chromium with the network faked (no Claude or Netlify calls).
 ```

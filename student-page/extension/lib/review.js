@@ -136,6 +136,9 @@ export function checks(L, { prompt, checkLesson } = {}) {
     if ((m.board || []).length > 2) flag(`mistakes.main.${i}.board`, "mistakes", "Bảng: nhiều hơn 2 dòng sẽ không vừa bảng");
   });
 
+  const Q = L.finish && L.finish.quote;
+  if (Q && (!Q.text || !Q.text.trim() || !Q.source || !Q.source.trim())) flag("finish.quote", "finish", "Câu kết chưa có câu hoặc nguồn", true);
+
   // exercises that can't work
   L.practice.items.forEach((it, i) => {
     if (it.type === "choose" && !(it.answer >= 0 && it.answer < (it.options || []).length)) flag(`practice.items.${i}.answer`, "practice", "Đáp án đúng không trỏ tới lựa chọn nào", true);

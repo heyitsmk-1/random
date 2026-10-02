@@ -5,7 +5,7 @@
 <style>
 /* Layout: one phone-sized screen at a time, never scrolls. Progress on top, anh Đậu's bubble under it,
    the current card fills the middle, action bar at the bottom. The student moves every step forward
-   (swipe or button). Đậu orange is the only loud colour; mint = đúng, coral = sai; the essay paper uses
+   (tap or button). Đậu orange is the only loud colour; mint = đúng, coral = sai; the essay paper uses
    the ô ly grid of a Vietnamese school notebook. */
 :root {
   --bg: #F3F8F4;
@@ -190,7 +190,7 @@ button { font: inherit; color: inherit; }
 /* the card area */
 .content { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: .7em; font-size: calc(16px * var(--k)); }
 .content > * { flex-shrink: 0; }
-.content.overflow { overflow-y: auto; }
+.content.overflow { overflow-y: auto; touch-action: pan-y; }
 .enter { animation: upIn .5s cubic-bezier(.2, .9, .3, 1) both; }
 @keyframes upIn { from { opacity: 0; transform: translateY(36px); } }
 .rise { animation: rise .45s cubic-bezier(.2, .9, .3, 1) both; }
@@ -205,9 +205,11 @@ button { font: inherit; color: inherit; }
 .btn-main.wait { opacity: .4; box-shadow: none; }
 .btn-back { width: 52px; background: var(--paper); border: 1.5px solid var(--line); color: var(--muted); font-size: 22px; padding: 0; }
 .btn-back:disabled { visibility: hidden; }
+.btn-check { flex: none; align-self: stretch; }
+.btn-check:disabled { opacity: .45; box-shadow: none; cursor: default; }
 .btn-ghost { background: var(--paper); border: 1.5px solid var(--line); color: var(--ink); box-shadow: 0 3px 0 var(--line); font-size: .95em; padding: .75em 1em; }
 
-/* swipe-up hint, shown when Đậu is away and the page is waiting */
+/* "chạm để tiếp" hint, shown when Đậu is away and the page is waiting */
 .hint { position: absolute; left: 50%; bottom: calc(100% + 2px); transform: translateX(-50%); display: none; align-items: center; gap: 6px; padding: 5px 14px 5px 10px; border-radius: 999px; background: var(--paper); border: 1.5px solid var(--line); box-shadow: var(--shadow); font-size: 13px; font-weight: 600; color: var(--muted); white-space: nowrap; pointer-events: none; }
 .app.hint-on .hint { display: flex; animation: rise .4s both; }
 .hint b { color: var(--orange); display: inline-block; animation: nudgeDown 1s ease-in-out infinite; }
@@ -317,6 +319,14 @@ mark.hl { background: linear-gradient(transparent 55%, var(--orange-soft) 55%); 
 @keyframes hintIn { from { opacity: 0; } }
 .idea-name { font-weight: 700; font-size: .92em; }
 .tr-note + .tr-note { margin-top: .9em; }
+.seg-row { display: flex; gap: 8px; align-items: stretch; }
+.seg-row .seg { flex: 1; min-width: 0; }
+.step-start { flex: none; padding: .5em .8em; font-size: 14px; }
+.stepper { display: flex; align-items: center; gap: 10px; padding: 10px 16px calc(env(safe-area-inset-bottom, 0px) + 12px); border-top: 1.5px solid var(--line); background: var(--paper); }
+.stepper[hidden], .step-start[hidden] { display: none; }
+.stepper .btn { flex: none; min-width: 52px; padding: .55em .9em; }
+.stepper .btn:disabled { opacity: .4; }
+.step-label { flex: 1; min-width: 0; text-align: center; font-weight: 700; color: var(--muted); font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .cpop-quote { font-weight: 700; font-style: italic; margin-bottom: .35em; white-space: normal; }
 .tr-hl { background: rgba(255, 190, 60, .22); border-bottom: 2px dotted var(--orange); border-radius: 3px; cursor: pointer; }
 .tr-hl.active { background: var(--orange-soft); outline: 2px solid var(--orange); }
@@ -638,7 +648,7 @@ const save = () => { if (PREVIEW) return; try { localStorage.setItem(KEY, JSON.s
 
 /* =====================================================================
    Engine. A screen is a script of beats. Each gate() waits for the student
-   (swipe or Tiếp); nothing moves forward on its own. Going back re-runs the
+   (a tap or Tiếp); nothing moves forward on its own. Going back re-runs the
    screen instantly up to the previous gate.
    ===================================================================== */
 let runId = 0, cur = 0, passed = 0, target = 0, replay = false, fast = false;
@@ -986,7 +996,8 @@ function progress() {
   $("#bar").setAttribute("aria-valuenow", Math.round(pct));
 }
 
-/* gestures: a tap anywhere = next; swipes still work quietly (up or left = next, down or right = back) */
+/* gestures: a tap anywhere = next (back is the ‹ button); a drag does nothing, so a long screen
+   just scrolls under the finger */
 function gestures(el, tapForward) {
   let sx = 0, sy = 0, on = false;
   el.addEventListener("pointerdown", e => {
@@ -1002,12 +1013,6 @@ function gestures(el, tapForward) {
       if (tapForward && (!own || own === el || !el.contains(own))) forward();
       return;
     }
-    const fwd = Math.abs(dx) > Math.abs(dy) ? dx < 0 : dy < 0;
-    if (content && content.classList.contains("overflow") && Math.abs(dy) > Math.abs(dx)) {
-      const room = fwd ? content.scrollHeight - content.clientHeight - content.scrollTop : content.scrollTop;
-      if (room > 2) { content.scrollBy({ top: (fwd ? 1 : -1) * content.clientHeight * .8, behavior: REDUCED ? "auto" : "smooth" }); return; }
-    }
-    if (fwd) { S.ups = (S.ups || 0) + 1; save(); forward(); } else backward();
   });
   el.addEventListener("pointercancel", () => { on = false; });
 }
@@ -1061,6 +1066,26 @@ add("intro", async c => {
   for (const line of L.results.score.slice(1)) { await c.gate(); await c.say(line, "explaining"); }
   await praise(c, "results");
 }, { label: "Xem chi tiết" });
+
+// how to go through it: the full lesson with Đậu, or quickly through the essay in order
+add("intro", async c => {
+  const wasReplay = replay;
+  c.show(h("h1", { class: "h" }, "Em muốn xem thế nào?"));
+  await c.say(`Em muốn học kỹ cùng anh Đậu, hay xem nhanh từng lỗi theo thứ tự bài nè ${NAME}?`, "explaining");
+  const i = await c.ask(["Học kỹ cùng anh Đậu", "Xem nhanh theo thứ tự bài"], { key: "path" });
+  if (!wasReplay && i === 1) jump(quickIdx);
+});
+const quickIdx = screens.length;
+add("intro", async c => {
+  const wasReplay = replay;
+  const toPractice = () => jump(screens.findIndex(x => x.sec === "practice"));
+  c.show(h("h1", { class: "h" }, "Xem nhanh theo thứ tự bài"));
+  c.show(h("button", { class: "btn btn-main", type: "button", onclick: () => openEssay({ step: true, onDone: toPractice }) }, "Xem lần lượt từng lỗi"));
+  await c.say("Em xem lần lượt từng lỗi từ đầu tới cuối bài nha, xong mình qua phần luyện tập", "explaining");
+  if (!wasReplay) openEssay({ step: true, onDone: toPractice });
+  await c.gate();
+  if (!wasReplay) toPractice();
+}, { optional: true, group: "quick", label: "Qua luyện tập" });
 
 // the plan: four parts, in order
 add("intro", async c => {
@@ -1476,7 +1501,7 @@ function exercise(c, item, key, counter) {
     } else if (item.type === "build") {
       body.append(h("div", { class: "vi" }, item.vi));
       const b = builder(item, () => finished);
-      const check = h("button", { class: "btn btn-ghost", type: "button", onclick: () => {
+      const check = h("button", { class: "btn btn-main btn-check", type: "button", onclick: () => {
         if (finished) return;
         const words = b.picked();
         if (!words.length) return;
@@ -1486,6 +1511,9 @@ function exercise(c, item, key, counter) {
         result(ok);
       } }, "Kiểm tra");
       reveal = () => { check.remove(); b.showAnswer(); };
+      // faded until at least one word is in the line
+      const syncCheck = () => { check.disabled = !b.picked().length; };
+      new MutationObserver(syncCheck).observe(b.line, { childList: true }); syncCheck();
       body.append(b.el, check); needAnswer = b.el;
     }
     fit(); setBtn(); settle();
@@ -1746,11 +1774,12 @@ function markIn(root, quote, onTap) {
   for (let n = walker.nextNode(); n; n = walker.nextNode()) if (!n.parentElement.closest("ins")) nodes.push(n);
   const full = nodes.map(n => n.data).join(""), q = quote.replace(/\s+/g, " ").trim(), flat = full.replace(/\s+/g, " ");
   let a = flat.indexOf(q), b = a + q.length;
-  if (a < 0) { if (flat.trim() && q.includes(flat.trim())) { a = flat.indexOf(flat.trim()); b = a + flat.trim().length; } else return; }
+  if (a < 0) { if (flat.trim() && q.includes(flat.trim())) { a = flat.indexOf(flat.trim()); b = a + flat.trim().length; } else return []; }
   // positions in the whitespace-collapsed text -> positions in the real text
   const map = []; let prevSpace = false;
   for (let i = 0; i < full.length; i++) { const sp = /\s/.test(full[i]); if (!(sp && prevSpace)) map.push(i); prevSpace = sp; }
   const A = map[a], B = b < map.length ? map[b] : full.length;
+  const marks = [];
   let pos = 0;
   for (const n of nodes) {
     const s0 = pos, s1 = pos + n.data.length; pos = s1;
@@ -1762,8 +1791,11 @@ function markIn(root, quote, onTap) {
     const mark = h("span", { class: "tr-hl" });
     mid.replaceWith(mark); mark.append(mid);
     mark.addEventListener("click", e => { e.stopPropagation(); onTap(mark); });
+    marks.push(mark);
   }
+  return marks;
 }
+const KIND = { grammar: "Ngữ pháp", vocabulary: "Từ vựng", trcc: "Ý & liên kết", task_response: "Ý", coherence: "Liên kết" };
 function openOthers(tab) {
   const body = h("div", { class: "sheet-body" });
   othersOf(tab).forEach(o => body.append(h("div", { class: "other-row" }, h("div", { style: "font-weight:600" }, `${o.label} · ${mCount(o)}`),
@@ -1771,7 +1803,7 @@ function openOthers(tab) {
     ...ptsOf(o).map(p => h("div", { class: "ex en" }, (p.quote || p.sids.map(origText).join(" ")) + (p.better ? "  →  " + p.better : ""))))));
   sheet(`Các lỗi ${tab === "LR" ? "từ vựng" : "ngữ pháp"} nhỏ khác`, null, body);
 }
-function openEssay({ sid = null, cids = null }) {
+function openEssay({ sid = null, cids = null, step = false, onDone = null }) {
   let mode = "diff";
   const body = h("div", { class: "sheet-body" });
   const segBtns = [["orig", "Bài gốc"], ["diff", "Bài sửa"]].map(([k, t]) => h("button", { type: "button", "data-k": k, "aria-pressed": String(k === mode), onclick: () => { mode = k; segBtns.forEach(b => b.setAttribute("aria-pressed", String(b.dataset.k === k))); draw(); } }, t));
@@ -1817,26 +1849,71 @@ function openEssay({ sid = null, cids = null }) {
       p.sentences.forEach((s, i) => {
         if (i) para.append(" ");
         const span = sentence(s.id, { mode: mode === "diff" ? "diff" : "orig" });
-        span.querySelectorAll(".corr").forEach(x => x.addEventListener("click", () => {
+        span.querySelectorAll(".corr").forEach(x => {
           const cc = C[x.dataset.c];
-          pop(x, h("div", { class: "nh" }, (cc.orig.trim() || "…") + "  →  " + (cc.fix.trim() || "bỏ")), cc.comment || null);
-        }));
+          x._open = () => pop(x, h("div", { class: "nh" }, (cc.orig.trim() || "…") + "  →  " + (cc.fix.trim() || "bỏ")), cc.comment || null);
+          x._keys = ["c" + x.dataset.c]; x._kind = KIND[cc.kind] || "Sửa";
+          x.addEventListener("click", x._open);
+        });
         // the highlighted words themselves open their comment
-        for (const t of notesBy[s.id] || []) if (t.quote) markIn(span, t.quote, m => pop(m, noteBody(t)));
+        for (const t of notesBy[s.id] || []) if (t.quote) markIn(span, t.quote, m => pop(m, noteBody(t))).forEach(m => {
+          m._open = () => pop(m, noteBody(t)); m._keys = ["n" + L.task_comments.indexOf(t)]; m._kind = KIND[t.kind] || "Nhận xét";
+        });
         if (s.id === sid) span.classList.add("hl");
         if (cids) span.querySelectorAll(".corr").forEach(x => { if (cids.includes(x.dataset.c)) x.classList.add("focus"); });
         para.append(span);
-        if (trBy[s.id]) para.append(h("button", { class: "tr-mark", type: "button", "aria-label": "Nhận xét về ý", onclick: e => pop(e.currentTarget,
-          ...trBy[s.id].map(noteBody)) }, img("icon_bulb")));
+        if (trBy[s.id]) {
+          const bulb = h("button", { class: "tr-mark", type: "button", "aria-label": "Nhận xét về ý", onclick: e => pop(e.currentTarget, ...trBy[s.id].map(noteBody)) }, img("icon_bulb"));
+          bulb._open = () => pop(bulb, ...trBy[s.id].map(noteBody)); bulb._keys = trBy[s.id].map(t => "n" + L.task_comments.indexOf(t));
+          bulb._kind = [...new Set(trBy[s.id].map(t => KIND[t.kind] || "Nhận xét"))].join(" · ");
+          para.append(bulb);
+        }
         // words the teacher typed in after this sentence, shown where they go
-        for (const t of trBy[s.id] || []) if (!t.quote && typedIn(t)) para.append(" ", h("button", { class: "tr-add en", type: "button", onclick: e => pop(e.currentTarget, noteBody(t)) }, "+ " + typedIn(t)));
+        for (const t of trBy[s.id] || []) if (!t.quote && typedIn(t)) {
+          const add = h("button", { class: "tr-add en", type: "button", onclick: e => pop(e.currentTarget, noteBody(t)) }, "+ " + typedIn(t));
+          add._open = () => pop(add, noteBody(t)); add._keys = ["n" + L.task_comments.indexOf(t)]; add._kind = KIND[t.kind] || "Nhận xét";
+          para.append(" ", add);
+        }
       });
       essay.append(para);
     });
     body.replaceChildren(h("div", { class: "prompt" }, h("div", { class: "label" }, "Đề bài"), h("span", { class: "en" }, L.prompt)), essay);
+    // the steps: each correction and comment once, top to bottom (a 💡 only for comments not shown yet)
+    const seen = new Set();
+    steps = [...body.querySelectorAll(".corr, .tr-hl, .tr-add, .tr-mark")].filter(el => el._open && el._keys.some(k => !seen.has(k)) && (el._keys.forEach(k => seen.add(k)), true));
+    if (at >= steps.length) at = steps.length - 1;
+    showStep();
+  }
+  // "Xem lần lượt": ‹ › through the steps, each one opened where it is
+  let steps = [], at = -1;
+  const stepLabel = h("span", { class: "step-label" });
+  const prev = h("button", { class: "btn btn-ghost", type: "button", "aria-label": "Lỗi trước", onclick: () => go(at - 1) }, "‹");
+  const next = h("button", { class: "btn btn-main", type: "button", onclick: () => at >= steps.length - 1 ? done() : go(at + 1) }, "›");
+  const stepper = h("div", { class: "stepper", hidden: true }, prev, stepLabel, next);
+  const startBtn = h("button", { class: "btn btn-ghost step-start", type: "button", onclick: () => go(0) }, "Xem lần lượt");
+  function showStep() {
+    const on = at >= 0 && steps.length > 0;
+    stepper.hidden = !on; startBtn.hidden = on || !steps.length;
+    if (!on) return;
+    stepLabel.textContent = `${at + 1}/${steps.length} · ${steps[at]._kind}`;
+    prev.disabled = at === 0;
+    next.textContent = at >= steps.length - 1 ? (onDone ? "Luyện tập ›" : "Xong") : "›";
+  }
+  function go(i) {
+    if (!steps.length) return;
+    at = Math.max(0, Math.min(steps.length - 1, i));
+    const el = steps[at];
+    el.scrollIntoView({ block: "center", behavior: "auto" });
+    el._open(); showStep();
+  }
+  function done() {
+    closePop(); at = -1; showStep();
+    if (onDone) { sheetEl.querySelector(".x").click(); onDone(); }
   }
   draw();
-  sheet("Bài của " + NAME, h("div", { class: "seg" }, segBtns), body);
+  const sheetEl = sheet("Bài của " + NAME, h("div", { class: "seg-row" }, h("div", { class: "seg" }, segBtns), startBtn), body);
+  sheetEl.append(stepper);
+  if (step) requestAnimationFrame(() => go(0));
   if (sid) requestAnimationFrame(() => { const t = body.querySelector(".s.hl"); if (t) t.scrollIntoView({ block: "center", behavior: REDUCED ? "auto" : "smooth" }); });
 }
 $("#essayBtn").addEventListener("click", () => openEssay({}));

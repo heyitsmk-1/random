@@ -373,6 +373,10 @@ try {
   // ✓ / ~ / ✗
   await page.locator(".mod-btn", { hasText: "Phát triển ý" }).click();
   ok(await page.locator('.form select option[value="improve"]:checked').count() === (lesson.ideas.details.length > 1 ? 1 : 0), "an idea marked ~ (could go further)");
+  const st0 = page.locator(".form select").filter({ has: page.locator('option[value="improve"]') }).first();
+  const was = await st0.inputValue();
+  await st0.selectOption(was === "fix" ? "improve" : "fix");
+  await page.locator(".form select").filter({ has: page.locator('option[value="improve"]') }).first().selectOption(was);
 
   // undo on the review list
   await page.locator(".mod-btn", { hasText: "Cần duyệt" }).click();
@@ -387,6 +391,8 @@ try {
   const nApproved = await page.locator(".approved-row").count();
   await page.locator(".approved-row").last().getByRole("button", { name: "Bỏ duyệt" }).click();
   ok(await countNow() === n0 && nApproved >= 1, "Bỏ duyệt in the approved list puts it back");
+  await page.locator(".sub.rv").first().locator(".reason", { hasText: "dài quá" }).click();
+  ok(await page.locator(".sub.rv").first().locator(".reason.on").count() === 1, "a reason chip can be picked");
   await page.screenshot({ path: join(OUT, "06c-undo.png"), fullPage: true });
 
   // approve everything
@@ -405,6 +411,19 @@ try {
   ok(await boxes.count() >= 2, `praise candidates listed (${await boxes.count()}, lesson had ${(lesson.praise || []).length})`);
   ok(await page.locator(".mod-btn .count").count() === 0, "nothing left to review: " + (await page.locator(".mod-btn .count").count() ? await page.locator(".mod-btn", { has: page.locator(".count") }).allTextContents() : ""));
 
+  /* the closing verse */
+  await page.locator(".mod-btn", { hasText: "Kết thúc" }).click();
+  const qsel = page.locator(".form select").filter({ has: page.locator('option[value="auto"]') });
+  ok(/^Tự động: /.test(await qsel.locator("option").first().textContent()), "the automatic verse is shown");
+  await qsel.selectOption("custom");
+  await page.locator('.form textarea[lang="en"]').last().fill("Whoever loves discipline loves knowledge.");
+  await page.locator(".form input[placeholder='Proverbs 1:5']").fill("Proverbs 12:1");
+  await page.getByRole("button", { name: /Thêm vào danh sách/ }).click();
+  ok(await page.evaluate(() => JSON.parse(localStorage.getItem("dau:settings")).quotes.some(q => q.source === "Proverbs 12:1")), "a typed verse is saved for later lessons");
+  await page.waitForTimeout(900);
+  ok(await page.frameLocator("#pv").locator("body").evaluate(b => b.innerHTML.includes("Whoever loves discipline")).catch(() => false)
+    || await page.evaluate(() => JSON.parse(localStorage.getItem(Object.keys(localStorage).find(k => k.startsWith("dau:draft:")))).lesson.lesson.finish.quote.source === "Proverbs 12:1"), "the lesson uses the chosen verse");
+
   /* export */
   await page.getByRole("button", { name: "5 · Xuất" }).click();
   ok(await page.getByText("Bài ôn dựng được.").count() === 1, "export: no blocking problems");
@@ -415,6 +434,16 @@ try {
   ok(/^Dau-on-bai-.+-Writing-Week-\d+\.html$/.test(dl.suggestedFilename()), "file name " + dl.suggestedFilename());
   const html = readFileSync(saved, "utf8");
   ok(!html.includes("__candidates") && !html.includes("__mistake_roles") && !html.includes("sk-ant"), "no editor-only data or keys in the page");
+  ok(html.includes("Whoever loves discipline loves knowledge."), "the exported page has the chosen verse");
+  // the editing log
+  const log = await page.evaluate(() => Object.keys(localStorage).filter(k => k.startsWith("dau:log:")).map(k => JSON.parse(localStorage.getItem(k))));
+  const rec = log[0] || {};
+  const names = [lesson.student, ...(await page.evaluate(() => JSON.parse(localStorage.getItem(Object.keys(localStorage).find(k => k.startsWith("dau:draft:")))).lesson.meta.student_full)).split(" ").slice(-2)];
+  ok(log.length === 1 && /^HV\d+$/.test(rec.student), "one log record, student as a code: " + rec.student);
+  ok(!names.some(n => n.length > 1 && JSON.stringify(rec).includes(n)) || names.every(n => n.length <= 1), "no student name in the log");
+  ok(rec.summary && rec.summary.ideas && rec.changes.some(c => c.status === "edited") && rec.groups.ai.length && rec.essay.length, "the log has the diff, groups and essay: " + Object.keys(rec.summary || {}).join(","));
+  ok(["approve", "undo", "unapprove", "drag", "idea_status", "praise_pick", "reason", "regen_group", "regen_practice", "checks"].every(t => rec.events.some(e => e.type === t)),
+    "the log has the actions: " + [...new Set((rec.events || []).map(e => e.type))].join(","));
 
   /* publish twice: the second deploy keeps the first page */
   await page.getByRole("button", { name: "Đăng link" }).click();

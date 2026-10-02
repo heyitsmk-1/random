@@ -36,3 +36,31 @@ export async function listDrafts() {
   }
   return out;
 }
+
+/* the editing log (lib/telemetry.js): one record per lesson, replaced when it is exported again */
+export async function saveLog(key, record) { return set("log:" + key, record); }
+export async function listLogs() {
+  if (hasChrome) {
+    const all = await chrome.storage.local.get(null);
+    return Object.entries(all).filter(([k]) => k.startsWith("log:")).map(([, v]) => v);
+  }
+  const out = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (k && k.startsWith("dau:log:")) { try { out.push(JSON.parse(localStorage.getItem(k))); } catch (e) { /* skip */ } }
+  }
+  return out;
+}
+export async function clearLogs() {
+  if (hasChrome) {
+    const all = await chrome.storage.local.get(null);
+    return chrome.storage.local.remove(Object.keys(all).filter(k => k.startsWith("log:")));
+  }
+  for (const k of Object.keys(localStorage)) if (k.startsWith("dau:log:")) localStorage.removeItem(k);
+}
+/** HV1, HV2, ...: the same student always gets the same code (kept in the settings). */
+export async function studentCode(name) {
+  const s = await getSettings(), codes = { ...(s.studentCodes || {}) };
+  if (!codes[name]) { codes[name] = "HV" + (Object.keys(codes).length + 1); await setSettings({ studentCodes: codes }); }
+  return codes[name];
+}

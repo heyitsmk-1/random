@@ -2,9 +2,10 @@
 import { extractPage } from "./lib/extract.js";
 import { buildPage, checkLesson } from "./lib/build.js";
 import { draftLesson, draftToLesson, mergeParts, draftGroup, redraftPractice, PARTS, MODEL } from "./lib/draft.js";
-import { getSettings, setSettings, takePage, saveDraft, loadDraft, listDrafts } from "./lib/store.js";
+import { getSettings, setSettings, takePage, saveDraft, loadDraft, listDrafts, saveLog, studentCode } from "./lib/store.js";
 import { publishPage } from "./lib/netlify.js";
 import { reviewUnits, checks, lint } from "./lib/review.js";
+import { buildRecord } from "./lib/telemetry.js";
 
 /* ---------- tiny DOM helper ---------- */
 function h(tag, attrs, ...kids) {
@@ -97,7 +98,10 @@ function approveItems(items) {
     for (const k of ks) if (!S.ok[k]) { S.ok[k] = true; keys.push(k); }
   }
   touch(); renderEdit();
-  if (keys.length) showUndo("Đã duyệt: " + (items.length === 1 ? itemLabel(items[0]) : `${items.length} mục`), () => { keys.forEach(k => { delete S.ok[k]; }); });
+  if (keys.length) {
+    logEvent("approve", { items: items.map(itemLabel) });
+    showUndo("Đã duyệt: " + (items.length === 1 ? itemLabel(items[0]) : `${items.length} mục`), () => { keys.forEach(k => { delete S.ok[k]; }); logEvent("undo", { items: items.map(itemLabel) }); });
+  }
 }
 const itemLabel = x => x.kind === "unit" ? x.u.label : x.kind === "flag" ? x.f.msg.slice(0, 60) : "Lời khen";
 /* "Hoàn tác" for 10 seconds after an approval */
@@ -148,7 +152,24 @@ function touch() {
 // don't lose the last few keystrokes when the tab closes
 addEventListener("pagehide", () => { if (saveTimer) flush(); });
 document.addEventListener("visibilitychange", () => { if (document.hidden && saveTimer) flush(); });
-const snapshot = () => ({ page: S.page, meta: S.meta, tags: S.tags, checklist: S.checklist, notes: S.notes, rewriteTarget: S.rewriteTarget, lesson: S.lesson, partial: S.partial, src: S.src, ok: S.ok, usage: S.usage, step: S.step });
+const snapshot = () => ({ page: S.page, meta: S.meta, tags: S.tags, checklist: S.checklist, notes: S.notes, rewriteTarget: S.rewriteTarget, lesson: S.lesson, partial: S.partial, src: S.src, ok: S.ok, usage: S.usage, step: S.step,
+  aiDraft: S.aiDraft, events: S.events, draftAt: S.draftAt });
+
+/* ---------- the editing log (lib/telemetry.js) ---------- */
+function logEvent(type, data = {}) {
+  if (!S.aiDraft) return;
+  (S.events = S.events || []).push({ t: Math.round((Date.now() - (S.draftAt || Date.now())) / 1000), type, ...data });
+}
+async function recordLesson(how) {
+  if (!S.aiDraft) return;                          // only lessons Claude drafted
+  try {
+    const full = S.meta.student_full || S.lesson.student || "";
+    const code = await studentCode(full || S.key);
+    const record = buildRecord({ key: S.key, code, names: [full, S.meta.call_name, S.lesson.student], meta: S.meta, ai: S.aiDraft, final: S.lesson,
+      events: S.events || [], usage: S.usage, draftAt: S.draftAt, how, page: S.page });
+    await saveLog(S.key, record);
+  } catch (e) { console.warn("nhật ký:", e); }  // the log must never block an export
+}
 function restore(snap) { Object.assign(S, snap); }
 
 /* ---------- boot ---------- */
@@ -453,6 +474,8 @@ async function runDraft({ retry = false } = {}) {
   }));
   S.ok = {};
   S.mod = "review";
+  S.aiDraft = structuredClone(S.lesson); S.draftAt = Date.now();
+  S.events = [{ t: 0, type: "checks", flags: checks(S.lesson, { prompt: S.lesson.prompt, checkLesson }).map(f => f.msg.replace(/\d+/g, "N").slice(0, 80)) }];
   touch(); go("edit");
 }
 
@@ -570,7 +593,7 @@ const STATUS = [["ok", "✓ Ổn"], ["improve", "~ Nâng cấp thêm"], ["fix", 
 const statusOf = o => o.status || (o.ok ? "ok" : "fix");
 function fStatus(p) {
   const o = getP(S.lesson, p);
-  return wrapField(`${p}.status`, "Đánh giá", h("select", { onchange: e => { o.ok = e.target.value === "ok"; changed(`${p}.status`, e.target.value, { rerender: true }); } },
+  return wrapField(`${p}.status`, "Đánh giá", h("select", { onchange: e => { logEvent("idea_status", { idea: o.tag, from: statusOf(o), to: e.target.value }); o.ok = e.target.value === "ok"; changed(`${p}.status`, e.target.value, { rerender: true }); } },
     STATUS.map(([v, l]) => h("option", { value: v, selected: statusOf(o) === v ? true : null }, l))));
 }
 function fBool(path, label) {
@@ -696,7 +719,7 @@ function moduleForm(id) {
     case "praise": return praiseForm();
     case "finish": return [head("Kết thúc", ["finish"]),
       fLines("finish.summary", "Sau luyện tập"), takeawaysForm(), fLine("finish.extra_prompt", "Rủ luyện thêm ({n} = số câu)"),
-      fLines("finish.later", "Nếu để lần sau"), fLines("finish.done", "Cuối cùng"),
+      fLines("finish.later", "Nếu để lần sau"), fLines("finish.done", "Cuối cùng"), quoteForm(),
       h("p", { class: "small muted" }, `Biểu tượng cảm xúc trong cả bài: ${emoticonCount()} (nên tối đa 3)`)];
   }
 }
@@ -750,6 +773,14 @@ function unitSummary(u) {
   if (u.id === "rewrite") return [kv("Mạch ý", enText(at("rewrite.flow"))), kv("Câu mở đầu", at("rewrite.starters")), kv("Từ hay", at("rewrite.phrases")), kv("Bài mẫu", enText(at("rewrite.model")))];
   return [];
 }
+/* optional one-click reasons, for the editing log */
+const REASONS = ["sai ý thầy", "sai kiến thức", "giọng Đậu", "dài quá", "khác"];
+function reasonChips(label) {
+  const picked = new Set((S.events || []).filter(e => e.type === "reason" && e.item === label).map(e => e.reason));
+  return h("div", { class: "reasons" }, h("span", { class: "small muted" }, "Lý do sửa (không bắt buộc):"),
+    REASONS.map(r => h("button", { class: "reason" + (picked.has(r) ? " on" : ""), type: "button", "aria-pressed": String(picked.has(r)),
+      onclick: e => { if (picked.has(r)) return; logEvent("reason", { item: label, reason: r }); e.currentTarget.classList.add("on"); e.currentTarget.setAttribute("aria-pressed", "true"); touch(); } }, r)));
+}
 function reviewForm() {
   const items = openItems();
   const order = MODULES.map(m => m[0]);
@@ -769,6 +800,7 @@ function reviewForm() {
         h("button", { class: "btn small ok-btn", type: "button", onclick: () => approveItems([x]) }, "✓ Duyệt"),
         h("button", { class: "btn small", type: "button", onclick: () => goTo(x.module, x.u.roots[0]) }, "Sửa")),
       x.flags.map(f => h("div", { class: "lint" }, f.msg)),
+      reasonChips(x.u.label),
       unitSummary(x.u));
   };
   return [h("h2", {}, "Cần duyệt"),
@@ -787,7 +819,7 @@ function approvedList() {
   if (!rows.length) return null;
   return h("details", { class: "approved" }, h("summary", {}, `Đã duyệt (${rows.length})`),
     rows.map(([label, undo]) => h("div", { class: "row approved-row" }, h("span", { class: "grow" }, label),
-      h("button", { class: "btn small", type: "button", onclick: () => { undo(); touch(); renderEdit(); } }, "Bỏ duyệt"))));
+      h("button", { class: "btn small", type: "button", onclick: () => { undo(); logEvent("unapprove", { item: label }); touch(); renderEdit(); } }, "Bỏ duyệt"))));
 }
 
 /* mistakes: groups the teacher can rename, re-tag, and drag corrections between */
@@ -800,6 +832,7 @@ function mistakeGroups() {
   ];
 }
 function setRole(g, role) {
+  logEvent("group_role", { group: g.where === "main" ? g.m.title : g.m.label, from: g.role, to: role });
   const M = S.lesson.mistakes;
   S.lesson.__mistake_roles = S.lesson.__mistake_roles || {};
   if (g.where === "others" && role !== "other") {
@@ -886,6 +919,7 @@ function mistakesForm() {
     ondrop: e => {
       e.preventDefault();
       const item = e.dataTransfer.getData("text/plain");
+      logEvent("drag", { item, to: g.where === "main" ? g.m.title : g.m.label });
       if (item.startsWith("c:")) {
         const cid = item.slice(2);
         for (const x of groups) { const l = x.m.cids; const k = l.indexOf(cid); if (k >= 0) l.splice(k, 1); }
@@ -949,6 +983,7 @@ function mistakesForm() {
 /* ✨ one small Claude call: the teaching of a group the teacher made or changed (only empty fields are filled) */
 async function regenGroup(g) {
   if (!SETTINGS.apiKey) return alert("Chưa có Claude API key. Thêm trong phần Cài đặt nha.");
+  logEvent("regen_group", { group: g.m.title, cids: g.m.cids.length, notes: (g.m.points || []).length });
   S.busy = { ...(S.busy || {}), [g.m.id]: true }; renderEdit();
   try {
     const d = await draftGroup({ apiKey: SETTINGS.apiKey, week: draftWeek(), teacher: SETTINGS.teacher, input: draftInput(), lesson: S.lesson, group: g.m });
@@ -965,6 +1000,7 @@ async function regenPractice() {
   if (!SETTINGS.apiKey) return alert("Chưa có Claude API key. Thêm trong phần Cài đặt nha.");
   if (!confirm("Soạn lại toàn bộ bài luyện theo các nhóm lỗi hiện tại? Bài luyện cũ (cả chỗ anh đã sửa) sẽ được thay.")) return;
   S.busy = { ...(S.busy || {}), practice: true }; renderEdit();
+  logEvent("regen_practice", { main: (S.lesson.mistakes.main[0] || {}).title });
   try {
     const old = S.lesson.practice;
     S.lesson.practice = await redraftPractice({ apiKey: SETTINGS.apiKey, week: draftWeek(), teacher: SETTINGS.teacher, input: draftInput(), lesson: S.lesson });
@@ -1016,6 +1052,7 @@ function praiseForm() {
       const on = isOn(c);
       return h("div", { class: "pick" },
         h("input", { type: "checkbox", checked: on, disabled: !on && chosen.length >= 3 ? true : null, onchange: e => {
+          logEvent(e.target.checked ? "praise_pick" : "praise_unpick", { line: c.line });
           if (e.target.checked) chosen.push({ at: c.at, line: c.line }); else chosen.splice(chosen.findIndex(p => p.line === c.line), 1);
           L.praise_status = L.praise_status === "ok" ? "ok" : "draft"; touch(); refreshPreview(); renderEdit();
         } }),
@@ -1028,6 +1065,37 @@ function praiseForm() {
     h("button", { class: "btn small", type: "button", onclick: () => { L.__candidates = L.__candidates || { praise: [], takeaways: [] }; L.__candidates.praise.push({ at: "framework", line: "", evidence: "" }); touch(); renderEdit(); } }, "+ Thêm lời khen")];
 }
 
+/* the closing verse: picked automatically (same pick as build.py) unless the teacher chooses one */
+function quoteForm() {
+  const L = S.lesson, F = L.finish;
+  const list = [...BUNDLE.quotes, ...(SETTINGS.quotes || [])];
+  const auto = BUNDLE.quotes[Array.from(L.student + L.homework).reduce((n, ch) => n + ch.codePointAt(0), 0) % BUNDLE.quotes.length];
+  const same = (a, b) => a && b && a.text === b.text && a.source === b.source;
+  const k = F.quote ? list.findIndex(q => same(q, F.quote)) : -1;
+  const mode = !F.quote ? "auto" : k >= 0 ? String(k) : "custom";
+  const label = q => `${q.source} · ${q.text.length > 70 ? q.text.slice(0, 67) + "…" : q.text}`;
+  let addBtn = null;
+  const set = (q, rerender = true) => {
+    F.quote = q; S.src["finish.quote"] = "teacher"; touch(); refreshPreview();
+    if (rerender) renderEdit(); else if (addBtn) addBtn.disabled = !q.text.trim() || !q.source.trim();
+  };
+  const shown = F.quote && F.quote.text ? F.quote : auto;
+  return h("div", { class: "field" }, h("div", { class: "lbl" }, "Câu kết (cuối bài)"),
+    h("select", { onchange: e => { const v = e.target.value; set(v === "auto" ? null : v === "custom" ? { text: "", source: "", meaning: "" } : list[+v]); } },
+      h("option", { value: "auto", selected: mode === "auto" ? true : null }, "Tự động: " + label(auto)),
+      list.map((q, i) => h("option", { value: i, selected: mode === String(i) ? true : null }, label(q))),
+      h("option", { value: "custom", selected: mode === "custom" ? true : null }, "Câu khác…")),
+    mode === "custom" ? h("div", { class: "sub", style: "margin-top:6px" },
+      h("label", {}, "Câu (tiếng Anh)", h("textarea", { lang: "en", value: F.quote.text, placeholder: "Let the wise hear and increase in learning…", oninput: e => { F.quote.text = e.target.value; set(F.quote, false); } })),
+      h("div", { class: "grid2" },
+        h("label", {}, "Nguồn", h("input", { value: F.quote.source, placeholder: "Proverbs 1:5", oninput: e => { F.quote.source = e.target.value; set(F.quote, false); } })),
+        h("label", {}, "Nghĩa (tiếng Việt)", h("input", { value: F.quote.meaning || "", oninput: e => { F.quote.meaning = e.target.value; set(F.quote, false); } }))),
+      addBtn = h("button", { class: "btn small", type: "button", disabled: !F.quote.text.trim() || !F.quote.source.trim() ? true : null, onclick: async () => {
+        const quotes = [...(SETTINGS.quotes || []), { ...F.quote }];
+        SETTINGS = { ...SETTINGS, quotes }; await setSettings({ quotes }); renderEdit();
+      } }, "Thêm vào danh sách (dùng cho các bài sau)")) : null,
+    h("div", { class: "small muted", style: "margin-top:4px" }, shown.meaning ? `“${shown.text}” · ${shown.meaning}` : `“${shown.text}”`));
+}
 function takeawaysForm() {
   const L = S.lesson, cand = (L.__candidates && L.__candidates.takeaways) || [];
   const chosen = L.finish.takeaways;
@@ -1036,6 +1104,7 @@ function takeawaysForm() {
     all.map((t, i) => h("div", { class: "pick" },
       h("input", { type: "checkbox", checked: chosen.includes(t), onchange: e => {
         const next = e.target.checked ? [...chosen, t] : chosen.filter(x => x !== t);
+        logEvent(e.target.checked ? "takeaway_pick" : "takeaway_unpick", { line: t });
         changed("finish.takeaways", next, { rerender: true });
       } }),
       h("input", { type: "text", value: t, oninput: e => {
@@ -1073,7 +1142,7 @@ async function renderExport() {
     warns.length ? h("div", { class: "notice" }, h("ul", { class: "problems" }, warns.map(w => h("li", {}, w)))) : null,
     S.usage ? h("p", { class: "small muted" }, `Lần soạn nháp: ${S.usage.input_tokens + (S.usage.cache_read_input_tokens || 0) + (S.usage.cache_creation_input_tokens || 0)} token vào, ${S.usage.output_tokens} token ra (${S.usage.model}).`) : null,
     h("div", { class: "row" },
-      h("button", { class: "btn primary", type: "button", disabled: problems.length ? true : null, onclick: async () => { const { html } = await buildPage(L, BUNDLE); download(fileBase() + ".html", html, "text/html"); } }, "Tải file HTML"),
+      h("button", { class: "btn primary", type: "button", disabled: problems.length ? true : null, onclick: async () => { const { html } = await buildPage(L, BUNDLE); download(fileBase() + ".html", html, "text/html"); await recordLesson("download"); } }, "Tải file HTML"),
       h("button", { class: "btn", type: "button", onclick: () => download(fileBase() + ".json", JSON.stringify(snapshot(), null, 1), "application/json") }, "Lưu bài ôn (.json) để sửa sau"),
       h("button", { class: "btn", type: "button", disabled: problems.length || !SETTINGS.netlifyToken ? true : null, title: SETTINGS.netlifyToken ? "" : "Thêm Netlify token trong Cài đặt", onclick: () => publish(status) }, "Đăng link")),
     L.__link ? h("p", {}, "Link đã đăng gần nhất: ", h("a", { href: L.__link, target: "_blank" }, L.__link), h("br"), h("span", { class: "small muted" }, "Đăng lại sẽ tạo link mới; link cũ vẫn giữ nguyên.")) : null,
@@ -1087,6 +1156,7 @@ async function publish(status) {
     SETTINGS = { ...SETTINGS, netlifySiteId: siteId, published: [...(SETTINGS.published || []), path] };
     await setSettings({ netlifySiteId: siteId, published: SETTINGS.published });
     S.lesson.__links = [...(S.lesson.__links || []), url]; S.lesson.__link = url; touch();
+    await recordLesson("publish");
     status.replaceChildren(h("div", { class: "notice good" }, "Đã đăng: ", h("a", { href: url, target: "_blank" }, url), " ",
       h("button", { class: "btn small", type: "button", onclick: () => navigator.clipboard.writeText(url) }, "Chép link")));
   } catch (e) { status.replaceChildren(h("div", { class: "notice bad" }, e.message || String(e))); }

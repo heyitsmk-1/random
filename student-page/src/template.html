@@ -80,7 +80,7 @@ button { font: inherit; color: inherit; }
 /* the roadmap: the four parts in order */
 .roadmap { display: flex; flex-direction: column; gap: 8px; }
 .road { display: flex; align-items: center; gap: 12px; padding: .7em .9em; animation: rise .4s both; }
-.road b { font: 800 1.25em/1 var(--font-display); color: var(--orange-deep); width: 2.6em; }
+.road b { font: 800 1.25em/1 var(--font-display); color: var(--orange-deep); min-width: 2.6em; }
 .road span { font-weight: 600; }
 .road em { margin-left: auto; font-style: normal; color: var(--muted); font-size: .85em; }
 .road-arrow { text-align: center; color: var(--muted); line-height: 1; }
@@ -210,7 +210,7 @@ button { font: inherit; color: inherit; }
 .btn-ghost { background: var(--paper); border: 1.5px solid var(--line); color: var(--ink); box-shadow: 0 3px 0 var(--line); font-size: .95em; padding: .75em 1em; }
 
 /* "chạm để tiếp" hint, shown when Đậu is away and the page is waiting */
-.hint { position: absolute; left: 50%; bottom: calc(100% + 2px); transform: translateX(-50%); display: none; align-items: center; gap: 6px; padding: 5px 14px 5px 10px; border-radius: 999px; background: var(--paper); border: 1.5px solid var(--line); box-shadow: var(--shadow); font-size: 13px; font-weight: 600; color: var(--muted); white-space: nowrap; pointer-events: none; }
+.hint { position: absolute; left: 50%; bottom: calc(100% + 2px); transform: translateX(-50%); display: none; align-items: center; gap: 6px; padding: 5px 14px 5px 10px; border-radius: 999px; background: var(--paper); border: 1.5px solid var(--line); box-shadow: var(--shadow); font-size: 13px; font-weight: 600; color: var(--muted); white-space: nowrap; pointer-events: auto; cursor: pointer; }
 .app.hint-on .hint { display: flex; animation: rise .4s both; }
 .hint b { color: var(--orange); display: inline-block; animation: nudgeDown 1s ease-in-out infinite; }
 @keyframes up { 50% { transform: translateY(-4px); } }
@@ -286,6 +286,37 @@ mark.hl { background: linear-gradient(transparent 55%, var(--orange-soft) 55%); 
 .map .chip { font-size: .85em; font-weight: 600; text-align: center; padding: .45em .5em; border-radius: 12px; line-height: 1.3; animation: popIn .4s cubic-bezier(.3, 1.5, .5, 1) both; }
 .map .c { background: var(--mint-soft); color: var(--mint-deep); }
 .map .s { background: var(--sky-soft); color: var(--sky-deep); }
+.map .o { background: var(--orange-soft); color: var(--orange-deep); }
+/* Task 1 */
+.t1-type { display: block; font: 700 .7em/1.2 var(--font-display); letter-spacing: .05em; text-transform: uppercase; color: var(--orange-deep); }
+.chart-card { padding: .7em .8em; }
+.chart-scroll { overflow-x: auto; }
+.chart-table { border-collapse: collapse; width: 100%; font-size: .85em; }
+.chart-table th, .chart-table td { padding: .3em .45em; text-align: right; border-bottom: 1px solid var(--line); white-space: nowrap; }
+.chart-table tbody th { text-align: left; font-weight: 600; white-space: normal; }
+.chart-table thead th { color: var(--muted); font-weight: 700; }
+.chart-table thead th.on { color: var(--orange-deep); }
+.chart-table tr.on th { color: var(--orange-deep); }
+.map-rows { display: flex; flex-direction: column; gap: 2px; font-size: .85em; }
+.map-row { padding: .35em .4em; border-bottom: 1px solid var(--line); border-radius: 8px; }
+.map-row > b { display: block; font-weight: 700; margin-bottom: 1px; }
+.map-row.on > b { color: var(--orange-deep); }
+.map-cell { display: flex; gap: .5em; line-height: 1.35; }
+.map-cell .k { flex: 0 0 3.6em; color: var(--muted); font-weight: 700; }
+.map-cell.hit { background: var(--orange-soft); color: var(--orange-deep); font-weight: 700; border-radius: 6px; }
+.chart-table td.hit { background: var(--orange-soft); color: var(--orange-deep); font-weight: 800; border-radius: 6px; }
+.line-chart { width: 100%; height: auto; display: block; }
+.line-chart text { font: 600 9px var(--font-body); fill: var(--muted); }
+.line-chart .grid { stroke: var(--line); stroke-width: 1; }
+.legend { display: flex; flex-wrap: wrap; gap: .3em .8em; font-size: .8em; margin-top: .3em; }
+.legend span { display: inline-flex; align-items: center; gap: .3em; color: var(--muted); }
+.legend span.on { color: var(--ink); font-weight: 700; }
+.legend i { width: .9em; height: .25em; border-radius: 2px; display: inline-block; }
+.data-item { display: flex; gap: .7em; align-items: flex-start; }
+.data-item .t { flex: 1; min-width: 0; }
+.data-item.bad { border-color: var(--coral); }
+.data-item .fix { color: var(--mint-deep); font-weight: 700; font-size: .92em; margin-top: .2em; }
+.check-line { display: flex; gap: .6em; align-items: flex-start; font-size: .92em; }
 .map .down { text-align: center; color: var(--orange); font-weight: 800; line-height: 1; animation: rise .4s both; }
 .tick { width: 1.5em; height: 1.5em; flex: none; border-radius: 50%; display: grid; place-items: center; background: var(--mint-soft); }
 .tick.no { background: var(--coral-soft); }
@@ -797,6 +828,7 @@ function makeCtx(id) {
     id,
     async say(text, p, opts = {}) {
       alive(id);
+      if (text == null || !String(text).trim()) return;   // a missing line: nothing to say, don't wait on an empty bubble
       const n = ++sayN;
       clearTimeout(awayTimer); awayTimer = null; saidAt = passed;
       clearTimeout(idleTimer);
@@ -890,10 +922,15 @@ const screens = [];
 /* 2-3 specific compliments per essay (lesson.praise), each said where it belongs */
 const praiseAt = key => (L.praise || []).filter(p => p.at === key).map(p => p.line);
 async function praise(c, key) { for (const line of praiseAt(key)) { await c.gate(); await c.say(line, "cheering"); } }
-const TABS = [["TR", "TR"], ["CC", "CC"], ["LR", "LR"], ["GRA", "GR"]];
-const tabBtns = TABS.map(([t, k]) => h("button", { class: "tab", type: "button", "aria-label": `${t}, band ${L.scores[k]}`, onclick: () => { if (tabIdx[t] != null) jump(tabIdx[t]); } }, h("b", {}, t), h("span", {}, L.scores[k])));
+/* the sections, in order: [section, tab label, score key (or null), name said in the roadmap] */
+const TABS = L.tabs || [["TR", "TR", "TR", "Ý tưởng"], ["CC", "CC", "CC", "Liên kết"], ["LR", "LR", "LR", "Từ vựng"], ["GRA", "GRA", "GR", "Ngữ pháp"]];
+const scoreOf = k => k && L.scores && L.scores[k] ? L.scores[k] : "";
+const hasScores = Object.values(L.scores || {}).some(Boolean);
+const tabBtns = TABS.map(([t, label, k, name]) => h("button", { class: "tab", type: "button", "aria-label": scoreOf(k) ? `${name}, band ${scoreOf(k)}` : name,
+  onclick: () => { if (tabIdx[t] != null) jump(tabIdx[t]); } }, h("b", {}, label), scoreOf(k) ? h("span", {}, scoreOf(k)) : null));
 $("#tabs").append(...tabBtns);
 const add = (sec, script, opts = {}) => screens.push({ sec, script, ...opts });
+const named = name => screens.findIndex(sc => sc.name === name);
 /* the order shows in the tabs: the current section is biggest, the ones still to come a little
    smaller in order, the ones done smallest (before TR starts, TR is the biggest) */
 function sizeTabs(sec) {
@@ -996,27 +1033,41 @@ function progress() {
   $("#bar").setAttribute("aria-valuenow", Math.round(pct));
 }
 
-/* gestures: a tap anywhere = next (back is the ‹ button); a drag does nothing, so a long screen
-   just scrolls under the finger */
+/* gestures. Back is the ‹ button. A tap (finger moved under 10px) moves on, except on a screen
+   taller than the phone: there the page scrolls, and only Đậu's bubble, the "chạm để tiếp" pill or
+   Tiếp move on. A drag over Đậu scrolls the page under him. */
+const scrolls = () => !!(content && content.scrollHeight > content.clientHeight + 2);
 function gestures(el, tapForward) {
-  let sx = 0, sy = 0, on = false;
+  let sx = 0, sy = 0, lastY = 0, on = false, dragged = false;
   el.addEventListener("pointerdown", e => {
     if (e.target.closest(".wchip, textarea, input, label")) return;
-    on = true; sx = e.clientX; sy = e.clientY;
+    on = true; dragged = false; sx = e.clientX; sy = lastY = e.clientY;
+  });
+  el.addEventListener("pointermove", e => {
+    if (!on) return;
+    if (Math.hypot(e.clientX - sx, e.clientY - sy) >= 10) dragged = true;
+    // the layer over the page (while Đậu talks) takes no native scroll: pass the drag on
+    if (el.id === "catch" && dragged && content) { content.scrollTop -= (e.clientY - lastY) / ZOOM; }
+    lastY = e.clientY;
   });
   el.addEventListener("pointerup", e => {
     if (!on) return; on = false;
-    const dx = e.clientX - sx, dy = e.clientY - sy;
-    if (Math.max(Math.abs(dx), Math.abs(dy)) < 45) {
-      // buttons, inputs and word chips inside the page keep their own taps
-      const own = e.target.closest("button, a, input, textarea, label, select, [role=button]");
-      if (tapForward && (!own || own === el || !el.contains(own))) forward();
-      return;
-    }
+    if (dragged) return;
+    // buttons, inputs and word chips inside the page keep their own taps
+    const own = e.target.closest("button, a, input, textarea, label, select, [role=button]");
+    if (!tapForward || (own && own !== el && el.contains(own))) return;
+    if (scrolls() && !e.target.closest("#say, .say, .hint") && !(el.id === "catch" && overBubble(e))) return;
+    forward();
   });
   el.addEventListener("pointercancel", () => { on = false; });
 }
+/* the catch layer sits over Đậu's bubble: was this tap on the bubble? */
+function overBubble(e) {
+  const r = sayBox.getBoundingClientRect();
+  return e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom;
+}
 gestures($("#stage"), true);
+$(".hint").addEventListener("click", () => forward());
 gestures($("#catch"), true);
 gestures(sayBox, true);
 gestures(dau, true);
@@ -1045,7 +1096,7 @@ add("intro", async c => {
 }, { label: "Bắt đầu nha", noSave: true });
 
 // results: each score ticks up one at a time, then overall (no word count: it isn't what matters)
-add("intro", async c => {
+if (hasScores) add("intro", async c => {
   c.show(h("h1", { class: "h" }, "Kết quả của em"));
   await c.say(L.results.criteria, "explaining");
   const grid = h("div", { class: "scores" });
@@ -1065,7 +1116,7 @@ add("intro", async c => {
   await c.say(L.results.score[0], "thumbsup");
   for (const line of L.results.score.slice(1)) { await c.gate(); await c.say(line, "explaining"); }
   await praise(c, "results");
-}, { label: "Xem chi tiết" });
+}, { label: "Xem chi tiết", name: "results" });
 
 // how to go through it: the full lesson with Đậu, or quickly through the essay in order
 add("intro", async c => {
@@ -1089,17 +1140,16 @@ add("intro", async c => {
 
 // the plan: four parts, in order
 add("intro", async c => {
-  c.show(h("h1", { class: "h" }, "Mình sẽ đi qua 4 phần"));
+  c.show(h("h1", { class: "h" }, `Mình sẽ đi qua ${TABS.length} phần`));
   const road = c.show(h("div", { class: "roadmap" }));
-  const parts = [["TR", "Ý tưởng", "TR"], ["CC", "Liên kết", "CC"], ["LR", "Từ vựng", "LR"], ["GRA", "Ngữ pháp", "GR"]];
-  for (const [k, [code, name, sk]] of parts.entries()) {
+  for (const [k, [, code, sk, name]] of TABS.entries()) {
     await c.wait(k ? 260 : 150);
     if (k) road.append(h("div", { class: "road-arrow", "aria-hidden": "true" }, "↓"));
-    road.append(h("div", { class: "card road" }, h("b", {}, code), h("span", {}, name), h("em", {}, "band " + L.scores[sk])));
+    road.append(h("div", { class: "card road" }, h("b", {}, code), h("span", {}, name), scoreOf(sk) ? h("em", {}, "band " + scoreOf(sk)) : null));
     fit();
   }
-  await c.say("Mình đi lần lượt 4 phần nha, bắt đầu từ ý tưởng (TR)", "explaining");
-}, { label: "Bắt đầu TR" });
+  await c.say(`Mình đi lần lượt ${TABS.length} phần nha, bắt đầu từ ${/^Exercise/.test(TABS[0][3]) ? TABS[0][3] : TABS[0][3].charAt(0).toLowerCase() + TABS[0][3].slice(1)} (${TABS[0][1]})`, "explaining");
+}, { label: "Bắt đầu " + TABS[0][1] });
 
 // ---------------- TR: framework ----------------
 const tabIdx = {};
@@ -1112,7 +1162,7 @@ const markFocus = (text, focus) => {
 };
 tabIdx.TR = screens.length;
 // first a choice: go over the framework and her essay again, or straight to the overview
-add("TR", async c => {
+if (L.framework) add("TR", async c => {
   const wasReplay = replay;
   c.show(h("h1", { class: "h" }, "Framework " + L.essay_type));
   await c.say("Em có muốn ôn lại Framework và nhìn lại bài mình viết trước khi sửa không?", "explaining");
@@ -1120,7 +1170,7 @@ add("TR", async c => {
   if (!wasReplay) jump(i === 0 ? fwReviewIdx : fwOverviewIdx);
 });
 const fwReviewIdx = screens.length;
-add("TR", async c => {
+if (L.framework) add("TR", async c => {
   const F = L.framework;
   c.show(h("h1", { class: "h" }, "Framework " + L.essay_type));
   // the skeleton of this essay type, so the first line has something to point at
@@ -1143,18 +1193,20 @@ add("TR", async c => {
   }
 });
 const fwOverviewIdx = screens.length;
-add("TR", async c => {
+if (L.framework) add("TR", async c => {
   const F = L.framework;
-  const [intro, b1, b2, concl] = F.parts;
   const map = h("div", { class: "map" });
   c.show(h("div", { class: "card stack" }, h("div", { class: "label" }, "Tổng quan bài của em"), map), { replace: true });
-  const rows = [
-    [h("div", { class: "lab" }, TICK(true), "Mở bài"), h("div", { class: "wide" }, intro.short)],
-    [h("div", { class: "lab" }, TICK(true), "Body 1"), ...b1.ideas.map(x => h("div", { class: "chip c" }, x.short))],
-    ...((F.pairs || []).length ? [[h("div"), h("div", { class: "down", "aria-hidden": "true" }, "↓"), h("div", { class: "down", "aria-hidden": "true" }, "↓")]] : []),
-    [h("div", { class: "lab" }, TICK(true), "Body 2"), ...b2.ideas.map(x => h("div", { class: "chip s" }, x.short))],
-    [h("div", { class: "lab" }, TICK(true), "Kết bài"), h("div", { class: "wide" }, concl.short)],
-  ];
+  // one row per part: chips for its ideas (or data groups), else its short summary
+  const chip = { mint: "c", sky: "s", orange: "o" };
+  const rows = [];
+  F.parts.forEach((p, k) => {
+    const name = p.map_label || p.label.split(" · ")[0];
+    rows.push((p.ideas || []).length
+      ? [h("div", { class: "lab" }, TICK(p.ok !== false), name), ...p.ideas.slice(0, 2).map(x => h("div", { class: "chip " + (chip[p.tone] || "c") }, x.short))]
+      : [h("div", { class: "lab" }, TICK(p.ok !== false), name), h("div", { class: "wide" }, p.short)]);
+    if (k === 1 && (F.pairs || []).length) rows.push([h("div"), h("div", { class: "down", "aria-hidden": "true" }, "↓"), h("div", { class: "down", "aria-hidden": "true" }, "↓")]);
+  });
   for (const r of rows) { await c.wait(550); map.append(...r); fit(); }
   await c.wait(400);
   if (F.ok) confetti();
@@ -1169,7 +1221,7 @@ add("TR", async c => {
   }
   if (!rest.length && F.focus) { await c.gate(); c.show(h("div", { class: "card focus-callout" }, img("icon_bulb", "icon"), h("div", {}, h("div", { class: "label" }, "Cần chỉnh"), h("b", {}, F.focus)))); }
   await praise(c, "framework");
-});
+}, { name: "framework" });
 
 // ---------------- TR: reading the prompt (only when the teacher flagged a misreading) ----------------
 if (L.prompt_check) add("TR", async c => {
@@ -1197,10 +1249,10 @@ if (L.prompt_check) add("TR", async c => {
     c.show(h("div", { class: "card stack" }, h("div", { class: "label" }, "Viết lại"), h("div", { class: "quote en" }, it.fix)));
     await c.say(it.fix_line, "explaining");
   }
-});
+}, { name: "prompt_check" });
 
 // ---------------- TR: idea development ----------------
-add("TR", async c => {
+if (L.ideas) add("TR", async c => {
   const I = L.ideas;
   c.show(h("h1", { class: "h" }, "Em phát triển ý tới đâu?"));
   const prompt = c.show(h("div", { class: "card stack" }, h("div", { class: "label" }, "Đề bài"), h("div", { class: "en" }, markFocus(L.prompt, I.prompt_focus))));
@@ -1236,12 +1288,12 @@ add("TR", async c => {
       : upN ? (upN > 1 ? "Mấy ý có dấu ~ mình nâng cấp thêm nha, em chạm vào ý nào cũng được" : "Ý có dấu ~ mình nâng cấp thêm nha, em chạm vào để xem")
       : (fixN > 1 ? "Mấy ý có dấu ✗ mình sửa từng cái nha, em chạm vào ý nào cũng được" : "Ý có dấu ✗ mình xem cách sửa nha, em chạm vào để xem"), "explaining");
   }
-}, { end: "dock" });
+}, { end: "dock", name: "ideas" });
 
 // ideas that need work (✗) or could go further (~), numbered separately
 const detailIdx = {};
 const detailKind = D => ideaStatus(L.ideas.overview.find(o => o.tag === D.tag) || { ok: false }) === "improve" ? "improve" : "fix";
-L.ideas.details.forEach((D, k) => (detailIdx[D.tag] = screens.length, add("TR", async c => {
+(L.ideas ? L.ideas.details : []).forEach((D, k) => (detailIdx[D.tag] = screens.length, add("TR", async c => {
   const kind = detailKind(D), same = L.ideas.details.filter(x => detailKind(x) === kind);
   c.show(h("span", { class: "pill " + (kind === "improve" ? "tone-orange" : "tone-blush") }, `${kind === "improve" ? "Nâng cấp" : "Cần sửa"} ${same.indexOf(D) + 1}/${same.length} · ${D.tag}`));
   await c.say(kind === "improve" ? `${D.tag} ổn rồi nè, mình nâng cấp thêm chút nha` : `Mình xem kỹ ${D.tag} của em nha`, "magnify");
@@ -1288,14 +1340,138 @@ L.ideas.details.forEach((D, k) => (detailIdx[D.tag] = screens.length, add("TR", 
   await c.say(D.outro, "thumbsup");
 })));
 
+// ---------------- Task 1 (Weeks 7–10): the overview against the main features, then the data ----------------
+const T1 = L.t1;
+const T1_TYPE = { trend: "Trends", difference: "Differences", change: "Main changes" };
+/* the chart as rows × columns: line/table (series × years), pie (categories × charts), map (areas × now/future) */
+function chartGrid(kind, chart) {
+  if (kind === "map") return { cols: ["Now", "Future"], rows: (chart.changes || []).map(x => ({ name: x.area, cells: [x.now, x.future] })) };
+  if (kind === "pie") {
+    const charts = Object.keys(chart.series), cats = [...new Set(charts.flatMap(k => Object.keys(chart.series[k])))];
+    return { cols: charts, rows: cats.map(cat => ({ name: cat, cells: charts.map(k => chart.series[k][cat]) })) };
+  }
+  return { cols: (chart.years || chart.columns || []).map(String), rows: Object.entries(chart.series || {}).map(([name, cells]) => ({ name, cells })) };
+}
+const sameName = (a, b) => String(a || "").trim().toLowerCase() === String(b || "").trim().toLowerCase();
+function cellOf(grid, a, b) {                       // the cell an item points at, either way round
+  for (const [r, c] of [[a, b], [b, a]]) {
+    const ri = grid.rows.findIndex(x => sameName(x.name, r)), ci = grid.cols.findIndex(x => sameName(x, c));
+    if (ri >= 0 && ci >= 0) return { ri, ci };
+    if (ri >= 0 && !c) return { ri, ci: -1 };
+  }
+  return null;
+}
+const CHART_COLS = ["#FF9800", "#2F9E74", "#4C8FD6", "#D9483B", "#8E6CC8", "#B88A1E"];
+function tableChart(grid, hl, unit) {
+  const at = hl && cellOf(grid, hl.series, hl.col);
+  return h("div", { class: "chart-scroll" }, h("table", { class: "chart-table" },
+    h("thead", {}, h("tr", {}, h("th", {}, unit ? `(${unit})` : ""), grid.cols.map((c, ci) => h("th", { class: at && at.ci === ci ? "on" : null }, c)))),
+    h("tbody", {}, grid.rows.map((r, ri) => h("tr", { class: at && at.ri === ri ? "on" : null }, h("th", {}, r.name),
+      r.cells.map((v, ci) => h("td", { class: at && at.ri === ri && (at.ci === ci || at.ci < 0) ? "hit" : null }, v == null ? "" : String(v))))))));
+}
+function lineChart(chart, grid, hl) {
+  const W = 320, H = 190, P = { l: 34, r: 10, t: 10, b: 24 };
+  const all = grid.rows.flatMap(r => r.cells).filter(v => typeof v === "number");
+  let lo = Math.min(...all), hi = Math.max(...all); const pad = (hi - lo) * .1 || 1; lo = Math.max(0, lo - pad); hi += pad;
+  const x = i => P.l + (W - P.l - P.r) * (grid.cols.length > 1 ? i / (grid.cols.length - 1) : .5), y = v => P.t + (H - P.t - P.b) * (1 - (v - lo) / (hi - lo));
+  const at = hl && cellOf(grid, hl.series, hl.col);
+  let svg = `<svg viewBox="0 0 ${W} ${H}" class="line-chart" role="img" aria-label="Biểu đồ">`;
+  for (let k = 0; k <= 3; k++) { const v = lo + (hi - lo) * k / 3, yy = y(v); svg += `<line x1="${P.l}" x2="${W - P.r}" y1="${yy}" y2="${yy}" class="grid"/><text x="${P.l - 4}" y="${yy + 3}" text-anchor="end">${+v.toFixed(2)}</text>`; }
+  grid.cols.forEach((c, i) => { if (grid.cols.length <= 6 || i % 2 === 0) svg += `<text x="${x(i)}" y="${H - 6}" text-anchor="middle">${c}</text>`; });
+  grid.rows.forEach((r, ri) => {
+    const pts = r.cells.map((v, i) => `${x(i)},${y(v)}`).join(" ");
+    svg += `<polyline points="${pts}" fill="none" stroke="${CHART_COLS[ri % 6]}" stroke-width="${at && at.ri === ri ? 3.4 : 2}" opacity="${at && at.ri !== ri ? .35 : 1}"/>`;
+  });
+  if (at && at.ci >= 0) svg += `<circle cx="${x(at.ci)}" cy="${y(grid.rows[at.ri].cells[at.ci])}" r="5.5" fill="none" stroke="${CHART_COLS[at.ri % 6]}" stroke-width="2.5"/>`;
+  svg += "</svg>";
+  return h("div", {}, h("div", { html: svg }), h("div", { class: "legend" }, grid.rows.map((r, ri) => h("span", { class: at && at.ri === ri ? "on" : null }, h("i", { style: `background:${CHART_COLS[ri % 6]}` }), r.name))),
+    chart.unit ? h("div", { class: "small muted" }, chart.unit) : null);
+}
+// a map: one row per area, now and future stacked (two long text columns don't fit a phone)
+function mapChart(grid, hl) {
+  const at = hl && cellOf(grid, hl.series, hl.col);
+  // while checking one detail, only that area (the whole list is shown first)
+  return h("div", { class: "map-rows" }, grid.rows.map((r, ri) => at && at.ri !== ri ? null : h("div", { class: "map-row" + (at && at.ri === ri ? " on" : "") },
+    h("b", {}, r.name),
+    grid.cols.map((c, ci) => h("div", { class: "map-cell" + (at && at.ri === ri && (at.ci === ci || at.ci < 0) ? " hit" : "") }, h("span", { class: "k" }, c), h("span", {}, r.cells[ci] || ""))))));
+}
+const chartView = hl => T1.kind === "line" ? lineChart(T1.chart, chartGrid("line", T1.chart), hl)
+  : T1.kind === "map" ? mapChart(chartGrid("map", T1.chart), hl) : tableChart(chartGrid(T1.kind, T1.chart), hl, T1.chart.unit);
+
+if (T1) add("TR", async c => {
+  const O = T1.overview;
+  c.show(h("h1", { class: "h" }, "Overview"));
+  if (O.sids.length) c.show(h("div", { class: "card stack" }, h("div", { class: "label" }, "Overview của em"), h("div", { class: "quote en" }, O.sids.map(origText).join(" ")), cite(O.sids[0])));
+  else c.show(h("div", { class: "card stack" }, h("div", { class: "label" }, "Overview của em"), h("div", { class: "muted" }, "Em chưa viết overview")));
+  await c.say(O.intro[0], "magnify");
+  for (const line of O.intro.slice(1)) { await c.gate(); await c.say(line); }
+  await c.gate();
+  if (mode === "talk") setMode("away");
+  // the main features she should have named, one by one
+  for (const [k, f] of O.features.entries()) {
+    await c.wait(k ? 420 : 150);
+    c.show(h("div", { class: "card ov" }, statusIcon(f.caught ? "ok" : "fix"),
+      h("div", { class: "t" }, h("span", { class: "t1-type" }, T1_TYPE[f.type] || f.type), h("b", { lang: "en" }, f.text), f.note ? h("span", {}, f.note) : null)));
+  }
+  await c.wait(350);
+  for (const [k, line] of O.lines.entries()) { if (k) await c.gate(); await c.say(line, k ? "explaining" : (O.features.every(f => f.caught) ? "cheering" : "thinking")); }
+  if (O.model) {
+    await c.gate();
+    c.show(h("div", { class: "card stack" }, h("div", { class: "label" }, "Overview gợi ý"), h("div", { class: "quote en" }, O.model)), { replace: true });
+  }
+  await praise(c, "overview");
+}, { name: "overview" });
+
+if (T1) add("TR", async c => {
+  const D = T1.data;
+  c.show(h("h1", { class: "h" }, T1.kind === "map" ? "Details" : "Data"));
+  const view = c.show(h("div", { class: "card chart-card" }, chartView(null)));
+  await c.say(D.intro, "magnify");
+  let shown = null;
+  for (const [k, it] of D.items.entries()) {
+    await c.gate();
+    view.replaceChildren(chartView({ series: it.series, col: it.col }));
+    const card = h("div", { class: "card data-item" + (it.ok ? "" : " bad") }, statusIcon(it.ok ? "ok" : "fix"),
+      h("div", { class: "t" }, h("span", { class: "small muted" }, `${k + 1}/${D.items.length}`), h("div", { class: "quote en" }, it.quote),
+        !it.ok && it.fix ? h("div", { class: "fix en" }, "→ " + it.fix) : null), cite(it.sid));
+    if (shown) shown.replaceWith(card); else c.show(card);
+    shown = card; fit();
+    await c.say(it.note, it.ok ? "thumbsup" : "thinking", { spot: card });
+  }
+  for (const line of D.verdict) { await c.gate(); await c.say(line, "explaining"); }
+  await praise(c, "data");
+}, { name: "data" });
+
+// ---------------- Week 1: paraphrasing the prompt, one topic at a time ----------------
+const PP = L.paraphrase;
+if (PP && PP.items.length) tabIdx.PARA = screens.length;
+const QTYPE = { opinion: "Đề ý kiến", "two-views": "Đề hai quan điểm", fact: "Đề sự thật / xu hướng" };
+(PP ? PP.items : []).forEach((it, k) => add("PARA", async c => {
+  c.show(h("div", { class: "row" }, h("span", { class: "pill tone-orange" }, `Topic ${k + 1}/${PP.items.length}`), h("span", { class: "small muted" }, QTYPE[it.qtype] || "")));
+  c.show(h("div", { class: "card stack" }, h("div", { class: "label" }, "Đề bài"), h("div", { class: "en" }, it.prompt || "")));
+  if (k === 0) for (const [i, line] of PP.intro.entries()) { if (i) await c.gate(); await c.say(line, "explaining"); }
+  if (k === 0 && PP.intro.length) await c.gate();
+  // her paraphrase and Đậu's line first (the screen still fits), then the checks and the fix, without him
+  const mine = c.show(h("div", { class: "card stack" }, h("div", { class: "label" }, "Em viết"), h("div", { class: "quote en" }, origText(it.sid).replace(/^topic\s*\d+\s*[:.]\s*/i, "")), cite(it.sid)));
+  await c.say(it.line, it.checks.every(x => x.ok) ? "thumbsup" : "thinking", { spot: mine });
+  await c.gate();
+  if (mode === "talk") setMode("away");
+  c.show(h("div", { class: "card stack checks" }, it.checks.map(x => h("div", { class: "check-line" }, TICK(x.ok), h("span", {}, x.rule)))));
+  if (it.fix) c.show(h("div", { class: "card stack" }, h("div", { class: "label" }, "Viết lại"), h("div", { class: "quote en" }, it.fix)));
+  if (k === PP.items.length - 1) {
+    if (PP.outro) { await c.gate(); await c.say(PP.outro, "cheering"); }
+    await praise(c, "paraphrase");
+  }
+}, k === 0 ? { name: "paraphrase" } : {}));
+
 // ---------------- CC: linking ----------------
 const SORDER = Object.keys(SENT);
-tabIdx.CC = screens.length;
-add("CC", async c => {
+if (L.linking) tabIdx.CC = screens.length;
+if (L.linking) add("CC", async c => {
   const K = L.linking;
-  c.show(h("h1", { class: "h" }, "Linking devices"));
+  c.show(h("h1", { class: "h" }, K.title || "Linking devices"));
   const num = h("span", { class: "count" }, "0");
-  const card = c.show(h("div", { class: "card stack" }, h("div", { class: "row", style: "gap:.8em" }, h("div", { class: "big-num" }, num), h("div", { class: "h2" }, "linking devices"))));
+  const card = c.show(h("div", { class: "card stack" }, h("div", { class: "row", style: "gap:.8em" }, h("div", { class: "big-num" }, num), h("div", { class: "h2" }, K.count_label || "linking devices"))));
   await c.say(K.intro[0], "explaining");
   await c.gate();
   // count them in, in the order they appear in her essay, each landing in its group
@@ -1317,7 +1493,7 @@ add("CC", async c => {
     if (si === 0) c.say(K.suggestions_intro, "explaining");
     c.show(h("div", { class: "card stack" }, h("span", { class: "pill tone-orange" }, `Nâng cấp ${si + 1}/${K.suggestions.length}`), h("div", { class: "swap" }, h("span", { class: "from" }, s.from), h("span", { class: "to" }, s.to)), h("div", { class: "small" }, s.why), cite(s.sid)), { replace: true });
   }
-});
+}, { name: "linking" });
 
 // ---------------- LR and GRA: mistakes ----------------
 const mistakeIdx = {};
@@ -1412,7 +1588,7 @@ add("LR", async c => {
   // a core vocab mistake is what he is pointing at, not the list of small ones
   const core = byTab("LR").findIndex(m => m.core);
   await c.say(M.lr_intro[M.lr_intro.length - 1], "explaining", core >= 0 ? { spot: cards[core] } : {});
-}, { end: "dock" });
+}, { end: "dock", name: "lr" });
 byTab("LR").forEach(m => addMistake(m, !m.core && !single("LR")));  // vocab is optional unless the lesson marks it core (or it's the only one)
 
 tabIdx.GRA = screens.length;
@@ -1431,7 +1607,7 @@ add("GRA", async c => {
   rest.forEach(m => c.show(minorCard(m)));
   const ob = othersBtn("GRA"); if (ob) c.show(ob);
   await c.say(M.gra_intro[2], "explaining");
-}, { end: "dock" });
+}, { end: "dock", name: "gra" });
 byTab("GRA").forEach((m, k) => addMistake(m, k > 0));
 
 const ITEM = Object.fromEntries(L.practice.items.map(it => [it.id, it]));
@@ -1581,7 +1757,7 @@ const RW = L.rewrite || {                     // older lessons: the one-sentence
   target: "idea", label: "Câu em đã viết", sids: [CH.sid], intro: CH.intro || [], task: "",
   flow: CH.chain || "", starters: [], phrases: [], checklist: CH.checklist || [], model: CH.model || "",
 };
-const RW_TARGET = { idea: "Một ý phát triển", paragraph: "Một đoạn thân bài", skeleton: "Mở bài và câu chủ đề" };
+const RW_TARGET = { idea: "Một ý phát triển", paragraph: "Một đoạn thân bài", skeleton: "Mở bài và câu chủ đề", overview: "Overview", paraphrase: "Paraphrase đề" };
 const rwHead = () => h("div", { class: "row" }, h("span", { class: "pill tone-orange" }, "Nhiệm vụ viết lại"), h("span", { class: "small muted" }, RW_TARGET[RW.target] || ""));
 
 // 1. what she will rewrite, and why
@@ -1716,7 +1892,7 @@ add("end", async c => {
   c.show(h("div", { class: "two" },
     h("button", { class: "btn btn-ghost", type: "button", onclick: () => openEssay({}) }, "Xem bài sửa"),
     h("button", { class: "btn btn-ghost", type: "button", onclick: () => { S = fresh(); S.ups = 3; save(); resumed = true; run(0); } }, "Làm lại từ đầu")));
-}, { last: true, end: "choose" });
+}, { last: true, end: "choose", name: "end" });
 
 // stopped after the summary
 const laterIdx = screens.length;
@@ -1921,8 +2097,10 @@ $("#essayIcon").src = A.icon_notebook;
 $("#sproutIcon").src = A.icon_sprout;
 
 // the editor's preview can open straight at a section (and skip a few screens into it)
-const startAt = L.__start ? screens.findIndex(sc => sc.sec === L.__start) : 0;
-run(startAt < 0 ? 0 : Math.min(screens.length - 1, startAt + (L.__startOffset || 0)));
+// (__startName: a named screen, else the first screen of that section)
+const byName = L.__startName ? (named(L.__startName) >= 0 ? named(L.__startName) : screens.findIndex(sc => sc.sec === L.__startName)) : -1;
+const startAt = byName >= 0 ? byName : L.__start ? screens.findIndex(sc => sc.sec === L.__start) : 0;
+run(startAt < 0 ? 0 : Math.min(screens.length - 1, startAt + (byName >= 0 ? 0 : L.__startOffset || 0)));
 if (PREVIEW && L.__essay) setTimeout(() => openEssay(L.__essay), 300);
 })();
 </script>

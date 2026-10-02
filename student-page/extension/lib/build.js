@@ -16,17 +16,17 @@ export function checkLesson(lesson) {
     if (!t.sentence_ids.length) problems.push("một nhận xét không gắn với câu nào: " + t.comment.slice(0, 60));
   const praise = lesson.praise || [];
   if (praise.length > 3) problems.push(`${praise.length} lời khen: chỉ nên 2-3 cho cả bài`);
-  const places = new Set(["results", "framework", "linking", "lr", "gra", ...lesson.ideas.overview.map(o => "idea:" + o.tag)]);
+  const places = new Set(["results", "framework", "linking", "lr", "gra", "overview", "data", "paraphrase", ...((lesson.ideas || { overview: [] }).overview).map(o => "idea:" + o.tag)]);
   for (const x of praise) if (!places.has(x.at)) problems.push(`lời khen ở chỗ không có: ${x.at}`);
   const rw = lesson.rewrite;
   if (rw) {
     for (const sid of rw.sids) if (!sids.has(sid)) problems.push(`viết lại: không có câu ${sid}`);
-    if (!["idea", "paragraph", "skeleton"].includes(rw.target)) problems.push("viết lại: chọn một ý, một đoạn, hoặc mở bài + câu chủ đề");
+    if (!["idea", "paragraph", "skeleton", "overview", "paraphrase"].includes(rw.target)) problems.push("viết lại: chọn một ý, một đoạn, mở bài + câu chủ đề, overview hoặc paraphrase");
     if (!rw.sids.length) problems.push("viết lại: chưa chọn câu nào");
   } else if (!lesson.practice.challenge) problems.push("chưa có phần viết lại");
   const used = JSON.stringify(lesson);
   for (const m of used.matchAll(/"(?:sid|sids)":\[?"(p\d+s\d+)"/g)) if (!sids.has(m[1])) problems.push(`không có câu ${m[1]}`);
-  for (const d of lesson.ideas.details) for (const sid of d.sids) if (!sids.has(sid)) problems.push(`ý ${d.tag}: không có câu ${sid}`);
+  for (const d of (lesson.ideas || { details: [] }).details) for (const sid of d.sids) if (!sids.has(sid)) problems.push(`ý ${d.tag}: không có câu ${sid}`);
   return [...new Set(problems)];
 }
 
@@ -54,7 +54,7 @@ function pyDumps(obj, sortKeys, ascii) {
 /** Fill the template. Returns { fragment, html, problems } (problems empty = ready to send). */
 export async function buildPage(lessonIn, { template, assets, quotes }) {
   const lesson = structuredClone(lessonIn);
-  for (const k of Object.keys(lesson)) if (k.startsWith("__") && k !== "__preview" && k !== "__start" && k !== "__startOffset" && k !== "__essay") delete lesson[k];
+  for (const k of Object.keys(lesson)) if (k.startsWith("__") && k !== "__preview" && k !== "__start" && k !== "__startOffset" && k !== "__startName" && k !== "__essay") delete lesson[k];
   const problems = checkLesson(lesson);
   const finish = (lesson.finish = lesson.finish || {});
   if (!finish.quote) {

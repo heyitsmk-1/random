@@ -31,6 +31,8 @@ const VOICE = [
   /^mistakes\.(lr_intro|gra_intro)\.\d+$/, /^mistakes\.main\.\d+\.(count_line|reason)$/,
   /^practice\.intro\.\d+$/, /^rewrite\.intro\.\d+$/, /^rewrite\.task$/,
   /^finish\.(summary|later|done)\.\d+$/,
+  /^t1\.overview\.(intro|lines)\.\d+$/, /^t1\.data\.intro$/, /^t1\.data\.verdict\.\d+$/, /^t1\.data\.items\.\d+\.note$/,
+  /^paraphrase\.intro\.\d+$/, /^paraphrase\.items\.\d+\.line$/, /^paraphrase\.outro$/,
 ];
 export const isVoice = path => VOICE.some(r => r.test(path));
 
@@ -46,7 +48,7 @@ export { leaves };
 /** Does the framework verdict agree with the teacher's checklist? (null = nothing to compare with) */
 export function verdictAgrees(L, checklist) {
   const ticked = (checklist || []).filter(c => c.ok != null);
-  if (!ticked.length) return null;
+  if (!ticked.length || !L.framework) return null;
   return !!L.framework.ok === !ticked.some(c => c.ok === false);
 }
 
@@ -56,12 +58,19 @@ export function verdictAgrees(L, checklist) {
  */
 export function reviewUnits(L, { checklist } = {}) {
   const units = [];
-  if (verdictAgrees(L, checklist) !== true)
+  if (L.framework && verdictAgrees(L, checklist) !== true)
     units.push({ id: "verdict", module: "framework", label: "Kết luận framework", roots: ["framework.ok", "framework.verdict"] });
   if (L.prompt_check) units.push({ id: "prompt_check", module: "prompt_check", label: "Đọc đề", roots: ["prompt_check"] });
-  units.push({ id: "overview", module: "ideas", label: "Các ý: ✓/~/✗ và nhận xét", roots: ["ideas.overview"] });
-  L.ideas.details.forEach((d, i) => units.push({ id: "detail" + i, module: "ideas", label: `Ý cần sửa · ${d.tag}`, roots: [`ideas.details.${i}`] }));
-  if ((L.linking.suggestions || []).length) units.push({ id: "linking", module: "linking", label: "Linking: gợi ý nâng cấp", roots: ["linking.suggestions"] });
+  if (L.ideas) {
+    units.push({ id: "overview", module: "ideas", label: "Các ý: ✓/~/✗ và nhận xét", roots: ["ideas.overview"] });
+    L.ideas.details.forEach((d, i) => units.push({ id: "detail" + i, module: "ideas", label: `Ý cần sửa · ${d.tag}`, roots: [`ideas.details.${i}`] }));
+  }
+  if (L.t1) {
+    units.push({ id: "t1overview", module: "t1", label: "Overview: các đặc điểm chính và overview gợi ý", roots: ["t1.overview.features", "t1.overview.lines", "t1.overview.model"] });
+    units.push({ id: "t1data", module: "t1", label: "Số liệu: đúng/sai và kết luận", roots: ["t1.data.items", "t1.data.verdict"] });
+  }
+  if (L.paraphrase) L.paraphrase.items.forEach((x, i) => units.push({ id: "para" + i, module: "paraphrase", label: `Paraphrase · Topic ${i + 1}`, roots: [`paraphrase.items.${i}`] }));
+  if (L.linking && (L.linking.suggestions || []).length) units.push({ id: "linking", module: "linking", label: "Linking: gợi ý nâng cấp", roots: ["linking.suggestions"] });
   L.mistakes.main.forEach((m, i) => units.push({ id: "group" + i, module: "mistakes", label: `Nhóm lỗi · ${m.title}`, roots: [`mistakes.main.${i}`] }));
   L.practice.items.forEach((it, i) => units.push({ id: "item" + i, module: "practice",
     label: `Bài luyện ${i + 1}${L.practice.core.includes(it.id) ? " (câu chính)" : ""} · ${{ choose: "chọn đáp án", tap: "chạm chữ sai", build: "xếp câu" }[it.type] || it.type}`,
@@ -83,7 +92,7 @@ export function checks(L, { prompt, checkLesson } = {}) {
   // (the word count is no longer shown)
   const bands = [L.overall, ...Object.values(L.scores || {})].map(Number).filter(n => !isNaN(n));
   const okBands = [...bands, ...bands.map(b => b + 0.5), ...bands.map(b => b + 1)];
-  (L.results.score || []).forEach((t, i) => { if (nums(t).some(n => !okBands.includes(n))) flag(`results.score.${i}`, "results", `Điểm không khớp trang chấm (overall ${L.overall})`); });
+  ((L.results && L.results.score) || []).forEach((t, i) => { if (nums(t).some(n => !okBands.includes(n))) flag(`results.score.${i}`, "results", `Điểm không khớp trang chấm (overall ${L.overall})`); });
   // a group's size = its corrections + its notes
   const size = g => g.cids.length + (g.points || []).length;
   L.mistakes.main.forEach((m, i) => {
@@ -104,13 +113,13 @@ export function checks(L, { prompt, checkLesson } = {}) {
   for (const p of L.essay.paragraphs) for (const s of p.sentences)
     sents[s.id] = norm(s.segs.map(g => typeof g === "string" ? g : C[g.c].orig).join("")) + " || " + norm(s.segs.map(g => typeof g === "string" ? g : C[g.c].fix).join(""));
   const P = norm(prompt || L.prompt || "");
-  if (L.ideas.prompt_focus && !P.includes(norm(L.ideas.prompt_focus))) flag("ideas.prompt_focus", "ideas", "Chữ tô vàng không có trong đề bài");
+  if (L.ideas && L.ideas.prompt_focus && !P.includes(norm(L.ideas.prompt_focus))) flag("ideas.prompt_focus", "ideas", "Chữ tô vàng không có trong đề bài");
   if (L.prompt_check) L.prompt_check.items.forEach((it, i) => {
     if (it.focus && !(sents[it.sid] || "").includes(norm(it.focus))) flag(`prompt_check.items.${i}.focus`, "prompt_check", "Chữ tô vàng không có trong câu của em");
     if (it.prompt_focus && !P.includes(norm(it.prompt_focus))) flag(`prompt_check.items.${i}.prompt_focus`, "prompt_check", "Chữ tô vàng không có trong đề bài");
   });
   let linked = 0;
-  L.linking.groups.forEach((g, gi) => g.items.forEach((x, xi) => {
+  if (L.linking) L.linking.groups.forEach((g, gi) => g.items.forEach((x, xi) => {
     linked++;
     // a split device ("not only … but also"): each piece, in order
     const s = sents[x.sid] || "";
@@ -118,7 +127,24 @@ export function checks(L, { prompt, checkLesson } = {}) {
     const found = norm(x.text).split(/\s*(?:…|\.\.\.)\s*/).filter(Boolean).every(piece => { const k = s.indexOf(piece, from); if (k < 0) return false; from = k + piece.length; return true; });
     if (!found) flag(`linking.groups.${gi}.items.${xi}`, "linking", `"${x.text}" không có trong câu ${x.sid}`);
   }));
-  if (L.linking.count !== linked) flag("linking.count", "linking", `Bộ đếm là ${L.linking.count} nhưng danh sách có ${linked} cụm`);
+  if (L.linking && L.linking.count !== linked) flag("linking.count", "linking", `Bộ đếm là ${L.linking.count} nhưng danh sách có ${linked} cụm`);
+
+  // Task 1: her quoted data must be in her sentence, and the right number must match the chart
+  if (L.t1) {
+    const T = L.t1;
+    (T.overview.sids || []).forEach((sid, i) => { if (!sents[sid]) flag(`t1.overview.sids.${i}`, "t1", `Không có câu ${sid}`); });
+    (T.data.items || []).forEach((it, i) => {
+      if (it.quote && !(sents[it.sid] || "").includes(norm(it.quote))) flag(`t1.data.items.${i}.quote`, "t1", `Chữ trích không có trong câu ${it.sid}`);
+      const v = chartValue(T, it);
+      if (v === undefined) { if (T.kind !== "map") flag(`t1.data.items.${i}.series`, "t1", `Không tìm thấy "${it.series}" / "${it.col}" trên biểu đồ`); return; }
+      if (typeof v !== "number") return;
+      const tol = (T.chart && T.chart.tolerance) || 0;
+      const near = t => nums(t).some(n => Math.abs(n - v) <= tol + 1e-9);
+      if (it.ok && it.quote && nums(it.quote).length && !near(it.quote)) flag(`t1.data.items.${i}.ok`, "t1", `Đánh dấu đúng, nhưng biểu đồ ghi ${v}`);
+      if (!it.ok && it.quote && near(it.quote)) flag(`t1.data.items.${i}.ok`, "t1", `Đánh dấu sai, nhưng số ${v} khớp biểu đồ`);
+      if (!it.ok && it.fix && nums(it.fix).length && !near(it.fix)) flag(`t1.data.items.${i}.fix`, "t1", `Số sửa không khớp biểu đồ (${v})`);
+    });
+  }
 
   // every correction in exactly one group
   const seen = {};
@@ -159,8 +185,29 @@ export function checks(L, { prompt, checkLesson } = {}) {
   return flags;
 }
 
+/* the chart value a Task 1 data item points at (series × column, either way round); undefined = not on the chart */
+export function chartValue(T, it) {
+  const ch = T.chart || {};
+  let cols, rows;
+  if (T.kind === "map") return undefined;
+  if (T.kind === "pie") {
+    cols = Object.keys(ch.series || {});
+    rows = [...new Set(cols.flatMap(k => Object.keys(ch.series[k])))].map(cat => ({ name: cat, cells: cols.map(k => ch.series[k][cat]) }));
+  } else {
+    cols = (ch.years || ch.columns || []).map(String);
+    rows = Object.entries(ch.series || {}).map(([name, cells]) => ({ name, cells }));
+  }
+  const same = (a, b) => String(a || "").trim().toLowerCase() === String(b || "").trim().toLowerCase();
+  for (const [r, c] of [[it.series, it.col], [it.col, it.series]]) {
+    const ri = rows.findIndex(x => same(x.name, r)), ci = cols.findIndex(x => same(x, c));
+    if (ri >= 0 && ci >= 0) return rows[ri].cells[ci];
+    if (ri >= 0 && !c) return null;           // a whole series: nothing single to compare
+  }
+  return undefined;
+}
+
 export function moduleOf(path) {
   const top = path.split(".")[0];
-  return { hello: "hello", student: "hello", results: "results", framework: "framework", prompt_check: "prompt_check", ideas: "ideas", linking: "linking",
+  return { hello: "hello", student: "hello", results: "results", framework: "framework", prompt_check: "prompt_check", ideas: "ideas", linking: "linking", t1: "t1", paraphrase: "paraphrase",
     mistakes: "mistakes", practice: "practice", rewrite: "rewrite", praise: "praise", finish: "finish" }[top] || "review";
 }

@@ -96,7 +96,7 @@ export const PARTS = {
       hello: A(S),
       results: O({ score: A(S), criteria: S }),
       rewrite: O({
-        target: E("idea", "paragraph", "skeleton"), label: S, sids: A(S), intro: A(S), task: S,
+        target: E("idea", "paragraph", "skeleton", "overview", "paraphrase"), label: S, sids: A(S), intro: A(S), task: S,
         flow: S, starters: A(S), phrases: A(S), checklist: A(S), model: S,
       }),
       praise_candidates: A(O({ at: S, line: S, evidence: S })),
@@ -105,6 +105,32 @@ export const PARTS = {
     }),
   },
 };
+
+// Task 1 (Weeks 7–10): the overview against the week's main features, and the data check
+PARTS.t1 = {
+  label: "Overview và số liệu",
+  fields: "t1",
+  schema: O({
+    t1: O({
+      overview: O({ intro: A(S), sids: A(S), features: A(O({ type: E("trend", "difference", "change"), text: S, caught: B, sid: S, note: S })), lines: A(S), model: S }),
+      data: O({ intro: S, items: A(O({ sid: S, quote: S, ok: B, fix: S, note: S, series: S, col: S })), verdict: A(S) }),
+    }),
+  }),
+};
+// Week 1, exercise 2: one paraphrase per topic
+PARTS.paraphrase = {
+  label: "Paraphrase",
+  fields: "paraphrase",
+  schema: O({
+    paraphrase: O({ intro: A(S), items: A(O({ topic: S, sid: S, qtype: E("opinion", "two-views", "fact"), checks: A(O({ rule: S, ok: B })), line: S, fix: S })), outro: S }),
+  }),
+};
+/** The parts a week's lesson is drafted in. */
+export function partsFor(week) {
+  if (week && week.task === 1) return ["structure", "t1", "reading", "mistakes", "practice", "frame"];
+  if (week && week.kind === "paragraph+paraphrase") return ["ideas", "paraphrase", "mistakes", "practice", "frame"];
+  return ["structure", "ideas", "reading", "mistakes", "practice", "frame"];
+}
 
 /** Problems with `value` against one of the schemas above (for replies drafted without the strict format). */
 export function checkAgainst(schema, value, path = "$", out = []) {
@@ -175,6 +201,8 @@ export function systemBlocks(week, teacher) {
 - Output only the JSON object for the part you are asked for.`;
   const fw = week.framework || {};
   const course = `# This week: ${week.homework}, ${week.essay_type}
+${kindNotes(week)}
+
 Prompt${week.prompts.length > 1 ? "s" : ""}:
 ${week.prompts.map(p => `- ${p.label}: ${p.prompt}`).join("\n")}
 
@@ -190,6 +218,36 @@ ${(fw.language || []).map(x => "- " + x).join("\n")}`;
     { type: "text", text: general },
     { type: "text", text: course, cache_control: { type: "ephemeral" } },
   ];
+}
+
+/* what is different about this homework type (Task 1 reports, Week 1 exercises) */
+function kindNotes(week) {
+  if (week.task === 1) {
+    const kind = week.kind.replace("task1-", "");
+    const overview = kind === "pie" ? "Differences (the largest/smallest parts and the biggest differences between the charts; a pie shows one moment, so there are no trends)"
+      : kind === "map" ? "Main changes (what is added, removed, moved or replaced overall)"
+      : "Trends (the main rises/falls over the period) and Differences (the biggest gaps between the items)";
+    return `
+## This is an IELTS Task 1 report (${kind}), not an essay
+The student describes the data; there are no arguments, so there is no ideas part. The teacher's tags are: Introduction, ${kind === "map" ? "Main changes" : kind === "pie" ? "Differences" : "Trends, Differences"}, Body 1, Body 2. Keep the English words "Trends", "Differences", "Main changes", "Data" as they are in Đậu's lines.
+- structure (framework): parts = Introduction (tone "orange"), Overview (tone "orange", ideas = one chip per overview element: tag "Trends"/"Differences"/"Main changes", short = 2-4 words), Body 1 (tone "mint", ideas = the data groups it covers, e.g. tag "Nhóm 1", short "Football, Golf"), Body 2 (tone "sky", same). ok = the structure and the grouping follow the checklist (e.g. the grouping rule). verdict says whether the grouping follows the week's rule.
+- t1.overview: sids = her overview sentence(s) ([] if she wrote none). features = the week's main features (main_features in the data below; if there are none, the 2-3 most important ${overview.split(" (")[0]} you read from the data yourself), one each: type "trend"/"difference"/"change", text = the feature in short English, caught = her overview names it, sid = where (or ""), note = 3-8 Vietnamese words. intro = 2 lines (what an overview must have: ${overview}). lines = 2 lines (what she caught, what to add). model = a better overview for her essay in 1-2 English sentences (the teacher's version when given).
+- t1.data: check the numbers and comparisons in her bodies against the data below (tolerance as given). items = 3-6 checks, wrong ones first then a few right ones: sid, quote = her exact words with the figure, ok, fix = the correct statement in English ("" when ok), note = 1 Đậu line, series and col = the row and column of the figure in the data (e.g. series "Rugby", col "2010"; for a pie: the chart name and the category; for a map: the area and "Now"/"Future"). intro = 1 line, verdict = 1-2 lines.
+- reading.linking: instead of linking devices, the language of ${kind === "map" ? "change and location" : kind === "pie" ? "comparison and proportion" : "trends and comparison"} she used (groups like "Xu hướng", "So sánh", "Số liệu"), with suggestions to upgrade. prompt_check: intro "" and items [].
+- rewrite target: "overview" or "paragraph" (one body).
+- praise "at" can also be "overview" or "data".
+
+Data (${week.chart && week.chart.unit ? "unit: " + week.chart.unit : "no unit"}${week.chart && week.chart.time ? ", time: " + week.chart.time : ""}):
+${JSON.stringify(week.chart || {})}`;
+  }
+  if (week.kind === "paragraph+paraphrase") return `
+## This is the Week 1 homework: two exercises, not an essay
+- Exercise 1: one body paragraph (topic sentence + 2 supporting ideas, each core idea → development) on the Exercise 1 prompt. The ideas part covers this paragraph: overview = its 2 ideas ("Ý 1", "Ý 2"); intro talks about the topic sentence and what each idea must reach.
+- Exercise 2: the student paraphrases each topic's prompt (lines starting "Topic N:"), with no thesis. paraphrase.items = one per topic, in order: topic = "Topic N", sid, qtype from the prompt ("opinion", "two-views", "fact"), checks = 3-4 rules from the checklist with ok true/false (e.g. "Đúng cấu trúc cho đề ý kiến: Opinions are divided on whether…", "Không có thesis", "Giữ đúng nghĩa đề", "Thay từ đồng nghĩa"), line = 1 Đậu line, fix = a corrected paraphrase in English (the teacher's when the comment gives one, else only when a check fails, else ""). intro = 2 lines, outro = 1 line.
+- There are no band scores: results.score and results.criteria can be short and general.
+- rewrite target: "paraphrase" (one topic) or "paragraph".
+- praise "at" can also be "paraphrase".`;
+  return "";
 }
 
 /* ---------- what we send about this essay ---------- */
@@ -303,7 +361,7 @@ export async function draftLesson({ apiKey, week, teacher, input, onProgress, fe
   // keep only finished parts that still fit the current schemas
   const have = {};
   for (const [k, v] of Object.entries(done)) if (PARTS[k] && !checkAgainst(PARTS[k].schema, v).length) have[k] = v;
-  const todo = Object.keys(PARTS).filter(p => !have[p]);
+  const todo = partsFor(week).filter(p => !have[p]);
 
   async function one(part, extra, onFirstEvent) {
     const args = { part, system, essay, extra, onChars, onFirstEvent, signal };
@@ -336,7 +394,7 @@ export async function draftLesson({ apiKey, week, teacher, input, onProgress, fe
   })());
 
   // start one part first, and the others once its essay block is cached (its first event)
-  const lead = todo.find(p => !PARTS[p].after || have[PARTS[p].after]);
+  const lead = todo.find(p => !PARTS[p].after || have[PARTS[p].after] || !todo.includes(PARTS[p].after));
   if (lead) {
     let go;
     const warm = new Promise(r => { go = r; });
@@ -421,12 +479,13 @@ function practiceToLesson(p) {
   };
 }
 
-export function mergeParts({ structure, ideas, reading, mistakes, practice, frame }) {
+export function mergeParts({ structure, ideas, reading, mistakes, practice, frame, t1, paraphrase }) {
   const P = practice.practice;
   const items = practiceItems(P);
-  const pc = reading.prompt_check;
+  const pc = reading && reading.prompt_check;
   return {
-    call_name: structure.call_name, framework: structure.framework, ideas: ideas.ideas,
+    call_name: structure ? structure.call_name : "", framework: structure ? structure.framework : null, ideas: ideas ? ideas.ideas : null,
+    t1: t1 ? t1.t1 : null, paraphrase: paraphrase ? paraphrase.paraphrase : null,
     prompt_check: pc && pc.items.length ? {
       intro: pc.intro,
       items: pc.items.map(it => ({
@@ -435,7 +494,7 @@ export function mergeParts({ structure, ideas, reading, mistakes, practice, fram
         line: it.line, fix: it.fix, fix_line: it.fix_line,
       })),
     } : null,
-    linking: reading.linking, mistakes: mistakes.mistakes,
+    linking: reading ? reading.linking : null, mistakes: mistakes.mistakes,
     practice: { intro: P.intro, core: P.core, items },
     ...frame,
   };
@@ -444,7 +503,7 @@ export function mergeParts({ structure, ideas, reading, mistakes, practice, fram
 export const pointOf = t => ({ sids: t.sentence_ids, quote: t.quote || "", comment: t.comment || "", ...(t.fix ? { fix: t.fix } : {}) });
 
 /* ---------- draft + page -> lesson (what the student page reads) ---------- */
-export function draftToLesson(draft, { page, meta, teacher, zalo }) {
+export function draftToLesson(draft, { page, meta, teacher, zalo, week = null }) {
   const d = structuredClone(draft);
   const groups = d.mistakes.groups;
   // a highlighted note in a group: her sentence(s), the teacher's comment, a better version
@@ -457,12 +516,12 @@ export function draftToLesson(draft, { page, meta, teacher, zalo }) {
     student: d.call_name, teacher, zalo, homework: meta.homework, essay_type: meta.essay_type, prompt: meta.prompt,
     word_target: meta.word_target || 250, overall: meta.overall,
     hello: d.hello, results: d.results,
-    framework: { ...d.framework, pairs: [], checklist: [] },
+    ...(d.framework ? { framework: { ...d.framework, pairs: [], checklist: [] } } : {}),
     ...(d.prompt_check && d.prompt_check.items.length ? { prompt_check: {
       intro: d.prompt_check.intro,
       items: d.prompt_check.items.map(it => ({ ...it, ...(it.ask ? {} : { ask: undefined }) })),
     } } : {}),
-    ideas: {
+    ...(d.ideas ? { ideas: {
       intro: d.ideas.intro, prompt_focus: d.ideas.prompt_focus,
       overview: d.ideas.overview.map(o => ({ ...o, ok: o.status === "ok" })),
       details: d.ideas.details.map(x => {
@@ -472,8 +531,18 @@ export function draftToLesson(draft, { page, meta, teacher, zalo }) {
         if (x.mode === "replace") out.replace = x.fix_label || "Chuỗi ý mới";
         return out;
       }),
-    },
-    linking: d.linking,
+    } } : {}),
+    ...(d.linking ? { linking: { ...d.linking, ...(week && week.task === 1 ? { title: week.kind === "task1-map" ? "Language of change" : "Language of trends & comparison", count_label: "cụm em đã dùng" } : {}) } } : {}),
+    // Task 1: the chart travels with the lesson, so the page can draw it
+    ...(d.t1 && week ? { t1: { kind: week.kind.replace("task1-", ""), chart: week.chart || {}, ...d.t1 } } : {}),
+    // Week 1: each topic with its prompt
+    ...(d.paraphrase && week ? { paraphrase: { ...d.paraphrase, items: d.paraphrase.items.map(it => {
+      const n = +((/\d+/.exec(it.topic) || [])[0]);
+      const p = week.prompts.find(x => x.id === "ex2-" + n);
+      return { ...it, prompt: p ? p.prompt : "" };
+    }) } } : {}),
+    ...(week && week.kind === "paragraph+paraphrase" ? { tabs: [["TR", "EX1", null, "Exercise 1 · Đoạn văn"], ["PARA", "EX2", null, "Exercise 2 · Paraphrase"], ["LR", "LR", null, "Từ vựng"], ["GRA", "GRA", null, "Ngữ pháp"]] } : {}),
+    ...(week && week.task === 1 ? { tabs: [["TR", "TA", "TR", "Overview & data"], ["CC", "CC", "CC", "Liên kết"], ["LR", "LR", "LR", "Từ vựng"], ["GRA", "GRA", "GR", "Ngữ pháp"]] } : {}),
     mistakes: {
       total: Object.keys(page.corrections).length,
       main: taught.map(g => ({ id: g.id, title: g.title, tag: g.tab === "LR" ? "Vocab" : "Grammar", cids: g.cids, points: points(g),

@@ -19,9 +19,19 @@ options) and add the Claude API key; the Netlify token is optional.
 ## How it works
 1. **Tạo bài ôn Đậu** (orange button on a grading page) copies the page and opens the editor.
 2. **Bài**: week, track and prompt, detected from the homework title; the teacher confirms.
-3. **Framework**: tag the idea sentences, pick the rewrite target, tick the week's checklist.
-4. **Nháp**: Claude drafts the lesson in 6 small parts (`lib/draft.js`, structured JSON output; bigger schemas were refused by the API as "too large"). One part goes first so the essay is cached for the rest; exercises wait for the mistake groups. If the API still refuses a schema, that part is asked without it and checked in the editor. A part that fails can be retried on its own.
-5. **Chỉnh sửa**: opens on **Cần duyệt**: only the cards where Claude judges her work or teaches (ideas, mistake groups, exercises, rewrite model, a framework verdict that disagrees with the checklist) plus lines that fail an automatic check (`lib/review.js`: numbers, quotes, ids, Đậu's voice). Everything else is approved by default. Every line stays editable, with a live phone preview. Open items stay purple until
+3. **Framework**: tag the sentences, pick the rewrite target, tick the week's checklist. The tags follow the
+   homework type: Task 2 essays (Mở bài, Câu chủ đề, Ý 1…), Task 1 reports, Weeks 7-10 (Introduction, Trends /
+   Differences / Main changes, Body 1, Body 2; English words kept), Week 1 (Topic sentence, Ý 1, Ý 2).
+4. **Nháp**: Claude drafts the lesson in small parts (`lib/draft.js`, structured JSON output; bigger schemas were refused by the API as "too large"). One part goes first so the essay is cached for the rest; exercises wait for the mistake groups. If the API still refuses a schema, that part is asked without it and checked in the editor. A part that fails can be retried on its own.
+   The parts depend on the homework (`partsFor` in `lib/draft.js`):
+   - Task 2 essay: structure, ideas, reading (prompt check + linking), mistakes, practice, frame.
+   - Task 1 (Weeks 7-10): structure, **t1**, reading, mistakes, practice, frame. t1 = the overview against the
+     week's main features, and her numbers against the chart in `course.json`, which the page draws (table,
+     line chart, pie table, or the map's now/future list). Linking becomes the language of trends and comparison.
+   - Week 1: ideas (Exercise 1, one paragraph), **paraphrase** (Exercise 2, one screen per topic), mistakes,
+     practice, frame. No scores, so no results screen.
+5. **Chỉnh sửa**: opens on **Cần duyệt**: only the cards where Claude judges her work or teaches (ideas, mistake groups, exercises, rewrite model, a framework verdict that disagrees with the checklist) plus lines that fail an automatic check (`lib/review.js`: numbers, quotes, ids, Đậu's voice; for Task 1, every number she is marked right or wrong on is
+   checked against the chart). Everything else is approved by default. Every line stays editable, with a live phone preview. Open items stay purple until
    the teacher approves or edits them. Mistake groups: rename, re-tag, drag corrections between groups.
 6. **Xuất**: download the `.html` (built exactly like `build.py`), save the lesson `.json`,
    or publish a Netlify link (`lib/netlify.js`: every publish is a new unguessable
@@ -42,4 +52,6 @@ node extension/tests/extract.test.mjs <saved CRM pages...>     # JS extractor ==
 node extension/tests/build.test.mjs                             # lib/build.js == build.py, byte for byte
 CRM=<page.html> LESSON=data/lesson-x.json node extension/tests/editor.test.mjs   # the whole editor flow
 CRM=<page.html> node extension/tests/extension.test.mjs         # the unpacked extension on a faked CRM address
+CRM=<page.html> node extension/tests/kinds.test.mjs             # Week 1 and Task 1 through the editor (fake reply built in)
+python3 extension/tests/task1_page.py <page.html> <7-10> <out.html>   # a fake Task 1 page (made-up essay and student)
 ```

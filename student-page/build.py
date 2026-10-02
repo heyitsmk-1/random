@@ -74,13 +74,14 @@ def check(lesson):
     praise = lesson.get("praise", [])
     if len(praise) > 3:
         problems.append(f"{len(praise)} compliments: keep it to 2-3 per essay")
-    places = {"results", "framework", "linking", "lr", "gra"} | {"idea:" + o["tag"] for o in lesson["ideas"]["overview"]}
+    ideas = lesson.get("ideas") or {"overview": []}
+    places = {"results", "framework", "linking", "lr", "gra", "overview", "data", "paraphrase"} | {"idea:" + o["tag"] for o in ideas["overview"]}
     problems += [f"compliment at unknown place '{x['at']}'" for x in praise if x["at"] not in places]
     rw = lesson.get("rewrite")
     if rw:
         problems += [f"rewrite: unknown sentence id {sid}" for sid in rw["sids"] if sid not in sids]
-        if rw.get("target") not in ("idea", "paragraph", "skeleton"):
-            problems.append("rewrite target must be idea, paragraph or skeleton")
+        if rw.get("target") not in ("idea", "paragraph", "skeleton", "overview", "paraphrase"):
+            problems.append("rewrite target must be idea, paragraph, skeleton, overview or paraphrase")
     elif not lesson["practice"].get("challenge"):
         problems.append("no rewrite section (lesson.rewrite)")
     used = json.dumps(lesson)

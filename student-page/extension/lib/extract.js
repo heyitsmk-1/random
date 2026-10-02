@@ -153,15 +153,33 @@ function paraTokens(p) {                      // split on <br> into paragraphs o
   return paras;
 }
 
+const sameButCase = (a, b) => a.length === b.length && a.every((x, i) => x === b[i] || x.toLowerCase() === b[i].toLowerCase());
 function studentMask(stream, original) {      // for each code point of stream: is it in her original?
   if (!original.length) return stream.map(() => true);
   const keep = stream.map(() => false);
-  for (const [a, , n] of new SequenceMatcher(stream, original).getMatchingBlocks()) for (let i = a; i < a + n; i++) keep[i] = true;
+  for (const [tag, i1, i2, j1, j2] of new SequenceMatcher(stream, original).getOpcodes()) {
+    // a letter whose case differs between the copies ("Golf" / "golf") is still hers
+    if (tag === "equal" || (tag === "replace" && sameButCase(stream.slice(i1, i2), original.slice(j1, j2)))) for (let i = i1; i < i2; i++) keep[i] = true;
+  }
   stream.forEach((ch, i) => { if (isSpace(ch)) keep[i] = true; });   // whitespace is never worth dropping on its own
   return keep;
 }
 
 const norm = t => t.replace(/\s+/g, " ").trim();
+const key = t => norm(t).replace(/ ([.,;:!?])/g, "$1");   // for matching only: "16% ." is "16%."
+const ACRONYMS = new Set(["UK", "US", "USA", "EU", "UAE", "GDP", "IELTS", "TV", "IT", "AI"]);
+function lowerCaps(text) {                    // the teacher's CAPS lowercased ("REACHING 16% IN 2010", "CANnot"), acronyms kept
+  const out = [];
+  let run = [];
+  for (const ch of [...cps(text), "\0"]) {
+    if (isUpper(ch)) { run.push(ch); continue; }
+    const word = run.join("");
+    out.push(word.length >= 2 && !ACRONYMS.has(word) ? word.toLowerCase() : word);
+    run = [];
+    out.push(ch);
+  }
+  return out.join("").slice(0, -1);
+}
 const isUpper = c => c !== c.toLowerCase() && c === c.toUpperCase();
 const isLower = c => c !== c.toUpperCase() && c === c.toLowerCase();
 
@@ -219,7 +237,7 @@ function indexOfCps(hay, needle, from) {
 export function extractPage(html) {
   const doc = new DOMParser().parseFromString(html, "text/html");
   const blocks = [...doc.querySelectorAll("#lrgr #editorjs .ce-paragraph")];
-  let original = cps([...doc.querySelectorAll("#trcc .ce-paragraph")].map(textWithBreaks).join("\n"));
+  let original = cps([...doc.querySelectorAll("#trcc .ce-paragraph")].map(textWithBreaks).join("\n").replace(/\u00a0/g, " "));
   const kindOf = tok => [...tok.classList].find(k => k !== "comment-inline" && k !== "focus") || "other";
   const byId = id => doc.getElementById(id);
 
@@ -228,14 +246,22 @@ export function extractPage(html) {
   for (const [pi, toks] of blocks.flatMap(paraTokens).entries()) {
     if (pi) items.push(null);
     for (const tok of toks) {
-      if (typeof tok === "string") { items.push(["t", tok]); continue; }
+      if (typeof tok === "string") { items.push(["t", tok.replace(/\u00a0/g, " ")]); continue; }
       const sid = tok.getAttribute("id");
       const box = sid ? byId("comment-" + sid) : null;
       const s = tok.querySelector("s"), mk = tok.querySelector("mark");
       const orig = s ? s.textContent : "", fix = mk ? mk.textContent : "";
+      const struck = s || mk ? null : tok.querySelector('[style*="line-through"]');
       if (s || mk) {
         if (orig || fix) items.push(["c", orig, fix, kindOf(tok), commentText(box)]);   // a correction may have no comment box
-      } else if (tok.textContent.trim() && box) items.push(["n", tok.textContent, kindOf(tok), commentText(box)]);
+      } else if (struck && struck.textContent.trim()) {
+        // crossed out by hand, then the teacher's version: a correction (her words may run on past the
+        // crossed-out part; step 1d takes them from the original)
+        const w = doc.createTreeWalker(tok, NodeFilter.SHOW_TEXT), parts = [];
+        for (let t = w.nextNode(); t; t = w.nextNode()) if (!struck.contains(t)) parts.push(t.nodeValue);
+        const theirs = lowerCaps(parts.join("").replace(/\s+/g, " ").trim());
+        items.push(["c", struck.textContent.replace(/\u00a0/g, " "), theirs, kindOf(tok), commentText(box), "grow"]);
+      } else if (tok.textContent.trim() && box) items.push(["n", tok.textContent.replace(/\u00a0/g, " "), kindOf(tok), commentText(box)]);
     }
   }
   const textOf = it => it === null ? "\n" : it[1];
@@ -271,6 +297,29 @@ export function extractPage(html) {
   const trccMarks = [...doc.querySelectorAll("#trcc .comment-inline")];
   let rewrites = new Map();
   if (original.length) ({ original, rewrites } = teacherRewrites(cps(items.map(textOf).join("")), original, trccMarks));
+
+  // 1d. a hand-made correction whose new version swallowed some of her words ("accounting for 16%" ->
+  //     "REACHING 16% IN 2010"): her words right after the crossed-out part belong to it
+  const grow = items.map((it, k) => it && it[0] === "c" && it.length > 5 ? k : -1).filter(k => k >= 0);
+  if (grow.length && original.length) {
+    const texts = items.map(textOf).map(cps), ends = [];
+    let at = 0;
+    for (const t of texts) { at += t.length; ends.push(at); }
+    const stream = texts.flat();
+    const ops = new SequenceMatcher(stream, original).getOpcodes();
+    for (const k of grow) {
+      const e = ends[k];
+      // right after it, or after the space that follows it ("do| not| sell")
+      const gap = e < stream.length && stream[e] === " " ? " " : "";
+      const op = ops.find(([tag, i1]) => tag === "insert" && (i1 === e || i1 === e + gap.length));
+      const extra = op ? original.slice(op[3], op[4]).join("") : "";
+      if (extra.trim() && !extra.includes("\n")) {
+        const lead = /^\s/.test(extra) ? "" : gap;
+        items[k] = ["c", items[k][1] + lead + extra.replace(/\s+$/, ""), ...items[k].slice(2, 5)];
+      }
+    }
+  }
+  items = items.map(it => it && it[0] === "c" ? it.slice(0, 5) : it);
 
   // 2. which characters of what the student wrote (plain text, <s>, note text) are really hers
   const streams = items.map(it => cps(it === null ? "\n" : ["t", "c", "n"].includes(it[0]) ? it[1] : ""));
@@ -403,7 +452,7 @@ export function extractPage(html) {
     const box = byId("comment-" + sp.getAttribute("id"));
     let text = rewrites.has(h) ? norm(rewrites.get(h)[0]) : norm(sp.textContent);
     // whole sentences inside the highlight, or the one sentence a partial highlight sits in
-    let ids = paragraphs.flatMap(p => p.sentences).filter(s => { const st = norm(sentenceText(s)); return st && (text.includes(st) || st.includes(text)); }).map(s => s.id);
+    let ids = paragraphs.flatMap(p => p.sentences).filter(s => { const st = key(sentenceText(s)); return st && (key(text).includes(st) || st.includes(key(text))); }).map(s => s.id);
     let added = "";
     if (rewrites.has(h)) {
       taskComments.push({ sentence_ids: ids, comment: commentText(box), kind: "trcc", quote: text, added: "", fix: norm(rewrites.get(h)[1]) });

@@ -1,6 +1,7 @@
 /* Đậu's lesson editor: page -> framework tagging -> Claude draft -> edit with live preview -> export. */
 import { extractPage } from "./lib/extract.js";
 import { buildPage, checkLesson } from "./lib/build.js";
+import { showInPreview } from "./lib/preview.js";
 import { draftLesson, draftToLesson, mergeParts, draftGroup, redraftPractice, partsFor, PARTS, MODEL } from "./lib/draft.js";
 import { getSettings, setSettings, takePage, saveDraft, loadDraft, listDrafts, saveLog, studentCode } from "./lib/store.js";
 import { publishPage } from "./lib/netlify.js";
@@ -55,7 +56,7 @@ function tagsFor(w = curWeek()) {
   return TAGS_T2;
 }
 function targetsFor(w = curWeek()) {
-  if (w.task === 1) return [["overview", "Overview"], ["paragraph", "Một đoạn thân bài"]];
+  if (w.task === 1) return [["idea", "Một ý / một câu"], ["overview", "Overview"], ["paragraph", "Một đoạn thân bài"]];
   if (w.kind === "paragraph+paraphrase") return [["paraphrase", "Paraphrase một topic"], ["paragraph", "Đoạn văn (Exercise 1)"]];
   return [["idea", "Một ý phát triển"], ["paragraph", "Một đoạn thân bài"], ["skeleton", "Mở bài + câu chủ đề"]];
 }
@@ -568,7 +569,7 @@ function refreshPreview(now) {
     if (S.mod === "mistakes" && !S.lesson.mistakes.main.some(x => x.tab === "LR")) name = "gra";
     if (S.mod === "praise" && !Object.values(S.lesson.scores || {}).some(Boolean)) name = "end";
     const lesson = { ...structuredClone(S.lesson), __preview: true, __startName: name, ...(S.pvEssay ? { __essay: S.pvEssay } : {}) };
-    try { const { html } = await buildPage(lesson, BUNDLE); f.srcdoc = html; } catch (e) { f.srcdoc = `<p style="font:14px sans-serif;padding:16px">Chưa xem trước được: ${e.message}</p>`; }
+    try { const { html } = await buildPage(lesson, BUNDLE); await showInPreview(f, html); } catch (e) { f.srcdoc = `<p style="font:14px sans-serif;padding:16px">Chưa xem trước được: ${e.message}</p>`; }
   }, now ? 0 : 700);
 }
 

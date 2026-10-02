@@ -8,6 +8,15 @@
 const get = (obj, path) => path.split(".").reduce((o, k) => (o == null ? undefined : o[/^\d+$/.test(k) ? +k : k]), obj);
 const BOARD_MAX = 22;                                 // characters per chalkboard line
 const nums = t => (String(t).match(/\d+(?:[.,]\d+)?/g) || []).map(x => +x.replace(",", "."));
+/* numbers that read as a band score: "7.5", "6.0", or a whole number right after overall / band / điểm /
+   a criterion ("TR 7"); "Body 1", "Ý 2", "Topic 3", "Week 9" are not scores */
+export const bandNums = t => {
+  const out = [];
+  String(t).replace(/(\d+)[.,]([05])\b|(?:overall|band|điểm|TR|TA|CC|LR|GRA|GR)\D{0,12}?(\d+(?:[.,][05])?)\b/giu, (m, a, b, c) => {
+    out.push(a != null ? +(a + "." + b) : +c.replace(",", "."));
+  });
+  return out.filter(n => n <= 10);
+};
 const norm = t => String(t).toLowerCase().replace(/[‘’]/g, "'").replace(/\s+/g, " ").trim();
 
 /** Đậu's voice rules (Vietnamese lines). */
@@ -92,7 +101,10 @@ export function checks(L, { prompt, checkLesson } = {}) {
   // (the word count is no longer shown)
   const bands = [L.overall, ...Object.values(L.scores || {})].map(Number).filter(n => !isNaN(n));
   const okBands = [...bands, ...bands.map(b => b + 0.5), ...bands.map(b => b + 1)];
-  ((L.results && L.results.score) || []).forEach((t, i) => { if (nums(t).some(n => !okBands.includes(n))) flag(`results.score.${i}`, "results", `Điểm không khớp trang chấm (overall ${L.overall})`); });
+  ((L.results && L.results.score) || []).forEach((t, i) => {
+    const bad = bandNums(t).filter(n => !okBands.includes(n));
+    if (bad.length) flag(`results.score.${i}`, "results", `Số ${bad.join(", ")} không khớp trang chấm (overall ${L.overall})`);
+  });
   // a group's size = its corrections + its notes
   const size = g => g.cids.length + (g.points || []).length;
   L.mistakes.main.forEach((m, i) => {
@@ -104,6 +116,11 @@ export function checks(L, { prompt, checkLesson } = {}) {
   const perTab = t => all.filter(x => x.tab === t);
   const okCounts = [...bands, Object.keys(C).length, grouped, grouped + all.reduce((n, x) => n + (x.g.points || []).length, 0), all.length,
     ...["LR", "GRA"].flatMap(t => [perTab(t).reduce((n, x) => n + size(x.g), 0), perTab(t).length]), ...all.map(x => size(x.g))];
+  // a rewrite of the sentences the teacher picked: the model shouldn't be a whole new paragraph
+  if (L.rewrite && L.rewrite.model && (L.rewrite.sids || []).length) {
+    const said = (L.rewrite.model.match(/[^.!?]+[.!?]+/g) || [L.rewrite.model]).length;
+    if (said > L.rewrite.sids.length + 1) flag("rewrite.model", "rewrite", `Bài mẫu có ${said} câu, nhưng phần em viết lại chỉ có ${L.rewrite.sids.length} câu`);
+  }
   for (const k of ["lr_intro", "gra_intro"]) (L.mistakes[k] || []).forEach((t, i) => {
     if (nums(t).some(n => !okCounts.includes(n))) flag(`mistakes.${k}.${i}`, "mistakes", `Con số không khớp số chỗ sửa (${Object.keys(C).length})`);
   });

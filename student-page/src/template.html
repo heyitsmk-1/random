@@ -93,6 +93,12 @@ button { font: inherit; color: inherit; }
 .tab[aria-current="true"] b, .tab[aria-current="true"] span { color: var(--orange-deep); }
 .essay-btn { display: inline-flex; align-items: center; gap: 6px; border: 1.5px solid var(--line); background: var(--paper); border-radius: 999px; padding: 5px 12px 5px 8px; font-size: 13px; font-weight: 600; cursor: pointer; }
 .essay-btn img { width: 20px; height: 20px; object-fit: contain; }
+.prompt-btn { padding: 5px 11px; }
+/* the prompt (and the chart) on every screen: a sheet on phones, a panel beside the lesson on wide screens */
+.side-prompt { display: none; position: fixed; top: 16px; left: calc(50% - 240px - 336px); width: 312px; max-height: calc(100% - 32px); overflow-y: auto; flex-direction: column; gap: 10px; z-index: 5; }
+.side-prompt .label { margin-bottom: 2px; }
+body.wide .side-prompt { display: flex; }
+body.wide .prompt-btn { display: none; }
 .bar { position: relative; height: 12px; border-radius: 999px; background: var(--paper); border: 1.5px solid var(--line); }
 .bar-fill { position: absolute; inset: 0 auto 0 0; width: 0; border-radius: 999px; background: linear-gradient(90deg, var(--mint), var(--orange)); transition: width .6s cubic-bezier(.3, .9, .3, 1); }
 .bar-sprout { position: absolute; top: 50%; width: 26px; height: 26px; transform: translate(-50%, -62%); transition: left .6s cubic-bezier(.3, .9, .3, 1); pointer-events: none; }
@@ -123,7 +129,10 @@ button { font: inherit; color: inherit; }
 .catch { position: absolute; inset: 0; display: none; pointer-events: auto; touch-action: none; cursor: pointer; }
 .app.dau-talk .catch { display: block; }
 .dgroup { position: absolute; left: 0; right: 0; top: 40%; display: flex; align-items: flex-end; padding-right: 14px; transition: top .35s cubic-bezier(.3, .9, .3, 1); pointer-events: none; }
-.dau { flex: none; width: 150px; margin-left: -22px; transform: translateX(-120%) rotate(-8deg); transform-origin: 30% 100%; transition: transform .55s cubic-bezier(.3, 1.35, .45, 1); pointer-events: auto; cursor: pointer; }
+/* he never stands on the page: while he talks the card area ends above him (--dau-h) and he waits
+   at the bottom, just over the Tiếp bar; the card he means lifts instead of him moving to it */
+.app.dau-talk .content { margin-bottom: var(--dau-h, 0px); }
+.dau { flex: none; width: 128px; margin-left: -18px; transform: translateX(-120%) rotate(-8deg); transform-origin: 30% 100%; transition: transform .55s cubic-bezier(.3, 1.35, .45, 1); pointer-events: auto; cursor: pointer; }
 .app.dau-talk .dau { transform: translateX(0) rotate(6deg); }
 /* entrance: his head peeks round the left edge first, then he hops in */
 .app.dau-talk.peek .dau { transform: translateX(-30%) rotate(12deg); transition: transform .4s cubic-bezier(.2, .8, .3, 1); }
@@ -526,7 +535,7 @@ canvas.confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-
 @media (max-height: 740px) {
   .top { padding-top: calc(env(safe-area-inset-top, 0px) + 6px); gap: 6px; }
   .scene { gap: 8px; padding-top: 6px; }
-  .dau { width: 120px; }
+  .dau { width: 108px; }
   .say { font-size: 16px; padding: 16px 14px 22px; min-height: 72px; }
   .btn { padding: 12px 16px; }
 }
@@ -540,6 +549,7 @@ canvas.confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-
   <header class="top">
     <div class="top-row">
       <nav class="tabs" id="tabs" aria-label="Các phần"></nav>
+      <button class="essay-btn prompt-btn" id="promptBtn" type="button" aria-label="Đề bài">Đề</button>
       <button class="essay-btn" id="essayBtn" type="button"><img alt="" id="essayIcon">Bài của em</button>
     </div>
     <div class="bar" role="progressbar" aria-label="Tiến độ" aria-valuemin="0" aria-valuemax="100" id="bar">
@@ -601,6 +611,19 @@ L.essay.paragraphs.forEach(p => p.sentences.forEach(s => { SENT[s.id] = s; }));
 const C = L.corrections;
 const CID_SENT = {};
 Object.values(SENT).forEach(s => s.segs.forEach(g => { if (typeof g !== "string") CID_SENT[g.c] = s.id; }));
+/* counts Đậu says are written as {n} and filled in here, so they stay right when the teacher adds or
+   removes an item (finish.extra_prompt keeps its {n}: that one is filled after the practice) */
+const fillN = (t, n) => typeof t === "string" ? t.replace(/\{n\}/g, n) : Array.isArray(t) ? t.map(x => fillN(x, n)) : t;
+if (L.linking) {
+  const K = L.linking, sug = (K.suggestions || []).length;
+  K.suggestions_intro = fillN(K.suggestions_intro, sug); K.result = fillN(K.result, sug); K.intro = fillN(K.intro, sug);
+}
+if (L.mistakes) {
+  const M = L.mistakes, size = g => (g.cids || []).length + (g.points || []).length;
+  M.main.forEach(m => { m.count_line = fillN(m.count_line, size(m)); });
+  const inTab = t => [...M.main.filter(m => m.tab === t), ...M.others.filter(o => o.tag === t)].reduce((n, g) => n + size(g), 0);
+  M.lr_intro = fillN(M.lr_intro, inTab("LR")); M.gra_intro = fillN(M.gra_intro, inTab("GRA"));
+}
 const origText = sid => SENT[sid].segs.map(g => typeof g === "string" ? g : C[g.c].orig).join("").replace(/\s+/g, " ").trim();
 
 /* ---------- DOM helpers ---------- */
@@ -721,10 +744,10 @@ function rectOf(el) {
   return { top: r.top / z, bottom: r.bottom / z, left: r.left / z, right: r.right / z, width: r.width / z, height: r.height / z };
 }
 
+let kMin = 1;                       // per screen: text only ever shrinks while it plays, so nothing jumps
 function fit() {
   if (!content) return;
-  content.classList.remove("overflow");
-  let k = 1;
+  let k = kMin;
   scene.style.setProperty("--k", k);
   // layout heights only: entrance animations use transforms, which would inflate scrollHeight
   const over = () => {
@@ -733,7 +756,8 @@ function fit() {
     return bottom - content.offsetTop > content.clientHeight + 1;
   };
   while (over() && k > .74) { k = +(k - .04).toFixed(2); scene.style.setProperty("--k", k); }
-  if (over()) content.classList.add("overflow");
+  kMin = k;
+  content.classList.toggle("overflow", over());
   place();
 }
 
@@ -785,22 +809,21 @@ function spotlight(el) {
   spotEl = el;
   if (el && mode === "talk") el.classList.add("spot");
 }
+let dauH = 0;
 function place() {
   if (mode !== "talk") return;
-  const L = rectOf(layer), gh = group.offsetHeight;
-  const kids = content ? [...content.children] : [];
-  const anchor = spotEl && spotEl.isConnected ? spotEl : kids[kids.length - 1];
-  let top = 12;
-  if (anchor) {
-    const r = rectOf(anchor);
-    let bottom = r.bottom;
-    for (let n = anchor.nextElementSibling; n; n = n.nextElementSibling) bottom = Math.max(bottom, rectOf(n).bottom);
-    const below = bottom - L.top + 14, above = r.top - L.top - gh - 14;
-    // no room under an answered question: stand over its choices rather than over what it was about
-    const answered = anchor.matches(".ask") && !anchor.querySelector(".choice:not([disabled])");
-    top = below + gh <= L.height - 8 ? below : answered ? L.height - gh - 8 : above >= 4 ? above : L.height - gh - 8;
-  }
+  const L = rectOf(layer), gh = group.offsetHeight, st = rectOf($("#stage"));
+  // docked: just above the Tiếp bar, always in the same place
+  const top = st.bottom - L.top - gh - 2;
   group.style.top = Math.max(4, top) + "px";
+  // the page ends above him (only grows during a screen, so the cards don't jump line by line)
+  if (gh + 8 > dauH) { dauH = gh + 8; app.style.setProperty("--dau-h", dauH + "px"); settle(); }
+  // what he is talking about must be in view above him
+  if (spotEl && spotEl.isConnected && content && content.classList.contains("overflow")) {
+    const c = rectOf(content), r = rectOf(spotEl);
+    if (r.bottom > c.bottom) content.scrollTop += Math.min(r.bottom - c.bottom + 8, r.top - c.top - 4);
+    else if (r.top < c.top) content.scrollTop -= c.top - r.top + 4;
+  }
   const up = !!(spotEl && spotEl.isConnected && rectOf(spotEl).bottom < L.top + top);
   if (up !== spotLooksUp) { spotLooksUp = up; face(typed ? "rest" : "talk"); }
 }
@@ -955,6 +978,7 @@ async function run(i, tgt = 0, dir = 1) {
   pending.clear();
   cur = i; passed = 0; target = tgt; atEnd = false; waiting = null; needAnswer = null; fast = false;
   dockHold = false; saidAt = -1; typed = true; spotEl = null; app.classList.remove("nofade", "peek");
+  kMin = 1; dauH = 0; app.style.removeProperty("--dau-h");
   replay = dir < 0 || tgt > 0;
   const sc = screens[i];
   content = h("div", { class: "content" });
@@ -993,6 +1017,8 @@ function forward() {
     if (!typed) { hurry(); return; }
     // the student has something to do on the page: step aside
     if (needAnswer || dockHold || (atEnd && screens[cur].end)) { setMode("away"); return; }
+    // the end of a long screen: step aside first, so the whole page can be read before moving on
+    if (atEnd && scrolls()) { setMode("away"); return; }
   }
   if (needAnswer) { needAnswer.classList.remove("nudge"); void needAnswer.offsetWidth; needAnswer.classList.add("nudge"); return; }
   if (waiting) { const w = waiting; waiting = null; setBtn(); w(); return; }
@@ -1056,6 +1082,8 @@ function gestures(el, tapForward) {
     // buttons, inputs and word chips inside the page keep their own taps
     const own = e.target.closest("button, a, input, textarea, label, select, [role=button]");
     if (!tapForward || (own && own !== el && el.contains(own))) return;
+    // tapping Đậu himself just sends him aside (to read what he covers); the next tap goes on
+    if (tapForward === "hide") { if (mode === "talk" && typed) setMode("away"); else forward(); return; }
     if (scrolls() && !e.target.closest("#say, .say, .hint") && !(el.id === "catch" && overBubble(e))) return;
     forward();
   });
@@ -1070,7 +1098,7 @@ gestures($("#stage"), true);
 $(".hint").addEventListener("click", () => forward());
 gestures($("#catch"), true);
 gestures(sayBox, true);
-gestures(dau, true);
+gestures(dau, "hide");
 sayBox.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); forward(); } });
 $("#nextBtn").addEventListener("click", forward);
 $("#backBtn").addEventListener("click", backward);
@@ -2093,6 +2121,16 @@ function openEssay({ sid = null, cids = null, step = false, onDone = null }) {
   if (sid) requestAnimationFrame(() => { const t = body.querySelector(".s.hl"); if (t) t.scrollIntoView({ block: "center", behavior: REDUCED ? "auto" : "smooth" }); });
 }
 $("#essayBtn").addEventListener("click", () => openEssay({}));
+/* the prompt, with the chart for Task 1: the student shouldn't have to remember it */
+const promptCards = () => [
+  h("div", { class: "card stack" }, h("div", { class: "label" }, "Đề bài" + (L.essay_type ? " · " + L.essay_type : "")), h("div", { class: "en" }, L.prompt || "")),
+  typeof T1 !== "undefined" && T1 ? h("div", { class: "card chart-card" }, chartView(null)) : null,
+].filter(Boolean);
+$("#promptBtn").addEventListener("click", () => sheet("Đề bài", null, h("div", { class: "sheet-body stack" }, promptCards())));
+const side = h("aside", { class: "side-prompt", "aria-label": "Đề bài" }, promptCards());
+document.body.append(side);
+const sideFits = () => document.body.classList.toggle("wide", innerWidth / ZOOM >= 1180);
+addEventListener("resize", sideFits); sideFits();
 $("#essayIcon").src = A.icon_notebook;
 $("#sproutIcon").src = A.icon_sprout;
 

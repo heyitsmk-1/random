@@ -14,6 +14,9 @@ Highlights in the grammar/vocab editor come in three shapes:
   - teacher typing inside the essay ("// CHILDREN", "IN PARTICULAR,", "=> COMMENT"): anything that is
     not in the student's original essay (the "Lập luận và Mạch lạc" editor) is dropped from the essay
     and kept on the note as `added`. "words // FIX" on a note becomes a correction words -> fix.
+  - a hand-made correction: words crossed out with the line-through style (not the editor's <s>)
+    followed by the teacher's version, often in CAPS; it reads as a correction, the CAPS lowercased.
+A letter that only changed case ("Golf" in one copy, "golf" in the other) is still the student's.
 """
 import difflib
 import json
@@ -98,20 +101,43 @@ def para_tokens(p):
     return paras
 
 
+def same_but_case(a, b):
+    return len(a) == len(b) and all(x == y or x.lower() == y.lower() for x, y in zip(a, b))
+
+
 def student_mask(stream, original):
     """For each character of `stream`, whether it is in the student's original essay."""
     if not original:
         return [True] * len(stream)
     keep = [False] * len(stream)
     sm = difflib.SequenceMatcher(None, stream, original, autojunk=False)
-    for a, _, n in sm.get_matching_blocks():
-        for i in range(a, a + n):
-            keep[i] = True
+    for tag, i1, i2, j1, j2 in sm.get_opcodes():
+        # a letter whose case differs between the copies ("Golf" / "golf") is still hers
+        if tag == "equal" or (tag == "replace" and same_but_case(stream[i1:i2], original[j1:j2])):
+            for i in range(i1, i2):
+                keep[i] = True
     # whitespace is never worth dropping on its own
     for i, ch in enumerate(stream):
         if ch.isspace():
             keep[i] = True
     return keep
+
+
+ACRONYMS = {"UK", "US", "USA", "EU", "UAE", "GDP", "IELTS", "TV", "IT", "AI"}
+
+
+def lower_caps(text):
+    """The teacher's CAPS lowercased ("REACHING 16% IN 2010", "CANnot"), acronyms kept."""
+    out, run = [], []
+    for ch in text + "\0":
+        if ch.isupper():
+            run.append(ch)
+            continue
+        word = "".join(run)
+        out.append(word.lower() if len(word) >= 2 and word not in ACRONYMS else word)
+        run = []
+        out.append(ch)
+    return "".join(out)[:-1]
 
 
 def brtext(el):  # get_text() with <br> as a newline
@@ -169,7 +195,7 @@ def main(src, dst):
     blocks = soup.select("#lrgr #editorjs .ce-paragraph")  # the editor may split the essay into blocks
     # the student's original, with its line breaks (<br>) kept
     original = "\n".join(BeautifulSoup(re.sub(r"<br\s*/?>", "\n", str(b)), "html.parser").get_text()
-                         for b in soup.select("#trcc .ce-paragraph"))
+                         for b in soup.select("#trcc .ce-paragraph")).replace("\xa0", " ")
     kind_of = lambda tok: next((k for k in tok.get("class", []) if k not in ("comment-inline", "focus")), "other")
 
     # 1. tokens: plain text, corrections, notes (paragraph breaks as None)
@@ -179,17 +205,24 @@ def main(src, dst):
             items.append(None)
         for tok in toks:
             if isinstance(tok, str):
-                items.append(("t", tok))
+                items.append(("t", tok.replace("\xa0", " ")))
                 continue
             sid = tok.get("id")
             box = soup.find(id=f"comment-{sid}") if sid else None
             orig = tok.s.get_text() if tok.s else ""
             fix = tok.mark.get_text() if tok.mark else ""
+            struck = None if tok.s is not None or tok.mark is not None else tok.find(
+                lambda t: "line-through" in (t.get("style") or ""))
             if tok.s is not None or tok.mark is not None:
                 if orig or fix:  # a correction may have no comment box
                     items.append(("c", orig, fix, kind_of(tok), comment_text(box)))
+            elif struck is not None and struck.get_text().strip():
+                # crossed out by hand, then the teacher's version: a correction (her words may run on
+                # past the crossed-out part; step 1d takes them from the original)
+                theirs = lower_caps(re.sub(r"\s+", " ", "".join(t for t in tok.find_all(string=True) if struck not in t.parents)).strip())
+                items.append(("c", struck.get_text().replace("\xa0", " "), theirs, kind_of(tok), comment_text(box), "grow"))
             elif tok.get_text().strip() and box is not None:
-                items.append(("n", tok.get_text(), kind_of(tok), comment_text(box)))
+                items.append(("n", tok.get_text().replace("\xa0", " "), kind_of(tok), comment_text(box)))
 
     # 1b. paragraph breaks the corrected copy lost ("former.On the one hand"): take them from the original
     if original:
@@ -225,6 +258,27 @@ def main(src, dst):
         original, rewrites = teacher_rewrites("".join("\n" if it is None else it[1] for it in items), original, trcc_marks)
     else:
         rewrites = {}
+
+    # 1d. a hand-made correction whose new version swallowed some of her words ("accounting for 16%" ->
+    #     "REACHING 16% IN 2010"): her words right after the crossed-out part belong to it
+    grow = [k for k, it in enumerate(items) if it and it[0] == "c" and len(it) > 5]
+    if grow and original:
+        texts = ["\n" if it is None else it[1] for it in items]
+        ends, pos = [], 0
+        for t in texts:
+            pos += len(t)
+            ends.append(pos)
+        ops = difflib.SequenceMatcher(None, "".join(texts), original, autojunk=False).get_opcodes()
+        stream = "".join(texts)
+        for k in grow:
+            e = ends[k]
+            # right after it, or after the space that follows it ("do| not| sell")
+            gap = " " if e < len(stream) and stream[e] == " " else ""
+            extra = next((original[j1:j2] for tag, i1, i2, j1, j2 in ops if tag == "insert" and i1 in (e, e + len(gap))), "")
+            if extra.strip() and "\n" not in extra:
+                lead = gap if not extra[:1].isspace() else ""
+                items[k] = ("c", items[k][1] + lead + extra.rstrip(), *items[k][2:5])
+    items = [it[:5] if it and it[0] == "c" else it for it in items]
 
     # 2. which characters of what the student wrote (plain text, <s>, note text) are really hers
     stream, owner = [], []
@@ -368,13 +422,14 @@ def main(src, dst):
         return "".join(x if isinstance(x, str) else corrections[x["c"]]["orig"] for x in s["segs"])
 
     norm = lambda t: re.sub(r"\s+", " ", t).strip()
+    key = lambda t: re.sub(r" ([.,;:!?])", r"\1", norm(t))  # for matching only: "16% ." is "16%."
     task_comments = []
     for h, sp in enumerate(trcc_marks):
         box = soup.find(id=f"comment-{sp.get('id')}")
         text = norm(rewrites[h][0]) if h in rewrites else norm(sp.get_text())
         # whole sentences inside the highlight, or the one sentence a partial highlight sits in
         ids = [s["id"] for p in paragraphs for s in p["sentences"]
-               if norm(sentence_text(s)) and (norm(sentence_text(s)) in text or text in norm(sentence_text(s)))]
+               if key(sentence_text(s)) and (key(sentence_text(s)) in key(text) or key(text) in key(sentence_text(s)))]
         added = ""
         if h in rewrites:
             task_comments.append({"sentence_ids": ids, "comment": comment_text(box), "kind": "trcc", "quote": text, "added": "", "fix": norm(rewrites[h][1])})

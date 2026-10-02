@@ -33,5 +33,10 @@
   },
   "icons": {
     "128": "bundle/icon128.png"
+  },
+  "sandbox": {
+    "pages": [
+      "preview.html"
+    ]
   }
 }

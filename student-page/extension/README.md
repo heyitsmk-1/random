@@ -39,6 +39,16 @@ options) and add the Claude API key; the Netlify token is optional.
 
 Drafts autosave in `chrome.storage.local`, keyed by the CRM writing id.
 
+**Phone preview:** the student page runs its own inline script, which Chrome never allows on an extension
+page. So the preview frame loads `preview.html`, a sandboxed page (`"sandbox"` in the manifest: no extension
+APIs, no storage), and the editor posts the built page to it (`lib/preview.js`).
+
+**Reading the grading page** (`lib/extract.js`, same as `tools/extract_page.py`): a letter that only changed
+case between the two copies stays the student's ("Golf"); words crossed out with the line-through style
+(not the editor's strikethrough) and the teacher's version after them read as one correction, with her words
+the new version swallowed taken from the original and the teacher's CAPS lowercased ("~~accounting for 16%~~
+→ reaching 16% in 2010").
+
 **Nhật ký (editing log, `lib/telemetry.js`):** when a Claude-drafted lesson is exported or published,
 the editor records what the teacher kept, edited, deleted or added versus Claude's draft, the mistake
 groups before/after, picks, and actions (drags, roles, ✓/~/✗, approvals, undo, optional reason chips).

@@ -307,7 +307,7 @@ try {
   // a wrong number in Đậu's line is caught
   await page.locator(".mod-btn", { hasText: "Kết quả" }).click();
   await page.locator(".form .lines input").first().fill("Overall của em là 9.5 á");
-  ok(/Điểm không khớp/.test(await page.locator(".form .lines .lint").first().textContent()), "a wrong band score is flagged in the field");
+  ok(/không khớp trang chấm/.test(await page.locator(".form .lines .lint").first().textContent()), "a wrong band score is flagged in the field");
   await page.locator(".form .lines input").first().fill(lesson.results.score[0]);
   await page.locator(".mod-btn", { hasText: "Chào" }).click();
   await page.screenshot({ path: join(OUT, "04-edit-hello.png") });

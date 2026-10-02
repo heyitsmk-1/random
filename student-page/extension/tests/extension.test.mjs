@@ -65,6 +65,38 @@ try {
   const s = await opt.evaluate(async () => (await chrome.storage.local.get("settings")).settings);
   ok(s.teacher === "cô Test" && s.zalo === "https://zalo.me/0838002910", "options save");
   void keys;
+
+  // the phone preview runs the student page's inline script inside the extension (the bug: Chrome
+  // blocks inline scripts on extension pages, so the preview stayed blank)
+  const probe = '<!doctype html><body><div id="x">waiting</div><script>try { localStorage.getItem("a"); } catch (e) {} document.getElementById("x").textContent = "ran";<\/script>';
+  await editor.evaluate(async html => {
+    const { showInPreview } = await import("/lib/preview.js");
+    const f = document.createElement("iframe"); f.id = "probe"; document.body.append(f);
+    await showInPreview(f, html);
+  }, probe);
+  await editor.waitForTimeout(400);
+  const pf = editor.frames().find(f => /preview\.html/.test(f.url()));
+  ok(pf && await pf.evaluate(() => document.getElementById("x").textContent) === "ran", "preview frame runs inline scripts (sandboxed page)");
+  if (process.env.LESSON) {
+    // a whole student page, built and shown the way the editor does it
+    const lesson = JSON.parse(readFileSync(process.env.LESSON, "utf8"));
+    await editor.evaluate(async ({ lesson, crm }) => {
+      const { extractPage } = await import("/lib/extract.js");
+      const { buildPage } = await import("/lib/build.js");
+      const { showInPreview } = await import("/lib/preview.js");
+      const get = async (f, t) => { const r = await fetch("bundle/" + f); return t ? r.text() : r.json(); };
+      const [template, assets, quotes, course] = await Promise.all([get("template.html", 1), get("assets.json"), get("quotes.json"), get("course.json")]);
+      const page = extractPage(crm);
+      const full = { ...lesson, essay: page.essay, corrections: page.corrections, task_comments: page.task_comments, scores: page.scores, word_count: page.word_count, __preview: true };
+      const { html } = await buildPage(full, { template, assets, quotes: quotes.quotes, course });
+      await showInPreview(document.getElementById("probe"), html);
+    }, { lesson, crm: readFileSync(CRM, "utf8") });
+    await editor.waitForTimeout(1500);
+    const lf = editor.frames().find(f => /preview\.html/.test(f.url()));
+    const line = lf ? await lf.evaluate(() => (document.getElementById("dauLine") || {}).textContent || "") : "";
+    ok(line.length > 3, "a whole student page plays in the preview: " + line.slice(0, 50));
+    await editor.screenshot({ path: join(OUT, "ext-preview.png") });
+  }
 } finally {
   await ctx.close();
 }

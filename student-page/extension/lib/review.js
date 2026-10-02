@@ -42,6 +42,9 @@ const VOICE = [
   /^finish\.(summary|later|done)\.\d+$/,
   /^t1\.overview\.(intro|lines)\.\d+$/, /^t1\.data\.intro$/, /^t1\.data\.verdict\.\d+$/, /^t1\.data\.items\.\d+\.note$/,
   /^paraphrase\.intro\.\d+$/, /^paraphrase\.items\.\d+\.line$/, /^paraphrase\.outro$/,
+  // flow 2
+  /^logic\.summary\.\d+$/, /^logic\.points\.\d+\.line$/, /^logic\.issues\.\d+\.say\.\d+$/,
+  /^language\.intro\.\d+$/, /^language\.phrases\.line$/, /^language\.items\.\d+\.ask\.q$/,
 ];
 export const isVoice = path => VOICE.some(r => r.test(path));
 
@@ -227,4 +230,80 @@ export function moduleOf(path) {
   const top = path.split(".")[0];
   return { hello: "hello", student: "hello", results: "results", framework: "framework", prompt_check: "prompt_check", ideas: "ideas", linking: "linking", t1: "t1", paraphrase: "paraphrase",
     mistakes: "mistakes", practice: "practice", rewrite: "rewrite", praise: "praise", finish: "finish" }[top] || "review";
+}
+
+/* ---------- flow 2 (the teacher decided; Claude wrote Đậu's words around it) ---------- */
+const MODULE2 = { logic: "logic", ideas: "ideas", language: "language", mistakes: "systemic", practice: "practice", rewrite: "rewrite",
+  hello: "frame", student: "frame", results: "frame", finish: "frame" };
+export const moduleOf2 = path => MODULE2[path.split(".")[0]] || "review";
+
+/** Automatic checks for a flow-2 lesson. Same flag shape as checks(). */
+export function checks2(L, { checkLesson } = {}) {
+  const flags = [];
+  const flag = (path, module, msg, fixOnly = false) => flags.push({ path, module, msg, fixOnly });
+  const C = L.corrections || {};
+  const sents = {};
+  for (const p of L.essay.paragraphs) for (const s of p.sentences)
+    sents[s.id] = norm(s.segs.map(g => typeof g === "string" ? g : C[g.c].orig).join("")) + " || " + norm(s.segs.map(g => typeof g === "string" ? g : C[g.c].fix).join(""));
+  const inSents = (ids, text) => (ids || []).some(id => (sents[id] || "").includes(norm(text)));
+
+  // the score Đậu says
+  const bands = [L.overall, ...Object.values(L.scores || {})].map(Number).filter(n => !isNaN(n));
+  const okBands = [...bands, ...bands.map(b => b + 0.5), ...bands.map(b => b + 1)];
+  ((L.results && L.results.score) || []).forEach((t, i) => {
+    const bad = bandNums(t).filter(n => !okBands.includes(n));
+    if (bad.length) flag(`results.score.${i}`, "frame", `Số ${bad.join(", ")} không khớp trang chấm (overall ${L.overall})`);
+  });
+
+  // Logic: quotes really hers, data on the chart
+  const G = L.logic || { points: [], issues: [] };
+  G.issues.forEach((it, i) => {
+    if (it.quote && !inSents(it.sids, it.quote)) flag(`logic.issues.${i}.quote`, "logic", "Chữ trích không có trong câu của em");
+    if (!(it.say || []).some(x => x && x.trim())) flag(`logic.issues.${i}.say`, "logic", "Chỗ cần sửa này chưa có lời Đậu", true);
+    if (L.t1 && it.series && L.t1.kind !== "map" && chartValue(L.t1, it) === undefined) flag(`logic.issues.${i}.series`, "logic", `Không thấy "${it.series}" / "${it.col}" trên biểu đồ`);
+  });
+  if (G.points.some(p => !p.ok) && !G.issues.length && !L.ideas) flag("logic.issues", "logic", "Có điểm ✗ nhưng chưa có màn nào giải thích cho em");
+
+  // Language: "Cụm em đã dùng tốt" really in her essay; Socratic questions that work
+  ((L.language && L.language.phrases && L.language.phrases.groups) || []).forEach((g, gi) => g.items.forEach((x, xi) => {
+    const s = sents[x.sid] || "";
+    let from = 0;
+    const found = norm(x.text).split(/\s*(?:…|\.\.\.)\s*/).filter(Boolean).every(piece => { const k = s.indexOf(piece, from); if (k < 0) return false; from = k + piece.length; return true; });
+    if (!found) flag(`language.phrases.groups.${gi}.items.${xi}`, "language", `"${x.text}" không có trong câu ${x.sid}`);
+  }));
+  ((L.language && L.language.items) || []).forEach((it, i) => {
+    if (it.mode !== "socratic") return;
+    if (!it.ask || !it.ask.q) flag(`language.items.${i}.ask`, "language", "Câu Socratic chưa có câu hỏi", true);
+    else if (!(it.ask.answer >= 0 && it.ask.answer < (it.ask.options || []).length)) flag(`language.items.${i}.ask.answer`, "language", "Đáp án đúng không trỏ tới lựa chọn nào", true);
+  });
+
+  // the systematic mistake: a figure instead of {n} must be right; the chalkboard must fit
+  const size = g => g.cids.length + (g.points || []).length;
+  ((L.mistakes && L.mistakes.main) || []).forEach((m, i) => {
+    if (m.count_line && nums(m.count_line).some(n => n !== size(m))) flag(`mistakes.main.${i}.count_line`, "systemic", `Số lỗi không khớp: lỗi này có ${size(m)} chỗ`);
+    (m.board || []).forEach((t, j) => { if (t.length > BOARD_MAX) flag(`mistakes.main.${i}.board.${j}`, "systemic", `Bảng: dòng quá dài (${t.length} ký tự, nên dưới ${BOARD_MAX})`); });
+    if (!(m.ask.answer >= 0 && m.ask.answer < (m.ask.options || []).length)) flag(`mistakes.main.${i}.ask.answer`, "systemic", "Đáp án đúng không trỏ tới lựa chọn nào", true);
+  });
+  ((L.practice && L.practice.items) || []).forEach((it, i) => {
+    if (it.type === "choose" && !(it.answer >= 0 && it.answer < (it.options || []).length)) flag(`practice.items.${i}.answer`, "practice", "Đáp án đúng không trỏ tới lựa chọn nào", true);
+    if (it.type === "choose" && it.sentence && !it.sentence.includes("___")) flag(`practice.items.${i}.sentence`, "practice", 'Câu điền chỗ trống cần có "___"');
+    if (it.type === "build" && !(it.answer || []).length) flag(`practice.items.${i}.answer`, "practice", "Chưa có các cụm của câu", true);
+  });
+
+  // the rewrite stays on the sentences the teacher picked
+  if (L.rewrite && L.rewrite.model && (L.rewrite.sids || []).length) {
+    const said = (L.rewrite.model.match(/[^.!?]+[.!?]+/g) || [L.rewrite.model]).length;
+    if (said > L.rewrite.sids.length + 1) flag("rewrite.model", "rewrite", `Bài mẫu có ${said} câu, nhưng phần em viết lại chỉ có ${L.rewrite.sids.length} câu`);
+  }
+  const Q = L.finish && L.finish.quote;
+  if (Q && (!Q.text || !Q.text.trim() || !Q.source || !Q.source.trim())) flag("finish.quote", "frame", "Câu kết chưa có câu hoặc nguồn", true);
+
+  // Đậu's voice
+  for (const p of leaves(L, "")) {
+    if (!isVoice(p)) continue;
+    const v = get(L, p);
+    if (typeof v === "string" && v && lint(v).length) flag(p, moduleOf2(p), "Giọng Đậu: " + lint(v).join(", "));
+  }
+  if (checkLesson) for (const msg of checkLesson(L)) flag("", /^câu luyện/.test(msg) ? "practice" : /^lỗi|chỗ sửa/.test(msg) ? "systemic" : /^viết lại/.test(msg) ? "rewrite" : /^language/.test(msg) ? "language" : "review", msg, true);
+  return flags;
 }

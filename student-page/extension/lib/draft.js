@@ -349,9 +349,11 @@ async function requestPart(client, { part, spec, system, essay, extra, strict, o
  * before: they go straight to the checked-here mode. Returns { parts, failed, usage, model, noStrict }:
  * failed = [{ part, label, message }] for the parts that didn't work (retry just those).
  */
-export async function draftLesson({ apiKey, week, teacher, input, onProgress, fetchImpl, signal, done = {}, noStrict = [] }) {
+export async function draftLesson({ apiKey, week, teacher, input, onProgress, fetchImpl, signal, done = {}, noStrict = [],
+  specs = PARTS, list = null, system = null, essay = null, depExtra = null }) {
+  // specs/list/system/essay/depExtra let another lesson layout (draft2.js) run its own parts through the same machinery
   const client = new Anthropic({ apiKey, dangerouslyAllowBrowser: true, ...(fetchImpl ? { fetch: fetchImpl } : {}) });
-  const system = systemBlocks(week, teacher), essay = userMessage(input);
+  system = system || systemBlocks(week, teacher); essay = essay || userMessage(input);
   const refused = new Set(noStrict);
   let chars = 0;
   const onChars = n => { chars += n; if (onProgress) onProgress(chars); };
@@ -360,11 +362,11 @@ export async function draftLesson({ apiKey, week, teacher, input, onProgress, fe
 
   // keep only finished parts that still fit the current schemas
   const have = {};
-  for (const [k, v] of Object.entries(done)) if (PARTS[k] && !checkAgainst(PARTS[k].schema, v).length) have[k] = v;
-  const todo = partsFor(week).filter(p => !have[p]);
+  for (const [k, v] of Object.entries(done)) if (specs[k] && !checkAgainst(specs[k].schema, v).length) have[k] = v;
+  const todo = (list || partsFor(week)).filter(p => !have[p]);
 
   async function one(part, extra, onFirstEvent) {
-    const args = { part, system, essay, extra, onChars, onFirstEvent, signal };
+    const args = { part, spec: specs[part], system, essay, extra, onChars, onFirstEvent, signal };
     let r;
     if (!refused.has(part)) {
       try { r = await requestPart(client, { ...args, strict: true }); }
@@ -381,20 +383,20 @@ export async function draftLesson({ apiKey, week, teacher, input, onProgress, fe
 
   const running = {};
   const run = (part, onFirstEvent) => running[part] || (running[part] = (async () => {
-    const dep = PARTS[part].after;
+    const dep = specs[part].after;
     let extra = "";
     if (dep) {
       let d;
       try { d = have[dep] || await run(dep); }
-      catch (e) { throw new DraftError(`Cần phần "${PARTS[dep].label}" xong trước.`); }
-      extra = "The mistake groups are already drafted. Use these ids for `mistake`, and base the 4 core items on the group with role \"main\":\n" +
+      catch (e) { throw new DraftError(`Cần phần "${specs[dep].label}" xong trước.`); }
+      extra = depExtra ? depExtra(dep, d) : "The mistake groups are already drafted. Use these ids for `mistake`, and base the 4 core items on the group with role \"main\":\n" +
         JSON.stringify(d.mistakes.groups.map(g => ({ id: g.id, title: g.title, tab: g.tab, role: g.role, cids: g.cids, nids: g.nids })));
     }
     return one(part, extra, onFirstEvent);
   })());
 
   // start one part first, and the others once its essay block is cached (its first event)
-  const lead = todo.find(p => !PARTS[p].after || have[PARTS[p].after] || !todo.includes(PARTS[p].after));
+  const lead = todo.find(p => !specs[p].after || have[specs[p].after] || !todo.includes(specs[p].after));
   if (lead) {
     let go;
     const warm = new Promise(r => { go = r; });
@@ -406,7 +408,7 @@ export async function draftLesson({ apiKey, week, teacher, input, onProgress, fe
   results.forEach((r, i) => {
     const part = todo[i];
     if (r.status === "fulfilled") parts[part] = r.value;
-    else failed.push({ part, label: PARTS[part].label, message: friendly(r.reason) });
+    else failed.push({ part, label: specs[part].label, message: friendly(r.reason) });
   });
   return { parts, failed, usage, model, noStrict: [...refused] };
 }
@@ -564,3 +566,6 @@ export function draftToLesson(draft, { page, meta, teacher, zalo, week = null })
   if (lesson.prompt_check) lesson.prompt_check.items.forEach(it => { if (it.ask === undefined) delete it.ask; });
   return lesson;
 }
+
+/* the building blocks draft2.js (the flow-2 lesson) shares */
+export { S, I, B, A, E, O, ASK, practiceItems, practiceToLesson };

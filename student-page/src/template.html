@@ -946,13 +946,18 @@ const screens = [];
 const praiseAt = key => (L.praise || []).filter(p => p.at === key).map(p => p.line);
 async function praise(c, key) { for (const line of praiseAt(key)) { await c.gate(); await c.say(line, "cheering"); } }
 /* the sections, in order: [section, tab label, score key (or null), name said in the roadmap] */
-const TABS = L.tabs || [["TR", "TR", "TR", "Ý tưởng"], ["CC", "CC", "CC", "Liên kết"], ["LR", "LR", "LR", "Từ vựng"], ["GRA", "GRA", "GR", "Ngữ pháp"]];
-const scoreOf = k => k && L.scores && L.scores[k] ? L.scores[k] : "";
+/* lessons made with the new editor (flow 2): two parts, Logic (TR/TA + CC) and Language (LR + GR) */
+const V2 = L.flow === 2;
+const TABS = L.tabs || (V2 ? [["LOGIC", "Logic", ["TR", "CC"], L.t1 ? "Bố cục, overview và số liệu" : "Bố cục và ý"], ["LANG", "Language", ["LR", "GR"], "Từ vựng và ngữ pháp"]]
+  : [["TR", "TR", "TR", "Ý tưởng"], ["CC", "CC", "CC", "Liên kết"], ["LR", "LR", "LR", "Từ vựng"], ["GRA", "GRA", "GR", "Ngữ pháp"]]);
+const scoreOf = k => Array.isArray(k) ? k.map(scoreOf).filter(Boolean).join(" · ") : k && L.scores && L.scores[k] ? L.scores[k] : "";
 const hasScores = Object.values(L.scores || {}).some(Boolean);
 const tabBtns = TABS.map(([t, label, k, name]) => h("button", { class: "tab", type: "button", "aria-label": scoreOf(k) ? `${name}, band ${scoreOf(k)}` : name,
   onclick: () => { if (tabIdx[t] != null) jump(tabIdx[t]); } }, h("b", {}, label), scoreOf(k) ? h("span", {}, scoreOf(k)) : null));
 $("#tabs").append(...tabBtns);
-const add = (sec, script, opts = {}) => screens.push({ sec, script, ...opts });
+// in a flow-2 lesson the screens shared with the old layout (idea chains, mistake groups) land in Logic / Language
+const SECMAP = V2 ? { TR: "LOGIC", CC: "LOGIC", LR: "LANG", GRA: "LANG" } : {};
+const add = (sec, script, opts = {}) => screens.push({ sec: SECMAP[sec] || sec, script, ...opts });
 const named = name => screens.findIndex(sc => sc.name === name);
 /* the order shows in the tabs: the current section is biggest, the ones still to come a little
    smaller in order, the ones done smallest (before TR starts, TR is the biggest) */
@@ -1147,7 +1152,8 @@ if (hasScores) add("intro", async c => {
 }, { label: "Xem chi tiết", name: "results" });
 
 // how to go through it: the full lesson with Đậu, or quickly through the essay in order
-add("intro", async c => {
+// (flow 2 lessons are short and already go mistake by mistake: no choice)
+if (!V2) add("intro", async c => {
   const wasReplay = replay;
   c.show(h("h1", { class: "h" }, "Em muốn xem thế nào?"));
   await c.say(`Em muốn học kỹ cùng anh Đậu, hay xem nhanh từng lỗi theo thứ tự bài nè ${NAME}?`, "explaining");
@@ -1164,7 +1170,7 @@ add("intro", async c => {
   if (!wasReplay) openEssay({ step: true, onDone: toPractice });
   await c.gate();
   if (!wasReplay) toPractice();
-}, { optional: true, group: "quick", label: "Qua luyện tập" });
+}, { optional: true, group: "quick", label: "Qua luyện tập", skip: () => V2 });
 
 // the plan: four parts, in order
 add("intro", async c => {
@@ -1176,6 +1182,7 @@ add("intro", async c => {
     road.append(h("div", { class: "card road" }, h("b", {}, code), h("span", {}, name), scoreOf(sk) ? h("em", {}, "band " + scoreOf(sk)) : null));
     fit();
   }
+  if (V2) return void await c.say("Mình xem Logic trước, rồi tới Language, cuối cùng em viết lại một chỗ nha", "explaining");
   await c.say(`Mình đi lần lượt ${TABS.length} phần nha, bắt đầu từ ${/^Exercise/.test(TABS[0][3]) ? TABS[0][3] : TABS[0][3].charAt(0).toLowerCase() + TABS[0][3].slice(1)} (${TABS[0][1]})`, "explaining");
 }, { label: "Bắt đầu " + TABS[0][1] });
 
@@ -1279,8 +1286,38 @@ if (L.prompt_check) add("TR", async c => {
   }
 }, { name: "prompt_check" });
 
+// ---------------- flow 2 · Logic: the teacher's checklist on one screen, then what to fix ----------------
+const LG = V2 ? L.logic : null;
+if (LG) tabIdx.LOGIC = screens.length;
+if (LG) add("LOGIC", async c => {
+  c.show(h("h1", { class: "h" }, "Logic"));
+  const list = c.show(h("div", { class: "stack" }));
+  for (const [k, p] of LG.points.entries()) {
+    await c.wait(k ? 380 : 150);
+    list.append(h("div", { class: "card ov rise" }, statusIcon(p.ok ? "ok" : "fix"), h("div", { class: "t" }, h("b", {}, p.line)))); fit();
+  }
+  await c.wait(300);
+  await c.say(LG.summary[0], LG.points.every(p => p.ok) ? "cheering" : "explaining");
+  for (const line of LG.summary.slice(1)) { await c.gate(); await c.say(line, "explaining"); }
+}, { name: "logic" });
+// Task 2: the ideas with the teacher's ✓ / ~ / ✗; ~ gets a one-line tip, ✗ opens its chain
+if (V2 && L.ideas) add("LOGIC", async c => {
+  const I = L.ideas;
+  c.show(h("h1", { class: "h" }, "Các ý của em"));
+  for (const [k, o] of I.overview.entries()) {
+    await c.wait(k ? 380 : 150);
+    const st = ideaStatus(o), tap = st === "fix" && detailIdx[o.tag] != null;
+    const inner = [statusIcon(st), h("div", { class: "t" }, h("b", {}, o.tag + " · " + o.text), o.note ? h("span", {}, o.note) : null, tap ? h("span", { class: "go" }, " · chạm để xem") : null)];
+    c.show(tap ? h("button", { class: "card ov tap reveal fix", type: "button", onclick: () => jump(detailIdx[o.tag]) }, inner, h("span", { class: "chev", "aria-hidden": "true" }, "›"))
+      : h("div", { class: "card ov" }, inner));
+  }
+  await c.wait(300);
+  await c.say((I.intro || [])[0], "explaining");
+  for (const line of (I.intro || []).slice(1)) { await c.gate(); await c.say(line, "explaining"); }
+}, { name: "ideas" });
+
 // ---------------- TR: idea development ----------------
-if (L.ideas) add("TR", async c => {
+if (L.ideas && !V2) add("TR", async c => {
   const I = L.ideas;
   c.show(h("h1", { class: "h" }, "Em phát triển ý tới đâu?"));
   const prompt = c.show(h("div", { class: "card stack" }, h("div", { class: "label" }, "Đề bài"), h("div", { class: "en" }, markFocus(L.prompt, I.prompt_focus))));
@@ -1368,6 +1405,17 @@ const detailKind = D => ideaStatus(L.ideas.overview.find(o => o.tag === D.tag) |
   await c.say(D.outro, "thumbsup");
 })));
 
+// flow 2: each problem the teacher noted under Logic, one screen each (Task 1: on the chart)
+(LG ? LG.issues : []).forEach((it, k, all) => add("LOGIC", async c => {
+  c.show(h("div", { class: "row" }, h("span", { class: "pill tone-blush" }, `Cần sửa ${k + 1}/${all.length}`), it.title ? h("span", { class: "small muted" }, it.title) : null));
+  if (L.t1 && it.series) c.show(h("div", { class: "card chart-card" }, chartView({ series: it.series, col: it.col })));
+  if ((it.sids || []).length) c.show(h("div", { class: "card stack" }, h("div", { class: "label" }, "Em viết"),
+    h("div", { class: "quote en" }, markFocus(it.sids.map(origText).join(" "), it.quote)), cite(it.sids[0])));
+  await c.say(it.say[0], "magnify");
+  for (const line of it.say.slice(1)) { await c.gate(); await c.say(line, "explaining"); }
+  if (it.fix) { await c.gate(); c.show(h("div", { class: "card stack" }, h("div", { class: "label" }, "Viết lại"), h("div", { class: "quote en" }, it.fix))); }
+}, k === 0 ? { name: "issues" } : {}));
+
 // ---------------- Task 1 (Weeks 7–10): the overview against the main features, then the data ----------------
 const T1 = L.t1;
 const T1_TYPE = { trend: "Trends", difference: "Differences", change: "Main changes" };
@@ -1426,7 +1474,7 @@ function mapChart(grid, hl) {
 const chartView = hl => T1.kind === "line" ? lineChart(T1.chart, chartGrid("line", T1.chart), hl)
   : T1.kind === "map" ? mapChart(chartGrid("map", T1.chart), hl) : tableChart(chartGrid(T1.kind, T1.chart), hl, T1.chart.unit);
 
-if (T1) add("TR", async c => {
+if (T1 && !V2) add("TR", async c => {
   const O = T1.overview;
   c.show(h("h1", { class: "h" }, "Overview"));
   if (O.sids.length) c.show(h("div", { class: "card stack" }, h("div", { class: "label" }, "Overview của em"), h("div", { class: "quote en" }, O.sids.map(origText).join(" ")), cite(O.sids[0])));
@@ -1450,7 +1498,7 @@ if (T1) add("TR", async c => {
   await praise(c, "overview");
 }, { name: "overview" });
 
-if (T1) add("TR", async c => {
+if (T1 && !V2) add("TR", async c => {
   const D = T1.data;
   c.show(h("h1", { class: "h" }, T1.kind === "map" ? "Details" : "Data"));
   const view = c.show(h("div", { class: "card chart-card" }, chartView(null)));
@@ -1545,7 +1593,7 @@ function addMistake(m, optional) {
   const head = label => h("div", { class: "row" }, h("button", { class: "backchip", type: "button", onclick: () => jump(tabIdx[m.tab]) }, "‹ Tất cả lỗi"), h("span", { class: "pill " + (label === "Quy tắc" ? "tone-orange" : "tone-blush") }, label));
   mistakeIdx[m.id] = screens.length;
   add(m.tab, async c => {
-    c.show(head(m.tab === "LR" && optional ? "Từ vựng" : optional ? "Lỗi phụ" : "Lỗi quan trọng nhất"));
+    c.show(head(V2 ? "Lỗi hệ thống" : m.tab === "LR" && optional ? "Từ vựng" : optional ? "Lỗi phụ" : "Lỗi quan trọng nhất"));
     const spots = [...sids.map(sid => ({ sid })), ...ptsOf(m).map(p => ({ p, sid: p.sids[0] }))];
     await c.say(`Em để ý ${spots.length} câu này nè ${NAME}`, "magnify");
     const cards = [], snips = h("div", { class: "stack" });
@@ -1601,6 +1649,7 @@ function addMistake(m, optional) {
 
 // LR: vocab mistakes are optional unless marked core; the grammar's most important mistake is taught step by step
 // a tab with just one group (and no small ones): no list to tap, straight into it
+if (!V2) {
 const single = t => byTab(t).length === 1 && !othersOf(t).length;
 tabIdx.LR = screens.length;
 add("LR", async c => {
@@ -1637,18 +1686,89 @@ add("GRA", async c => {
   await c.say(M.gra_intro[2], "explaining");
 }, { end: "dock", name: "gra" });
 byTab("GRA").forEach((m, k) => addMistake(m, k > 0));
+}
 
-const ITEM = Object.fromEntries(L.practice.items.map(it => [it.id, it]));
-const CORE = L.practice.core.map(id => ITEM[id]);
-const EXTRA = L.practice.items.filter(it => !L.practice.core.includes(it.id));
+// ---------------- flow 2 · Language: what she used well, the systematic mistake, then each correction ----------------
+const LN = V2 ? L.language : null;
+if (LN) {
+  tabIdx.LANG = tabIdx.LR = tabIdx.GRA = screens.length;
+  add("LANG", async c => {
+    c.show(h("h1", { class: "h" }, "Language"));
+    await c.say(LN.intro[0], "explaining");
+    const P = LN.phrases;
+    if (P && P.groups.some(g => g.items.length)) {
+      await c.gate();
+      // "Cụm em đã dùng tốt": counted in, in essay order, each landing in its group
+      const num = h("span", { class: "count" }, "0");
+      const card = c.show(h("div", { class: "card stack" }, h("div", { class: "row", style: "gap:.8em" }, h("div", { class: "big-num" }, num), h("div", { class: "h2" }, "Cụm em đã dùng tốt"))));
+      if (mode === "talk") setMode("away");
+      const order = Object.keys(SENT), groups = {};
+      const all = P.groups.flatMap(g => g.items.map(it => ({ ...it, g: g.label }))).sort((a, b) => order.indexOf(a.sid) - order.indexOf(b.sid));
+      let n = 0;
+      for (const it of all) {
+        await c.wait(n ? 380 : 250);
+        if (!groups[it.g]) { groups[it.g] = h("div", { class: "chips" }); card.append(h("div", { class: "rise" }, h("div", { class: "lg-label" }, it.g), groups[it.g])); }
+        groups[it.g].append(h("button", { class: "lchip", type: "button", onclick: () => openEssay({ sid: it.sid }) }, it.text));
+        num.textContent = ++n; num.classList.remove("bump"); void num.offsetWidth; num.classList.add("bump"); fit();
+      }
+      await c.wait(300);
+      await c.say(P.line, "thumbsup");
+    }
+    for (const line of LN.intro.slice(1)) { await c.gate(); await c.say(line, "explaining"); }
+  }, { name: "language" });
+  // the systematic mistake (only when the teacher named one): the full mini-lesson
+  L.mistakes.main.forEach(m => addMistake(m, false));
+  // every other correction the teacher kept, in essay order: shown (Dạy), asked first (Socratic) or praised (Khen).
+  // Dạy corrections in the same sentence share one screen (one sentence, all its fixes, the comments under it)
+  const cards = [];
+  for (const it of LN.items) {
+    const isC = it.ref[0] === "c", last = cards[cards.length - 1];
+    const sid = isC ? CID_SENT[it.ref] : ((L.task_comments[+it.ref.slice(1) - 1] || {}).sentence_ids || [])[0];
+    if (isC && it.mode === "teach" && last && last.teach && last.sid === sid && last.tab === it.tab) last.refs.push(it.ref);
+    else cards.push({ ...it, sid, refs: [it.ref], teach: isC && it.mode === "teach" });
+  }
+  const taught = cards.filter(x => x.mode !== "praise");
+  cards.forEach((it, k) => add("LANG", async c => {
+    const isC = it.ref[0] === "c";
+    const note = isC ? null : L.task_comments[+it.ref.slice(1) - 1];
+    if (isC ? it.refs.some(r => !C[r]) : !note) return;
+    const praiseIt = it.mode === "praise";
+    c.show(h("div", { class: "row" }, praiseIt ? h("span", { class: "pill tone-mint" }, TEACHER + " khen")
+      : h("span", { class: "pill " + (it.tab === "LR" ? "tone-sky" : "tone-orange") }, `${it.tab === "LR" ? "Từ vựng" : "Ngữ pháp"} · ${taught.indexOf(it) + 1}/${taught.length}`)));
+    const noteText = () => (note.sentence_ids || []).map(origText).join(" ");
+    const shown = reveal => isC ? sentence(it.sid, { mode: reveal ? "diff" : "orig", focus: it.refs, window: it.refs.length > 1 ? 0 : 8 }) : markFocus(noteText(), note.quote);
+    const body = h("div", { class: "quote en" }, shown(it.mode !== "socratic"));
+    const col = h("div", { class: "snip-col" }, body);
+    c.show(h("div", { class: "card stack" }, col, it.sid ? cite(it.sid, isC ? it.refs : null) : null));
+    const comments = isC ? it.refs.map(r => C[r].comment).filter(Boolean) : [note.comment].filter(Boolean);
+    const extras = () => [...comments.map(t => h("div", { class: "pt-comment" }, h("b", {}, TEACHER + ": "), t)),
+      !isC && note.fix ? h("div", { class: "pt-better" }, h("span", { class: "lbl" }, "Viết lại"), h("span", { class: "en" }, note.fix)) : null].filter(Boolean);
+    if (praiseIt) { col.append(...extras()); fit(); return void await c.say(`${TEACHER} khen chỗ này nè ${NAME}`, "cheering"); }
+    if (it.mode === "socratic" && it.ask) {
+      await c.say(it.ask.q, "thinking");
+      const i = await c.ask(it.ask.options, { answer: it.ask.answer, key: "li-" + it.ref, q: it.ask.q });
+      await c.say(i === it.ask.answer ? "Đúng rồi á em" : `Chưa đúng nè ${NAME}, đáp án đúng là câu tô xanh á`, i === it.ask.answer ? "thumbsup" : "oops");
+      await c.gate();
+      content.querySelector(".ask").remove();
+      body.replaceChildren(...[shown(true)].flat());
+    }
+    col.append(...extras()); fit();
+  }, k === 0 ? { name: "lang-items" } : {}));
+}
+
+// flow 2: practice only exists when the teacher named a systematic mistake
+const PR = L.practice || { intro: [], core: [], items: [] };
+const ITEM = Object.fromEntries(PR.items.map(it => [it.id, it]));
+const CORE = PR.core.map(id => ITEM[id]).filter(Boolean);
+const EXTRA = PR.items.filter(it => !PR.core.includes(it.id));
 const TOTAL = CORE.length;                        // the rewrite is its own section now
 const kind = it => it.type === "build" ? "Xếp câu tiếng Anh" : it.type === "tap" ? "Tìm chữ sai" : it.sentence ? "Điền vào chỗ trống" : "Chọn câu đúng";
 
 // practice intro: the kinds of question, one per tap
-add("practice", async c => {
+if (CORE.length) add("practice", async c => {
   c.show(h("h1", { class: "h" }, "Luyện tập"));
-  await c.say(L.practice.intro[0], "writing");
-  for (const line of L.practice.intro.slice(1)) { await c.gate(); await c.say(line); }
+  await c.say(PR.intro[0], "writing");
+  for (const line of PR.intro.slice(1)) { await c.gate(); await c.say(line); }
   for (const [i, t] of CORE.map(kind).entries()) {
     await c.gate();
     c.show(h("div", { class: "card ov" }, h("span", { class: "num" }, i + 1), h("div", { class: "t" }, h("b", {}, t))));
@@ -1780,7 +1900,7 @@ CORE.forEach((item, k) => add("practice", async c => { await exercise(c, item, "
 // ---------------- Nhiệm vụ viết lại: its own section, after practice ----------------
 const TEACHER = L.teacher || "anh Khoa";
 const ZALO = L.zalo || "";
-const CH = L.practice.challenge || {};
+const CH = PR.challenge || {};
 const RW = L.rewrite || {                     // older lessons: the one-sentence challenge
   target: "idea", label: "Câu em đã viết", sids: [CH.sid], intro: CH.intro || [], task: "",
   flow: CH.chain || "", starters: [], phrases: [], checklist: CH.checklist || [], model: CH.model || "",
@@ -1889,16 +2009,17 @@ add("end", async c => {
   const right = recs.filter(r => r.first).length, total = CORE.length;
   const on = right >= total ? 3 : right >= total * .7 ? 2 : right > 0 ? 1 : 0;
   await c.say(F.summary[0], "cheering");
-  c.show(h("div", { class: "card stat" }, h("div", { class: "stars" }, [0, 1, 2].map(i => img("icon_star", i < on ? "" : "off"))), h("div", {}, h("b", {}, `${right}/${total} câu đúng`), h("div", { class: "small muted" }, "ngay lần đầu"))));
+  if (total) c.show(h("div", { class: "card stat" }, h("div", { class: "stars" }, [0, 1, 2].map(i => img("icon_star", i < on ? "" : "off"))), h("div", {}, h("b", {}, `${right}/${total} câu đúng`), h("div", { class: "small muted" }, "ngay lần đầu"))));
   await c.gate();
   await c.say(F.summary[1], "thumbsup");
   c.show(h("div", { class: "takeaway" }, h("div", { class: "row" }, img("icon_notebook", "icon"), h("b", { class: "h2" }, "Nhớ cho bài sau")), h("ol", {}, F.takeaways.map(t => h("li", {}, t)))));
+  if (!total) return;                            // no practice in this lesson: nothing more to offer
   await c.gate();
   await c.say(F.extra_prompt.replace("{n}", extraCount()), "writing");
   c.show(h("div", { class: "two" },
     h("button", { class: "btn btn-ghost", type: "button", onclick: () => jump(laterIdx) }, "Để lần sau"),
     h("button", { class: "btn btn-main", type: "button", onclick: () => jump(nextIndex(cur, 1)) }, "Luyện thêm")));
-}, { label: "Luyện thêm", end: "choose" });
+}, TOTAL ? { label: "Luyện thêm", end: "choose" } : {});
 
 // extra practice: first the core questions she missed, then the rest
 const extraIdx = screens.length;

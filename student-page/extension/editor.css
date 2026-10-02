@@ -162,3 +162,18 @@ body.options main.opt { max-width: 520px; margin: 30px auto; display: flex; flex
   .edit { grid-template-columns: 170px minmax(0, 1fr); }
   .preview { grid-column: 1 / -1; position: static; }
 }
+
+/* flow 2: the teacher's decisions */
+.tri button[aria-pressed="true"][data-v="ok"] { background: var(--mint-soft); border-color: var(--mint); }
+.tri button[aria-pressed="true"][data-v="improve"] { background: var(--orange-soft); border-color: var(--orange); }
+.tri button[aria-pressed="true"][data-v="fix"] { background: var(--coral-soft); border-color: var(--coral); }
+.lang-item { display: flex; flex-direction: column; gap: 6px; padding: 10px 0; border-bottom: 1px dashed var(--line); }
+.lang-item.skipped .crow { opacity: .45; }
+.lang-item .crow { cursor: default; }
+.modes { display: inline-flex; border: 1.5px solid var(--line); border-radius: 9px; overflow: hidden; }
+.modes button { border: 0; border-right: 1px solid var(--line); background: var(--paper); padding: 5px 11px; font: inherit; font-size: 13px; cursor: pointer; }
+.modes button:last-child { border-right: 0; }
+.modes button[aria-pressed="true"] { background: var(--orange-soft); color: var(--orange-deep, #C65D00); font-weight: 700; }
+.sys { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: end; padding: 8px 0 10px; border-bottom: 1.5px solid var(--line); margin-bottom: 4px; }
+.sys label:first-child { flex: 1; min-width: 240px; }
+.blockers button.link { text-align: left; }

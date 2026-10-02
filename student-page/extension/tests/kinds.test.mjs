@@ -49,7 +49,7 @@ page.on("pageerror", e => errors.push(e.message));
 page.on("console", m => { if (m.type() === "error" && !/Failed to load resource/.test(m.text())) errors.push("console: " + m.text()); });
 page.on("dialog", d => d.accept());
 
-await page.goto("https://dau.test/editor.html?html=/fixture/page.html");
+await page.goto("https://dau.test/editor.html?flow=1&html=/fixture/page.html");
 await page.locator("h1").first().waitFor();
 const { P, W } = await page.evaluate(async () => {
   const { extractPage } = await import("/lib/extract.js");

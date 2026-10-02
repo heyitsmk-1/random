@@ -18,24 +18,34 @@ options) and add the Claude API key; the Netlify token is optional.
 
 ## How it works
 1. **Tạo bài ôn Đậu** (orange button on a grading page) copies the page and opens the editor.
-2. **Bài**: week, track and prompt, detected from the homework title; the teacher confirms.
-3. **Framework**: tag the sentences, pick the rewrite target, tick the week's checklist. The tags follow the
-   homework type: Task 2 essays (Mở bài, Câu chủ đề, Ý 1…), Task 1 reports, Weeks 7-10 (Introduction, Trends /
-   Differences / Main changes, Body 1, Body 2; English words kept), Week 1 (Topic sentence, Ý 1, Ý 2).
-4. **Nháp**: Claude drafts the lesson in small parts (`lib/draft.js`, structured JSON output; bigger schemas were refused by the API as "too large"). One part goes first so the essay is cached for the rest; exercises wait for the mistake groups. If the API still refuses a schema, that part is asked without it and checked in the editor. A part that fails can be retried on its own.
-   The parts depend on the homework (`partsFor` in `lib/draft.js`):
-   - Task 2 essay: structure, ideas, reading (prompt check + linking), mistakes, practice, frame.
-   - Task 1 (Weeks 7-10): structure, **t1**, reading, mistakes, practice, frame. t1 = the overview against the
-     week's main features, and her numbers against the chart in `course.json`, which the page draws (table,
-     line chart, pie table, or the map's now/future list). Linking becomes the language of trends and comparison.
-   - Week 1: ideas (Exercise 1, one paragraph), **paraphrase** (Exercise 2, one screen per topic), mistakes,
-     practice, frame. No scores, so no results screen.
-5. **Chỉnh sửa**: opens on **Cần duyệt**: only the cards where Claude judges her work or teaches (ideas, mistake groups, exercises, rewrite model, a framework verdict that disagrees with the checklist) plus lines that fail an automatic check (`lib/review.js`: numbers, quotes, ids, Đậu's voice; for Task 1, every number she is marked right or wrong on is
-   checked against the chart). Everything else is approved by default. Every line stays editable, with a live phone preview. Open items stay purple until
-   the teacher approves or edits them. Mistake groups: rename, re-tag, drag corrections between groups.
-6. **Xuất**: download the `.html` (built exactly like `build.py`), save the lesson `.json`,
-   or publish a Netlify link (`lib/netlify.js`: every publish is a new unguessable
-   `/r/<random>/` address; old pages are never removed).
+2. **Bài**: week and prompt, detected from the homework title; the teacher confirms.
+
+New lessons (**flow 2**: the teacher decides, Claude writes little):
+
+3. **Logic** (TR/TA · CC): the week's framework checklist from `course.json`, blank: ✓ / ✗ and a note for
+   each point (data mistakes go in the note: "56% là năm 2010 không phải 2000"). Essays: the idea sentences
+   are guessed (Ý 1–4), the teacher fixes the tags and marks each idea ✓ / ~ / ✗ with a note. Week 1: each
+   paraphrase topic ✓ / ✗. The TR/CC editor's own comments are listed for reference.
+4. **Language** (LR · GRA): per tab, the systematic mistake (a name, then tick the corrections that belong to
+   it) or "Không có lỗi hệ thống". Every correction and note from the grammar/vocab editor, in essay order:
+   **Dạy** (shown as the teacher wrote it) / **Socratic** (asked first) / **Khen** / **Bỏ qua**.
+5. **Viết lại**: the exact sentences to rewrite.
+6. **Soạn**: one Claude pass in small parts (`lib/draft2.js`), only Đậu's words around those decisions: the
+   Logic summary and one screen per problem, the chains of ✗ ideas, "Cụm em đã dùng tốt", the Socratic
+   questions, the systematic mistake's mini-lesson and exercises (only when one is named), the rewrite,
+   hello and goodbye. Nothing is asked for what the teacher already decided.
+7. **Xem lại**: Claude's lines by screen with the phone preview, and the automatic checks (`checks2` in
+   `lib/review.js`: quotes verbatim, figures on the chart, Socratic answers, Đậu's voice).
+8. **Xuất**: the `.html` (built exactly like `build.py`), the `.json`, or a Netlify link (`lib/netlify.js`: every
+   publish is a new unguessable `/r/<random>/` address; old pages are never removed).
+
+The student page of a flow-2 lesson (`"flow": 2`) has two parts, **Logic** and **Language** (each tab shows its
+two scores): results → Logic (the checklist on one screen, then each problem; essays: the ideas, ✗ ones open
+their chain) → Language ("Cụm em đã dùng tốt", the systematic mistake if any, then each correction; Dạy
+corrections in the same sentence share a screen) → practice (only with a systematic mistake) → Viết lại → end.
+
+Drafts started before flow 2 (and `editor.html?flow=1`) keep the old steps: Framework tagging → a 6-part
+draft (`lib/draft.js`) → "Cần duyệt" review → export. Old lessons still build and play as before.
 
 Drafts autosave in `chrome.storage.local`, keyed by the CRM writing id.
 
@@ -60,8 +70,9 @@ All run in headless Chromium with the network faked (no Claude or Netlify calls)
 ```
 node extension/tests/extract.test.mjs <saved CRM pages...>     # JS extractor == tools/extract_page.py
 node extension/tests/build.test.mjs                             # lib/build.js == build.py, byte for byte
-CRM=<page.html> LESSON=data/lesson-x.json node extension/tests/editor.test.mjs   # the whole editor flow
+CRM=<page.html> LESSON=data/lesson-x.json node extension/tests/editor.test.mjs   # the old editor flow (?flow=1)
 CRM=<page.html> node extension/tests/extension.test.mjs         # the unpacked extension on a faked CRM address
-CRM=<page.html> node extension/tests/kinds.test.mjs             # Week 1 and Task 1 through the editor (fake reply built in)
+CRM=<page.html> node extension/tests/flow2.test.mjs             # flow 2 end to end, any homework type (fake reply built from the decisions)
+CRM=<page.html> node extension/tests/kinds.test.mjs             # old flow: Week 1 and Task 1 through the editor (fake reply built in)
 python3 extension/tests/task1_page.py <page.html> <7-10> <out.html>   # a fake Task 1 page (made-up essay and student)
 ```

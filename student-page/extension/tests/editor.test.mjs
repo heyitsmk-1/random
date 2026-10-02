@@ -211,7 +211,7 @@ try {
 
   /* 2. the whole flow */
   const { ctx, page, errors } = await setup(browser);
-  await page.goto("https://dau.test/editor.html?html=/fixture/page.html");
+  await page.goto("https://dau.test/editor.html?flow=1&html=/fixture/page.html");
   await page.locator("h1").first().waitFor();
   const weekSel = await page.locator("label:has-text('Tuần') select").inputValue();
   ok(weekSel === String(/Week (\d+)/.exec(lesson.homework)[1]), `week detected from the homework title (${weekSel})`);
@@ -470,7 +470,7 @@ try {
   NET.dropFromList = null;
 
   /* reload: the draft is still there */
-  await page.goto("https://dau.test/editor.html?html=/fixture/page.html");
+  await page.goto("https://dau.test/editor.html?flow=1&html=/fixture/page.html");
   await page.locator(".step-btn[aria-current=step]").waitFor();
   ok((await page.locator(".step-btn[aria-current=step]").textContent()).includes("Xuất"), "reload resumes the saved draft: " + await page.locator(".step-btn[aria-current=step]").textContent());
   ok(errors.length === 0, "no page errors " + errors.join(" | "));
@@ -480,7 +480,7 @@ try {
   {
     claudeMode = new Set(["401"]);
     const { page, errors } = await setup(browser);
-    await page.goto("https://dau.test/editor.html?html=/fixture/page.html");
+    await page.goto("https://dau.test/editor.html?flow=1&html=/fixture/page.html");
     await page.getByRole("button", { name: "3 · Nháp" }).click();
     await page.getByRole("button", { name: "Soạn nháp" }).click();
     await page.locator("#draftStatus .notice.bad").waitFor({ timeout: 15000 });

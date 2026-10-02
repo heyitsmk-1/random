@@ -6,11 +6,12 @@ export function checkLesson(lesson) {
   const sids = new Set(lesson.essay.paragraphs.flatMap(p => p.sentences.map(s => s.id)));
   const problems = [];
   const bare = w => w.replace(/[^\p{L}\p{N}_'-]/gu, "").toLowerCase();
-  for (const item of lesson.practice.items) {
+  const practice = lesson.practice || { items: [] };            // flow 2: only with a systematic mistake
+  for (const item of practice.items) {
     if (item.type === "tap" && !item.sentence.split(/\s+/).map(bare).includes(bare(item.wrong)))
       problems.push(`câu luyện ${item.id}: chữ "${item.wrong}" không phải một chữ trong câu`);
   }
-  for (const m of lesson.mistakes.main)
+  for (const m of (lesson.mistakes || { main: [] }).main)
     for (const c of m.cids) if (!(c in lesson.corrections)) problems.push(`lỗi ${m.id}: không có chỗ sửa ${c}`);
   for (const t of lesson.task_comments)
     if (!t.sentence_ids.length) problems.push("một nhận xét không gắn với câu nào: " + t.comment.slice(0, 60));
@@ -23,7 +24,11 @@ export function checkLesson(lesson) {
     for (const sid of rw.sids) if (!sids.has(sid)) problems.push(`viết lại: không có câu ${sid}`);
     if (!["idea", "paragraph", "skeleton", "overview", "paraphrase"].includes(rw.target)) problems.push("viết lại: chọn một ý, một đoạn, mở bài + câu chủ đề, overview hoặc paraphrase");
     if (!rw.sids.length) problems.push("viết lại: chưa chọn câu nào");
-  } else if (!lesson.practice.challenge) problems.push("chưa có phần viết lại");
+  } else if (!practice.challenge) problems.push("chưa có phần viết lại");
+  for (const it of (lesson.language || { items: [] }).items) {  // flow 2: the corrections shown one by one
+    const r = it.ref, n = /^n(\d+)$/.exec(r);
+    if (!(r in lesson.corrections) && !(n && +n[1] > 0 && +n[1] <= lesson.task_comments.length)) problems.push(`language: không có ${r} trên trang chấm`);
+  }
   const used = JSON.stringify(lesson);
   for (const m of used.matchAll(/"(?:sid|sids)":\[?"(p\d+s\d+)"/g)) if (!sids.has(m[1])) problems.push(`không có câu ${m[1]}`);
   for (const d of (lesson.ideas || { details: [] }).details) for (const sid of d.sids) if (!sids.has(sid)) problems.push(`ý ${d.tag}: không có câu ${sid}`);

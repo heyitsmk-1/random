@@ -61,12 +61,13 @@ def check(lesson):
     """Fail the build on lesson data the page cannot render."""
     sids = {s["id"] for p in lesson["essay"]["paragraphs"] for s in p["sentences"]}
     problems = []
-    for item in lesson["practice"]["items"]:
+    practice = lesson.get("practice") or {"items": []}  # flow 2: only with a systematic mistake
+    for item in practice["items"]:
         if item["type"] == "tap":
             bare = lambda w: re.sub(r"[^\w'-]", "", w).lower()
             if bare(item["wrong"]) not in [bare(w) for w in item["sentence"].split()]:
                 problems.append(f"tap item {item.get('id')}: '{item['wrong']}' is not a single word of its sentence")
-    for m in lesson["mistakes"]["main"]:
+    for m in (lesson.get("mistakes") or {"main": []})["main"]:
         problems += [f"mistake {m['id']}: unknown correction {c}" for c in m["cids"] if c not in lesson["corrections"]]
     for t in lesson["task_comments"]:
         if not t["sentence_ids"]:
@@ -82,8 +83,12 @@ def check(lesson):
         problems += [f"rewrite: unknown sentence id {sid}" for sid in rw["sids"] if sid not in sids]
         if rw.get("target") not in ("idea", "paragraph", "skeleton", "overview", "paraphrase"):
             problems.append("rewrite target must be idea, paragraph, skeleton, overview or paraphrase")
-    elif not lesson["practice"].get("challenge"):
+    elif not practice.get("challenge"):
         problems.append("no rewrite section (lesson.rewrite)")
+    for it in (lesson.get("language") or {"items": []})["items"]:  # flow 2: the corrections shown one by one
+        ref = it["ref"]
+        if not (ref in lesson["corrections"] or (ref[:1] == "n" and ref[1:].isdigit() and 0 < int(ref[1:]) <= len(lesson["task_comments"]))):
+            problems.append(f"language item {ref}: not on the page")
     used = json.dumps(lesson)
     problems += [f"unknown sentence id {sid}" for sid in set(re.findall(r'"(?:sid|sids)": \[?"(p\d+s\d+)"', used)) if sid not in sids]
     if problems:

@@ -234,6 +234,68 @@ function indexOfCps(hay, needle, from) {
   return -1;
 }
 
+const isLetter = ch => !!ch && /[\p{L}'’]/u.test(ch);
+const escRe = t => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+function editDistance(a, b) {
+  a = cps(a); b = cps(b);
+  let row = Array.from({ length: b.length + 1 }, (_, j) => j);
+  for (let i = 1; i <= a.length; i++) {
+    const next = [i];
+    for (let j = 1; j <= b.length; j++) next.push(Math.min(row[j] + 1, next[j - 1] + 1, row[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)));
+    row = next;
+  }
+  return row[b.length];
+}
+/* Same as merge_in_word() in extract_page.py. */
+function mergeInWord(paragraphs, corrections, original) {
+  const shown = g => typeof g === "string" ? g : corrections[g.c].fix || corrections[g.c].orig;
+  const joins = (x, y) => { const l = cps(shown(x)), r = cps(shown(y)); return isLetter(l[l.length - 1]) && isLetter(r[0]); };
+  for (const p of paragraphs) for (const s of p.sentences) {
+    const segs = s.segs;
+    for (let i = 0; i < segs.length; i++) {
+      if (typeof segs[i] === "string") continue;
+      let a = i, b = i, left = "", right = "";
+      while (a > 0 && joins(segs[a - 1], segs[a])) {
+        const g = segs[a - 1];
+        if (typeof g === "string" && /\s/.test(g)) { left = g.match(/\S+$/)[0]; break; }
+        a--;
+      }
+      while (b < segs.length - 1 && joins(segs[b], segs[b + 1])) {
+        const g = segs[b + 1];
+        if (typeof g === "string" && /\s/.test(g)) { right = g.match(/^\S+/)[0]; break; }
+        b++;
+      }
+      const inner = segs.slice(a, b + 1), ids = inner.filter(g => typeof g !== "string").map(g => g.c);
+      if (!left && !right && inner.length === 1) continue;           // a whole-word correction already
+      const word = which => left + inner.map(g => typeof g === "string" ? g : corrections[g.c][which]).join("") + right;
+      let orig = word("orig");
+      const before = a > 0 && typeof segs[a - 1] === "string" ? segs[a - 1].slice(0, segs[a - 1].length - left.length) : "";
+      const after = b < segs.length - 1 && typeof segs[b + 1] === "string" ? segs[b + 1].slice(right.length) : "";
+      // her word: after the same word in the original, the closest in spelling to what is left of it
+      const prev = (before.match(/(\S+)\s+$/) || [])[1], next = (after.match(/^\s+(\S+)/) || [])[1];
+      const core = orig.replace(/^[^\p{L}]+|[^\p{L}]+$/gu, "");
+      if ((prev || next) && core && !/\s/.test(orig)) {
+        const re = prev ? new RegExp(escRe(prev) + "\\s+([\\p{L}'’-]+)", "gu") : new RegExp("([\\p{L}'’-]+)\\S*\\s+" + escRe(next), "gu");
+        let best = null, dist = Infinity;
+        for (const m of original.matchAll(re)) { const d = editDistance(m[1], core); if (d < dist) { best = m[1]; dist = d; } }
+        if (best !== null && dist <= Math.max(2, Math.floor(cps(core).length / 3))) orig = orig.replace(core, best);
+      }
+      const cs = ids.map(id => corrections[id]);
+      const kind = (cs.find(c => c.kind !== "teacher") || cs[0]).kind;
+      const comment = [...new Set(cs.map(c => c.comment).filter(Boolean))].join("\n");
+      corrections[ids[0]] = { orig, fix: word("fix"), kind, comment };
+      for (const id of ids.slice(1)) delete corrections[id];
+      const out = [...segs.slice(0, a)];
+      if (a > 0 && left) out[out.length - 1] = before;
+      out.push({ c: ids[0] });
+      if (b < segs.length - 1) out.push(right ? after : segs[b + 1]);
+      out.push(...segs.slice(b + 2));
+      s.segs = out.filter(g => g !== "");
+      return mergeInWord(paragraphs, corrections, original);         // segs changed: start over
+    }
+  }
+}
+
 export function extractPage(html) {
   const doc = new DOMParser().parseFromString(html, "text/html");
   const blocks = [...doc.querySelectorAll("#lrgr #editorjs .ce-paragraph")];
@@ -249,6 +311,9 @@ export function extractPage(html) {
       if (typeof tok === "string") { items.push(["t", tok.replace(/\u00a0/g, " ")]); continue; }
       const sid = tok.getAttribute("id");
       const box = sid ? byId("comment-" + sid) : null;
+      // "((words)) => COMMENT": the brackets mark the words the comment is about
+      const bare = tok.textContent.trim();
+      if ((bare === "((" || bare === "))") && !commentText(box)) { items.push([bare === "((" ? "o" : "x", ""]); continue; }
       const s = tok.querySelector("s"), mk = tok.querySelector("mark");
       const orig = s ? s.textContent : "", fix = mk ? mk.textContent : "";
       const struck = s || mk ? null : tok.querySelector('[style*="line-through"]');
@@ -353,8 +418,12 @@ export function extractPage(html) {
     });
   };
   let afterStop = false;                      // the last highlight ended a sentence
+  let bracket = null, closed = null;          // the student's words since "((", and the last closed "(( ))"
+  const hers = t => { if (bracket !== null) bracket += t; };
   items.forEach((it, k) => {
     if (it === null) { close(); paragraphs.push({ sentences }); sentences = []; afterStop = false; return; }
+    if (it[0] === "o") { bracket = ""; return; }
+    if (it[0] === "x") { if (bracket !== null) closed = norm(bracket); bracket = null; return; }
     const [mine, added] = split[k];
     if (it[0] === "t") {
       // the student's text, with anything the teacher typed into it (no highlight) as a correction
@@ -371,6 +440,11 @@ export function extractPage(html) {
         }
       }
       for (const [chunk, ok] of runs) {
+        if (!ok && (chunk.trim() === "((" || chunk.trim() === "))")) {   // the brackets typed without a highlight
+          if (chunk.trim() === "((") bracket = "";
+          else { if (bracket !== null) closed = norm(bracket); bracket = null; }
+          continue;
+        }
         if (!ok) {
           n++;
           corrections["c" + n] = { orig: "", fix: chunk, kind: "teacher", comment: "" };
@@ -381,12 +455,18 @@ export function extractPage(html) {
         let text = chunk.replace(/ {2,}/g, " ");
         if (afterStop && /^\s/.test(text)) { close(); text = text.replace(/^\s+/, ""); }
         afterStop = false;
+        hers(text);
         if (text) textIn(text);
       }
       return;
     }
     if (it[0] === "n") {
       const [, , kind, comment] = it;
+      let added = split[k][1], quote = null;
+      if (/^\)\)/.test(added) && bracket !== null) {   // "((words)) => COMMENT"
+        hers(mine); quote = norm(bracket); bracket = null; added = added.replace(/^\)\)\s*/, "");
+      } else if (added.startsWith("=>") && closed) quote = closed;
+      closed = null;
       const m = SLASH_FIX.exec(added);
       if (m && mine.trim()) {                 // "offspring // CHILDREN": a correction written in the essay
         n++;
@@ -394,20 +474,23 @@ export function extractPage(html) {
         const lead = mine.slice(0, mine.length - mine.replace(/^\s+/, "").length);
         if (lead) segs.push(lead);
         segs.push({ c: "c" + n });
+        hers(mine);
         afterStop = false;
         return;
       }
       const hasText = segs.some(g => (typeof g === "object" && "c" in g) || (typeof g === "string" && g.trim()));
       // "=> COMMENT" points back at what was just written
-      const back = added.startsWith("=>") && !mine.trim() && !hasText;
-      notes.push({ comment, kind, quote: mine.trim(), added, back });
+      const back = quote === null && added.startsWith("=>") && !mine.trim() && !hasText;
+      notes.push({ comment, kind, quote: quote === null ? mine.trim() : quote, added, back });
       segs.push({ n: notes.length - 1 });
+      if (quote === null) hers(mine);
       if (mine) textIn(mine.replace(/ {2,}/g, " "));
       afterStop = /[.?!]\s*$/.test(mine);
       return;
     }
     const [, orig, fix, kind, comment] = it;
     n++;
+    hers(orig);
     corrections["c" + n] = { orig, fix, kind, comment };
     segs.push({ c: "c" + n });
     afterStop = /[.?!]\s*$/.test(fix || orig);
@@ -422,6 +505,13 @@ export function extractPage(html) {
     const kept = [];
     for (const s of p.sentences) {
       const marks = s.segs.filter(g => typeof g === "object" && "n" in g).map(g => g.n);
+      // where each mark sits in her sentence (a typed-in linker pops in there)
+      const at = {};
+      let upto = "";
+      for (const g of s.segs) {
+        if (typeof g === "object" && "n" in g) at[g.n] = cps(upto.replace(/^\s+/, "")).length;
+        else upto += typeof g === "string" ? g : corrections[g.c].orig;
+      }
       s.segs = s.segs.filter(g => !(typeof g === "object" && "n" in g));
       while (s.segs.length && typeof s.segs[0] === "string" && !s.segs[0].trim()) s.segs.shift();
       if (s.segs.length && typeof s.segs[0] === "string") s.segs[0] = s.segs[0].replace(/^\s+/, "");
@@ -435,6 +525,7 @@ export function extractPage(html) {
       for (const i of marks) {
         const here = hasText && !notes[i].back;
         notes[i].sentence_ids = [here || prevSid === null ? s.id : prevSid];
+        notes[i].at = here ? at[i] : -1;
       }
       if (hasText) { kept.push(s); prevSid = s.id; }
     }
@@ -445,6 +536,10 @@ export function extractPage(html) {
     const old = s.id; s.id = `p${pi}s${si}`;
     for (const note of notes) note.sentence_ids = (note.sentence_ids || []).map(x => x === old ? s.id : x);
   }));
+
+  // 5. an edit inside one word ("heal|th|care", an added "l") is one correction of the whole word,
+  //    her spelling taken from the original
+  mergeInWord(paragraphs, corrections, original.join(""));
 
   const sentenceText = s => s.segs.map(x => typeof x === "string" ? x : corrections[x.c].orig).join("");
   const taskComments = [];
@@ -480,7 +575,7 @@ export function extractPage(html) {
     }
     taskComments.push({ sentence_ids: added ? ids.slice(-1) : ids, comment: commentText(box), kind: "trcc", quote: text, added });
   }
-  for (const x of notes) taskComments.push({ sentence_ids: x.sentence_ids || [], comment: x.comment, kind: x.kind, quote: x.quote, added: x.added });
+  for (const x of notes) taskComments.push({ sentence_ids: x.sentence_ids || [], comment: x.comment, kind: x.kind, quote: x.quote, added: x.added, at: x.at ?? -1 });
 
   const scores = [...doc.querySelectorAll("#right-partial input.input-otp")].slice(0, 4).map(i => i.getAttribute("value"));
   const essayText = paragraphs.flatMap(p => p.sentences).map(sentenceText).join(" ");

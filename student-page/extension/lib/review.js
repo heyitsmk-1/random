@@ -44,7 +44,8 @@ const VOICE = [
   /^paraphrase\.intro\.\d+$/, /^paraphrase\.items\.\d+\.line$/, /^paraphrase\.outro$/,
   // flow 2
   /^logic\.summary\.\d+$/, /^logic\.points\.\d+\.line$/, /^logic\.issues\.\d+\.say\.\d+$/,
-  /^language\.intro\.\d+$/, /^language\.phrases\.line$/, /^language\.items\.\d+\.ask\.q$/,
+  /^language\.intro\.\d+$/, /^language\.phrases\.line$/, /^language\.items\.\d+\.ask\.(q|right|wrong)$/,
+  /^language\.focus$/, /^language\.groups\.\d+\.ask\.(q|right|wrong)$/, /^logic\.issues\.\d+\.changes\.\d+\.why$/,
 ];
 export const isVoice = path => VOICE.some(r => r.test(path));
 
@@ -259,6 +260,8 @@ export function checks2(L, { checkLesson } = {}) {
   const G = L.logic || { points: [], issues: [] };
   G.issues.forEach((it, i) => {
     if (it.quote && !inSents(it.sids, it.quote)) flag(`logic.issues.${i}.quote`, "logic", "Chữ trích không có trong câu của em");
+    if (!(it.sids || []).length) flag(`logic.issues.${i}.sids`, "logic", "Chỗ cần sửa này chưa gắn với câu nào trong bài (em không biết nó ở đâu)");
+    (it.changes || []).forEach((ch, j) => { if (ch.from && !inSents(it.sids, ch.from)) flag(`logic.issues.${i}.changes.${j}.from`, "logic", `"${ch.from}" không có trong câu của em`); });
     if (!(it.say || []).some(x => x && x.trim())) flag(`logic.issues.${i}.say`, "logic", "Chỗ cần sửa này chưa có lời Đậu", true);
     if (L.t1 && it.series && L.t1.kind !== "map" && chartValue(L.t1, it) === undefined) flag(`logic.issues.${i}.series`, "logic", `Không thấy "${it.series}" / "${it.col}" trên biểu đồ`);
   });
@@ -271,10 +274,24 @@ export function checks2(L, { checkLesson } = {}) {
     const found = norm(x.text).split(/\s*(?:…|\.\.\.)\s*/).filter(Boolean).every(piece => { const k = s.indexOf(piece, from); if (k < 0) return false; from = k + piece.length; return true; });
     if (!found) flag(`language.phrases.groups.${gi}.items.${xi}`, "language", `"${x.text}" không có trong câu ${x.sid}`);
   }));
+  const sidOfRef = ref => {
+    if (ref[0] === "c") { for (const p of L.essay.paragraphs) for (const s of p.sentences) if (s.segs.some(g => typeof g !== "string" && g.c === ref)) return s.id; return null; }
+    return ((L.task_comments[+ref.slice(1) - 1] || {}).sentence_ids || [])[0] || null;
+  };
+  const groups = (L.language && L.language.groups) || [];
+  const askCheck = (ask, path, sidsOf) => {
+    if (!ask || !ask.q) return flag(path, "language", "Câu Socratic chưa có câu hỏi", true);
+    if (!(ask.answer >= 0 && ask.answer < (ask.options || []).length)) flag(`${path}.answer`, "language", "Đáp án đúng không trỏ tới lựa chọn nào", true);
+    if (ask.focus && !inSents(sidsOf, ask.focus)) flag(`${path}.focus`, "language", `"${ask.focus}" (chữ được tô khi hỏi) không có trong câu của em`);
+  };
   ((L.language && L.language.items) || []).forEach((it, i) => {
+    const sid = sidOfRef(it.ref);
+    if (it.swap && it.swap.from && !inSents([sid], it.swap.from)) flag(`language.items.${i}.swap.from`, "language", `"${it.swap.from}" không có trong câu của em`);
     if (it.mode !== "socratic") return;
-    if (!it.ask || !it.ask.q) flag(`language.items.${i}.ask`, "language", "Câu Socratic chưa có câu hỏi", true);
-    else if (!(it.ask.answer >= 0 && it.ask.answer < (it.ask.options || []).length)) flag(`language.items.${i}.ask.answer`, "language", "Đáp án đúng không trỏ tới lựa chọn nào", true);
+    const g = it.group && groups.find(x => x.id === it.group);
+    if (g && g.refs[0] !== it.ref) return;                // a group asks once, on its first item
+    if (g && g.ask) return askCheck(g.ask, `language.groups.${groups.indexOf(g)}.ask`, g.refs.map(sidOfRef));
+    askCheck(it.ask, `language.items.${i}.ask`, [sid]);
   });
 
   // the systematic mistake: a figure instead of {n} must be right; the chalkboard must fit

@@ -24,11 +24,19 @@ New lessons (**flow 2**: the teacher decides, Claude writes little):
 
 3. **Logic** (TR/TA · CC): the week's framework checklist from `course.json`, blank: ✓ / ✗ and a note for
    each point (data mistakes go in the note: "56% là năm 2010 không phải 2000"). Essays: the idea sentences
-   are guessed (Ý 1–4), the teacher fixes the tags and marks each idea ✓ / ~ / ✗ with a note. Week 1: each
-   paraphrase topic ✓ / ✗. The TR/CC editor's own comments are listed for reference.
+   are guessed (Ý 1–4: "The first…", the sentence after the topic sentence, "Moreover / On top of that / In
+   terms of / Regarding…"); the teacher fixes the tags (sentences tagged with the same Ý are one idea) and
+   marks each idea ✓ / ~ / ✗. The teacher's CRM comments on an idea's sentences (TR/CC comments and plain
+   "=> COMMENT" notes) are filled in under it, each with a tick to leave it out, plus a note box. A ✗ idea
+   needs its fix type: **Đổi hướng** (a new direction), **Sửa mắt xích** (a wrong link) or **Thiếu bước**.
+   Week 1: each paraphrase topic ✓ / ✗.
 4. **Language** (LR · GRA): per tab, the systematic mistake (a name, then tick the corrections that belong to
    it) or "Không có lỗi hệ thống". Every correction and note from the grammar/vocab editor, in essay order:
-   **Dạy** (shown as the teacher wrote it) / **Socratic** (asked first) / **Khen** / **Bỏ qua**.
+   **Dạy** (shown as the teacher wrote it) / **Socratic** (asked first) / **Khen** / **Bỏ qua**, and its part
+   (Từ vựng / Ngữ pháp / **Logic**: plain "=> COMMENT" notes start in Logic). **Gộp với…** puts corrections
+   that are the same point on one screen, with an optional group note; **Chuyển nhận xét sang…** moves a
+   comment to the correction it belongs to (only in the lesson: the CRM is never touched). A note already
+   used in a ✗ / ~ idea starts as Bỏ qua.
 5. **Viết lại**: the exact sentences to rewrite.
 6. **Soạn**: one Claude pass in small parts (`lib/draft2.js`), only Đậu's words around those decisions: the
    Logic summary and one screen per problem, the chains of ✗ ideas, "Cụm em đã dùng tốt", the Socratic
@@ -39,10 +47,22 @@ New lessons (**flow 2**: the teacher decides, Claude writes little):
 8. **Xuất**: the `.html` (built exactly like `build.py`), the `.json`, or a Netlify link (`lib/netlify.js`: every
    publish is a new unguessable `/r/<random>/` address; old pages are never removed).
 
-The student page of a flow-2 lesson (`"flow": 2`) has two parts, **Logic** and **Language** (each tab shows its
-two scores): results → Logic (the checklist on one screen, then each problem; essays: the ideas, ✗ ones open
-their chain) → Language ("Cụm em đã dùng tốt", the systematic mistake if any, then each correction; Dạy
-corrections in the same sentence share a screen) → practice (only with a systematic mistake) → Viết lại → end.
+The student page of a flow-2 lesson (`"flow": 2`) has two parts, **Logic** and **Language**. The tabs show
+"TR · CC" until the results screen has counted the scores up, then "TR 7 · CC 6". Results → Logic (the
+checklist on one screen, then in essay order: each problem, the comments moved to Logic, and the ideas, whose
+✗ ones open their chain; when the teacher rewrote a sentence, Đậu goes through each change while it lights up
+in both cards) → Language ("Cụm em đã dùng tốt", the systematic mistake if any, then the corrections:
+vocabulary first, then grammar, each in essay order) → practice (only with a systematic mistake) → Viết lại
+(it opens on the idea's chain from Logic) → end.
+
+- An idea's chain is drawn unmarked while the student answers; then the wrong link turns red and the fix is
+  drawn by its type: a new direction under her struck-through chain, the new links after the last good one,
+  or the missing steps.
+- Corrections draw in: the line strikes through, the fix pops in, then the teacher's comment. Socratic asks
+  first, with the words it is about underlined. Words the teacher typed into the essay (a linker) pop in
+  where she typed them, with the sentence before shown faded. A group is one screen.
+- The lines between parts ("Giờ mình xem 4 chỗ từ vựng anh Khoa sửa cho em nha") come from the page, so they
+  always match what comes next; Claude only names a focus when the teacher named a systematic mistake.
 
 Drafts started before flow 2 (and `editor.html?flow=1`) keep the old steps: Framework tagging → a 6-part
 draft (`lib/draft.js`) → "Cần duyệt" review → export. Old lessons still build and play as before.
@@ -57,7 +77,10 @@ APIs, no storage), and the editor posts the built page to it (`lib/preview.js`).
 case between the two copies stays the student's ("Golf"); words crossed out with the line-through style
 (not the editor's strikethrough) and the teacher's version after them read as one correction, with her words
 the new version swallowed taken from the original and the teacher's CAPS lowercased ("~~accounting for 16%~~
-→ reaching 16% in 2010").
+→ reaching 16% in 2010"). An edit inside one word is one correction of the whole word, her spelling taken
+from the original ("heal|~~th~~ TH|care" → helathcare → healthcare). `((words)) => COMMENT`: the words
+between the brackets are what the comment is about. A note remembers where it sits in its sentence (`at`),
+so a typed-in linker pops in at the right place.
 
 **Nhật ký (editing log, `lib/telemetry.js`):** when a Claude-drafted lesson is exported or published,
 the editor records what the teacher kept, edited, deleted or added versus Claude's draft, the mistake

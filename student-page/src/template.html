@@ -88,7 +88,9 @@ button { font: inherit; color: inherit; }
 .focus-callout .label { color: var(--orange-deep); }
 .focus-callout b { font: 800 1.15em/1.3 var(--font-display); }
 .tab b { font: 800 12px/1 var(--font-display); letter-spacing: .04em; color: var(--muted); }
-.tab span { font: 700 11px/1 var(--font-body); color: var(--muted); font-variant-numeric: tabular-nums; }
+.tab span { font: 700 11px/1 var(--font-body); color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; letter-spacing: -.01em; }
+.tab span[hidden] { display: none; }
+@media (max-width: 420px) { .tab span { font-size: 10px; } }
 .tab[aria-current="true"] { background: var(--orange-soft); border-color: var(--orange); }
 .tab[aria-current="true"] b, .tab[aria-current="true"] span { color: var(--orange-deep); }
 .essay-btn { display: inline-flex; align-items: center; gap: 6px; border: 1.5px solid var(--line); background: var(--paper); border-radius: 999px; padding: 5px 12px 5px 8px; font-size: 13px; font-weight: 600; cursor: pointer; }
@@ -338,6 +340,10 @@ mark.hl { background: linear-gradient(transparent 55%, var(--orange-soft) 55%); 
 .node { padding: .45em .85em; border-radius: 12px; background: var(--mint-soft); font-weight: 600; font-size: .92em; animation: popIn .45s cubic-bezier(.3, 1.5, .5, 1) both; }
 .node.bad { background: var(--coral-soft); color: var(--coral); font-style: italic; }
 .node.new { background: transparent; border: 2px dashed var(--mint-deep); color: var(--mint-deep); }
+/* her chain once a new direction (or a fix from a wrong link on) replaces it */
+.node.old { opacity: .5; text-decoration: line-through; text-decoration-thickness: 1.5px; font-size: .84em; padding: .3em .8em; animation: none; }
+.chain-new { margin-top: .9em; padding-top: .8em; border-top: 1.5px dashed var(--line); }
+.fix-mark { align-self: center; font: 700 .8em var(--font-display); color: var(--mint-deep); padding: .3em .8em; border-radius: 999px; background: var(--mint-soft); margin-top: .3em; animation: popIn .4s both; }
 .arrow { align-self: center; width: 2px; height: .75em; background: var(--muted); opacity: .45; position: relative; animation: rise .3s both; }
 .arrow::after { content: ""; position: absolute; left: -4px; bottom: -2px; border: 5px solid transparent; border-top-color: var(--muted); border-bottom: 0; }
 .gap-mark { align-self: center; font: 700 .8em var(--font-display); color: var(--coral); padding: .3em .8em; border-radius: 999px; background: var(--coral-soft); margin-top: .3em; animation: popIn .4s both; }
@@ -406,6 +412,13 @@ button.mcard { width: 100%; text-align: left; font: inherit; color: inherit; cur
 .corr.live s { background: linear-gradient(var(--coral), var(--coral)) no-repeat 0 55% / 0 2px; text-decoration: none; animation: strike .45s forwards; }
 .corr.live ins { display: inline-block; animation: popIn .4s .4s cubic-bezier(.3, 1.5, .5, 1) both; }
 @keyframes strike { to { background-size: 100% 2px; } }
+/* several fixes in one place play one after another (--d set per fix) */
+.corr.live s { animation-delay: var(--d, 0s); }
+.corr.live ins { animation-delay: calc(var(--d, 0s) + .4s); }
+.prev-ctx { color: var(--muted); }
+mark.hl-bad { background: linear-gradient(transparent 55%, var(--coral-soft) 55%); color: var(--coral); font-weight: 600; padding: 0 .1em; }
+mark.hl-good { background: linear-gradient(transparent 55%, var(--mint-soft) 55%); color: var(--mint-deep); font-weight: 600; padding: 0 .1em; }
+.pt-comment.rise, .pt-better.rise { animation: rise .4s both; }
 .snip { display: flex; gap: .6em; align-items: flex-start; padding: .55em .8em; text-align: left; font: inherit; color: inherit; cursor: pointer; width: 100%; }
 .snip .quote, .snip-col { flex: 1; min-width: 0; }
 .snip .pin { flex: none; width: 16px; height: 16px; color: var(--orange-deep); margin-top: .25em; }
@@ -602,6 +615,7 @@ canvas.confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-
 const L = JSON.parse(document.getElementById("lesson-data").textContent);
 const A = JSON.parse(document.getElementById("asset-data").textContent);
 const NAME = L.student;
+const TEACHER = L.teacher || "anh Khoa";
 const REDUCED = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const $ = s => document.querySelector(s);
 
@@ -952,8 +966,24 @@ const TABS = L.tabs || (V2 ? [["LOGIC", "Logic", ["TR", "CC"], L.t1 ? "Bố cụ
   : [["TR", "TR", "TR", "Ý tưởng"], ["CC", "CC", "CC", "Liên kết"], ["LR", "LR", "LR", "Từ vựng"], ["GRA", "GRA", "GR", "Ngữ pháp"]]);
 const scoreOf = k => Array.isArray(k) ? k.map(scoreOf).filter(Boolean).join(" · ") : k && L.scores && L.scores[k] ? L.scores[k] : "";
 const hasScores = Object.values(L.scores || {}).some(Boolean);
-const tabBtns = TABS.map(([t, label, k, name]) => h("button", { class: "tab", type: "button", "aria-label": scoreOf(k) ? `${name}, band ${scoreOf(k)}` : name,
-  onclick: () => { if (tabIdx[t] != null) jump(tabIdx[t]); } }, h("b", {}, label), scoreOf(k) ? h("span", {}, scoreOf(k)) : null));
+/* the scores on the tabs stay hidden until the results screen has counted them up ("TR · CC"),
+   then show with their names ("TR 7 · CC 6"); on a later visit they show from the start */
+const critName = k => k === "GR" ? "GRA" : k;
+const tabScore = k => {
+  const keys = Array.isArray(k) ? k : [k];
+  if (!S.scoresSeen) return Array.isArray(k) ? keys.map(critName).join(" · ") : "";
+  return Array.isArray(k) ? keys.filter(x => L.scores && L.scores[x]).map(x => `${critName(x)} ${L.scores[x]}`).join(" · ") : scoreOf(k);
+};
+const tabBtns = TABS.map(([t, label, k, name]) => h("button", { class: "tab", type: "button", onclick: () => { if (tabIdx[t] != null) jump(tabIdx[t]); } }, h("b", {}, label), h("span", {})));
+function paintTabs() {
+  tabBtns.forEach((b, i) => {
+    const [, label, k, name] = TABS[i], t = hasScores ? tabScore(k) : "";
+    b.lastChild.textContent = t; b.lastChild.hidden = !t;
+    b.setAttribute("aria-label", S.scoresSeen && scoreOf(k) ? `${name}, band ${scoreOf(k)}` : name);
+  });
+}
+function scoresSeen() { if (!S.scoresSeen) { S.scoresSeen = true; save(); paintTabs(); } }
+paintTabs();
 $("#tabs").append(...tabBtns);
 // in a flow-2 lesson the screens shared with the old layout (idea chains, mistake groups) land in Logic / Language
 const SECMAP = V2 ? { TR: "LOGIC", CC: "LOGIC", LR: "LANG", GRA: "LANG" } : {};
@@ -992,6 +1022,7 @@ async function run(i, tgt = 0, dir = 1) {
   fitRO.disconnect(); fitMO.disconnect();
   fitRO.observe(scene); fitMO.observe(scene, { childList: true, subtree: true, characterData: true });
   tabBtns.forEach((b, k) => b.setAttribute("aria-current", String(TABS[k][0] === sc.sec)));
+  if (hasScores && !S.scoresSeen && named("results") >= 0 && i > named("results")) scoresSeen();   // jumped past it
   sizeTabs(sc.sec);
   // a new section (TR, CC, LR, GRA) starts: a little burst on its tab
   const tk = TABS.findIndex(t => t[0] === sc.sec);
@@ -1146,6 +1177,7 @@ if (hasScores) add("intro", async c => {
   c.show(h("div", { class: "card overall" }, ring, h("div", {}, h("div", { class: "h2" }, "Overall"), h("div", { class: "muted small" }, L.teacher + " chấm"))));
   await c.wait(400);
   await tick(ring, Number(L.overall), .5, 1, 90, c.id);
+  scoresSeen();
   await c.say(L.results.score[0], "thumbsup");
   for (const line of L.results.score.slice(1)) { await c.gate(); await c.say(line, "explaining"); }
   await praise(c, "results");
@@ -1301,7 +1333,8 @@ if (LG) add("LOGIC", async c => {
   for (const line of LG.summary.slice(1)) { await c.gate(); await c.say(line, "explaining"); }
 }, { name: "logic" });
 // Task 2: the ideas with the teacher's ✓ / ~ / ✗; ~ gets a one-line tip, ✗ opens its chain
-if (V2 && L.ideas) add("LOGIC", async c => {
+// (added below with the rest of Logic, in essay order)
+const addIdeasOverview2 = () => add("LOGIC", async c => {
   const I = L.ideas;
   c.show(h("h1", { class: "h" }, "Các ý của em"));
   for (const [k, o] of I.overview.entries()) {
@@ -1358,7 +1391,12 @@ if (L.ideas && !V2) add("TR", async c => {
 // ideas that need work (✗) or could go further (~), numbered separately
 const detailIdx = {};
 const detailKind = D => ideaStatus(L.ideas.overview.find(o => o.tag === D.tag) || { ok: false }) === "improve" ? "improve" : "fix";
-(L.ideas ? L.ideas.details : []).forEach((D, k) => (detailIdx[D.tag] = screens.length, add("TR", async c => {
+/* one idea to fix. Her chain is drawn with no marks while she answers; then what is wrong shows, and
+   the fix is drawn by its kind: a new direction (her chain struck through, the teacher's below), a wrong
+   link (it and what follows struck through, the new links after the last good one), or missing steps */
+function addIdeaDetail(D, k) {
+  detailIdx[D.tag] = screens.length;
+  add("TR", async c => {
   const kind = detailKind(D), same = L.ideas.details.filter(x => detailKind(x) === kind);
   c.show(h("span", { class: "pill " + (kind === "improve" ? "tone-orange" : "tone-blush") }, `${kind === "improve" ? "Nâng cấp" : "Cần sửa"} ${same.indexOf(D) + 1}/${same.length} · ${D.tag}`));
   await c.say(kind === "improve" ? `${D.tag} ổn rồi nè, mình nâng cấp thêm chút nha` : `Mình xem kỹ ${D.tag} của em nha`, "magnify");
@@ -1367,31 +1405,47 @@ const detailKind = D => ideaStatus(L.ideas.overview.find(o => o.tag === D.tag) |
     h("div", { class: "quote en" }, D.sids.map(origText).join(" ")), cite(D.sids[D.sids.length - 1])));
   await c.gate();
   const chain = h("div", { class: "chain" }), chainLabel = h("div", { class: "label", style: "margin-bottom:.4em" }, "Chuỗi ý của em");
-  c.show(h("div", { class: "card" }, chainLabel, chain), { replace: true });
+  const box = c.show(h("div", { class: "card" }, chainLabel, chain), { replace: true });
+  const nodes = [];
   for (const [i, n] of D.chain.entries()) {
     await c.wait(i ? 800 : 300);
     if (i) chain.append(h("div", { class: "arrow" }));
-    chain.append(h("div", { class: "node" + (D.bad_node === i ? " bad" : "") }, n)); fit();
+    chain.append(nodes[i] = h("div", { class: "node" }, n)); fit();
   }
   await c.wait(500);
   await c.say(D.ask.q, "thinking");
   const i = await c.ask(D.ask.options, { answer: D.ask.answer, key: "idea" + k, q: D.ask.q });
+  // now what is wrong shows on her chain
+  if (D.bad_node != null && nodes[D.bad_node]) nodes[D.bad_node].classList.add("bad");
   await c.say(i === D.ask.answer ? D.ask.right : D.ask.wrong, i === D.ask.answer ? "thumbsup" : "oops");
   await c.gate();
   content.querySelector(".ask").remove(); fit();
   await c.say(D.fix_intro, "explaining");
+  const grow = async (into, before = null) => {
+    for (const [j, n] of D.fix_chain.entries()) {
+      await c.wait(j ? 800 : 250);
+      if (j || into.children.length) into.insertBefore(h("div", { class: "arrow" }), before);
+      into.insertBefore(h("div", { class: "node new" }, n), before); fit();
+    }
+  };
   if (D.replace) {
-    // same idea, fewer links
-    await c.wait(300);
-    chainLabel.textContent = D.replace; chain.replaceChildren(); fit();
-    for (const [i, n] of D.fix_chain.entries()) { await c.wait(i ? 800 : 200); if (i) chain.append(h("div", { class: "arrow" })); chain.append(h("div", { class: "node new" }, n)); fit(); }
+    // a new direction: hers stays, struck through, the teacher's builds from its start below it
+    nodes.forEach(n => n.classList.add("old")); if (V2) chainLabel.textContent = "Hướng cũ của em"; fit();
+    const fresh = h("div", { class: "chain" });
+    box.append(h("div", { class: "chain-new" }, h("div", { class: "label", style: "margin-bottom:.4em" }, D.replace), fresh)); fit();
+    await grow(fresh);
+  } else if (D.bad_node != null) {
+    // a wrong link: it and what follows are struck through, the new links go on from the last good one
+    nodes.slice(D.bad_node).forEach(n => n.classList.add("old"));
+    chain.append(h("div", { class: "fix-mark" }, "Sửa thành")); fit();
+    await grow(chain);
   } else if (D.gap_after != null) {
     // the missing link sits between two of her own
     const ref = chain.children[2 * D.gap_after + 1] || null;
     chain.insertBefore(h("div", { class: "gap-mark" }, "Thiếu mắt xích"), ref); fit();
     for (const n of D.fix_chain) { await c.wait(800); chain.insertBefore(h("div", { class: "arrow" }), ref); chain.insertBefore(h("div", { class: "node new" }, n), ref); fit(); }
   } else {
-    if (D.bad_node == null) { chain.append(h("div", { class: "gap-mark" }, "Thiếu mắt xích")); fit(); }
+    chain.append(h("div", { class: "gap-mark" }, "Thiếu mắt xích")); fit();
     for (const n of D.fix_chain) { await c.wait(800); chain.append(h("div", { class: "arrow" }), h("div", { class: "node new" }, n)); fit(); }
   }
   await c.gate();
@@ -1401,20 +1455,63 @@ const detailKind = D => ideaStatus(L.ideas.overview.find(o => o.tag === D.tag) |
     kids.slice(0, keep).forEach(k => k.remove());
     chain.prepend(h("div", { class: "node fold" }, "…"), h("div", { class: "arrow" }));
   }
-  chain.parentNode.append(h("div", { class: "flow-en rise", style: "margin-top:.6em" }, (D.fix_label || "Flow gợi ý") + ": ", h("span", { class: "en" }, D.fix_en))); fit();
+  box.append(h("div", { class: "flow-en rise", style: "margin-top:.6em" }, (D.replace ? "Flow" : D.fix_label || "Flow gợi ý") + ": ", h("span", { class: "en" }, D.fix_en))); fit();
   await c.say(D.outro, "thumbsup");
-})));
+  });
+}
+if (!V2) (L.ideas ? L.ideas.details : []).forEach(addIdeaDetail);
 
-// flow 2: each problem the teacher noted under Logic, one screen each (Task 1: on the chart)
-(LG ? LG.issues : []).forEach((it, k, all) => add("LOGIC", async c => {
-  c.show(h("div", { class: "row" }, h("span", { class: "pill tone-blush" }, `Cần sửa ${k + 1}/${all.length}`), it.title ? h("span", { class: "small muted" }, it.title) : null));
-  if (L.t1 && it.series) c.show(h("div", { class: "card chart-card" }, chartView({ series: it.series, col: it.col })));
-  if ((it.sids || []).length) c.show(h("div", { class: "card stack" }, h("div", { class: "label" }, "Em viết"),
-    h("div", { class: "quote en" }, markFocus(it.sids.map(origText).join(" "), it.quote)), cite(it.sids[0])));
-  await c.say(it.say[0], "magnify");
-  for (const line of it.say.slice(1)) { await c.gate(); await c.say(line, "explaining"); }
-  if (it.fix) { await c.gate(); c.show(h("div", { class: "card stack" }, h("div", { class: "label" }, "Viết lại"), h("div", { class: "quote en" }, it.fix))); }
-}, k === 0 ? { name: "issues" } : {}));
+// flow 2: each problem the teacher noted under Logic, one screen each (Task 1: on the chart). When the
+// teacher rewrote a sentence, Đậu goes through each change while it lights up in both cards
+function addIssue(it, k, n, opts) {
+  add("LOGIC", async c => {
+    c.show(h("div", { class: "row" }, h("span", { class: "pill tone-blush" }, `Cần sửa ${k + 1}/${n}`), it.title ? h("span", { class: "small muted" }, it.title) : null));
+    if (L.t1 && it.series) c.show(h("div", { class: "card chart-card" }, chartView({ series: it.series, col: it.col })));
+    const mine = (it.sids || []).map(origText).join(" ");
+    const mineQ = h("div", { class: "quote en" }, markFocus(mine, it.quote));
+    if (mine) c.show(h("div", { class: "card stack" }, h("div", { class: "label" }, "Em viết"), mineQ, cite(it.sids[0])));
+    await c.say(it.say[0], "magnify");
+    for (const line of it.say.slice(1)) { await c.gate(); await c.say(line, "explaining"); }
+    if (!it.fix) return;
+    await c.gate();
+    const fixQ = h("div", { class: "quote en" }, it.fix);
+    const fixCard = c.show(h("div", { class: "card stack" }, h("div", { class: "label" }, "Viết lại"), fixQ));
+    for (const [j, ch] of (it.changes || []).entries()) {
+      if (j) await c.gate();
+      const kept = ch.from && ch.from === ch.to;
+      if (mine) mineQ.replaceChildren(...markPhrase(mine, ch.from, kept ? "hl-good" : "hl-bad"));
+      fixQ.replaceChildren(...markPhrase(it.fix, ch.to, "hl-good"));
+      await c.say(ch.why, kept ? "thumbsup" : "explaining", ch.to ? { spot: fixCard } : {});
+    }
+  }, opts);
+}
+/* text with one phrase marked (first match, case-insensitive) */
+function markPhrase(text, phrase, cls) {
+  const i = phrase ? text.toLowerCase().indexOf(phrase.toLowerCase()) : -1;
+  return i < 0 ? [text] : [text.slice(0, i), h("mark", { class: cls }, text.slice(i, i + phrase.length)), text.slice(i + phrase.length)];
+}
+if (V2) {
+  const order = Object.keys(SENT), posOf = sid => order.indexOf(sid) >= 0 ? order.indexOf(sid) : null;
+  const blocks = [];
+  // the teacher's problems and her comments moved to Logic: numbered together, in essay order
+  const units = langUnits().filter(u => u.tab === "LOGIC");
+  (LG ? LG.issues : []).forEach((it, k) => blocks.push({ pos: posOf((it.sids || [])[0]) ?? 1e6 + k, kind: "issue", it }));
+  units.forEach(u => blocks.push({ pos: posOf(u.sid) ?? 1e6, kind: "unit", u }));
+  if (L.ideas) {
+    const ps = [...L.ideas.overview.flatMap(o => o.sids || []), ...L.ideas.details.flatMap(d => d.sids || [])].map(posOf).filter(x => x != null);
+    blocks.push({ pos: ps.length ? Math.min(...ps) : 5e5, kind: "ideas" });
+  }
+  blocks.sort((a, b) => a.pos - b.pos);
+  const counted = blocks.filter(b => b.kind === "issue" || (b.kind === "unit" && b.u.mode !== "praise"));
+  let first = true;
+  for (const b of blocks) {
+    if (b.kind === "ideas") { addIdeasOverview2(); L.ideas.details.forEach(addIdeaDetail); continue; }
+    const opts = first ? { name: "issues" } : {};
+    first = false;
+    if (b.kind === "issue") addIssue(b.it, counted.indexOf(b), counted.length, opts);
+    else addUnit(b.u, { pill: b.u.mode === "praise" ? null : `Cần sửa ${counted.indexOf(b) + 1}/${counted.length}` }, opts);
+  }
+}
 
 // ---------------- Task 1 (Weeks 7–10): the overview against the main features, then the data ----------------
 const T1 = L.t1;
@@ -1587,13 +1684,14 @@ const mainCard = m => h("button", { class: "card mcard main", type: "button", on
 const minorCard = m => h("button", { class: "card mcard minor", type: "button", onclick: () => jump(mistakeIdx[m.id]) },
   h("div", { class: "n" }, mCount(m) + "×"), h("div", { class: "t" }, h("b", {}, m.title)));
 
-function addMistake(m, optional) {
+function addMistake(m, optional, lead = []) {
   const sids = [...new Set(m.cids.map(x => CID_SENT[x]))];
   const opts = { group: "m-" + m.id, optional };
   const head = label => h("div", { class: "row" }, h("button", { class: "backchip", type: "button", onclick: () => jump(tabIdx[m.tab]) }, "‹ Tất cả lỗi"), h("span", { class: "pill " + (label === "Quy tắc" ? "tone-orange" : "tone-blush") }, label));
   mistakeIdx[m.id] = screens.length;
   add(m.tab, async c => {
     c.show(head(V2 ? "Lỗi hệ thống" : m.tab === "LR" && optional ? "Từ vựng" : optional ? "Lỗi phụ" : "Lỗi quan trọng nhất"));
+    for (const line of lead.filter(Boolean)) { await c.say(line, "explaining"); await c.gate(); }
     const spots = [...sids.map(sid => ({ sid })), ...ptsOf(m).map(p => ({ p, sid: p.sids[0] }))];
     await c.say(`Em để ý ${spots.length} câu này nè ${NAME}`, "magnify");
     const cards = [], snips = h("div", { class: "stack" });
@@ -1689,15 +1787,131 @@ byTab("GRA").forEach((m, k) => addMistake(m, k > 0));
 }
 
 // ---------------- flow 2 · Language: what she used well, the systematic mistake, then each correction ----------------
+/* the corrections and notes the teacher kept, as screens ("units"): one correction or note; Dạy corrections
+   in the same sentence together; a group the teacher made ("Gộp với…") together. In essay order. */
+function langUnits() {
+  const LN = L.language || { items: [], groups: [] }, units = [], byGroup = {};
+  const groups = Object.fromEntries((LN.groups || []).map(g => [g.id, g]));
+  for (const it of LN.items) {
+    const isC = it.ref[0] === "c", note = isC ? null : L.task_comments[+it.ref.slice(1) - 1];
+    if (isC ? !C[it.ref] : !note) continue;
+    const sid = isC ? CID_SENT[it.ref] : (note.sentence_ids || [])[0];
+    const spot = { ref: it.ref, sid, isC, note, swap: it.swap || null };
+    const g = it.group && groups[it.group];
+    if (g) {
+      if (byGroup[g.id]) { byGroup[g.id].spots.push(spot); continue; }
+      units.push(byGroup[g.id] = { tab: it.tab, mode: it.mode, sid, spots: [spot], ask: g.ask || it.ask || null, group: g, key: "g-" + g.id });
+      continue;
+    }
+    const last = units[units.length - 1];
+    if (isC && it.mode === "teach" && last && last.teachC && last.sid === sid && last.tab === it.tab) { last.spots.push(spot); continue; }
+    units.push({ tab: it.tab, mode: it.mode, sid, spots: [spot], ask: it.ask || null, teachC: isC && it.mode === "teach", key: "li-" + it.ref });
+  }
+  return units;
+}
+/* a typed-in addition (a linker, a missing word) as it reads in her sentence */
+function typedWords(note) {
+  const t = (note.added || "").trim();
+  if (!t || /^(=>|\/\/|\)\))/.test(t) || note.quote) return "";
+  return t.replace(/\p{Lu}{2,}/gu, w => ["UK", "US", "USA", "EU", "GDP", "IELTS", "TV", "IT", "AI"].includes(w) ? w : w.toLowerCase()).replace(/\bi\b/g, "I");
+}
+const isLinker = note => typedWords(note) && !(note.at > 0);
+/* one card of a unit, before (her words, what is asked about underlined) or after (the fixes, drawn in one
+   after another from delay d when live). v.refs: the corrections shown in one sentence; v.sp: a note */
+function spotView(v, { after, live, focus, d = 0 }) {
+  if (v.refs) {
+    const el = sentence(v.sid, { mode: after ? "diff" : "orig", focus: v.refs, live, window: v.refs.length > 1 ? 0 : 8 });
+    el.querySelectorAll(".corr.live").forEach((x, k) => x.style.setProperty("--d", d + k * .9 + "s"));
+    return [el];
+  }
+  const sp = v.sp, text = (sp.note.sentence_ids || []).map(origText).join(" "), add = typedWords(sp.note);
+  if (add) {
+    // the words the teacher typed in, popping in where she typed them (a linker: the sentence before, faded)
+    let at = Math.max(0, Math.min(text.length, sp.note.at > 0 ? sp.note.at : 0));
+    if (at && at < text.length && !/\s/.test(text[at - 1])) { const k = text.lastIndexOf(" ", at); at = k < 0 ? 0 : k + 1; }
+    const start = at === 0, words = start ? add.charAt(0).toUpperCase() + add.slice(1) : add;
+    let rest = text.slice(at);
+    if (start && after && /^\p{Lu}(\p{Ll}|\s)/u.test(rest) && !/^I\b/.test(rest)) rest = rest.charAt(0).toLowerCase() + rest.slice(1);
+    const order = Object.keys(SENT), prev = start ? order[order.indexOf(sp.sid) - 1] : null;
+    const ins = after ? h("span", { class: "corr" + (live ? " live" : ""), style: `--d:${d}s` }, h("ins", {}, words)) : h("span", { class: "err gap", "aria-label": "chỗ thiếu" });
+    return [prev && SENT[prev] ? h("span", { class: "prev-ctx" }, "… " + origText(prev).split(" ").slice(-8).join(" ") + " ") : null, text.slice(0, at), ins, " ", rest].filter(x => x !== null);
+  }
+  const sw = sp.swap, from = sw ? sw.from : focus || sp.note.quote;
+  const i = from ? text.indexOf(from) : -1;
+  if (i < 0) return markFocus(text, focus || sp.note.quote);
+  if (!after || !sw) return [text.slice(0, i), h("span", { class: "err" }, from), text.slice(i + from.length)];
+  return [text.slice(0, i), h("span", { class: "corr" + (live ? " live" : ""), style: `--d:${d}s` }, h("s", {}, sw.from), " ", h("ins", {}, sw.to)), text.slice(i + sw.from.length)];
+}
+/* one unit's screen: the sentence(s); Socratic asks first; then the fixes draw in one after another and the
+   teacher's comments rise under them */
+function addUnit(u, { pill, bridge = null } = {}, opts = {}) {
+  add(u.tab === "LOGIC" ? "LOGIC" : "LANG", async c => {
+    const praiseIt = u.mode === "praise", asking = u.mode === "socratic" && u.ask;
+    c.show(h("div", { class: "row" }, praiseIt ? h("span", { class: "pill tone-mint" }, TEACHER + " khen")
+      : h("span", { class: "pill " + (u.tab === "LR" ? "tone-sky" : u.tab === "LOGIC" ? "tone-blush" : "tone-orange") }, pill)));
+    if (bridge) await c.say(bridge, "explaining");
+    // corrections in the same sentence share a card; a note has its own
+    const specs = [];
+    for (const sp of u.spots) {
+      const last = specs[specs.length - 1];
+      if (sp.isC && last && last.refs && last.sid === sp.sid) last.refs.push(sp.ref);
+      else specs.push(sp.isC ? { sid: sp.sid, refs: [sp.ref] } : { sid: sp.sid, sp });
+    }
+    const focus = asking && specs.length === 1 ? u.ask.focus : null;
+    const views = specs.map(v => {
+      const body = h("div", { class: "quote en" }, spotView(v, { after: praiseIt, live: false, focus }));
+      const col = h("div", { class: "snip-col" }, body);
+      c.show(h("div", { class: "card stack" }, col, v.sid ? cite(v.sid, v.refs || null) : null));
+      return { ...v, body, col };
+    });
+    if (bridge) await c.gate();
+    const comments = v => {
+      const said = v.refs ? v.refs.map(r => C[r].comment).filter(Boolean) : [v.sp.note.comment].filter(Boolean), fix = v.sp && v.sp.note.fix;
+      return [...said.map(t => h("div", { class: "pt-comment rise" }, h("b", {}, TEACHER + ": "), t)),
+        fix ? h("div", { class: "pt-better rise" }, h("span", { class: "lbl" }, "Viết lại"), h("span", { class: "en" }, fix)) : null].filter(Boolean);
+    };
+    if (praiseIt) { views.forEach(v => v.col.append(...comments(v))); fit(); return void await c.say(`${TEACHER} khen chỗ này nè ${NAME}`, "cheering"); }
+    if (asking) {
+      await c.say(u.ask.q, "thinking");
+      const i = await c.ask(u.ask.options, { answer: u.ask.answer, key: u.key, q: u.ask.q });
+      const right = i === u.ask.answer;
+      await c.say(right ? u.ask.right || "Đúng rồi á em" : u.ask.wrong || `Chưa đúng nè ${NAME}, đáp án đúng là câu tô xanh á`, right ? "thumbsup" : "oops");
+      await c.gate();
+      content.querySelector(".ask").remove(); fit();
+    } else if (u.group) await c.say(`${u.spots.length} chỗ này cùng một chuyện nè ${NAME}`, "magnify");
+    else if (views.some(v => v.sp && typedWords(v.sp.note))) await c.say(`Chỗ này ${TEACHER} thêm ${views.some(v => v.sp && isLinker(v.sp.note)) ? "một từ nối" : "chữ"} cho em nè`, "explaining");
+    else await c.wait(650);
+    // the fixes draw in, one after another, then the comments
+    let d = 0;
+    for (const v of views) {
+      v.body.replaceChildren(...[spotView(v, { after: true, live: !replay, focus: null, d })].flat());
+      d += .9 * (v.refs ? v.refs.length : 1);
+    }
+    fit();
+    await c.wait(300 + d * 1000);
+    views.forEach(v => v.col.append(...comments(v)));
+    if (u.group && u.group.note) c.show(h("div", { class: "card stack" }, h("div", { class: "pt-comment rise" }, h("b", {}, TEACHER + ": "), u.group.note)));
+    fit();
+  }, opts);
+}
 const LN = V2 ? L.language : null;
 if (LN) {
   tabIdx.LANG = tabIdx.LR = tabIdx.GRA = screens.length;
+  const units = langUnits().filter(u => u.tab !== "LOGIC");
+  const lr = units.filter(u => u.tab === "LR"), gra = units.filter(u => u.tab === "GRA");
+  const sys = L.mistakes.main;
+  // the tone: Claude's line only when the teacher named a systematic mistake (said on that lesson);
+  // otherwise the page says it, so it never promises something that doesn't come
+  const tone = LN.intro ? LN.intro[0]
+    : sys.length ? null
+    : units.length ? `Phần này không có lỗi nào em lặp lại nhiều, chỉ có mấy chỗ nhỏ thôi nè ${NAME}` : "Từ vựng và ngữ pháp bài này ổn rồi nè";
   add("LANG", async c => {
     c.show(h("h1", { class: "h" }, "Language"));
-    await c.say(LN.intro[0], "explaining");
-    const P = LN.phrases;
-    if (P && P.groups.some(g => g.items.length)) {
-      await c.gate();
+    const P = LN.phrases, has = P && P.groups.some(g => g.items.length);
+    if (tone) await c.say(tone, "explaining");
+    else if (!has) await c.say("Giờ mình qua phần từ vựng và ngữ pháp nha", "explaining");
+    if (has) {
+      if (tone) await c.gate();
       // "Cụm em đã dùng tốt": counted in, in essay order, each landing in its group
       const num = h("span", { class: "count" }, "0");
       const card = c.show(h("div", { class: "card stack" }, h("div", { class: "row", style: "gap:.8em" }, h("div", { class: "big-num" }, num), h("div", { class: "h2" }, "Cụm em đã dùng tốt"))));
@@ -1714,46 +1928,27 @@ if (LN) {
       await c.wait(300);
       await c.say(P.line, "thumbsup");
     }
-    for (const line of LN.intro.slice(1)) { await c.gate(); await c.say(line, "explaining"); }
+    for (const line of (LN.intro || []).slice(1)) { await c.gate(); await c.say(line, "explaining"); }
   }, { name: "language" });
-  // the systematic mistake (only when the teacher named one): the full mini-lesson
-  L.mistakes.main.forEach(m => addMistake(m, false));
-  // every other correction the teacher kept, in essay order: shown (Dạy), asked first (Socratic) or praised (Khen).
-  // Dạy corrections in the same sentence share one screen (one sentence, all its fixes, the comments under it)
-  const cards = [];
-  for (const it of LN.items) {
-    const isC = it.ref[0] === "c", last = cards[cards.length - 1];
-    const sid = isC ? CID_SENT[it.ref] : ((L.task_comments[+it.ref.slice(1) - 1] || {}).sentence_ids || [])[0];
-    if (isC && it.mode === "teach" && last && last.teach && last.sid === sid && last.tab === it.tab) last.refs.push(it.ref);
-    else cards.push({ ...it, sid, refs: [it.ref], teach: isC && it.mode === "teach" });
+  // the systematic mistake (only when the teacher named one): the full mini-lesson, opened by the
+  // page's bridge and Claude's focus line
+  sys.forEach((m, k) => addMistake(m, false, k ? [] : [LN.intro ? null : "Giờ mình xem lỗi em hay lặp lại nhất nha", LN.focus]));
+  // then the other corrections: vocabulary, then grammar, each in essay order, with a bridge from the page
+  const fixes = list => list.filter(u => u.mode !== "praise").length;
+  const bridgeFor = (list, t) => {
+    const n = fixes(list), what = t === "LR" ? "từ vựng" : "ngữ pháp";
+    if (!n) return `Có mấy chỗ ${TEACHER} khen em nè`;
+    if (t === "GRA" && lr.length) return `Giờ tới ngữ pháp nha, ${n} chỗ`;
+    return `Giờ mình xem ${n} chỗ ${what} ${TEACHER} sửa cho em nha`;
+  };
+  let firstItem = true;
+  for (const [t, list] of [["LR", lr], ["GRA", gra]]) {
+    const counted = list.filter(u => u.mode !== "praise");
+    list.forEach((u, k) => {
+      addUnit(u, { pill: `${t === "LR" ? "Từ vựng" : "Ngữ pháp"} · ${counted.indexOf(u) + 1}/${counted.length}`, bridge: k === 0 ? bridgeFor(list, t) : null }, firstItem ? { name: "lang-items" } : {});
+      firstItem = false;
+    });
   }
-  const taught = cards.filter(x => x.mode !== "praise");
-  cards.forEach((it, k) => add("LANG", async c => {
-    const isC = it.ref[0] === "c";
-    const note = isC ? null : L.task_comments[+it.ref.slice(1) - 1];
-    if (isC ? it.refs.some(r => !C[r]) : !note) return;
-    const praiseIt = it.mode === "praise";
-    c.show(h("div", { class: "row" }, praiseIt ? h("span", { class: "pill tone-mint" }, TEACHER + " khen")
-      : h("span", { class: "pill " + (it.tab === "LR" ? "tone-sky" : "tone-orange") }, `${it.tab === "LR" ? "Từ vựng" : "Ngữ pháp"} · ${taught.indexOf(it) + 1}/${taught.length}`)));
-    const noteText = () => (note.sentence_ids || []).map(origText).join(" ");
-    const shown = reveal => isC ? sentence(it.sid, { mode: reveal ? "diff" : "orig", focus: it.refs, window: it.refs.length > 1 ? 0 : 8 }) : markFocus(noteText(), note.quote);
-    const body = h("div", { class: "quote en" }, shown(it.mode !== "socratic"));
-    const col = h("div", { class: "snip-col" }, body);
-    c.show(h("div", { class: "card stack" }, col, it.sid ? cite(it.sid, isC ? it.refs : null) : null));
-    const comments = isC ? it.refs.map(r => C[r].comment).filter(Boolean) : [note.comment].filter(Boolean);
-    const extras = () => [...comments.map(t => h("div", { class: "pt-comment" }, h("b", {}, TEACHER + ": "), t)),
-      !isC && note.fix ? h("div", { class: "pt-better" }, h("span", { class: "lbl" }, "Viết lại"), h("span", { class: "en" }, note.fix)) : null].filter(Boolean);
-    if (praiseIt) { col.append(...extras()); fit(); return void await c.say(`${TEACHER} khen chỗ này nè ${NAME}`, "cheering"); }
-    if (it.mode === "socratic" && it.ask) {
-      await c.say(it.ask.q, "thinking");
-      const i = await c.ask(it.ask.options, { answer: it.ask.answer, key: "li-" + it.ref, q: it.ask.q });
-      await c.say(i === it.ask.answer ? "Đúng rồi á em" : `Chưa đúng nè ${NAME}, đáp án đúng là câu tô xanh á`, i === it.ask.answer ? "thumbsup" : "oops");
-      await c.gate();
-      content.querySelector(".ask").remove();
-      body.replaceChildren(...[shown(true)].flat());
-    }
-    col.append(...extras()); fit();
-  }, k === 0 ? { name: "lang-items" } : {}));
 }
 
 // flow 2: practice only exists when the teacher named a systematic mistake
@@ -1898,7 +2093,6 @@ function builder(item, isDone) {
 CORE.forEach((item, k) => add("practice", async c => { await exercise(c, item, "p" + item.id, `Câu ${k + 1}/${TOTAL}`); }));
 
 // ---------------- Nhiệm vụ viết lại: its own section, after practice ----------------
-const TEACHER = L.teacher || "anh Khoa";
 const ZALO = L.zalo || "";
 const CH = PR.challenge || {};
 const RW = L.rewrite || {                     // older lessons: the one-sentence challenge
@@ -1907,6 +2101,23 @@ const RW = L.rewrite || {                     // older lessons: the one-sentence
 };
 const RW_TARGET = { idea: "Một ý phát triển", paragraph: "Một đoạn thân bài", skeleton: "Mở bài và câu chủ đề", overview: "Overview", paraphrase: "Paraphrase đề" };
 const rwHead = () => h("div", { class: "row" }, h("span", { class: "pill tone-orange" }, "Nhiệm vụ viết lại"), h("span", { class: "small muted" }, RW_TARGET[RW.target] || ""));
+/* the chain she rewrites by: the one she saw in Logic for that idea (the teacher's fix in place), else
+   the flow Claude wrote for the rewrite */
+const RW_CHAIN = (() => {
+  const D = L.ideas && (L.ideas.details || []).find(d => (d.sids || []).some(x => (RW.sids || []).includes(x)));
+  if (D) {
+    const mine = t => ({ t }), fresh = t => ({ t, fresh: true });
+    const nodes = D.replace ? D.fix_chain.map(fresh)
+      : D.bad_node != null ? [...D.chain.slice(0, D.bad_node).map(mine), ...D.fix_chain.map(fresh)]
+      : D.gap_after != null ? [...D.chain.slice(0, D.gap_after + 1).map(mine), ...D.fix_chain.map(fresh), ...D.chain.slice(D.gap_after + 1).map(mine)]
+      : [...D.chain.map(mine), ...D.fix_chain.map(fresh)];
+    return { nodes, tag: D.tag, en: D.fix_en || RW.flow };
+  }
+  const steps = (RW.flow || "").split(/\s*(?:→|->)\s*/).filter(Boolean);
+  return steps.length > 1 ? { nodes: steps.map(t => ({ t, en: true })), tag: null, en: "" } : null;
+})();
+const chainView = () => h("div", { class: "chain" }, RW_CHAIN.nodes.flatMap((n, i) => [i ? h("div", { class: "arrow" }) : null,
+  h("div", { class: "node" + (n.fresh ? " new" : "") + (n.en ? " en" : ""), style: "animation:none" }, n.t)]));
 
 // 1. what she will rewrite, and why
 add("rewrite", async c => {
@@ -1917,20 +2128,31 @@ add("rewrite", async c => {
   await c.gate();
   c.show(h("div", { class: "card stack" }, h("div", { class: "label" }, RW.label || "Em đã viết"),
     h("div", { class: "quote en" }, RW.sids.map(origText).join(" ")), cite(RW.sids[0])));
-  if (RW.task) await c.say(RW.task, "explaining");
+  if (RW_CHAIN && RW_CHAIN.tag) {
+    // back to the chain from Logic: that is what she writes by
+    await c.gate();
+    c.show(h("div", { class: "card" }, h("div", { class: "label", style: "margin-bottom:.4em" }, "Chuỗi ý · " + RW_CHAIN.tag), chainView(),
+      RW_CHAIN.en ? h("div", { class: "flow-en", style: "margin-top:.6em" }, "Flow: ", h("span", { class: "en" }, RW_CHAIN.en)) : null), { replace: true });
+    await c.say(`Nhớ chuỗi ý mình xem ở phần Logic không nè? Giờ em viết lại ${RW_CHAIN.tag} theo chuỗi này nha`, "explaining");
+  }
+  if (RW.task) { if (RW_CHAIN && RW_CHAIN.tag) await c.gate(); await c.say(RW.task, "explaining"); }
 }, { label: "Bắt đầu viết" });
 
 // 2. write, with hints she opens one at a time
 add("rewrite", async c => {
   S.rwHints = S.rwHints || 0;
+  // the chain comes first (open), then what she wrote; the hints unlock one at a time
   const hints = [
-    ["flow", "Gợi ý 1 · Mạch ý", RW.flow],
-    ["start", "Gợi ý 2 · Câu mở đầu", RW.starters && RW.starters.length ? RW.starters : null],
-    ["words", "Gợi ý 3 · Từ hay", RW.phrases && RW.phrases.length ? RW.phrases : null],
-  ].filter(x => x[2]);
+    ...(RW_CHAIN ? [] : [["flow", "Mạch ý", RW.flow]]),
+    ["start", "Câu mở đầu", RW.starters && RW.starters.length ? RW.starters : null],
+    ["words", "Từ hay", RW.phrases && RW.phrases.length ? RW.phrases : null],
+  ].filter(x => x[2]).map(([k, t, v], i) => [k, `Gợi ý ${i + 1} · ${t}`, v]);
+  const base = RW_CHAIN ? [["chain", "Chuỗi ý"], ["orig", "Bài gốc"]] : [["orig", "Bài gốc"]];
   const panel = h("div", { class: "card rw-panel" });
   const bodyOf = key => {
     if (key === "orig") return [h("div", { class: "label" }, RW.label || "Em đã viết"), h("div", { class: "quote en" }, RW.sids.map(origText).join(" "))];
+    if (key === "chain") return [h("div", { class: "label", style: "margin-bottom:.4em" }, RW_CHAIN.tag ? "Chuỗi ý · " + RW_CHAIN.tag : "Chuỗi ý"), chainView(),
+      RW_CHAIN.en ? h("div", { class: "flow-en", style: "margin-top:.6em" }, "Flow: ", h("span", { class: "en" }, RW_CHAIN.en)) : null];
     const [, title, v] = hints.find(x => x[0] === key);
     const label = h("div", { class: "label" }, title);
     if (key === "flow") return [label, h("div", { class: "flow-en" }, h("span", { class: "en" }, v))];
@@ -1938,17 +2160,18 @@ add("rewrite", async c => {
     return [label, h("div", { class: "rw-words en" }, v.map(t => h("span", {}, t)))];
   };
   const tabs = h("div", { class: "rw-tabs" });
-  const btns = [["orig", "Bài gốc"], ...hints.map(([k, t]) => [k, t.split(" · ")[0]])].map(([k, t], i) =>
+  const nb = base.length;
+  const btns = [...base, ...hints.map(([k, t]) => [k, t.split(" · ")[0]])].map(([k, t], i) =>
     h("button", { class: "rw-tab", type: "button", "data-k": k, onclick: () => open(k, i) }, t));
   const open = (k, i) => {
-    if (i > S.rwHints) S.rwHints = i, save();          // hints unlock in order
-    btns.forEach((b, j) => { b.setAttribute("aria-pressed", String(b.dataset.k === k)); b.disabled = j > S.rwHints + 1; });
-    panel.replaceChildren(...bodyOf(k)); fit();
+    if (i >= nb && i - nb + 1 > S.rwHints) S.rwHints = i - nb + 1, save();          // hints unlock in order
+    btns.forEach((b, j) => { b.setAttribute("aria-pressed", String(b.dataset.k === k)); b.disabled = j >= nb && j - nb > S.rwHints; });
+    panel.replaceChildren(...[bodyOf(k)].flat().filter(Boolean)); fit();
   };
   tabs.append(...btns);
   c.show(rwHead());
   c.show(h("div", { class: "stack" }, tabs, panel));
-  open("orig", 0);
+  open(base[0][0], 0);
   await c.say(hints.length ? "Em viết bên dưới nha, cần thì mở gợi ý từng cái một" : "Em viết bên dưới nha", "writing");
   await c.away();                                   // he steps aside before the writing box appears
   const ta = h("textarea", { class: "write rw", id: "rewrite-text", placeholder: "Em viết lại ở đây nha", "aria-label": "Bài viết lại" });

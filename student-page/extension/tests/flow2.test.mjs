@@ -47,23 +47,33 @@ function fakePart(part, payload) {
     points: D.checklist.map((c, i) => ({ line: `Điểm ${i + 1} của Framework` })),
     issues: [
       ...D.checklist.filter(c => !c.ok).map(c => ({ point: c.point, title: "Số liệu chưa có năm", sids: [first.id], quote: words(first.original, 3), say: ["Chỗ này em nhớ ghi năm nha", "Số liệu luôn đi kèm năm"],
-        fix: "A corrected sentence with the year.", series: payload.chart_row || "", col: payload.chart_col || "" })),
-      ...(D.topics || []).filter(t => !t.ok).map(t => ({ point: -1, title: t.tag, sids: [t.sid], quote: "", say: ["Topic này em còn giữ nguyên từ của đề"], fix: "A better paraphrase.", series: "", col: "" })),
+        fix: "A corrected sentence with the year.", changes: [{ from: words(first.original, 2), to: "A corrected sentence", why: "Mình nói rõ hơn nha" }, { from: "", to: "with the year", why: "Số liệu luôn đi kèm năm" }],
+        series: payload.chart_row || "", col: payload.chart_col || "" })),
+      ...(D.topics || []).filter(t => !t.ok).map(t => ({ point: -1, title: t.tag, sids: [t.sid], quote: "", say: ["Topic này em còn giữ nguyên từ của đề"], fix: "A better paraphrase.", changes: [], series: "", col: "" })),
     ],
   } };
   if (part === "ideas") return { ideas: {
     intro: ["Ý có dấu ✗ em chạm vào để xem cách sửa nha"],
-    names: D.ideas.map(x => ({ tag: x.tag, text: "Ý về " + words(S[x.sids[0]].original, 3) })),
+    names: D.ideas.map(x => ({ tag: x.tag, text: "Ý về " + words(S[x.sids[0]].original, 3), problem: x.status === "fix" ? "Chưa tới kết quả cuối" : "" })),
     tips: D.ideas.filter(x => x.status === "improve").map(x => ({ tag: x.tag, tip: "Thêm một ví dụ cụ thể nữa nha" })),
-    details: D.ideas.filter(x => x.status === "fix").map(x => ({ tag: x.tag, title: "Ý cần sửa", sids: x.sids, chain: ["Nguyên nhân", "Kết quả"], mode: "missing_end", bad_node: -1, gap_after: -1,
+    details: D.ideas.filter(x => x.status === "fix").map(x => ({ tag: x.tag, title: "Ý cần sửa", sids: x.sids, chain: ["Nguyên nhân", "Kết quả", "Hệ quả"],
+      mode: { replace: "replace", link: "bad_link", missing: "missing_end" }[x.fix_type] || "missing_end", bad_node: x.fix_type === "link" ? 1 : -1, gap_after: -1,
       ask: { q: "Rồi sao nữa nè?", options: ["Ảnh hưởng tới người đọc", "Không có gì"], answer: 0, right: "Đúng rồi nè", wrong: "Chưa đúng nha" },
-      fix_intro: "Mình thêm mắt xích cuối nha", fix_chain: ["Ảnh hưởng tới xã hội"], fix_label: "", fix_en: "cause → effect → impact", outro: "Vậy là ý đủ rồi" })),
+      fix_intro: "Mình sửa chuỗi ý nha", fix_chain: ["Chính phủ tăng thuế", "Người dân chi tiêu ít", "Kinh tế chậm lại"], fix_label: "Hướng anh Khoa gợi ý", fix_en: "tax → spending → economy", outro: "Vậy là ý đủ rồi" })),
   } };
-  if (part === "language") return { language: {
-    intro: [D.language.systemic.length ? "Mình xem lỗi hay gặp nhất trước nha" : "Vocab và grammar của em đủ tốt rồi, chỉ có mấy chỗ nhỏ thôi nè", "Mình xem từng chỗ nha"],
-    phrases: { line: "Em dùng mấy cụm này hay ghê", groups: [{ label: "Cụm hay", items: payload.sentences.slice(0, 3).map(s => ({ text: words(s.original, 2), sid: s.id })) }] },
-    asks: D.language.items.filter(i => i.mode === "socratic").map(i => ({ ref: i.ref, q: "Chỗ tô vàng chưa ổn ở đâu nè em?", options: ["Sai từ", "Sai thì", "Thiếu chữ"], answer: 0 })),
-  } };
+  if (part === "language") {
+    const grouped = new Set(D.language.groups.flatMap(g => g.refs));
+    const note = ref => payload.notes.find(n => n.id === ref);
+    const sentOf = ref => ref[0] === "n" ? S[(note(ref).sentence_ids || [])[0]] : payload.sentences.find(s => s.original.includes((payload.corrections.find(c => c.id === ref) || {}).orig || "\0"));
+    const ask = ref => ({ ref, focus: sentOf(ref) ? words(sentOf(ref).original, 2) : "", q: "Chữ này nghĩa là gì nè em?", options: ["Nghĩa thứ nhất", "Nghĩa thứ hai"], answer: 0, right: "Đúng rồi, chữ này hợp nghĩa hơn nè", wrong: "Chưa đúng nha, mình xem lại nghĩa của chữ này" });
+    return { language: {
+      focus: D.language.systemic.length ? "Chỗ mình cần chú ý nhất là " + D.language.systemic[0].name : "",
+      phrases: { line: "Em dùng mấy cụm này hay ghê", groups: [{ label: "Cụm hay", items: payload.sentences.slice(0, 3).map(s => ({ text: words(s.original, 2), sid: s.id })) }] },
+      asks: [...D.language.items.filter(i => i.mode === "socratic" && !grouped.has(i.ref)).map(i => ask(i.ref)),
+        ...D.language.groups.filter(g => (D.language.items.find(i => i.ref === g.refs[0]) || {}).mode === "socratic").map(g => ({ ...ask(g.refs[0]), ref: g.id }))],
+      swaps: D.language.items.filter(i => i.ref[0] === "n" && i.mode !== "skip" && note(i.ref).quote).slice(0, 1).map(i => ({ ref: i.ref, from: note(i.ref).quote, to: "a better phrase" })),
+    } };
+  }
   if (part === "systemic") return { systemic: D.language.systemic.map(x => ({ tab: x.tab, title: x.name, count_line: "Em mắc lỗi này {n} lần",
     ask: { q: "Mấy chỗ này có lỗi gì giống nhau?", options: ["Một", "Hai", "Ba"], answer: 0 }, reason: "Em quen tay viết vậy á", board: ["a → the"], rule: ["Quy tắc một", "Quy tắc hai", "Quy tắc ba"],
     example: { bad: "Bad one.", good: "Good one." }, better: x.refs.filter(r => r[0] === "n").map(r => ({ ref: r, text: "A better sentence." })) })) };
@@ -129,11 +139,19 @@ try {
   await rows.nth(n - 1).locator("input").fill(W.task === 1 ? "56% là năm 2010 không phải 2000" : "Ý 2 chưa tới kết quả cuối");
   if (KIND !== "essay" && KIND !== "week1") ok(await page.locator(".card .essay").count() === 0, "Task 1: no idea tagging");
   if (KIND === "essay" || KIND === "week1") {
-    const ideaRows = page.locator(".card").nth(1).locator(".check-row");
+    const ideaRows = page.locator(".card").nth(1).locator(".idea-row");
     const ni = await ideaRows.count();
     ok(ni >= 2, `ideas found from the guessed tags (${ni})`);
+    // tagging every sentence of Ý 1 is one idea, not one per sentence
+    const sents = page.locator(".card").nth(1).locator(".essay .sent");
+    const tagged = await sents.evaluateAll(els => els.map(e => e.querySelector(".tagchip") ? e.querySelector(".tagchip").textContent : ""));
+    const at1 = tagged.indexOf("Ý 1");
+    if (at1 >= 0 && tagged[at1 + 1] === "") { await sents.nth(at1 + 1).click(); ok(await ideaRows.count() === ni, "a second sentence tagged Ý 1 stays one idea"); }
     await ideaRows.nth(0).locator(".tri button").nth(2).click();                              // Ý 1 ✗
-    await ideaRows.nth(0).locator("input").fill("chưa nói được kết quả cuối cùng");
+    const blocked = await page.locator(".idea-row .fix-types").count();
+    ok(blocked === 1, "a ✗ idea asks how to fix it");
+    await ideaRows.nth(0).locator(".fix-types button", { hasText: "Đổi hướng" }).click();
+    await ideaRows.nth(0).locator("textarea").fill("chưa nói được kết quả cuối cùng");
     await ideaRows.nth(1).locator(".tri button").nth(1).click();                              // Ý 2 ~
   }
   if (KIND === "week1") {
@@ -165,6 +183,16 @@ try {
     await page.locator(".lang-item").first().locator(".modes button", { hasText: "Socratic" }).click();
   }
   if (ni > 1) await page.locator(".lang-item").last().locator(".modes button", { hasText: "Bỏ qua" }).click();
+  // two vocabulary fixes that are the same point: one screen
+  const vItems = vocab.locator(".lang-item");
+  let grouped = false;
+  if (await vItems.count() >= 2) {
+    const target = await vItems.nth(1).getAttribute("data-ref");
+    await vItems.nth(0).locator("select[aria-label='Gộp với']").selectOption(target);
+    await vocab.locator(".group-note").fill("Cứ dùng một chữ đơn giản là được");
+    grouped = await vocab.locator(".lang-item.grouped").count() === 2;
+    ok(grouped, "two vocabulary fixes grouped");
+  }
   await page.screenshot({ path: join(OUT, `${KIND}-language.png`), fullPage: true });
   await page.getByRole("button", { name: "Tiếp: Viết lại" }).click();
 
@@ -176,12 +204,14 @@ try {
   /* Soạn */
   ok(await page.locator(".blockers").count() === 0, "nothing left to decide: " + (await page.locator(".blockers").allTextContents()).join(" "));
   await page.getByRole("button", { name: "Soạn", exact: true }).click();
-  await page.locator(".edit").waitFor({ timeout: 20000 });
+  await page.locator(".edit").waitFor({ timeout: 20000 }).catch(async e => { console.log("     draft: " + (await page.locator("#draftStatus").textContent())); throw e; });
   const parts = asked.map(a => a.part).sort().join(",");
   const want = ["frame", "language", "logic", ...(KIND === "essay" || KIND === "week1" ? ["ideas"] : []), ...(sysWanted ? ["practice", "systemic"] : [])].sort().join(",");
   ok(parts === want, `parts asked: ${parts}`);
   const D = asked[0].payload.decisions;
   ok(D.checklist.filter(c => c.ok === false).length === 1 && D.language.items.length === ni && D.rewrite.sids.length === 1, "the teacher's decisions are sent");
+  ok(!grouped || (D.language.groups.length === 1 && D.language.groups[0].note), "the group and its note are sent");
+  if (KIND === "essay" || KIND === "week1") ok(D.ideas[0].status === "fix" && D.ideas[0].fix_type === "replace", "the fix type is sent");
   ok(!asked.some(a => /praise_candidates|framework_checklist/.test(JSON.stringify(a.body))), "no old-flow parts asked");
   ok(asked.every(a => a.body.model === "claude-opus-5-5"), "model claude-opus-5-5");
 
@@ -213,6 +243,7 @@ try {
   ok(errors.length === 0, "no errors " + errors.join(" | "));
   console.log("     exported " + saved);
 } finally {
+  if (errors.length) console.log("     errors: " + errors.join(" | "));
   await browser.close();
 }
 console.log(failures ? `${failures} failed` : "all ok");

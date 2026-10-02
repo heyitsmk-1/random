@@ -177,3 +177,18 @@ body.options main.opt { max-width: 520px; margin: 30px auto; display: flex; flex
 .sys { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: end; padding: 8px 0 10px; border-bottom: 1.5px solid var(--line); margin-bottom: 4px; }
 .sys label:first-child { flex: 1; min-width: 240px; }
 .blockers button.link { text-align: left; }
+/* flow 2 · Logic ideas: the CRM comments under each idea, the fix type of a ✗ idea */
+.idea-row { padding: 8px 0 10px; border-bottom: 1px dashed var(--line); display: flex; flex-direction: column; gap: 6px; }
+.idea-row .check-row { grid-template-columns: auto 1fr; border-bottom: 0; padding: 0; }
+.idea-note { width: 100%; min-height: 2.6em; resize: vertical; }
+.crm-notes { display: flex; flex-direction: column; gap: 4px; padding-left: 4px; }
+label.crm-note { align-items: flex-start; font-size: 13px; }
+.crm-note input { margin-top: 3px; }
+.fix-types { display: inline-flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.fix-types button { border: 1.5px solid var(--line); background: var(--paper); border-radius: 9px; padding: 4px 10px; font: inherit; font-size: 13px; cursor: pointer; }
+.fix-types button[aria-pressed="true"] { background: var(--coral-soft); border-color: var(--coral); font-weight: 700; }
+/* flow 2 · Language: grouped items */
+.lang-item.grouped { border-left: 3px solid var(--sky, #6FB7F2); padding-left: 10px; }
+.group-tag { color: #2E6FA8; font-weight: 600; }
+.group-note { width: 100%; }
+.lang-item select.small { font-size: 13px; padding: 3px 6px; }

@@ -30,6 +30,10 @@ ABBREV = re.compile(r"(?:\b(?:e\.g|i\.e|etc|vs|Mr|Mrs|Ms|Dr|St|approx)\.)$", re.
 SLASH_FIX = re.compile(r"^\s*//\s*(.+?)\s*$")
 
 
+def norm(t):
+    return re.sub(r"\s+", " ", t).strip()
+
+
 def split_sentences(text):
     """Split on sentence punctuation, but not after common abbreviations."""
     parts = []
@@ -190,6 +194,97 @@ def teacher_rewrites(stream, original, highlights):
     return patched, found
 
 
+LETTERS_AFTER = r"\s+((?:[^\W\d_]|['’-])+)"
+LETTERS_BEFORE = r"((?:[^\W\d_]|['’-])+)\S*\s+"
+
+
+def edit_distance(a, b):
+    row = list(range(len(b) + 1))
+    for i in range(1, len(a) + 1):
+        nxt = [i]
+        for j in range(1, len(b) + 1):
+            nxt.append(min(row[j] + 1, nxt[j - 1] + 1, row[j - 1] + (a[i - 1] != b[j - 1])))
+        row = nxt
+    return row[-1]
+
+
+def merge_in_word(paragraphs, corrections, original):
+    """Same as mergeInWord() in extension/lib/extract.js."""
+    def shown(g):
+        return g if isinstance(g, str) else corrections[g["c"]]["fix"] or corrections[g["c"]]["orig"]
+
+    def joins(x, y):
+        l, r = shown(x), shown(y)
+        return bool(l) and bool(r) and (l[-1].isalpha() or l[-1] in "'’") and (r[0].isalpha() or r[0] in "'’")
+
+    again = True
+    while again:
+        again = False
+        for p in paragraphs:
+            for s in p["sentences"]:
+                segs = s["segs"]
+                for i, g0 in enumerate(segs):
+                    if isinstance(g0, str):
+                        continue
+                    a = b = i
+                    left = right = ""
+                    while a > 0 and joins(segs[a - 1], segs[a]):
+                        g = segs[a - 1]
+                        if isinstance(g, str) and re.search(r"\s", g):
+                            left = re.search(r"\S+$", g).group(0)
+                            break
+                        a -= 1
+                    while b < len(segs) - 1 and joins(segs[b], segs[b + 1]):
+                        g = segs[b + 1]
+                        if isinstance(g, str) and re.search(r"\s", g):
+                            right = re.match(r"\S+", g).group(0)
+                            break
+                        b += 1
+                    inner = segs[a:b + 1]
+                    ids = [g["c"] for g in inner if not isinstance(g, str)]
+                    if not left and not right and len(inner) == 1:  # a whole-word correction already
+                        continue
+
+                    def word(which):
+                        return left + "".join(g if isinstance(g, str) else corrections[g["c"]][which] for g in inner) + right
+                    orig = word("orig")
+                    before = segs[a - 1][:len(segs[a - 1]) - len(left)] if a > 0 and isinstance(segs[a - 1], str) else ""
+                    after = segs[b + 1][len(right):] if b < len(segs) - 1 and isinstance(segs[b + 1], str) else ""
+                    # her word: after the same word in the original, the closest in spelling to what is left of it
+                    pm, nm = re.search(r"(\S+)\s+$", before), re.match(r"\s+(\S+)", after)
+                    prev, nxt = pm.group(1) if pm else None, nm.group(1) if nm else None
+                    core = re.sub(r"^[\W\d_]+|[\W\d_]+$", "", orig)
+                    if (prev or nxt) and core and not re.search(r"\s", orig):
+                        pat = re.escape(prev) + LETTERS_AFTER if prev else LETTERS_BEFORE + re.escape(nxt)
+                        best, dist = None, None
+                        for m in re.finditer(pat, original):
+                            d = edit_distance(m.group(1), core)
+                            if dist is None or d < dist:
+                                best, dist = m.group(1), d
+                        if best is not None and dist <= max(2, len(core) // 3):
+                            orig = orig.replace(core, best, 1)
+                    cs = [corrections[x] for x in ids]
+                    kind = next((c for c in cs if c["kind"] != "teacher"), cs[0])["kind"]
+                    comment = "\n".join(dict.fromkeys(c["comment"] for c in cs if c["comment"]))
+                    corrections[ids[0]] = {"orig": orig, "fix": word("fix"), "kind": kind, "comment": comment}
+                    for x in ids[1:]:
+                        del corrections[x]
+                    out = segs[:a]
+                    if a > 0 and left:
+                        out[-1] = before
+                    out.append({"c": ids[0]})
+                    if b < len(segs) - 1:
+                        out.append(after if right else segs[b + 1])
+                    out += segs[b + 2:]
+                    s["segs"] = [g for g in out if g != ""]
+                    again = True
+                    break
+                if again:
+                    break
+            if again:
+                break
+
+
 def main(src, dst):
     soup = BeautifulSoup(open(src, encoding="utf-8").read(), "html.parser")
     blocks = soup.select("#lrgr #editorjs .ce-paragraph")  # the editor may split the essay into blocks
@@ -209,6 +304,11 @@ def main(src, dst):
                 continue
             sid = tok.get("id")
             box = soup.find(id=f"comment-{sid}") if sid else None
+            # "((words)) => COMMENT": the brackets mark the words the comment is about
+            bare = tok.get_text().strip()
+            if bare in ("((", "))") and not comment_text(box):
+                items.append(("o" if bare == "((" else "x", ""))
+                continue
             orig = tok.s.get_text() if tok.s else ""
             fix = tok.mark.get_text() if tok.mark else ""
             struck = None if tok.s is not None or tok.mark is not None else tok.find(
@@ -322,10 +422,25 @@ def main(src, dst):
                 segs.append(part if i == len(parts) - 1 else part + " ")
 
     after_stop = False  # the last highlight ended a sentence
+    bracket, closed = None, None  # the student's words since "((", and the last closed "(( ))"
+
+    def hers(t):
+        nonlocal bracket
+        if bracket is not None:
+            bracket += t
+
     for k, it in enumerate(items):
         if it is None:
             close(); paragraphs.append({"sentences": sentences}); sentences = []
             after_stop = False
+            continue
+        if it[0] == "o":
+            bracket = ""
+            continue
+        if it[0] == "x":
+            if bracket is not None:
+                closed = norm(bracket)
+            bracket = None
             continue
         mine, added = split[k]
         if it[0] == "t":
@@ -341,6 +456,14 @@ def main(src, dst):
                     runs[i - 1][0] += runs[i][0] + runs.pop(i + 1)[0]
                     runs.pop(i)
             for chunk, ok in runs:
+                if not ok and chunk.strip() in ("((", "))"):  # the brackets typed without a highlight
+                    if chunk.strip() == "((":
+                        bracket = ""
+                    else:
+                        if bracket is not None:
+                            closed = norm(bracket)
+                        bracket = None
+                    continue
                 if not ok:
                     n += 1
                     corrections[f"c{n}"] = {"orig": "", "fix": chunk, "kind": "teacher", "comment": ""}
@@ -352,11 +475,20 @@ def main(src, dst):
                     close()
                     text = text.lstrip()
                 after_stop = False
+                hers(text)
                 if text:
                     text_in(text)
             continue
         if it[0] == "n":
             _, _, kind, comment = it
+            quote = None
+            if added.startswith("))") and bracket is not None:  # "((words)) => COMMENT"
+                hers(mine)
+                quote, bracket = norm(bracket), None
+                added = re.sub(r"^\)\)\s*", "", added)
+            elif added.startswith("=>") and closed:
+                quote = closed
+            closed = None
             m = SLASH_FIX.match(added)
             if m and mine.strip():  # "offspring // CHILDREN": a correction written in the essay
                 n += 1
@@ -365,19 +497,23 @@ def main(src, dst):
                 if lead:
                     segs.append(lead)
                 segs.append({"c": f"c{n}"})
+                hers(mine)
                 after_stop = False
                 continue
             has_text = any(isinstance(g, dict) and "c" in g or isinstance(g, str) and g.strip() for g in segs)
             # "=> COMMENT" points back at what was just written
-            back = added.startswith("=>") and not mine.strip() and not has_text
-            notes.append({"comment": comment, "kind": kind, "quote": mine.strip(), "added": added, "back": back})
+            back = quote is None and added.startswith("=>") and not mine.strip() and not has_text
+            notes.append({"comment": comment, "kind": kind, "quote": mine.strip() if quote is None else quote, "added": added, "back": back})
             segs.append({"n": len(notes) - 1})
+            if quote is None:
+                hers(mine)
             if mine:
                 text_in(re.sub(r" {2,}", " ", mine))
             after_stop = bool(re.search(r"[.?!]\s*$", mine))
             continue
         _, orig, fix, kind, comment = it
         n += 1
+        hers(orig)
         corrections[f"c{n}"] = {"orig": orig, "fix": fix, "kind": kind, "comment": comment}
         segs.append({"c": f"c{n}"})
         after_stop = bool(re.search(r"[.?!]\s*$", fix or orig))
@@ -391,6 +527,13 @@ def main(src, dst):
         kept = []
         for s in p["sentences"]:
             marks = [g["n"] for g in s["segs"] if isinstance(g, dict) and "n" in g]
+            # where each mark sits in her sentence (a typed-in linker pops in there)
+            at, upto = {}, ""
+            for g in s["segs"]:
+                if isinstance(g, dict) and "n" in g:
+                    at[g["n"]] = len(upto.lstrip())
+                else:
+                    upto += g if isinstance(g, str) else corrections[g["c"]]["orig"]
             s["segs"] = [g for g in s["segs"] if not (isinstance(g, dict) and "n" in g)]
             while s["segs"] and isinstance(s["segs"][0], str) and not s["segs"][0].strip():
                 s["segs"].pop(0)
@@ -407,6 +550,7 @@ def main(src, dst):
             for i in marks:
                 here = has_text and not notes[i]["back"]
                 notes[i]["sentence_ids"] = [s["id"] if here or prev_sid is None else prev_sid]
+                notes[i]["at"] = at[i] if here else -1
             if has_text:
                 kept.append(s)
                 prev_sid = s["id"]
@@ -418,10 +562,13 @@ def main(src, dst):
             for note in notes:
                 note["sentence_ids"] = [s["id"] if x == old else x for x in note.get("sentence_ids", [])]
 
+    # 5. an edit inside one word ("heal|th|care", an added "l") is one correction of the whole word,
+    #    her spelling taken from the original
+    merge_in_word(paragraphs, corrections, original)
+
     def sentence_text(s):
         return "".join(x if isinstance(x, str) else corrections[x["c"]]["orig"] for x in s["segs"])
 
-    norm = lambda t: re.sub(r"\s+", " ", t).strip()
     key = lambda t: re.sub(r" ([.,;:!?])", r"\1", norm(t))  # for matching only: "16% ." is "16%."
     task_comments = []
     for h, sp in enumerate(trcc_marks):
@@ -447,7 +594,7 @@ def main(src, dst):
                         ids = [s_["id"]]
             added, text = text, ""
         task_comments.append({"sentence_ids": ids[-1:] if added else ids, "comment": comment_text(box), "kind": "trcc", "quote": text, "added": added})
-    task_comments += [{"sentence_ids": x.get("sentence_ids", []), **{k: x[k] for k in ("comment", "kind", "quote", "added")}} for x in notes]
+    task_comments += [{"sentence_ids": x.get("sentence_ids", []), **{k: x[k] for k in ("comment", "kind", "quote", "added")}, "at": x.get("at", -1)} for x in notes]
 
     scores = [i.get("value") for i in soup.select("#right-partial input.input-otp")][:4]
     essay_text = " ".join(sentence_text(s) for p in paragraphs for s in p["sentences"])

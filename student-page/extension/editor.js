@@ -369,7 +369,7 @@ function renderPage() {
       w && !w.supported ? h("div", { class: "notice bad" }, `Week ${w.week} (${w.essay_type}) chưa làm được bài ôn tự động (tuần này chưa được bật trong file khóa học).`) : null,
       !w ? h("div", { class: "notice bad" }, "Không nhận ra tuần của bài này. Chọn tuần ở trên nha.") : null,
       h("div", { class: "row" }, h("button", { class: "btn primary", type: "button", disabled: !(w && w.supported), onclick: () => go(isFlow2() ? "logic" : "framework") }, isFlow2() ? "Tiếp: Logic" : "Tiếp: Framework"))),
-    h("div", { class: "card essay" }, h("h2", {}, "Bài của em (bản sửa)"), essayView({}))));
+    h("details", { class: "card essay" }, h("summary", {}, "Xem bài của em (bản sửa)"), essayView({}))));
 }
 const field = (label, input) => h("label", {}, label, input);
 
@@ -979,8 +979,9 @@ function corrSnippet(cid) {
   return { sid: null, pre: "", post: "" };
 }
 function previewEssay(sid, cids) { if (!sid || !S.lesson) return; S.pvEssay = { sid, cids: cids || null }; refreshPreview(true); }
-function corrRow(cid, { drag = true } = {}) {
-  const c = (S.lesson || S.page).corrections[cid] || { orig: "", fix: "", comment: "" }, sn = corrSnippet(cid);
+function corrRow(cid, { drag = true, comment = null } = {}) {
+  const c0 = (S.lesson || S.page).corrections[cid] || { orig: "", fix: "", comment: "" }, sn = corrSnippet(cid);
+  const c = comment == null ? c0 : { ...c0, comment };
   // a change inside a word ("bring|ing", "children|'s"): show the whole word, before and after
   const wl = /[\p{L}\p{N}'’-]+$/u.exec(sn.pre), wr = /^[\p{L}\p{N}'’-]+/u.exec(sn.post);
   const L0 = wl ? wl[0] : "", R0 = wr ? wr[0] : "";
@@ -1290,33 +1291,71 @@ const noteOf = ref => S.page.task_comments[+ref.slice(1) - 1];
 const pointOfNote = t => ({ sids: t.sentence_ids || [], quote: t.quote || "", comment: t.comment || "", better: t.fix || "" });
 function d2() { return S.d2 || (S.d2 = { ideas: {}, topics: {}, lang: { LR: { name: "", none: false }, GRA: { name: "", none: false }, items: {} } }); }
 
-/* Ý tags guessed: in each body paragraph the sentence after the topic sentence, then the sentences
-   opening with "Moreover / In addition / …" (Week 1: in the Exercise 1 paragraph) */
+/* Ý tags guessed: in each body paragraph the first sentence when it already states an idea ("The first
+   challenge is…"), else the sentence after the topic sentence; then the sentences opening with
+   "Moreover / On top of that / In terms of …" (Week 1: in the Exercise 1 paragraph) */
+const IDEA_FIRST = /^(The first|First(ly)?\b|First of all|To begin with|One (major |key |main |significant )?(reason|benefit|advantage|drawback|disadvantage|challenge|problem|issue|argument|way|factor))/i;
+const IDEA_NEXT = /^(Moreover|In addition|Additionally|Furthermore|Second(ly)?\b|Third(ly)?\b|Another|Besides|What is more|Apart from|On top of (that|this)|In terms of|Regarding|With regards? to|As for|Turning to|Last(ly)?\b|Finally|The second|The other)/i;
 function autoTags2() {
   S.tags = {};
   if (!hasIdeas()) return;
   const ps = S.page.essay.paragraphs, tags = IDEA_TAGS().map(t => t[0]);
   const bodies = curWeek().kind === "paragraph+paraphrase" ? [ps.reduce((a, p) => p.sentences.length > a.sentences.length ? p : a, ps[0])]
     : ps.length > 3 ? ps.slice(1, -1) : ps.slice(1);
-  const NEXT = /^(Moreover|In addition|Additionally|Furthermore|Secondly|Another|Besides|What is more|Apart from)/i;
   let k = 0;
-  for (const p of bodies) p.sentences.forEach((s, i) => {
-    if (k < tags.length && (i === 1 || (i > 1 && NEXT.test(sentText(s, "orig").trim())))) S.tags[s.id] = tags[k++];
-  });
+  for (const p of bodies) {
+    const text = s => sentText(s, "orig").trim(), first = p.sentences.length && IDEA_FIRST.test(text(p.sentences[0])) ? 0 : 1;
+    p.sentences.forEach((s, i) => {
+      if (k < tags.length && (i === first || (i > first && IDEA_NEXT.test(text(s))))) S.tags[s.id] = tags[k++];
+    });
+  }
 }
-/* the ideas: each tagged sentence and the untagged sentences after it in its paragraph */
+/* the ideas: each tagged sentence and the untagged sentences after it in its paragraph; sentences
+   tagged with the same Ý are one idea (tagging every sentence of it is fine) */
 function ideasFromTags() {
-  const labels = Object.fromEntries(IDEA_TAGS()), out = [];
+  const labels = Object.fromEntries(IDEA_TAGS()), byKey = {}, out = [];
   for (const p of S.page.essay.paragraphs) {
     let cur = null;
     for (const s of p.sentences) {
       const t = S.tags[s.id];
-      if (t && labels[t]) { cur = { tag: labels[t], key: t, sids: [s.id] }; out.push(cur); }
-      else if (t) cur = null;
+      if (t && labels[t]) {
+        if (!byKey[t]) out.push(byKey[t] = { tag: labels[t], key: t, sids: [] });
+        cur = byKey[t];
+        cur.sids.push(s.id);
+      } else if (t) cur = null;
       else if (cur) cur.sids.push(s.id);
     }
   }
   return out.sort((a, b) => a.key.localeCompare(b.key));
+}
+/* the teacher's CRM comments on an idea's sentences (the TR/CC editor's, and the plain "=> COMMENT"
+   notes): they go into the idea's note unless the teacher unticks them */
+const LOGIC_KINDS = new Set(["trcc", "default"]);
+function ideaCrm(x) {
+  return S.page.task_comments.map((t, i) => ({ ref: "n" + (i + 1), t }))
+    .filter(({ ref, t }) => LOGIC_KINDS.has(t.kind) && commentOf(ref).trim() && (t.sentence_ids || []).some(sid => x.sids.includes(sid)))
+    .map(({ ref, t }) => ({ ref, text: commentOf(ref).trim(), quote: t.quote || "" }));
+}
+function ideaState(x) { const D = d2(); return D.ideas[x.tag] || (D.ideas[x.tag] = { status: "ok", note: "", off: [] }); }
+const ideaUsed = x => { const st = ideaState(x); return ideaCrm(x).filter(c => !(st.off || []).includes(c.ref)); };
+const ideaNote = x => [...ideaUsed(x).map(c => c.text), ideaState(x).note.trim()].filter(Boolean).join("\n");
+/* a CRM note already said inside an idea the student fixes or upgrades: not shown again in Language */
+const usedInIdea = ref => hasIdeas() && ideasFromTags().some(x => ideaState(x).status !== "ok" && ideaUsed(x).some(c => c.ref === ref));
+/* comments the teacher moved in the editor ("chuyển nhận xét sang…"); the CRM is never touched */
+function commentOf(ref) {
+  const o = (d2().comments || {})[ref];
+  if (o != null) return o;
+  if (ref[0] === "c") return (S.page.corrections[ref] || {}).comment || "";
+  return (noteOf(ref) || {}).comment || "";
+}
+/* the page as Claude and the student page see it: the moved comments in place */
+function pageFor2() {
+  const P = structuredClone(S.page), o = d2().comments || {};
+  for (const [ref, text] of Object.entries(o)) {
+    if (ref[0] === "c" && P.corrections[ref]) P.corrections[ref].comment = text;
+    else if (ref[0] === "n" && P.task_comments[+ref.slice(1) - 1]) P.task_comments[+ref.slice(1) - 1].comment = text;
+  }
+  return P;
 }
 const topicSents = () => allSents().filter(s => /^Topic\s*\d/i.test(sentText(s, "orig").trim()));
 
@@ -1327,31 +1366,51 @@ function langItems() {
   allSents().forEach(s => s.segs.forEach((g, j) => {
     if (typeof g === "string") return;
     const c = P.corrections[g.c];
-    items.push({ ref: g.c, at: at.get(s.id) * 1000 + j, tab: c.kind === "vocabulary" ? "LR" : "GRA", comment: c.comment || "" });
+    items.push({ ref: g.c, at: at.get(s.id) * 1000 + j, tab: c.kind === "vocabulary" ? "LR" : "GRA", comment: commentOf(g.c) });
   }));
   P.task_comments.forEach((t, i) => {
     if (t.kind === "trcc") return;
-    items.push({ ref: "n" + (i + 1), at: (at.get((t.sentence_ids || [])[0]) ?? 999) * 1000 + 999, tab: t.kind === "vocabulary" ? "LR" : "GRA", comment: t.comment || "", note: t });
+    // a plain highlight with "=> COMMENT" is usually about the logic: it starts in the Logic part
+    items.push({ ref: "n" + (i + 1), at: (at.get((t.sentence_ids || [])[0]) ?? 999) * 1000 + (t.at >= 0 ? Math.min(t.at, 998) : 999),
+      tab: t.kind === "vocabulary" ? "LR" : t.kind === "default" ? "LOGIC" : "GRA", comment: commentOf("n" + (i + 1)), note: t });
   });
   return items.sort((a, b) => a.at - b.at);
 }
 const PRAISE_RE = /\b(great|good job|nice|excellent|fantastic|well done|perfect|brilliant)\b|rất hay|hay quá|tốt lắm|giỏi|xuất sắc/i;
 function itemState(it) {
   const st = d2().lang.items;
-  if (!st[it.ref]) st[it.ref] = { mode: it.note && PRAISE_RE.test(it.comment) && !/nhưng|but|however|sai|lỗi|thiếu/i.test(it.comment) ? "praise" : "teach", tab: it.tab, sys: false };
+  if (!st[it.ref]) st[it.ref] = { tab: it.tab, sys: false };
   return st[it.ref];
+}
+/* the mode the teacher picked, else the default: praise for a compliment, skip for a note already said
+   in an idea, else Dạy */
+function modeOf(it) {
+  const st = itemState(it);
+  if (st.mode) return st.mode;
+  if (it.note && usedInIdea(it.ref)) return "skip";
+  return it.note && PRAISE_RE.test(it.comment) && !/nhưng|but|however|sai|lỗi|thiếu/i.test(it.comment) ? "praise" : "teach";
+}
+/* "Gộp với…": corrections that are the same point share one screen */
+function groupsOf(items) {
+  const D = d2(), by = {};
+  for (const it of items) { const g = itemState(it).group; if (g && modeOf(it) !== "skip") (by[g] = by[g] || []).push(it.ref); }
+  return Object.entries(by).filter(([, refs]) => refs.length > 1).map(([id, refs]) => ({ id, refs, note: ((D.groups || {})[id] || "").trim() }));
 }
 
 function decisions2() {
   const D = d2(), items = langItems();
   return {
     checklist: S.checklist.map((c, i) => ({ point: i, item: c.item, ok: c.ok, note: c.note })),
-    ideas: hasIdeas() ? ideasFromTags().map(x => ({ tag: x.tag, sids: x.sids, status: (D.ideas[x.tag] || {}).status || "ok", note: (D.ideas[x.tag] || {}).note || "" })) : [],
+    ideas: hasIdeas() ? ideasFromTags().map(x => {
+      const st = ideaState(x);
+      return { tag: x.tag, sids: x.sids, status: st.status || "ok", ...(st.status === "fix" ? { fix_type: st.fixType || null } : {}), note: ideaNote(x), card_note: st.note.trim() };
+    }) : [],
     topics: curWeek().kind === "paragraph+paraphrase" ? topicSents().map((s, i) => ({ tag: "Topic " + (i + 1), sid: s.id, ok: (D.topics[s.id] || {}).ok !== false, note: (D.topics[s.id] || {}).note || "" })) : [],
     language: {
       systemic: ["LR", "GRA"].filter(t => !D.lang[t].none && D.lang[t].name.trim())
         .map(t => ({ tab: t, name: D.lang[t].name.trim(), refs: items.filter(it => itemState(it).tab === t && itemState(it).sys).map(it => it.ref) })),
-      items: items.map(it => ({ ref: it.ref, tab: itemState(it).tab, mode: itemState(it).mode })),
+      items: items.map(it => ({ ref: it.ref, tab: itemState(it).tab, mode: modeOf(it), ...(itemState(it).group ? { group: itemState(it).group } : {}) })),
+      groups: groupsOf(items),
     },
     rewrite: S.rewriteTarget && S.rewriteTarget.sids.length ? S.rewriteTarget : null,
   };
@@ -1364,8 +1423,10 @@ function blockers2() {
   const bare = S.checklist.filter(c => c.ok === false && !c.note.trim()).length;
   if (bare) out.push(["logic", `Logic: ${bare} điểm ✗ chưa có ghi chú (Claude cần biết sai ở đâu)`]);
   if (hasIdeas() && !ideasFromTags().length) out.push(["logic", "Logic: chưa gắn nhãn ý nào (Ý 1, Ý 2…)"]);
-  const badIdeas = ideasFromTags().filter(x => (D.ideas[x.tag] || {}).status === "fix" && !((D.ideas[x.tag] || {}).note || "").trim()).length;
+  const badIdeas = ideasFromTags().filter(x => ideaState(x).status === "fix" && !ideaNote(x)).length;
   if (badIdeas) out.push(["logic", `Logic: ${badIdeas} ý ✗ chưa có ghi chú`]);
+  const noType = ideasFromTags().filter(x => ideaState(x).status === "fix" && !ideaState(x).fixType).length;
+  if (noType) out.push(["logic", `Logic: ${noType} ý ✗ chưa chọn cách sửa (Đổi hướng / Sửa mắt xích / Thiếu bước)`]);
   for (const t of ["LR", "GRA"]) {
     const L = D.lang[t], name = t === "LR" ? "Từ vựng" : "Ngữ pháp";
     if (!L.none && !L.name.trim()) out.push(["language", `Language · ${name}: ghi lỗi hệ thống, hoặc tick "Không có lỗi hệ thống"`]);
@@ -1394,17 +1455,28 @@ function renderLogic() {
     w.task === 1 ? h("p", { class: "small muted" }, "Số liệu sai thì ghi vào ghi chú, vd: “56% là năm 2010 không phải 2000; thiếu năm 2000 của swimming”. Claude lấy đúng số từ biểu đồ.") : null,
     trcc.length ? h("details", {}, h("summary", {}, `Nhận xét của anh ở phần Lập luận và Mạch lạc (${trcc.length})`),
       h("div", { class: "crows static" }, trcc.map(t => h("div", { class: "crow" }, t.quote ? h("div", { class: "crow-text", lang: "en" }, t.quote) : null, h("div", { class: "crow-comment" }, t.comment))))) : null);
+  const FIX_TYPES = [["replace", "Đổi hướng", "ý đi sai hướng: em thấy chuỗi ý mới thay cho chuỗi cũ"], ["link", "Sửa mắt xích", "một bước sai, phần trước vẫn đúng"], ["missing", "Thiếu bước", "chuỗi đúng nhưng chưa đi tới nơi, hoặc hở một bước"]];
   const ideas = hasIdeas() ? h("div", { class: "card" },
     h("h2", {}, curWeek().kind === "paragraph+paraphrase" ? "Exercise 1 · các ý" : "Các ý"),
-    h("p", { class: "muted small" }, "Chạm vào câu nêu ý để gắn Ý 1, Ý 2…; các câu sau nó trong đoạn là phần phát triển (đã gợi ý sẵn). Rồi chấm từng ý: ✓ ổn · ~ nâng cấp thêm (em thấy một dòng gợi ý) · ✗ cần sửa (Claude dựng chuỗi ý từ ghi chú của anh)."),
+    h("p", { class: "muted small" }, "Chạm vào câu nêu ý để gắn Ý 1, Ý 2… (các câu sau nó trong đoạn tự thuộc ý đó; gắn cả mấy câu cùng một Ý cũng được). Rồi chấm từng ý: ✓ ổn · ~ nâng cấp thêm · ✗ cần sửa. Nhận xét anh đã viết trong CRM ở các câu của ý được điền sẵn."),
     h("div", { class: "palette" }, IDEA_TAGS().map(([id, label]) => h("button", { class: "btn small", type: "button", "aria-pressed": String(activeIdea === id), onclick: () => { activeIdea = id; renderLogic(); } }, label))),
     h("div", { class: "essay" }, essayView({ onClick: sid => { S.tags[sid] = S.tags[sid] === activeIdea ? undefined : activeIdea; rerender(); } })),
     ideasFromTags().map(x => {
-      const st = D.ideas[x.tag] || (D.ideas[x.tag] = { status: "ok", note: "" });
-      return h("div", { class: "check-row" },
-        triRow([["ok", "✓"], ["improve", "~"], ["fix", "✗"]], st.status, v => { st.status = v || "ok"; rerender(); }),
-        h("div", {}, h("b", {}, x.tag + " · "), sentText(findSent(x.sids[0]), "orig").slice(0, 110)),
-        h("input", { placeholder: st.status === "ok" ? "ghi chú (không bắt buộc)" : st.status === "fix" ? "sai ở đâu, nên đi tiếp thế nào (bắt buộc)" : "nên thêm gì", value: st.note, oninput: e => { st.note = e.target.value; touch(); } }));
+      const st = ideaState(x), crm = ideaCrm(x), first = findSent(x.sids[0]);
+      return h("div", { class: "idea-row" },
+        h("div", { class: "check-row" },
+          triRow([["ok", "✓"], ["improve", "~"], ["fix", "✗"]], st.status, v => { st.status = v || "ok"; rerender(); }),
+          h("div", {}, h("b", {}, x.tag + " · "), h("span", { lang: "en" }, first ? sentText(first, "orig") : ""),
+            x.sids.length > 1 ? h("span", { class: "muted small" }, ` (+${x.sids.length - 1} câu phát triển)`) : null),
+          h("span")),
+        st.status === "fix" ? h("div", { class: "fix-types", role: "group", "aria-label": "Cách sửa" }, h("span", { class: "small muted" }, "Cách sửa:"),
+          FIX_TYPES.map(([v, l, tip]) => h("button", { type: "button", title: tip, "aria-pressed": String(st.fixType === v), onclick: () => { st.fixType = v; rerender(); } }, l))) : null,
+        crm.length ? h("div", { class: "crm-notes" }, crm.map(c => h("label", { class: "inline crm-note" },
+          h("input", { type: "checkbox", checked: !(st.off || []).includes(c.ref), onchange: e => {
+            st.off = (st.off || []).filter(r => r !== c.ref); if (!e.target.checked) st.off.push(c.ref); rerender(); } }),
+          h("span", {}, h("span", { class: "small muted" }, "CRM: "), c.text)))) : null,
+        h("textarea", { class: "idea-note", rows: 2, placeholder: st.status === "ok" ? "ghi chú thêm (không bắt buộc)" : st.status === "fix" ? (crm.length ? "thêm ghi chú (không bắt buộc)" : "sai ở đâu, nên đi tiếp thế nào (bắt buộc)") : "nên thêm gì",
+          value: st.note, oninput: e => { st.note = e.target.value; touch(); } }));
     })) : null;
   const topics = w.kind === "paragraph+paraphrase" ? h("div", { class: "card" }, h("h2", {}, "Exercise 2 · Paraphrase"),
     h("p", { class: "muted small" }, "✓ hay ✗ cho từng topic; topic ✗ thì ghi chú cái sai (và câu sửa nếu có)."),
@@ -1421,16 +1493,43 @@ function renderLogic() {
 
 /* ---------- 3. Language ---------- */
 const MODES = [["teach", "Dạy"], ["socratic", "Socratic"], ["praise", "Khen"], ["skip", "Bỏ qua"]];
-function itemRow(it, L) {
-  const st = itemState(it);
-  const shown = it.ref[0] === "c" ? corrRow(it.ref, { drag: false }) : pointRow({ ...pointOfNote(it.note), nid: it.ref }, { path: "" });
-  return h("div", { class: "lang-item" + (st.mode === "skip" ? " skipped" : ""), "data-ref": it.ref },
+const TAB_NAMES = { LR: "Từ vựng", GRA: "Ngữ pháp", LOGIC: "Logic" };
+const langLabel = it => it.ref[0] === "c" ? (c => `${c.orig.trim() || "…"} → ${c.fix.trim() || "(bỏ)"}`)(S.page.corrections[it.ref])
+  : ((it.note.quote || it.note.added || it.comment || it.ref).replace(/^=>\s*COMMENT/i, "").trim() || it.comment).slice(0, 40);
+function itemRow(it, L, all) {
+  const D = d2(), st = itemState(it), mode = modeOf(it), comment = commentOf(it.ref);
+  const shown = it.ref[0] === "c" ? corrRow(it.ref, { drag: false, comment }) : pointRow({ ...pointOfNote({ ...it.note, comment }), nid: it.ref }, { path: "" });
+  const others = all.filter(x => x.ref !== it.ref);
+  const group = st.group ? all.filter(x => itemState(x).group === st.group) : [];
+  const firstOfGroup = group.length > 1 && group[0].ref === it.ref;
+  const ungroup = () => { const g = st.group; st.group = null; const rest = all.filter(x => itemState(x).group === g); if (rest.length === 1) itemState(rest[0]).group = null; };
+  return h("div", { class: "lang-item" + (mode === "skip" ? " skipped" : "") + (group.length > 1 ? " grouped" : ""), "data-ref": it.ref },
+    group.length > 1 ? h("div", { class: "small group-tag" }, `🔗 Nhóm ${group.map(x => langLabel(x)).join(" + ")}`) : null,
     shown,
+    it.note && usedInIdea(it.ref) ? h("div", { class: "small muted" }, "Nhận xét này đã nằm trong ghi chú của một ý ở bước Logic.") : null,
     h("div", { class: "row" },
       h("div", { class: "modes", role: "group", "aria-label": "Cách hiện cho em" }, MODES.map(([v, l]) =>
-        h("button", { type: "button", "aria-pressed": String(st.mode === v), onclick: () => { st.mode = v; touch(); renderLanguage(); } }, l))),
-      h("button", { class: "btn link small", type: "button", onclick: () => { st.tab = st.tab === "LR" ? "GRA" : "LR"; st.sys = false; touch(); renderLanguage(); } }, st.tab === "LR" ? "→ chuyển sang Ngữ pháp" : "→ chuyển sang Từ vựng"),
-      !L.none && L.name.trim() ? h("label", { class: "inline" }, h("input", { type: "checkbox", checked: st.sys, onchange: e => { st.sys = e.target.checked; touch(); } }), "thuộc lỗi hệ thống") : null));
+        h("button", { type: "button", "aria-pressed": String(mode === v), onclick: () => { st.mode = v; touch(); renderLanguage(); } }, l))),
+      h("select", { class: "small", "aria-label": "Phần", onchange: e => { st.tab = e.target.value; st.sys = false; ungroup(); touch(); renderLanguage(); } },
+        Object.entries(TAB_NAMES).map(([v, l]) => h("option", { value: v, selected: st.tab === v ? true : null }, "Phần: " + l))),
+      st.tab !== "LOGIC" && !L.none && L.name.trim() ? h("label", { class: "inline" }, h("input", { type: "checkbox", checked: st.sys, onchange: e => { st.sys = e.target.checked; touch(); } }), "thuộc lỗi hệ thống") : null),
+    h("div", { class: "row" },
+      h("select", { class: "small", "aria-label": "Gộp với", onchange: e => {
+        const v = e.target.value;
+        if (v === "-") ungroup();
+        else { const t = others.find(x => x.ref === v), g = itemState(t).group || "g-" + t.ref; if (st.group && st.group !== g) ungroup(); itemState(t).group = g; st.group = g; }
+        touch(); renderLanguage(); } },
+        h("option", { value: "" }, "🔗 Gộp với…"), st.group ? h("option", { value: "-" }, "Bỏ gộp") : null,
+        others.filter(x => itemState(x).tab === st.tab).map(x => h("option", { value: x.ref }, langLabel(x)))),
+      comment.trim() ? h("select", { class: "small", "aria-label": "Chuyển nhận xét", onchange: e => {
+        const t = all.find(x => x.ref === e.target.value); if (!t) return;
+        D.comments = D.comments || {};
+        D.comments[t.ref] = [commentOf(t.ref).trim(), comment.trim()].filter(Boolean).join("\n"); D.comments[it.ref] = "";
+        touch(); renderLanguage(); } },
+        h("option", { value: "" }, "↪ Chuyển nhận xét sang…"), others.map(x => h("option", { value: x.ref }, langLabel(x)))) : null,
+      (D.comments || {})[it.ref] != null ? h("button", { class: "btn link small", type: "button", onclick: () => { delete D.comments[it.ref]; touch(); renderLanguage(); } }, "Trả nhận xét như CRM") : null),
+    firstOfGroup ? h("input", { class: "group-note", placeholder: "Ghi chú chung cho nhóm (không bắt buộc), vd: cứ dùng free housing là được",
+      value: (D.groups || {})[st.group] || "", oninput: e => { D.groups = D.groups || {}; D.groups[st.group] = e.target.value; touch(); } }) : null);
 }
 function renderLanguage() {
   const D = d2(), items = langItems();
@@ -1442,13 +1541,17 @@ function renderLanguage() {
         field("Lỗi hệ thống (lặp lại nhiều lần, cần dạy kỹ)", h("input", { value: L.name, placeholder: t === "LR" ? "vd: chọn từ chưa sát nghĩa đề" : "vd: thiếu mạo từ the", disabled: L.none ? true : null,
           oninput: e => { L.name = e.target.value; touch(); }, onchange: () => renderLanguage() })),
         h("label", { class: "inline" }, h("input", { type: "checkbox", checked: L.none, onchange: e => { L.none = e.target.checked; if (L.none) mine.forEach(it => { itemState(it).sys = false; }); touch(); renderLanguage(); } }), "Không có lỗi hệ thống")),
-      mine.length ? mine.map(it => itemRow(it, L)) : h("p", { class: "muted small" }, "Không có chỗ sửa nào ở phần này."));
+      mine.length ? mine.map(it => itemRow(it, L, items)) : h("p", { class: "muted small" }, "Không có chỗ sửa nào ở phần này."));
   };
+  const logicItems = items.filter(it => itemState(it).tab === "LOGIC");
   $("#main").replaceChildren(h("div", { class: "panel" },
     h("div", { class: "card" }, h("h1", {}, "Language"),
       h("p", { class: "muted" }, "Mỗi chỗ sửa trong bài: ", h("b", {}, "Dạy"), " (hiện y như anh sửa) · ", h("b", {}, "Socratic"), " (hỏi em trước, rồi mới hiện) · ", h("b", {}, "Khen"), " · ", h("b", {}, "Bỏ qua"),
-        ". Chỉ lỗi hệ thống mới có bài giảng nhỏ và bài luyện; còn lại em xem từng chỗ một, theo thứ tự trong bài.")),
+        ". Chỉ lỗi hệ thống mới có bài giảng nhỏ và bài luyện. ", h("b", {}, "Gộp với…"), " để mấy chỗ cùng một ý hiện chung một màn; ", h("b", {}, "Phần: Logic"), " để đưa một nhận xét về ý sang phần Logic.")),
     sect("LR"), sect("GRA"),
+    logicItems.length ? h("div", { class: "card" }, h("h2", {}, "Hiện ở phần Logic"),
+      h("p", { class: "muted small" }, "Nhận xét về ý và lập luận (thường là \"=> COMMENT\"): em xem ở phần Logic, theo thứ tự trong bài."),
+      logicItems.map(it => itemRow(it, { none: true, name: "" }, items))) : null,
     h("div", { class: "row" }, h("button", { class: "btn primary", type: "button", onclick: () => go("rewrite") }, "Tiếp: Viết lại"))));
 }
 
@@ -1472,8 +1575,8 @@ function renderRewrite() {
 const draftWeek2 = () => { const w = curWeek(); return w.kind === "paragraph+paraphrase" ? w : { ...w, prompts: [{ label: w.essay_type, prompt: S.meta.prompt }] }; };
 function renderDraft2() {
   const D = decisions2(), block = blockers2(), hasKey = !!SETTINGS.apiKey;
-  const n = { teach: 0, socratic: 0, praise: 0, skip: 0 };
-  D.language.items.forEach(i => { n[i.mode]++; });
+  const n = { teach: 0, socratic: 0, praise: 0, skip: 0, logic: 0 };
+  D.language.items.forEach(i => { n[i.mode]++; if (i.tab === "LOGIC" && i.mode !== "skip") n.logic++; });
   const status = h("div", { id: "draftStatus" });
   $("#main").replaceChildren(h("div", { class: "panel" }, h("div", { class: "card" },
     h("h1", {}, "Soạn với Claude"),
@@ -1482,7 +1585,7 @@ function renderDraft2() {
       h("li", {}, `Logic: ${D.checklist.filter(c => c.ok === true).length} ✓, ${D.checklist.filter(c => c.ok === false).length} ✗` +
         (D.ideas.length ? ` · ${D.ideas.length} ý (${D.ideas.filter(x => x.status === "fix").length} ✗, ${D.ideas.filter(x => x.status === "improve").length} ~)` : "") +
         (D.topics.length ? ` · ${D.topics.filter(x => !x.ok).length}/${D.topics.length} topic ✗` : "")),
-      h("li", {}, `Language: ${n.teach} dạy, ${n.socratic} Socratic, ${n.praise} khen, ${n.skip} bỏ qua · ` +
+      h("li", {}, `Language: ${n.teach} dạy, ${n.socratic} Socratic, ${n.praise} khen, ${n.skip} bỏ qua` + (n.logic ? ` (${n.logic} hiện ở Logic)` : "") + (D.language.groups.length ? ` · ${D.language.groups.length} nhóm` : "") + " · " +
         (D.language.systemic.length ? "lỗi hệ thống: " + D.language.systemic.map(x => x.name).join(", ") : "không có lỗi hệ thống")),
       h("li", {}, D.rewrite ? `Viết lại: ${D.rewrite.sids.length} câu (${D.rewrite.sids.join(", ")})` : "Viết lại: chưa chọn")),
     block.length ? h("div", { class: "notice bad blockers" }, h("b", {}, "Còn thiếu:"), h("ul", { class: "problems" }, block.map(([step, msg]) =>
@@ -1511,7 +1614,7 @@ async function runDraft2({ retry = false } = {}) {
   try {
     result = await draftLesson2({
       apiKey: SETTINGS.apiKey, week: draftWeek2(), teacher: SETTINGS.teacher,
-      input: { page: S.page, meta: S.meta, decisions: D },
+      input: { page: pageFor2(), meta: S.meta, decisions: D },
       onProgress: n => { bar.value = Math.min(n, +bar.max - 300); const el = $("#draftChars"); if (el) el.textContent = `${n.toLocaleString("vi-VN")} ký tự`; },
       signal: ctrl.signal, done: S.partial || {}, noStrict: SETTINGS.noStrict2 || [],
     });
@@ -1542,7 +1645,7 @@ async function runDraft2({ retry = false } = {}) {
     return;
   }
   try {
-    S.lesson = toLesson2(S.partial, { page: S.page, meta: { ...S.meta, word_target: curWeek().task === 1 ? 150 : 250 }, teacher: SETTINGS.teacher, zalo: SETTINGS.zalo, week: draftWeek2(), decisions: D });
+    S.lesson = toLesson2(S.partial, { page: pageFor2(), meta: { ...S.meta, word_target: curWeek().task === 1 ? 150 : 250 }, teacher: SETTINGS.teacher, zalo: SETTINGS.zalo, week: draftWeek2(), decisions: D });
   } catch (e) {
     S.partial = {};
     status.replaceChildren(h("div", { class: "notice bad" }, "Bản soạn của Claude thiếu thông tin (" + e.message + "). Soạn lại nha."),
@@ -1595,13 +1698,18 @@ function moduleForm2(id) {
         h("div", { class: "grid2" }, fLine(`${p}.title`, "Tên", { voice: false }), fSids(`${p}.sids`, "Câu")),
         fLine(`${p}.quote`, "Chữ của em (chép y nguyên)", { voice: false, en: true }), fLines(`${p}.say`, "Đậu nói"),
         fLine(`${p}.fix`, "Viết lại", { voice: false, en: true, long: true }),
+        L.logic.issues[+p.split(".").pop()].fix ? [h("h3", {}, "Đậu giải thích từng chỗ đổi"),
+          cards(`${p}.changes`, ch => `${ch.from || "+"} → ${ch.to || "(bỏ)"}`, q => [
+            h("div", { class: "grid2" }, fLine(`${q}.from`, "Chữ của em (trống = thêm mới)", { voice: false, en: true }), fLine(`${q}.to`, "Chữ mới (trống = bỏ)", { voice: false, en: true })),
+            fLine(`${q}.why`, "Đậu nói vì sao")], { add: () => ({ from: "", to: "", why: "" }) })] : null,
         L.t1 ? h("div", { class: "grid2" }, fLine(`${p}.series`, "Hàng trên biểu đồ", { voice: false }), fLine(`${p}.col`, "Cột", { voice: false })) : null,
       ], { add: () => ({ title: "", sids: [], quote: "", say: [""], fix: "", series: "", col: "" }) })];
     case "ideas": return [...head("Các ý", "✓/~/✗ là của anh; ý ~ có một dòng gợi ý, ý ✗ có chuỗi ý."), fLines("ideas.intro", "Đậu nói"),
       cards("ideas.overview", o => `${o.tag} · ${o.text}`, p => [h("div", { class: "grid2" }, fLine(`${p}.text`, "Ý", { voice: false }), fLine(`${p}.note`, "Ghi chú / gợi ý", { voice: false })), fStatus(p)], { remove: false }),
       h("h3", {}, "Ý cần sửa"), ideaDetailCards()];
-    case "language": return [...head("Language", "Cụm em dùng tốt, rồi từng chỗ sửa theo thứ tự trong bài."),
-      fLines("language.intro", "Đậu nói (dòng đầu mở phần này, dòng cuối trước các chỗ sửa)"),
+    case "language": return [...head("Language", "Cụm em dùng tốt, rồi lỗi hệ thống (nếu có), rồi từng chỗ sửa: Từ vựng trước, Ngữ pháp sau. Lời nối giữa các phần do trang tự viết."),
+      L.language.intro ? fLines("language.intro", "Đậu nói") : null,
+      L.mistakes.main.length ? fLine("language.focus", "Đậu mở bài lỗi hệ thống") : null,
       L.language.phrases ? [h("h3", {}, "Cụm em đã dùng tốt"), fLine("language.phrases.line", "Đậu khen"),
         cards("language.phrases.groups", g => g.label, p => [fLine(`${p}.label`, "Nhóm", { voice: false }),
           cards(`${p}.items`, x => x.text, q => h("div", { class: "grid2" }, fLine(`${q}.text`, "Cụm", { voice: false, en: true }), fSid(`${q}.sid`, "Câu")), { add: () => ({ text: "", sid: sidOptions()[0][0] }) })],
@@ -1610,10 +1718,18 @@ function moduleForm2(id) {
       cards("language.items", it => `${MODE_LABEL[it.mode] || it.mode} · ${refLabel(it.ref)}`, (p, it) => [
         it.ref[0] === "c" ? corrRow(it.ref, { drag: false }) : pointRow({ ...pointOfNote(noteOf(it.ref) || {}), nid: it.ref }, { path: p }),
         h("div", { class: "grid2" }, fSelect(`${p}.mode`, "Cách hiện", [["teach", "Dạy"], ["socratic", "Socratic"], ["praise", "Khen"]], { rerender: true }),
-          fSelect(`${p}.tab`, "Phần", [["LR", "Từ vựng"], ["GRA", "Ngữ pháp"]])),
-        it.mode === "socratic" ? (it.ask ? [fLine(`${p}.ask.q`, "Câu hỏi"), fLines(`${p}.ask.options`, "Lựa chọn"), fNumber(`${p}.ask.answer`, "Đáp án đúng (0 là lựa chọn đầu)")]
-          : h("div", { class: "notice" }, "Chỗ này chưa có câu hỏi. ", h("button", { class: "btn small", type: "button", onclick: () => changed(`${p}.ask`, { q: "Chỗ tô vàng chưa ổn ở đâu nè em?", options: ["", "", ""], answer: 0 }, { rerender: true }) }, "Thêm câu hỏi"))) : null,
-      ])];
+          fSelect(`${p}.tab`, "Phần", [["LR", "Từ vựng"], ["GRA", "Ngữ pháp"], ["LOGIC", "Logic"]])),
+        it.swap ? h("div", { class: "grid2" }, fLine(`${p}.swap.from`, "Đổi chữ của em", { voice: false, en: true }), fLine(`${p}.swap.to`, "thành", { voice: false, en: true })) : null,
+        it.group && (L.language.groups || []).some(g => g.id === it.group && g.refs[0] !== it.ref) ? h("p", { class: "small muted" }, "Hiện chung màn với nhóm (câu hỏi, nếu có, ở chỗ đầu nhóm).")
+        : it.mode === "socratic" ? (() => {
+          const gi = (L.language.groups || []).findIndex(g => g.id === it.group && g.ask), ap = gi >= 0 ? `language.groups.${gi}.ask` : `${p}.ask`, ask = gi >= 0 ? L.language.groups[gi].ask : it.ask;
+          return ask ? [fLine(`${ap}.focus`, "Chữ được tô khi hỏi (chép y nguyên)", { voice: false, en: true }), fLine(`${ap}.q`, "Câu hỏi"), fLines(`${ap}.options`, "Lựa chọn"), fNumber(`${ap}.answer`, "Đáp án đúng (0 là lựa chọn đầu)"),
+            h("div", { class: "grid2" }, fLine(`${ap}.right`, "Đậu nói khi em đúng"), fLine(`${ap}.wrong`, "Đậu nói khi em sai"))]
+            : h("div", { class: "notice" }, "Chỗ này chưa có câu hỏi. ", h("button", { class: "btn small", type: "button", onclick: () => changed(`${p}.ask`, { q: "", options: ["", "", ""], answer: 0, right: "", wrong: "", focus: "" }, { rerender: true }) }, "Thêm câu hỏi"));
+        })() : null,
+      ]),
+      (L.language.groups || []).length ? [h("h3", {}, "Nhóm (chung một màn)"),
+        cards("language.groups", g => g.refs.map(refLabel).join(" + "), q => [fLine(`${q}.note`, "Ghi chú chung của anh", { voice: false })], { remove: false })] : null];
     case "systemic": return [...head("Lỗi hệ thống", "Lỗi anh đặt tên: bài giảng nhỏ (câu hỏi, bảng, quy tắc, ví dụ) và bài luyện."),
       cards("mistakes.main", g => g.title, (p, g) => [
         fLine(`${p}.title`, "Tên", { voice: false }),

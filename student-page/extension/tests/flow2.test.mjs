@@ -72,6 +72,8 @@ function fakePart(part, payload) {
       asks: [...D.language.items.filter(i => i.mode === "socratic" && !grouped.has(i.ref)).map(i => ask(i.ref)),
         ...D.language.groups.filter(g => (D.language.items.find(i => i.ref === g.refs[0]) || {}).mode === "socratic").map(g => ({ ...ask(g.refs[0]), ref: g.id }))],
       swaps: D.language.items.filter(i => i.ref[0] === "n" && i.mode !== "skip" && note(i.ref).quote).slice(0, 1).map(i => ({ ref: i.ref, from: note(i.ref).quote, to: "a better phrase" })),
+      boards: [...D.language.items.filter(i => i.mode === "board" && !grouped.has(i.ref)).map(i => i.ref), ...D.language.groups.filter(g => (D.language.items.find(i => i.ref === g.refs[0]) || {}).mode === "board").map(g => g.id)]
+        .map(ref => ({ ref, lines: ["the + other + N"], rule: "Trước other mà đã xác định thì cần the nha" })),
     } };
   }
   if (part === "systemic") return { systemic: D.language.systemic.map(x => ({ tab: x.tab, title: x.name, count_line: "Em mắc lỗi này {n} lần",
@@ -175,14 +177,19 @@ try {
   if (sysWanted) {
     await grammar.locator(".sys input:not([type])").fill("Chia thì của động từ");
     await grammar.locator(".sys input:not([type])").press("Tab");
-    await gItems.nth(0).locator("label.inline input").check();
-    await gItems.nth(1).locator("label.inline input").check();
+    await gItems.nth(0).locator("label", { hasText: "thuộc lỗi hệ thống" }).locator("input").check();
+    await gItems.nth(1).locator("label", { hasText: "thuộc lỗi hệ thống" }).locator("input").check();
     await gItems.nth(2).locator(".modes button", { hasText: "Socratic" }).click();
   } else {
     await grammar.locator(".sys input[type=checkbox]").check();
     await page.locator(".lang-item").first().locator(".modes button", { hasText: "Socratic" }).click();
   }
   if (ni > 1) await page.locator(".lang-item").last().locator(".modes button", { hasText: "Bỏ qua" }).click();
+  // Dạy (a small board) on one grammar fix, and one fix marked as an upgrade
+  const gLast = grammar.locator(".lang-item").last();
+  await gLast.locator(".modes button", { hasText: "Dạy" }).click();
+  const upBox = vocab.locator(".lang-item").last().locator("label", { hasText: "Nâng cấp" }).locator("input");
+  if (await upBox.count()) await upBox.check();
   // two vocabulary fixes that are the same point: one screen
   const vItems = vocab.locator(".lang-item");
   let grouped = false;
@@ -211,6 +218,7 @@ try {
   const D = asked[0].payload.decisions;
   ok(D.checklist.filter(c => c.ok === false).length === 1 && D.language.items.length === ni && D.rewrite.sids.length === 1, "the teacher's decisions are sent");
   ok(!grouped || (D.language.groups.length === 1 && D.language.groups[0].note), "the group and its note are sent");
+  ok(D.language.items.some(i => i.mode === "board"), "a Dạy item is sent");
   if (KIND === "essay" || KIND === "week1") ok(D.ideas[0].status === "fix" && D.ideas[0].fix_type === "replace", "the fix type is sent");
   ok(!asked.some(a => /praise_candidates|framework_checklist/.test(JSON.stringify(a.body))), "no old-flow parts asked");
   ok(asked.every(a => a.body.model === "claude-opus-5-5"), "model claude-opus-5-5");

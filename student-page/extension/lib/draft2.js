@@ -33,6 +33,7 @@ export const PARTS2 = {
       phrases: O({ line: S, groups: A(O({ label: S, items: A(O({ text: S, sid: S })) })) }),
       asks: A(O({ ref: S, focus: S, q: S, options: A(S), answer: I, right: S, wrong: S })),
       swaps: A(O({ ref: S, from: S, to: S })),
+      boards: A(O({ ref: S, lines: A(S), rule: S })),
     }) }),
   },
   systemic: {
@@ -70,7 +71,7 @@ The teacher went through the essay and decided (in "decisions"):
 - logic_checklist: which points of this week's framework she met (ok true/false) with the teacher's notes.
 - ideas (essays): how each idea is developed: "ok", "improve" (could go further) or "fix" (broken), with notes (the teacher's CRM comments on it, then anything the teacher added). A "fix" idea has a fix_type: "replace" (the idea goes the wrong way: a new direction replaces her chain), "link" (one step of her chain is wrong, the steps before it hold), "missing" (the chain is right but stops short, or skips a step).
 - topics (Week 1): whether each paraphrase topic is right, with notes.
-- language.items: which corrections and notes the student sees, and how: "teach" (shown as is, the teacher's own words), "socratic" (she is asked first, then sees the teacher's fix), "praise" (a compliment from the teacher), "skip" (not shown). tab = where it is shown: "LR" (vocabulary), "GRA" (grammar) or "LOGIC" (a comment about her ideas, shown in the Logic part). language.groups: items the teacher put together (same point): shown on one screen, with the teacher's group note.
+- language.items: which corrections and notes the student sees, and how: "teach" (shown as is, the teacher's own words), "board" (shown as is, then a small chalkboard you write), "socratic" (she is asked first, then sees the teacher's fix), "praise" (a compliment from the teacher), "skip" (not shown). tab = where it is shown: "LR" (vocabulary), "GRA" (grammar) or "LOGIC" (a comment about her ideas, shown in the Logic part). upgrade true = her words are not wrong: the teacher suggests a better way to say it (never call it a mistake). language.groups: items the teacher put together (same point): shown on one screen, with the teacher's group note.
 - language.systemic: the systematic mistake of a tab, named by the teacher, with the corrections and notes that belong to it (refs). Usually there is none.
 - rewrite_target: the exact sentences she rewrites.
 Never change, soften or add to these decisions: no extra points, mistakes, corrections or praise of your own. Write only Đậu's words around them, short. Everything else on the page is the teacher's own words.
@@ -94,6 +95,8 @@ Never change, soften or add to these decisions: no extra points, mistakes, corre
 - language.focus: only when language.systemic is not empty: 1 line that opens the systematic mistake lesson, naming the teacher's systematic mistake (e.g. "Grammar của em khá chắc rồi, chỗ mình cần chú ý nhất là mạo từ the nè"). Else "". Never name a focus, a weakness or a pattern the teacher didn't name (the page writes its own lines between the parts).
 - language.phrases ("Cụm em đã dùng tốt"): the good phrases she used, in 2-3 groups (essays: linking devices, good vocabulary; Task 1: language of trends, comparison, figures). Each phrase verbatim from her original text with its sid; never words the teacher corrected or commented on as a problem. line = 1 line of praise. Empty groups if there is nothing worth showing.
 - language.asks: one per item with mode "socratic" (any tab, LOGIC too), in order; for a group whose first item is socratic, one ask for the whole group with ref = the group id (its items get no ask of their own). ref; focus = the exact words the question is about, verbatim from her original sentence (they are highlighted while she thinks); q = a short question that makes her reason about the point (the meaning, the rule, what the word really says), not just find the error (e.g. for "directly addresses the root cause of homelessness": "Nhà miễn phí giải quyết trực tiếp cái gì nè em?"); options = 2-3 short Vietnamese options, each a belief a student at her level could really hold (no silly ones); no option repeats the teacher's comment, and no option suggests a word or phrase the teacher corrected anywhere in the essay (e.g. never offer "no-cost" when the teacher changed "no-cost" elsewhere); answer = index of the right one, which must agree with the teacher's correction and comment; right = 1 Đậu line when she gets it, explaining the point in a way that adds to the teacher's comment (no repeat); wrong = 1-2 Đậu lines when she doesn't, gently explaining the difference. The page then shows the teacher's fix and comment.
+- language.boards: one per item with mode "board" (for a group whose first item is "board": one, with ref = the group id), in order: ref; lines = 1-2 short formulas for a chalkboard, at most 20 characters each, symbols welcome (→, =, ≠, +), e.g. "the + other + N", "give ≠ provide"; rule = 1 Đậu line stating the rule, built on the teacher's correction and comment.
+- For an upgrade item asked Socratically, the question is about saying it better (e.g. "Có cách nào nói gọn và tự nhiên hơn không nè?"), never "what is wrong".
 - language.swaps: for each shown note (n…, not skip) whose comment or teacher_rewrite replaces some of her words: ref, from = her words verbatim (the note's quote when it has one), to = the new words from the teacher's comment. None for notes where the teacher typed words into the essay (typed_by_teacher, not starting with "=>"): the page shows those itself. [] when there are none.
 - systemic: one per language.systemic entry, same tab: title = the teacher's name for it, tidied. count_line = "Em mắc lỗi này {n} lần" (write {n} literally, the page fills it in). ask = "Mấy chỗ này có lỗi gì giống nhau?" with 3 options. reason = why she probably made it (1 kind line). board = 1-2 formulas, at most 20 characters each, symbols welcome (→, =, ≠, +). rule = 3 short lines. example = a new bad/good pair (not from her essay). better = for each note ref (n…) in it, the better version of her sentence in English (the teacher's when given).
 - practice (only with a systematic mistake): 3-4 core items on it, one of each kind where it fits: a "choose" item with sentence "" (3 English sentences as options), a "choose" item with a sentence containing "___" (3 options), a "tap" item (a sentence with exactly one wrong word; wrong = that word as it appears between spaces, fix = the right word), a "build" item (vi = a Vietnamese sentence, answer_words = 4-8 English chunks in order, extra = 2 wrong chunks). mistake = the systematic group's id. New sentences on the essay's topic, never copied from her essay. explain = 1 short line. core = their ids in order. intro = 2 lines.
@@ -178,6 +181,7 @@ export function toLesson2(parts, { page, meta, teacher, zalo, week, decisions })
   });
   const asks = Object.fromEntries((ln.asks || []).map(a => [a.ref, { q: a.q, options: a.options, answer: a.answer, ...(a.right ? { right: a.right } : {}), ...(a.wrong ? { wrong: a.wrong } : {}), ...(a.focus ? { focus: a.focus } : {}) }]));
   const swaps = Object.fromEntries((ln.swaps || []).filter(x => x.from && x.to).map(x => [x.ref, { from: x.from, to: x.to }]));
+  const boards = Object.fromEntries((ln.boards || []).filter(b => (b.lines || []).some(x => x.trim())).map(b => [b.ref, { lines: b.lines.filter(x => x.trim()), rule: b.rule || "" }]));
   const groups = (D.language.groups || []).filter(g => g.refs.length > 1);
   const groupOf = Object.fromEntries(groups.flatMap(g => g.refs.map(r => [r, g.id])));
   const inSys = new Set(D.language.systemic.flatMap(s => s.refs));
@@ -218,11 +222,13 @@ export function toLesson2(parts, { page, meta, teacher, zalo, week, decisions })
       focus: D.language.systemic.length ? ln.focus || "" : "",
       phrases: ln.phrases && ln.phrases.groups.some(g => g.items.length) ? { line: ln.phrases.line, groups: ln.phrases.groups.map(g => ({ label: g.label, items: g.items.filter(x => sids.has(x.sid)) })) } : null,
       items: D.language.items.filter(it => it.mode !== "skip" && !inSys.has(it.ref))
-        .map(it => ({ ref: it.ref, tab: it.tab, mode: it.mode, ...(groupOf[it.ref] ? { group: groupOf[it.ref] } : {}),
-          ...(it.mode === "socratic" && asks[it.ref] ? { ask: asks[it.ref] } : {}), ...(swaps[it.ref] ? { swap: swaps[it.ref] } : {}) }))
-        .map(it => it.mode === "socratic" && !it.ask && !(it.group && asks[it.group]) ? { ...it, mode: "teach" } : it),
+        .map(it => ({ ref: it.ref, tab: it.tab, mode: it.mode, ...(it.upgrade ? { upgrade: true } : {}), ...(groupOf[it.ref] ? { group: groupOf[it.ref] } : {}),
+          ...(it.mode === "socratic" && asks[it.ref] ? { ask: asks[it.ref] } : {}), ...(it.mode === "board" && boards[it.ref] ? { board: boards[it.ref] } : {}),
+          ...(swaps[it.ref] ? { swap: swaps[it.ref] } : {}) }))
+        .map(it => it.mode === "socratic" && !it.ask && !(it.group && asks[it.group]) ? { ...it, mode: "teach" } : it)
+        .map(it => it.mode === "board" && !it.board && !(it.group && boards[it.group]) ? { ...it, mode: "teach" } : it),
       groups: groups.filter(g => D.language.items.some(it => it.ref === g.refs[0] && it.mode !== "skip" && !inSys.has(it.ref)))
-        .map(g => ({ id: g.id, refs: g.refs.filter(r => !inSys.has(r)), note: g.note || "", ...(asks[g.id] ? { ask: asks[g.id] } : {}) })),
+        .map(g => ({ id: g.id, refs: g.refs.filter(r => !inSys.has(r)), note: g.note || "", ...(asks[g.id] ? { ask: asks[g.id] } : {}), ...(boards[g.id] ? { board: boards[g.id] } : {}) })),
     },
     mistakes: { total: Object.keys(page.corrections).length, main: sys, others: [], lr_intro: [], gra_intro: [] },
     practice: sys.length && P.practice ? practiceToLesson({ intro: P.practice.practice.intro, core: P.practice.practice.core, items: practiceItems(P.practice.practice) }) : null,

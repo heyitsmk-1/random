@@ -1377,6 +1377,9 @@ function langItems() {
   return items.sort((a, b) => a.at - b.at);
 }
 const PRAISE_RE = /\b(great|good job|nice|excellent|fantastic|well done|perfect|brilliant)\b|rất hay|hay quá|tốt lắm|giỏi|xuất sắc/i;
+/* "nâng cấp": her words aren't wrong, the teacher suggests something better */
+const UPGRADE_RE = /nâng cấp|hay hơn|tốt hơn|tự nhiên hơn|ấn tượng hơn|học thuật hơn|đề xuất|\bupgrade\b/i;
+const isUpgrade = it => { const st = itemState(it); return st.up != null ? st.up : UPGRADE_RE.test(it.comment) && !/\bsai\b|lỗi|thiếu/i.test(it.comment); };
 function itemState(it) {
   const st = d2().lang.items;
   if (!st[it.ref]) st[it.ref] = { tab: it.tab, sys: false };
@@ -1409,7 +1412,7 @@ function decisions2() {
     language: {
       systemic: ["LR", "GRA"].filter(t => !D.lang[t].none && D.lang[t].name.trim())
         .map(t => ({ tab: t, name: D.lang[t].name.trim(), refs: items.filter(it => itemState(it).tab === t && itemState(it).sys).map(it => it.ref) })),
-      items: items.map(it => ({ ref: it.ref, tab: itemState(it).tab, mode: modeOf(it), ...(itemState(it).group ? { group: itemState(it).group } : {}) })),
+      items: items.map(it => ({ ref: it.ref, tab: itemState(it).tab, mode: modeOf(it), ...(isUpgrade(it) ? { upgrade: true } : {}), ...(itemState(it).group ? { group: itemState(it).group } : {}) })),
       groups: groupsOf(items),
     },
     rewrite: S.rewriteTarget && S.rewriteTarget.sids.length ? S.rewriteTarget : null,
@@ -1492,7 +1495,9 @@ function renderLogic() {
 }
 
 /* ---------- 3. Language ---------- */
-const MODES = [["teach", "Dạy"], ["socratic", "Socratic"], ["praise", "Khen"], ["skip", "Bỏ qua"]];
+// [value, label, what the student sees]
+const MODES = [["teach", "Hiện", "Chỗ sửa hiện ra, rồi nhận xét của anh"], ["board", "Dạy", "Như Hiện, thêm một bảng nhỏ: công thức và một dòng quy tắc (Claude viết từ nhận xét của anh)"],
+  ["socratic", "Socratic", "Hỏi em trước, rồi mới hiện chỗ sửa"], ["praise", "Khen", "Tô xanh chỗ em viết hay, kèm lời khen của anh"], ["skip", "Bỏ qua", "Không hiện cho em"]];
 const TAB_NAMES = { LR: "Từ vựng", GRA: "Ngữ pháp", LOGIC: "Logic" };
 const langLabel = it => it.ref[0] === "c" ? (c => `${c.orig.trim() || "…"} → ${c.fix.trim() || "(bỏ)"}`)(S.page.corrections[it.ref])
   : ((it.note.quote || it.note.added || it.comment || it.ref).replace(/^=>\s*COMMENT/i, "").trim() || it.comment).slice(0, 40);
@@ -1508,8 +1513,10 @@ function itemRow(it, L, all) {
     shown,
     it.note && usedInIdea(it.ref) ? h("div", { class: "small muted" }, "Nhận xét này đã nằm trong ghi chú của một ý ở bước Logic.") : null,
     h("div", { class: "row" },
-      h("div", { class: "modes", role: "group", "aria-label": "Cách hiện cho em" }, MODES.map(([v, l]) =>
-        h("button", { type: "button", "aria-pressed": String(mode === v), onclick: () => { st.mode = v; touch(); renderLanguage(); } }, l))),
+      h("div", { class: "modes", role: "group", "aria-label": "Cách hiện cho em" }, MODES.map(([v, l, tip]) =>
+        h("button", { type: "button", title: tip, "aria-pressed": String(mode === v), onclick: () => { st.mode = v; touch(); renderLanguage(); } }, l))),
+      mode !== "praise" && mode !== "skip" ? h("label", { class: "inline", title: "Chữ của em không sai, anh gợi ý cách nói hay hơn: không gạch đi" },
+        h("input", { type: "checkbox", checked: isUpgrade(it), onchange: e => { st.up = e.target.checked; touch(); renderLanguage(); } }), "⬆ Nâng cấp (không phải lỗi)") : null,
       h("select", { class: "small", "aria-label": "Phần", onchange: e => { st.tab = e.target.value; st.sys = false; ungroup(); touch(); renderLanguage(); } },
         Object.entries(TAB_NAMES).map(([v, l]) => h("option", { value: v, selected: st.tab === v ? true : null }, "Phần: " + l))),
       st.tab !== "LOGIC" && !L.none && L.name.trim() ? h("label", { class: "inline" }, h("input", { type: "checkbox", checked: st.sys, onchange: e => { st.sys = e.target.checked; touch(); } }), "thuộc lỗi hệ thống") : null),
@@ -1546,7 +1553,8 @@ function renderLanguage() {
   const logicItems = items.filter(it => itemState(it).tab === "LOGIC");
   $("#main").replaceChildren(h("div", { class: "panel" },
     h("div", { class: "card" }, h("h1", {}, "Language"),
-      h("p", { class: "muted" }, "Mỗi chỗ sửa trong bài: ", h("b", {}, "Dạy"), " (hiện y như anh sửa) · ", h("b", {}, "Socratic"), " (hỏi em trước, rồi mới hiện) · ", h("b", {}, "Khen"), " · ", h("b", {}, "Bỏ qua"),
+      h("p", { class: "muted" }, "Mỗi chỗ sửa trong bài: ", h("b", {}, "Hiện"), " (chỗ sửa và nhận xét của anh) · ", h("b", {}, "Dạy"), " (thêm một bảng nhỏ: công thức + quy tắc) · ", h("b", {}, "Socratic"), " (hỏi em trước, rồi mới hiện) · ", h("b", {}, "Khen"), " · ", h("b", {}, "Bỏ qua"),
+        ". ", h("b", {}, "⬆ Nâng cấp"), ": chữ của em không sai, chỉ có cách nói hay hơn (không gạch đi)",
         ". Chỉ lỗi hệ thống mới có bài giảng nhỏ và bài luyện. ", h("b", {}, "Gộp với…"), " để mấy chỗ cùng một ý hiện chung một màn; ", h("b", {}, "Phần: Logic"), " để đưa một nhận xét về ý sang phần Logic.")),
     sect("LR"), sect("GRA"),
     logicItems.length ? h("div", { class: "card" }, h("h2", {}, "Hiện ở phần Logic"),
@@ -1575,7 +1583,7 @@ function renderRewrite() {
 const draftWeek2 = () => { const w = curWeek(); return w.kind === "paragraph+paraphrase" ? w : { ...w, prompts: [{ label: w.essay_type, prompt: S.meta.prompt }] }; };
 function renderDraft2() {
   const D = decisions2(), block = blockers2(), hasKey = !!SETTINGS.apiKey;
-  const n = { teach: 0, socratic: 0, praise: 0, skip: 0, logic: 0 };
+  const n = { teach: 0, board: 0, socratic: 0, praise: 0, skip: 0, logic: 0 };
   D.language.items.forEach(i => { n[i.mode]++; if (i.tab === "LOGIC" && i.mode !== "skip") n.logic++; });
   const status = h("div", { id: "draftStatus" });
   $("#main").replaceChildren(h("div", { class: "panel" }, h("div", { class: "card" },
@@ -1585,7 +1593,7 @@ function renderDraft2() {
       h("li", {}, `Logic: ${D.checklist.filter(c => c.ok === true).length} ✓, ${D.checklist.filter(c => c.ok === false).length} ✗` +
         (D.ideas.length ? ` · ${D.ideas.length} ý (${D.ideas.filter(x => x.status === "fix").length} ✗, ${D.ideas.filter(x => x.status === "improve").length} ~)` : "") +
         (D.topics.length ? ` · ${D.topics.filter(x => !x.ok).length}/${D.topics.length} topic ✗` : "")),
-      h("li", {}, `Language: ${n.teach} dạy, ${n.socratic} Socratic, ${n.praise} khen, ${n.skip} bỏ qua` + (n.logic ? ` (${n.logic} hiện ở Logic)` : "") + (D.language.groups.length ? ` · ${D.language.groups.length} nhóm` : "") + " · " +
+      h("li", {}, `Language: ${n.teach} hiện, ${n.board} dạy, ${n.socratic} Socratic, ${n.praise} khen, ${n.skip} bỏ qua` + (n.logic ? ` (${n.logic} hiện ở Logic)` : "") + (D.language.groups.length ? ` · ${D.language.groups.length} nhóm` : "") + " · " +
         (D.language.systemic.length ? "lỗi hệ thống: " + D.language.systemic.map(x => x.name).join(", ") : "không có lỗi hệ thống")),
       h("li", {}, D.rewrite ? `Viết lại: ${D.rewrite.sids.length} câu (${D.rewrite.sids.join(", ")})` : "Viết lại: chưa chọn")),
     block.length ? h("div", { class: "notice bad blockers" }, h("b", {}, "Còn thiếu:"), h("ul", { class: "problems" }, block.map(([step, msg]) =>
@@ -1675,7 +1683,7 @@ const MODULES2 = [
 ];
 const curModules = () => isFlow2() ? MODULES2.filter(([id]) => S.lesson && (id === "ideas" ? !!S.lesson.ideas : id === "systemic" ? S.lesson.mistakes.main.length > 0 : id === "practice" ? !!S.lesson.practice : true))
   : visibleModules();
-const MODE_LABEL = { teach: "Dạy", socratic: "Socratic", praise: "Khen" };
+const MODE_LABEL = { teach: "Hiện", board: "Dạy", socratic: "Socratic", praise: "Khen" };
 function refLabel(ref) {
   if (ref[0] === "c") { const c = S.lesson.corrections[ref]; return c ? `${c.orig.trim() || "…"} → ${c.fix.trim() || "(bỏ)"}` : ref; }
   const t = noteOf(ref); return t ? (t.quote || t.comment || ref).slice(0, 50) : ref;
@@ -1717,9 +1725,11 @@ function moduleForm2(id) {
       h("h3", {}, "Từng chỗ sửa"),
       cards("language.items", it => `${MODE_LABEL[it.mode] || it.mode} · ${refLabel(it.ref)}`, (p, it) => [
         it.ref[0] === "c" ? corrRow(it.ref, { drag: false }) : pointRow({ ...pointOfNote(noteOf(it.ref) || {}), nid: it.ref }, { path: p }),
-        h("div", { class: "grid2" }, fSelect(`${p}.mode`, "Cách hiện", [["teach", "Dạy"], ["socratic", "Socratic"], ["praise", "Khen"]], { rerender: true }),
+        h("div", { class: "grid2" }, fSelect(`${p}.mode`, "Cách hiện", [["teach", "Hiện"], ["board", "Dạy"], ["socratic", "Socratic"], ["praise", "Khen"]], { rerender: true }),
           fSelect(`${p}.tab`, "Phần", [["LR", "Từ vựng"], ["GRA", "Ngữ pháp"], ["LOGIC", "Logic"]])),
         it.swap ? h("div", { class: "grid2" }, fLine(`${p}.swap.from`, "Đổi chữ của em", { voice: false, en: true }), fLine(`${p}.swap.to`, "thành", { voice: false, en: true })) : null,
+        it.mode === "board" ? (it.board ? [fLines(`${p}.board.lines`, "Bảng (ngắn, dưới 20 ký tự)", { voice: false }), fLine(`${p}.board.rule`, "Đậu nói quy tắc")]
+          : h("div", { class: "notice" }, "Chỗ này chưa có bảng. ", h("button", { class: "btn small", type: "button", onclick: () => changed(`${p}.board`, { lines: [""], rule: "" }, { rerender: true }) }, "Thêm bảng"))) : null,
         it.group && (L.language.groups || []).some(g => g.id === it.group && g.refs[0] !== it.ref) ? h("p", { class: "small muted" }, "Hiện chung màn với nhóm (câu hỏi, nếu có, ở chỗ đầu nhóm).")
         : it.mode === "socratic" ? (() => {
           const gi = (L.language.groups || []).findIndex(g => g.id === it.group && g.ask), ap = gi >= 0 ? `language.groups.${gi}.ask` : `${p}.ask`, ask = gi >= 0 ? L.language.groups[gi].ask : it.ask;

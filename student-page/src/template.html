@@ -419,6 +419,46 @@ button.mcard { width: 100%; text-align: left; font: inherit; color: inherit; cur
 mark.hl-bad { background: linear-gradient(transparent 55%, var(--coral-soft) 55%); color: var(--coral); font-weight: 600; padding: 0 .1em; }
 mark.hl-good { background: linear-gradient(transparent 55%, var(--mint-soft) 55%); color: var(--mint-deep); font-weight: 600; padding: 0 .1em; }
 .pt-comment.rise, .pt-better.rise { animation: rise .4s both; }
+/* praise is green, never the red wavy of a mistake */
+mark.good { background: var(--mint-soft); color: var(--mint-deep); font-weight: 600; border-radius: 4px; padding: 0 .15em; }
+.tr-hl.good { background: var(--mint-soft); border-bottom-color: var(--mint-deep); }
+/* nâng cấp: her words stay (no strike), the better version comes after an arrow */
+.err.up { text-decoration: underline dotted var(--orange); text-decoration-thickness: 2.5px; }
+.corr.up s, .corr.live.up s { text-decoration: none; background: none; animation: none; color: inherit; border-bottom: 2.5px dotted var(--orange); }
+.corr.up s::after { content: " →"; color: var(--orange-deep); font-weight: 800; }
+.pill img { width: 1.15em; height: 1.15em; vertical-align: -.22em; margin-right: .3em; }
+/* Dạy: a small chalkboard under the fix */
+.board-card.mini { align-self: flex-start; font-size: 22px; padding: 8px 18px; border-width: 6px; }
+/* a sticker beside a question, and the section title cards */
+.ask-q { display: flex; gap: .6em; align-items: center; }
+.ask-q .qtext { flex: 1; }
+.ask-icon { width: 3.2em; height: 3.2em; flex: none; object-fit: contain; animation: popIn .45s both; }
+.explain.oops { display: flex; gap: .6em; align-items: center; }
+.explain.oops img { width: 2.8em; height: 2.8em; flex: none; object-fit: contain; }
+/* practice streak */
+.streak { display: inline-flex; align-items: center; gap: .3em; font: 800 .8em var(--font-display); color: #C2410C; background: #FFEAD5; border-radius: 999px; padding: .15em .6em .15em .3em; animation: popIn .45s cubic-bezier(.3, 1.6, .5, 1) both; }
+.streak img { width: 1.5em; height: 1.5em; }
+/* the overall score: suspense, then a celebration that grows with the band */
+.overall { position: relative; }
+.overall .ring { position: relative; z-index: 1; }
+.ring.squash { animation: squash .55s cubic-bezier(.3, 1.6, .5, 1) both; }
+@keyframes squash { 0% { transform: scale(1); } 30% { transform: scale(1.28, .78); } 60% { transform: scale(.9, 1.14); } 100% { transform: scale(1); } }
+.ring.gold { background: linear-gradient(135deg, #FFD166, #FF9800); box-shadow: 0 0 0 5px #FFE9B0, 0 0 26px rgba(255, 186, 60, .75); }
+.ring.shine { overflow: hidden; }
+.ring.shine::after { content: ""; position: absolute; inset: 0; border-radius: 50%; background: linear-gradient(115deg, transparent 30%, rgba(255, 255, 255, .8) 50%, transparent 70%); transform: translateX(-130%); animation: shine 1.4s .2s ease-in-out 3; }
+@keyframes shine { to { transform: translateX(130%); } }
+.ring-wrap { position: relative; flex: none; display: grid; place-items: center; margin: 0 .45em 0 .3em; }
+.stamp-star { position: absolute; left: 50%; top: 50%; width: 160%; height: 160%; translate: -50% -52%; z-index: 0; pointer-events: none; animation: starIn .65s cubic-bezier(.2, 1.4, .4, 1) both; }
+@keyframes starIn { from { transform: scale(3.2) rotate(-120deg); opacity: 0; } 60% { opacity: 1; } to { transform: none; } }
+.shock { position: absolute; left: 50%; top: 50%; width: 1.4em; height: 1.4em; margin: -.7em 0 0 -.7em; border-radius: 50%; border: 4px solid #FFB547; pointer-events: none; animation: shock .75s ease-out forwards; }
+@keyframes shock { to { transform: scale(10); opacity: 0; } }
+.xs-badge { align-self: center; display: flex; align-items: center; gap: .5em; padding: .4em 1.2em .4em .6em; border-radius: 999px; background: linear-gradient(135deg, #FFE08A, #FFB547); color: #5A3200; font: 800 1.25em var(--font-display); box-shadow: 0 8px 22px rgba(255, 160, 40, .45); animation: stampIn .5s cubic-bezier(.2, 1.6, .4, 1) both; }
+.xs-badge img { width: 2em; height: 2em; }
+@keyframes stampIn { from { transform: scale(2.6) rotate(-10deg); opacity: 0; } to { transform: none; opacity: 1; } }
+.dimmer { position: fixed; inset: 0; z-index: 40; background: rgba(28, 18, 8, .62); opacity: 0; transition: opacity .45s; pointer-events: none; }
+.dimmer.on { opacity: 1; }
+.app.shake #stage { animation: shake .42s; }
+@media (prefers-reduced-motion: reduce) { .stamp-star, .xs-badge, .ring.squash, .ring.shine::after, .streak, .ask-icon { animation: none; } }
 .snip { display: flex; gap: .6em; align-items: flex-start; padding: .55em .8em; text-align: left; font: inherit; color: inherit; cursor: pointer; width: 100%; }
 .snip .quote, .snip-col { flex: 1; min-width: 0; }
 .snip .pin { flex: none; width: 16px; height: 16px; color: var(--orange-deep); margin-top: .25em; }
@@ -624,6 +664,7 @@ const SENT = {};
 L.essay.paragraphs.forEach(p => p.sentences.forEach(s => { SENT[s.id] = s; }));
 const C = L.corrections;
 const CID_SENT = {};
+const PRAISED = new Set(((L.language || {}).items || []).filter(it => it.mode === "praise").map(it => it.ref));   // notes the teacher praised
 Object.values(SENT).forEach(s => s.segs.forEach(g => { if (typeof g !== "string") CID_SENT[g.c] = s.id; }));
 /* counts Đậu says are written as {n} and filled in here, so they stay right when the teacher adds or
    removes an item (finish.extra_prompt keeps its {n}: that one is filled after the practice) */
@@ -655,6 +696,9 @@ function h(tag, attrs, ...kids) {
   return e;
 }
 const img = (key, cls = "", alt = "") => h("img", { src: A[key], class: cls, alt });
+/* a section's title card, with the sticker of Đậu that fits it */
+const secTitle = (sticker, label, title) => h("div", { class: "card rw-title" }, img(sticker, "rw-icon", ""),
+  h("div", {}, label ? h("div", { class: "label" }, label) : null, h("h1", { class: "h" }, title)));
 const CITE_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>';
 const cite = (sid, cids) => h("button", { class: "cite", type: "button", html: CITE_SVG, onclick: () => openEssay({ sid, cids }) }, "Xem trong bài");
 const TICK = ok => h("span", { class: "tick" + (ok ? "" : " no"), html: ok ? '<svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>' : '<svg viewBox="0 0 24 24"><path d="M7 7l10 10M17 7L7 17"/></svg>' });
@@ -667,7 +711,7 @@ function sentence(sid, { mode = "orig", focus = null, live = false, window: win 
     const c = C[g.c];
     const on = !focus || focus.includes(g.c);
     if (mode === "orig") {
-      if (on && focus) wrap.append(c.orig ? h("span", { class: "err" }, c.orig.trimEnd()) : h("span", { class: "err gap", "aria-label": "chỗ thiếu" }), c.orig.endsWith(" ") ? " " : "");
+      if (on && focus) wrap.append(c.orig ? h("span", { class: "err", "data-c": g.c }, c.orig.trimEnd()) : h("span", { class: "err gap", "data-c": g.c, "aria-label": "chỗ thiếu" }), c.orig.endsWith(" ") ? " " : "");
       else wrap.append(c.orig);
     } else {
       if (!on) { wrap.append(c.orig); continue; }
@@ -691,13 +735,13 @@ function sentence(sid, { mode = "orig", focus = null, live = false, window: win 
 }
 
 /* ---------- confetti ---------- */
-function confetti() {
+function confetti(cols0) {
   if (REDUCED || replay) return;
   const cv = h("canvas", { class: "confetti" }); document.body.append(cv);
   const ctx = cv.getContext("2d"), dpr = devicePixelRatio || 1;
   cv.width = innerWidth * dpr; cv.height = innerHeight * dpr; ctx.scale(dpr, dpr);
-  const cols = ["#FF9800", "#8DD9B8", "#F9B8AE", "#FFD166", "#6FB7F2"];
-  const ps = Array.from({ length: 90 }, () => ({ x: innerWidth / 2 + (Math.random() - .5) * 80, y: innerHeight * .45, vx: (Math.random() - .5) * 9, vy: -Math.random() * 11 - 4, r: Math.random() * 6.28, vr: (Math.random() - .5) * .3, w: 6 + Math.random() * 6, hh: 4 + Math.random() * 5, c: cols[Math.random() * cols.length | 0] }));
+  const cols = cols0 || ["#FF9800", "#8DD9B8", "#F9B8AE", "#FFD166", "#6FB7F2"];
+  const ps = Array.from({ length: cols0 ? 160 : 90 }, () => ({ x: innerWidth / 2 + (Math.random() - .5) * 80, y: innerHeight * .45, vx: (Math.random() - .5) * 9, vy: -Math.random() * 11 - 4, r: Math.random() * 6.28, vr: (Math.random() - .5) * .3, w: 6 + Math.random() * 6, hh: 4 + Math.random() * 5, c: cols[Math.random() * cols.length | 0] }));
   let t = 0;
   (function frame() {
     ctx.clearRect(0, 0, innerWidth, innerHeight);
@@ -928,14 +972,14 @@ function makeCtx(id) {
       if (!screens[cur].noSave) { S.screen = cur; S.passed = passed; save(); }
       progress(); setBtn();
     },
-    async ask(options, { answer = null, key, en = false, q = null }) {
+    async ask(options, { answer = null, key, en = false, q = null, icon = "dau_thinking" }) {
       alive(id);
       if (!(S.answers[key] != null && replay)) await ctx.away();
       app.classList.add("nofade");
       const box = h("div", { class: "choices" });
       const btns = options.map(o => h("button", { class: "choice" + (en ? " en" : ""), type: "button" }, o));
       box.append(...btns);
-      const wrap = h("div", { class: "stack ask" }, q ? h("div", { class: "qtext" }, q) : null, box);
+      const wrap = h("div", { class: "stack ask" }, q ? h("div", { class: "ask-q" }, icon && A[icon] ? img(icon, "ask-icon", "") : null, h("div", { class: "qtext" }, q)) : null, box);
       ctx.show(wrap);
       return new Promise(resolve => {
         const pick = i => {
@@ -995,6 +1039,18 @@ function sizeTabs(sec) {
   const at = TABS.findIndex(t => t[0] === sec), base = at >= 0 ? at : sec === "intro" ? -1 : null;
   tabBtns.forEach((b, k) => { b.style.flexGrow = base === null || k < base ? 1 : k === base ? 1.6 : Math.max(1, 1.35 - .13 * (k - base - 1)); });
 }
+/* a burst of particles at a point on screen (fireworks) */
+function burstAt(x, y, n = 16, spread = 60, cols = ["#FFD166", "#FF9800", "#FFE9A8", "#8DD9B8", "#F9B8AE"]) {
+  if (REDUCED || replay) return;
+  const box = h("div", { class: "burst", style: `left:${x}px;top:${y}px`, "aria-hidden": "true" });
+  for (let k = 0; k < n; k++) {
+    const a = k / n * Math.PI * 2 + Math.random() * .3, d = spread * (.6 + Math.random() * .6);
+    box.append(h("i", { style: `--dx:${Math.cos(a) * d}px;--dy:${Math.sin(a) * d}px;background:${cols[k % cols.length]}` }));
+  }
+  document.body.append(box);
+  setTimeout(() => box.remove(), 900);
+}
+const buzz = pattern => { try { if (!replay && navigator.vibrate) navigator.vibrate(pattern); } catch (e) { /* not on this phone */ } };
 function burst(el) {
   el.classList.remove("pulse"); void el.offsetWidth; el.classList.add("pulse");
   if (REDUCED) return;
@@ -1079,7 +1135,7 @@ function setBtn() {
   let t = "Tiếp";
   if (needAnswer) t = "Chọn đáp án nha";
   else if (atEnd && cur === 0 && S.screen > 1 && S.screen < screens.length && !resumed) t = "Làm tiếp bài dở";
-  else if (atEnd && sc.last) t = "Xong";
+  else if (atEnd && sc.last) t = "Tải sổ tay về";
   else if (atEnd && sc.label) t = sc.label;
   b.textContent = t;
   $("#backBtn").disabled = cur === 0 && passed === 0;
@@ -1136,7 +1192,8 @@ gestures($("#catch"), true);
 gestures(sayBox, true);
 gestures(dau, "hide");
 sayBox.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); forward(); } });
-$("#nextBtn").addEventListener("click", forward);
+// on the last screen the main button saves the notebook (taps elsewhere still do nothing there)
+$("#nextBtn").addEventListener("click", e => { if (atEnd && screens[cur] && screens[cur].last && !needAnswer) { e.stopPropagation(); return void saveNotebook(); } forward(); });
 $("#backBtn").addEventListener("click", backward);
 document.addEventListener("keydown", e => {
   if ((e.target.closest && e.target.closest("textarea, input")) || document.querySelector(".sheet")) return;
@@ -1170,18 +1227,59 @@ if (hasScores) add("intro", async c => {
     grid.append(h("div", { class: "score" }, n, h("span", {}, k), h("em", {}, lab))); fit();
     await c.wait(300);
     await tick(n, Number(L.scores[k]), 1, 0, 120, c.id);
+    if (Number(L.scores[k]) >= 7) burst(n.parentElement);              // a little sparkle on a strong score
     await c.wait(550);
   }
   await c.gate();
   const ring = h("div", { class: "ring" }, "0.0");
-  c.show(h("div", { class: "card overall" }, ring, h("div", {}, h("div", { class: "h2" }, "Overall"), h("div", { class: "muted small" }, L.teacher + " chấm"))));
+  const card = c.show(h("div", { class: "card overall" }, ring, h("div", {}, h("div", { class: "h2" }, "Overall"), h("div", { class: "muted small" }, L.teacher + " chấm"))));
   await c.wait(400);
-  await tick(ring, Number(L.overall), .5, 1, 90, c.id);
+  const O = Number(L.overall), tier = O >= 8 ? 5 : O >= 7.5 ? 4 : O >= 7 ? 3 : O >= 6.5 ? 2 : O >= 6 ? 1 : 0;
+  await scoreShow(c, ring, card, O, tier);
   scoresSeen();
-  await c.say(L.results.score[0], "thumbsup");
+  await c.say(L.results.score[0], tier >= 2 ? "cheering" : tier ? "thumbsup" : "explaining");
   for (const line of L.results.score.slice(1)) { await c.gate(); await c.say(line, "explaining"); }
   await praise(c, "results");
 }, { label: "Xem chi tiết", name: "results" });
+
+/* the overall band: the count slows down before the last step (suspense is half the fun), then a
+   celebration that grows with the band: 6.0 a pop, 6.5 cheers and gold, 7.0 confetti, 7.5 a star
+   stamp, 8.0+ the lights go down, then gold, fireworks and a "Xuất sắc" badge. Played once: going
+   back shows the result without the show; reduced motion shows it still. */
+async function scoreShow(c, ring, card, to, tier) {
+  const live = !replay && !REDUCED;
+  const steps = [];
+  for (let v = .5; v < to - 1e-9; v += .5) steps.push(v);
+  let dim = null;
+  for (const [i, v] of steps.entries()) {
+    ring.textContent = v.toFixed(1);
+    const left = steps.length - i;
+    if (live && tier >= 5 && left === 2) { dim = h("div", { class: "dimmer" }); document.body.append(dim); requestAnimationFrame(() => dim.classList.add("on")); }
+    await c.wait(left > 3 ? 75 : left === 3 ? 170 : left === 2 ? 290 : tier >= 5 ? 1000 : tier >= 3 ? 600 : 420);
+  }
+  ring.textContent = to.toFixed(1);
+  if (dim) { dim.classList.remove("on"); setTimeout(() => dim.remove(), 500); }
+  if (tier >= 2) ring.classList.add("gold");
+  // the star stamps in behind the ring, its points around it
+  const holder = () => { if (ring.parentElement.classList.contains("ring-wrap")) return ring.parentElement; const w = h("div", { class: "ring-wrap" }); ring.replaceWith(w); w.append(ring); return w; };
+  const star = () => holder().prepend(h("img", { class: "stamp-star", src: A.icon_star, alt: "" }));
+  const badge = () => card.after(h("div", { class: "xs-badge" }, img("icon_trophy"), "Xuất sắc"));
+  if (!live) { if (tier >= 4) star(); if (tier >= 5) badge(); fit(); return; }
+  const r = () => rectOf(ring), mid = () => ({ x: r().left + r().width / 2, y: r().top + r().height / 2 });
+  ring.classList.remove("squash"); void ring.offsetWidth; ring.classList.add("squash");
+  if (tier >= 1) burst(ring);
+  if (tier >= 2) for (const d of [180, 360]) setTimeout(() => { const m = mid(); burstAt(m.x, m.y, 14, 70 + d / 4); }, d);
+  if (tier >= 3) { confetti(tier >= 5 ? ["#FFD166", "#FFB547", "#FFE9A8", "#FF9800", "#FFF3C4", "#F6C453"] : null); app.classList.remove("shake"); void app.offsetWidth; app.classList.add("shake"); setTimeout(() => app.classList.remove("shake"), 500); buzz(tier >= 5 ? [40, 60, 40, 60, 120] : 40); }
+  if (tier >= 4) { star(); holder().append(h("div", { class: "shock" })); fit(); }
+  if (tier >= 5) {
+    ring.classList.add("shine");
+    const waves = to >= 8.5 ? 2 : 1;
+    for (let w = 0; w < waves; w++) for (let k = 0; k < 5; k++) setTimeout(() => burstAt(innerWidth * (.15 + Math.random() * .7), innerHeight * (.12 + Math.random() * .45), 22, 90), 250 + w * 900 + k * 170);
+    await c.wait(500);
+    badge(); fit();
+  }
+  await c.wait(tier >= 3 ? 700 : 350);
+}
 
 // how to go through it: the full lesson with Đậu, or quickly through the essay in order
 // (flow 2 lessons are short and already go mistake by mistake: no choice)
@@ -1322,7 +1420,7 @@ if (L.prompt_check) add("TR", async c => {
 const LG = V2 ? L.logic : null;
 if (LG) tabIdx.LOGIC = screens.length;
 if (LG) add("LOGIC", async c => {
-  c.show(h("h1", { class: "h" }, "Logic"));
+  c.show(secTitle("dau_magnify", "Phần 1 · " + (L.t1 ? "TA và CC" : "TR và CC"), "Logic"));
   const list = c.show(h("div", { class: "stack" }));
   for (const [k, p] of LG.points.entries()) {
     await c.wait(k ? 380 : 150);
@@ -1796,16 +1894,16 @@ function langUnits() {
     const isC = it.ref[0] === "c", note = isC ? null : L.task_comments[+it.ref.slice(1) - 1];
     if (isC ? !C[it.ref] : !note) continue;
     const sid = isC ? CID_SENT[it.ref] : (note.sentence_ids || [])[0];
-    const spot = { ref: it.ref, sid, isC, note, swap: it.swap || null };
+    const spot = { ref: it.ref, sid, isC, note, swap: it.swap || null, upgrade: !!it.upgrade };
     const g = it.group && groups[it.group];
     if (g) {
       if (byGroup[g.id]) { byGroup[g.id].spots.push(spot); continue; }
-      units.push(byGroup[g.id] = { tab: it.tab, mode: it.mode, sid, spots: [spot], ask: g.ask || it.ask || null, group: g, key: "g-" + g.id });
+      units.push(byGroup[g.id] = { tab: it.tab, mode: it.mode, sid, spots: [spot], ask: g.ask || it.ask || null, board: g.board || it.board || null, group: g, key: "g-" + g.id });
       continue;
     }
     const last = units[units.length - 1];
     if (isC && it.mode === "teach" && last && last.teachC && last.sid === sid && last.tab === it.tab) { last.spots.push(spot); continue; }
-    units.push({ tab: it.tab, mode: it.mode, sid, spots: [spot], ask: it.ask || null, teachC: isC && it.mode === "teach", key: "li-" + it.ref });
+    units.push({ tab: it.tab, mode: it.mode, sid, spots: [spot], ask: it.ask || null, board: it.board || null, teachC: isC && it.mode === "teach", key: "li-" + it.ref });
   }
   return units;
 }
@@ -1818,10 +1916,12 @@ function typedWords(note) {
 const isLinker = note => typedWords(note) && !(note.at > 0);
 /* one card of a unit, before (her words, what is asked about underlined) or after (the fixes, drawn in one
    after another from delay d when live). v.refs: the corrections shown in one sentence; v.sp: a note */
-function spotView(v, { after, live, focus, d = 0 }) {
+function spotView(v, { after, live, focus, d = 0, praise = false }) {
   if (v.refs) {
     const el = sentence(v.sid, { mode: after ? "diff" : "orig", focus: v.refs, live, window: v.refs.length > 1 ? 0 : 8 });
     el.querySelectorAll(".corr.live").forEach((x, k) => x.style.setProperty("--d", d + k * .9 + "s"));
+    // a "nâng cấp": her words stay, not struck through
+    el.querySelectorAll("[data-c]").forEach(x => { if ((v.up || []).includes(x.dataset.c)) x.classList.add("up"); });
     return [el];
   }
   const sp = v.sp, text = (sp.note.sentence_ids || []).map(origText).join(" "), add = typedWords(sp.note);
@@ -1836,18 +1936,20 @@ function spotView(v, { after, live, focus, d = 0 }) {
     const ins = after ? h("span", { class: "corr" + (live ? " live" : ""), style: `--d:${d}s` }, h("ins", {}, words)) : h("span", { class: "err gap", "aria-label": "chỗ thiếu" });
     return [prev && SENT[prev] ? h("span", { class: "prev-ctx" }, "… " + origText(prev).split(" ").slice(-8).join(" ") + " ") : null, text.slice(0, at), ins, " ", rest].filter(x => x !== null);
   }
-  const sw = sp.swap, from = sw ? sw.from : focus || sp.note.quote;
+  const sw = sp.swap, from = sw ? sw.from : focus || sp.note.quote, up = sp.upgrade ? " up" : "";
   const i = from ? text.indexOf(from) : -1;
+  if (praise) return i < 0 ? [text] : [text.slice(0, i), h("mark", { class: "good" }, from), text.slice(i + from.length)];
   if (i < 0) return markFocus(text, focus || sp.note.quote);
-  if (!after || !sw) return [text.slice(0, i), h("span", { class: "err" }, from), text.slice(i + from.length)];
-  return [text.slice(0, i), h("span", { class: "corr" + (live ? " live" : ""), style: `--d:${d}s` }, h("s", {}, sw.from), " ", h("ins", {}, sw.to)), text.slice(i + sw.from.length)];
+  if (!after || !sw) return [text.slice(0, i), h("span", { class: "err" + up }, from), text.slice(i + from.length)];
+  return [text.slice(0, i), h("span", { class: "corr" + up + (live ? " live" : ""), style: `--d:${d}s` }, h("s", {}, sw.from), " ", h("ins", {}, sw.to)), text.slice(i + sw.from.length)];
 }
 /* one unit's screen: the sentence(s); Socratic asks first; then the fixes draw in one after another and the
    teacher's comments rise under them */
 function addUnit(u, { pill, bridge = null } = {}, opts = {}) {
   add(u.tab === "LOGIC" ? "LOGIC" : "LANG", async c => {
-    const praiseIt = u.mode === "praise", asking = u.mode === "socratic" && u.ask;
-    c.show(h("div", { class: "row" }, praiseIt ? h("span", { class: "pill tone-mint" }, TEACHER + " khen")
+    const praiseIt = u.mode === "praise", asking = u.mode === "socratic" && u.ask, upgrade = u.spots.every(sp => sp.upgrade);
+    c.show(h("div", { class: "row" }, praiseIt ? h("span", { class: "pill tone-mint" }, img("icon_star"), TEACHER + " khen")
+      : upgrade ? [h("span", { class: "pill tone-mint" }, "⬆ Nâng cấp"), pill ? h("span", { class: "small muted" }, pill) : null]
       : h("span", { class: "pill " + (u.tab === "LR" ? "tone-sky" : u.tab === "LOGIC" ? "tone-blush" : "tone-orange") }, pill)));
     if (bridge) await c.say(bridge, "explaining");
     // corrections in the same sentence share a card; a note has its own
@@ -1855,11 +1957,12 @@ function addUnit(u, { pill, bridge = null } = {}, opts = {}) {
     for (const sp of u.spots) {
       const last = specs[specs.length - 1];
       if (sp.isC && last && last.refs && last.sid === sp.sid) last.refs.push(sp.ref);
-      else specs.push(sp.isC ? { sid: sp.sid, refs: [sp.ref] } : { sid: sp.sid, sp });
+      else specs.push(sp.isC ? { sid: sp.sid, refs: [sp.ref], up: [] } : { sid: sp.sid, sp });
+      if (sp.isC && sp.upgrade) specs[specs.length - 1].up.push(sp.ref);
     }
     const focus = asking && specs.length === 1 ? u.ask.focus : null;
     const views = specs.map(v => {
-      const body = h("div", { class: "quote en" }, spotView(v, { after: praiseIt, live: false, focus }));
+      const body = h("div", { class: "quote en" }, spotView(v, { after: praiseIt, live: false, focus, praise: praiseIt }));
       const col = h("div", { class: "snip-col" }, body);
       c.show(h("div", { class: "card stack" }, col, v.sid ? cite(v.sid, v.refs || null) : null));
       return { ...v, body, col };
@@ -1879,6 +1982,7 @@ function addUnit(u, { pill, bridge = null } = {}, opts = {}) {
       await c.gate();
       content.querySelector(".ask").remove(); fit();
     } else if (u.group) await c.say(`${u.spots.length} chỗ này cùng một chuyện nè ${NAME}`, "magnify");
+    else if (upgrade) await c.say(`Chỗ này em viết đúng rồi, ${TEACHER} gợi ý cách nói hay hơn nè`, "thumbsup");
     else if (views.some(v => v.sp && typedWords(v.sp.note))) await c.say(`Chỗ này ${TEACHER} thêm ${views.some(v => v.sp && isLinker(v.sp.note)) ? "một từ nối" : "chữ"} cho em nè`, "explaining");
     else await c.wait(650);
     // the fixes draw in, one after another, then the comments
@@ -1892,6 +1996,12 @@ function addUnit(u, { pill, bridge = null } = {}, opts = {}) {
     views.forEach(v => v.col.append(...comments(v)));
     if (u.group && u.group.note) c.show(h("div", { class: "card stack" }, h("div", { class: "pt-comment rise" }, h("b", {}, TEACHER + ": "), u.group.note)));
     fit();
+    // Dạy: a small chalkboard and the rule in one line
+    if (u.mode === "board" && u.board && u.board.lines.length) {
+      await c.gate();
+      c.show(h("div", { class: "board-card mini", "aria-label": u.board.lines.join(", ") }, u.board.lines.map(t => h("span", {}, t))));
+      if (u.board.rule) await c.say(u.board.rule, "explaining");
+    }
   }, opts);
 }
 const LN = V2 ? L.language : null;
@@ -1906,7 +2016,7 @@ if (LN) {
     : sys.length ? null
     : units.length ? `Phần này không có lỗi nào em lặp lại nhiều, chỉ có mấy chỗ nhỏ thôi nè ${NAME}` : "Từ vựng và ngữ pháp bài này ổn rồi nè";
   add("LANG", async c => {
-    c.show(h("h1", { class: "h" }, "Language"));
+    c.show(secTitle("dau_writing", "Phần 2 · LR và GRA", "Language"));
     const P = LN.phrases, has = P && P.groups.some(g => g.items.length);
     if (tone) await c.say(tone, "explaining");
     else if (!has) await c.say("Giờ mình qua phần từ vựng và ngữ pháp nha", "explaining");
@@ -1961,7 +2071,7 @@ const kind = it => it.type === "build" ? "Xếp câu tiếng Anh" : it.type === 
 
 // practice intro: the kinds of question, one per tap
 if (CORE.length) add("practice", async c => {
-  c.show(h("h1", { class: "h" }, "Luyện tập"));
+  c.show(secTitle("dau_thumbsup", "Lỗi em hay lặp lại", "Luyện tập"));
   await c.say(PR.intro[0], "writing");
   for (const line of PR.intro.slice(1)) { await c.gate(); await c.say(line); }
   for (const [i, t] of CORE.map(kind).entries()) {
@@ -1977,21 +2087,26 @@ function exercise(c, item, key, counter) {
   const rec = S.practice[key] || (S.practice[key] = { tries: 0, done: false, first: null });
   app.classList.add("nofade");
   const body = h("div", { class: "stack" });
-  c.show(h("div", { class: "stack" }, h("div", { class: "row" }, h("span", { class: "pill tone-orange" }, kind(item)), counter ? h("span", { class: "small muted" }, counter) : null), body), { replace: true });
+  const headRow = h("div", { class: "row" }, h("span", { class: "pill tone-orange" }, kind(item)), counter ? h("span", { class: "small muted" }, counter) : null);
+  const flame = () => { headRow.querySelectorAll(".streak").forEach(x => x.remove()); if ((S.streak || 0) >= 2) headRow.append(h("span", { class: "streak" }, img("icon_flame"), `${S.streak} câu liên tiếp`)); };
+  flame();
+  c.show(h("div", { class: "stack" }, headRow, body), { replace: true });
   const q = item.type === "build" ? "Dịch câu này sang tiếng Anh nha" : item.q;
   body.append(h("div", { class: "qtext" }, q));
   if (!rec.done) c.say(q, "magnify");
   return new Promise(resolve => {
     let finished = false, reveal = () => {};
     // the explanation, as its own card under the exercise (never spliced into Đậu's line)
-    const explain = () => { if (item.explain && !body.querySelector(".explain")) { body.append(h("div", { class: "explain" }, item.explain)); fit(); } };
+    const explain = oops => { if (item.explain && !body.querySelector(".explain")) { body.append(h("div", { class: "explain" + (oops ? " oops" : "") }, oops ? img("dau_oops", "", "") : null, h("span", {}, item.explain))); fit(); } };
     const lock = () => body.querySelectorAll(".tok, .wchip, .choice").forEach(b => { b.disabled = true; });
     const end = ok => { finished = true; rec.done = true; save(); lock(); needAnswer = null; setBtn(); resolve(ok); };
     async function result(ok) {
       if (finished) return;
       rec.tries++; if (rec.first == null) rec.first = ok; save();
-      if (ok) { end(true); if (rec.tries === 1) explain(); await c.say(RIGHT[rightCount++ % RIGHT.length], "thumbsup"); }
-      else if (rec.tries < 2) { explain(); await c.say(`Chưa đúng nè ${NAME}, em thử lại nhen`, "oops"); }
+      // right first time keeps the streak going (the flame); a miss starts it again
+      S.streak = ok && rec.tries === 1 ? (S.streak || 0) + 1 : 0; save(); flame(); fit();
+      if (ok) { end(true); if (rec.tries === 1) explain(); await c.say(S.streak >= 3 ? `${S.streak} câu liên tiếp rồi nè, giữ lửa nha` : RIGHT[rightCount++ % RIGHT.length], S.streak >= 3 ? "cheering" : "thumbsup"); }
+      else if (rec.tries < 2) { explain(true); await c.say(`Chưa đúng nè ${NAME}, em thử lại nhen`, "oops"); }
       else { reveal(); end(false); await c.say("Đáp án ở đây nè, câu này mình ôn lại cuối bài nha", "thinking"); }
     }
     if (item.type === "choose") {
@@ -2231,6 +2346,7 @@ add("end", async c => {
   const recs = CORE.map(it => S.practice["p" + it.id]).filter(Boolean);
   const right = recs.filter(r => r.first).length, total = CORE.length;
   const on = right >= total ? 3 : right >= total * .7 ? 2 : right > 0 ? 1 : 0;
+  c.show(secTitle("dau_cheering", "Bài ôn của " + NAME, "Hoàn thành rồi nè"));
   await c.say(F.summary[0], "cheering");
   if (total) c.show(h("div", { class: "card stat" }, h("div", { class: "stars" }, [0, 1, 2].map(i => img("icon_star", i < on ? "" : "off"))), h("div", {}, h("b", {}, `${right}/${total} câu đúng`), h("div", { class: "small muted" }, "ngay lần đầu"))));
   await c.gate();
@@ -2277,6 +2393,220 @@ add("end", async c => {
     h("button", { class: "btn btn-ghost", type: "button", onclick: () => openEssay({}) }, "Xem bài sửa"),
     h("button", { class: "btn btn-ghost", type: "button", onclick: () => jump(nextIndex(extraIdx - 1, 1)) }, "Luyện thêm")));
 }, { last: true, optional: true, group: "later", end: "choose", backTo: () => summaryIdx });
+
+/* ---------- Sổ tay: one picture to keep (good phrases, mistakes to watch out for) ---------- */
+/* what goes in it, from the lesson itself */
+function notebookData() {
+  const good = [];                                   // [group label, [phrases]]
+  const P = (L.language && L.language.phrases) || (L.linking && L.linking.groups ? { groups: L.linking.groups } : null);
+  for (const g of (P && P.groups) || []) if (g.items.length) good.push([g.label, g.items.map(x => x.text)]);
+  const praised = [...PRAISED].map(r => (L.task_comments[+r.slice(1) - 1] || {}).quote).filter(Boolean);
+  if (praised.length) good.push([TEACHER + " khen", praised]);
+  // her words around a correction, a few on each side
+  const around = cid => {
+    const sid = CID_SENT[cid]; if (!sid) return { pre: "", post: "" };
+    const segs = SENT[sid].segs, j = segs.findIndex(g => typeof g !== "string" && g.c === cid);
+    const txt = gs => gs.map(g => typeof g === "string" ? g : C[g.c].orig).join("");
+    const pw = txt(segs.slice(0, j)).trim().split(/\s+/).filter(Boolean), qw = txt(segs.slice(j + 1)).trim().split(/\s+/).filter(Boolean);
+    return { pre: (pw.length > 4 ? "… " : "") + pw.slice(-4).join(" "), post: qw.slice(0, 4).join(" ") + (qw.length > 4 ? " …" : "") };
+  };
+  const fromC = (cid, up) => ({ ...around(cid), from: C[cid].orig.trim(), to: C[cid].fix.trim(), note: C[cid].comment || "", up });
+  const fromNote = (ref, it = {}) => {
+    const t = L.task_comments[+ref.slice(1) - 1]; if (!t) return null;
+    const add = typedWords(t);
+    if (it.swap) return { pre: "", post: "", from: it.swap.from, to: it.swap.to, note: t.comment, up: !!it.upgrade };
+    if (add) return { pre: "", post: "", from: "", to: add, note: t.comment, up: false };
+    return t.quote ? { pre: "", post: "", from: t.quote, to: "", note: t.comment, up: !!it.upgrade, keep: true } : null;
+  };
+  const sys = [], mistakes = [];
+  const M = L.mistakes || { main: [], others: [] };
+  for (const m of M.main || []) sys.push({ title: m.title, board: m.board || [], rule: m.rule || [], items: [...m.cids.filter(c => C[c]).map(c => fromC(c, false)), ...(m.points || []).map(p => fromNote(p.nid)).filter(Boolean)] });
+  if (L.language) {
+    for (const t of ["LR", "GRA"]) for (const it of L.language.items) if (it.tab === t && it.mode !== "praise" && it.mode !== "skip") {
+      const x = it.ref[0] === "c" ? (C[it.ref] ? fromC(it.ref, !!it.upgrade) : null) : fromNote(it.ref, it);
+      if (x) mistakes.push(x);
+    }
+  }                                                  // older lessons: their main mistakes only (the small ones stay on the page)
+  return { good, sys, mistakes };
+}
+async function saveNotebook() {
+  const btn = $("#nextBtn"), label = btn.textContent;
+  btn.textContent = "Đang tạo sổ tay…";
+  try {
+    const blob = await drawNotebook();
+    const name = `So-tay-${NAME}-${(L.homework || "").replace(/\s+/g, "-")}.png`.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/g, "d").replace(/Đ/g, "D");
+    const file = new File([blob], name, { type: "image/png" });
+    // on a phone: the share sheet (Lưu hình ảnh, Zalo…); elsewhere a download
+    if (matchMedia("(pointer: coarse)").matches && navigator.canShare && navigator.canShare({ files: [file] })) {
+      try { await navigator.share({ files: [file], title: "Sổ tay của " + NAME }); btn.textContent = "Đã lưu sổ tay ✓"; return; } catch (e) { if (e && e.name === "AbortError") { btn.textContent = label; return; } }
+    }
+    const a = h("a", { href: URL.createObjectURL(blob), download: name });
+    document.body.append(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+    btn.textContent = "Đã lưu sổ tay ✓";
+  } catch (e) { console.error(e); btn.textContent = label; }
+}
+/* the picture: 1080 px wide, as tall as it needs */
+async function drawNotebook() {
+  const D = notebookData();
+  const W = 1080, PAD = 56, IN = 44, CW = W - 2 * PAD;
+  const F = { disp: '"Baloo 2", "Be Vietnam Pro", system-ui, sans-serif', body: '"Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", sans-serif' };
+  const COL = { paper: "#FFF7EC", ink: "#2B2118", muted: "#8A7B6E", orange: "#FF9800", deep: "#C65D00", mint: "#2F9E74", mintSoft: "#E1F5EA", coral: "#D9483B", coralSoft: "#FDE6E2", line: "#EFE3D3", chalk: "#F4F1E8", board: "#2F4A3F", wood: "#B8763A", upSoft: "#FFF0D6" };
+  try { await Promise.race([Promise.all([document.fonts.load(`800 60px ${F.disp}`), document.fonts.load(`600 30px ${F.body}`), document.fonts.load(`italic 400 30px ${F.body}`)]), new Promise(r => setTimeout(r, 1500))]); } catch (e) { /* system fonts then */ }
+  const pic = key => new Promise(res => { const im = new Image(); im.onload = () => res(im); im.onerror = () => res(null); im.src = A[key]; });
+  const [wave, check, bulb, head] = await Promise.all(["dau_waving", "icon_check", "icon_bulb", "icon_dau"].map(pic));
+  const cv = document.createElement("canvas"), x = cv.getContext("2d");
+  const font = (w, size, fam = "body", style = "") => `${style} ${w} ${size}px ${F[fam]}`.trim();
+  const rr = (X, Y, w, hh, r, fill, stroke) => { x.beginPath(); x.roundRect ? x.roundRect(X, Y, w, hh, r) : x.rect(X, Y, w, hh); if (fill) { x.fillStyle = fill; x.fill(); } if (stroke) { x.strokeStyle = stroke; x.lineWidth = 2; x.stroke(); } };
+  /* rich text: runs of {t, f (font), c (colour), strike, bg}; wrapped word by word */
+  const wrap = (runs, maxW) => {
+    const lines = [[]]; let w = 0;
+    for (const r of runs) for (const tok of r.t.split(/(\s+)/)) {
+      if (!tok) continue;
+      x.font = r.f; const tw = x.measureText(tok).width;
+      if (/^\s+$/.test(tok)) { if (lines[lines.length - 1].length) { lines[lines.length - 1].push({ ...r, t: " ", w: tw }); w += tw; } continue; }
+      if (w + tw > maxW && lines[lines.length - 1].length) { const l = lines[lines.length - 1]; while (l.length && l[l.length - 1].t === " ") w -= l.pop().w; lines.push([]); w = 0; }
+      lines[lines.length - 1].push({ ...r, t: tok, w: tw }); w += tw;
+    }
+    return lines;
+  };
+  const drawLines = (lines, X, Y, lh, draw, maxLines = 99) => {
+    lines.slice(0, maxLines).forEach((l, i) => {
+      let cx = X; const by = Y + i * lh + lh * .72;
+      // one highlight behind each run of highlighted words (not one per word)
+      if (draw) {
+        let gx = X, start = null;
+        l.forEach((s, j) => {
+          if (s.bg && start === null) start = gx;
+          const endsHere = s.bg && !(l[j + 1] && l[j + 1].bg === s.bg);
+          gx += s.w;
+          if (endsHere) { let w = gx - start; if (s.t === " ") w -= s.w; rr(start - 6, by - lh * .68, w + 12, lh * .86, 10, s.bg); start = null; }
+        });
+      }
+      for (const s of l) {
+        if (draw) {
+          x.font = s.f; x.fillStyle = s.c; x.fillText(s.t, cx, by);
+          if (s.strike && s.t !== " ") { x.strokeStyle = s.c; x.lineWidth = 3; x.beginPath(); x.moveTo(cx, by - lh * .22); x.lineTo(cx + s.w, by - lh * .22); x.stroke(); }
+          if (s.dotted && s.t !== " ") { x.strokeStyle = COL.orange; x.lineWidth = 3; x.setLineDash([3, 5]); x.beginPath(); x.moveTo(cx, by + 6); x.lineTo(cx + s.w, by + 6); x.stroke(); x.setLineDash([]); }
+        }
+        cx += s.w;
+      }
+    });
+    return Math.min(lines.length, maxLines) * lh;
+  };
+  const clip = (t, n) => t.length > n ? t.slice(0, n - 1).replace(/\s+\S*$/, "") + " …" : t;
+  function layout(draw) {
+    let y = PAD;
+    // header: Đậu waving, her name, the homework, the band
+    const HH = 250;
+    if (draw) {
+      const g = x.createLinearGradient(PAD, y, PAD + CW, y + HH); g.addColorStop(0, "#FFB547"); g.addColorStop(1, "#FF9800");
+      rr(PAD, y, CW, HH, 40, g);
+      if (wave) { const k = Math.min(206 / wave.height, 220 / wave.width); x.drawImage(wave, PAD + 24, y + HH - 22 - wave.height * k, wave.width * k, wave.height * k); }
+      x.fillStyle = "#3A1D00"; x.font = font(800, 30, "disp"); x.fillText("SỔ TAY CỦA", PAD + 262, y + 82);
+      x.font = font(800, 66, "disp"); x.fillText(clip(NAME, 16), PAD + 262, y + 146);
+      x.font = font(500, 28); x.fillStyle = "#5A3200"; x.fillText(clip(`${L.homework || ""}${L.essay_type ? " · " + L.essay_type : ""}`, 34), PAD + 262, y + 196);
+      if (L.overall) {
+        const cx = PAD + CW - 100, cy = y + HH / 2;
+        x.beginPath(); x.arc(cx, cy, 70, 0, Math.PI * 2); x.fillStyle = "#FFF7EC"; x.fill();
+        x.fillStyle = COL.deep; x.textAlign = "center"; x.font = font(800, 56, "disp"); x.fillText(Number(L.overall).toFixed(1), cx, cy + 16);
+        x.font = font(700, 20, "disp"); x.fillText("OVERALL", cx, cy + 46); x.textAlign = "left";
+      }
+    }
+    y += HH + 36;
+    // a section card: icon, title, count
+    const section = (icon, title, n, tone, body) => {
+      const top = y; let yy = top + IN;
+      if (draw) {
+        x.save(); x.shadowColor = "rgba(90,50,10,.10)"; x.shadowBlur = 24; x.shadowOffsetY = 6; rr(PAD, top, CW, sectionH, 32, "#FFFFFF"); x.restore();
+        if (icon) x.drawImage(icon, PAD + IN, yy - 6, 58, 58);
+        x.fillStyle = COL.ink; x.font = font(800, 44, "disp"); x.fillText(title, PAD + IN + 74, yy + 40);
+        if (n) {
+          const tx = PAD + IN + 74 + x.measureText(title).width + 18;
+          x.font = font(800, 26, "disp"); const tw = x.measureText(String(n)).width;
+          rr(tx, yy + 6, tw + 28, 42, 21, tone); x.fillStyle = "#FFFFFF"; x.fillText(String(n), tx + 14, yy + 37);
+        }
+      }
+      yy += 76;
+      yy = body(yy);
+      return yy + IN - top;
+    };
+    let sectionH = 0;
+    // 1. good phrases, as chips by group
+    if (D.good.length) {
+      const body = yy => {
+        for (const [label, items] of D.good) {
+          if (draw) { x.fillStyle = COL.muted; x.font = font(700, 22, "disp"); x.fillText(label.toUpperCase(), PAD + IN, yy + 22); }
+          yy += 38;
+          let cx = PAD + IN;
+          for (const t of items) {
+            x.font = font(600, 28); const tw = Math.min(x.measureText(t).width, CW - 2 * IN - 40);
+            if (cx + tw + 40 > PAD + CW - IN) { cx = PAD + IN; yy += 64; }
+            if (draw) { rr(cx, yy, tw + 40, 52, 26, COL.mintSoft); x.fillStyle = COL.mint; x.font = font(600, 28); x.fillText(clip(t, 60), cx + 20, yy + 36); }
+            cx += tw + 40 + 12;
+          }
+          yy += 64 + 18;
+        }
+        return yy - 18;
+      };
+      sectionH = measureSection(body); y += section(check, "Cụm em dùng tốt", D.good.reduce((n, g) => n + g[1].length, 0), COL.mint, body) + 32;
+    }
+    // 2. mistakes to watch out for: the repeated one on its board first, then each fix
+    if (D.sys.length || D.mistakes.length) {
+      const item = (it, k, yy) => {
+        // a number, then her words → the fix (struck through unless it's an upgrade), then the comment
+        if (draw) { x.beginPath(); x.arc(PAD + IN + 20, yy + 22, 20, 0, Math.PI * 2); x.fillStyle = it.up ? COL.orange : COL.coral; x.fill(); x.fillStyle = "#FFF"; x.font = font(800, 22, "disp"); x.textAlign = "center"; x.fillText(String(k), PAD + IN + 20, yy + 30); x.textAlign = "left"; }
+        const X = PAD + IN + 58, MW = CW - 2 * IN - 58;
+        const it0 = font(400, 30, "body", "italic"), it1 = font(700, 30);
+        const runs = [];
+        if (it.pre) runs.push({ t: it.pre + " ", f: it0, c: COL.muted });
+        if (it.from) runs.push({ t: it.from, f: it.keep ? font(600, 30, "body", "italic") : it0, c: it.up || it.keep ? COL.ink : COL.coral, strike: !it.up && !it.keep, dotted: it.up || it.keep });
+        if (it.to) runs.push({ t: (it.from ? " → " : "+ "), f: it1, c: it.up ? COL.deep : COL.mint }, { t: it.to, f: it1, c: it.up ? COL.deep : COL.mint, bg: it.up ? COL.upSoft : COL.mintSoft });
+        if (it.post) runs.push({ t: " " + it.post, f: it0, c: COL.muted });
+        let yy2 = yy + drawLines(wrap(runs, MW), X, yy, 44, draw);
+        if (it.up) { if (draw) { x.font = font(800, 20, "disp"); rr(X, yy2 + 6, x.measureText("NÂNG CẤP").width + 24, 32, 16, COL.upSoft); x.fillStyle = COL.deep; x.fillText("NÂNG CẤP", X + 12, yy2 + 29); } yy2 += 44; }
+        if (it.note) yy2 += 6 + drawLines(wrap([{ t: clip(it.note.replace(/\s+/g, " "), 170), f: font(400, 25), c: COL.muted }], MW), X, yy2 + 6, 36, draw, 3);
+        return yy2 + 30;
+      };
+      const body = yy => {
+        let k = 1;
+        for (const g of D.sys) {
+          // the repeated mistake: its name, the chalkboard, the rule
+          if (draw) { x.fillStyle = COL.coral; x.font = font(800, 22, "disp"); x.fillText("LỖI EM HAY LẶP LẠI", PAD + IN, yy + 22); x.fillStyle = COL.ink; x.font = font(800, 34, "disp"); x.fillText(clip(g.title, 40), PAD + IN, yy + 66); }
+          yy += 86;
+          if (g.board.length) {
+            const bh = 40 + g.board.length * 52;
+            if (draw) { rr(PAD + IN, yy, CW - 2 * IN, bh, 16, COL.wood); rr(PAD + IN + 10, yy + 10, CW - 2 * IN - 20, bh - 20, 10, COL.board); x.fillStyle = COL.chalk; x.font = font(700, 36, "disp"); g.board.forEach((t, i) => x.fillText(t, PAD + IN + 40, yy + 62 + i * 52)); }
+            yy += bh + 16;
+          }
+          for (const r of g.rule) yy += drawLines(wrap([{ t: "• " + r, f: font(500, 26), c: COL.ink }], CW - 2 * IN), PAD + IN, yy, 38, draw) + 4;
+          yy += 22;
+          for (const it of g.items) yy = item(it, k++, yy);
+          if (D.mistakes.length && draw) { x.strokeStyle = COL.line; x.lineWidth = 2; x.beginPath(); x.moveTo(PAD + IN, yy); x.lineTo(PAD + CW - IN, yy); x.stroke(); }
+          yy += 24;
+        }
+        for (const it of D.mistakes) yy = item(it, k++, yy);
+        return yy - 30;
+      };
+      sectionH = measureSection(body); y += section(bulb, "Lỗi cần để ý", D.sys.reduce((n, g) => n + g.items.length, 0) + D.mistakes.length, COL.coral, body) + 32;
+    }
+    // footer
+    if (draw) {
+      if (head) x.drawImage(head, PAD, y, 64, 64);
+      x.fillStyle = COL.muted; x.font = font(700, 26, "disp"); x.fillText(`anh Đậu · ôn bài cùng ${TEACHER}`, PAD + 80, y + 30);
+      x.font = font(400, 22); x.fillText(new Date().toLocaleDateString("vi-VN"), PAD + 80, y + 60);
+    }
+    return y + 64 + PAD;
+    // a section's height: run its body without drawing
+    function measureSection(body) { const was = draw; draw = false; const end = body(IN + 76); draw = was; return end + IN; }
+  }
+  x.font = font(400, 30);
+  const H = layout(false);
+  cv.width = W; cv.height = Math.ceil(H);
+  x.fillStyle = COL.paper; x.fillRect(0, 0, W, cv.height);
+  layout(true);
+  return await new Promise((res, rej) => cv.toBlob(b => b ? res(b) : rej(new Error("toBlob")), "image/png"));
+}
 
 /* the chalk on the drawn board: shrink until every line fits, never below 12px (readable on a phone);
    if that's not enough, make the picture full width and try again; false = use a plain board */
@@ -2406,6 +2736,7 @@ function openEssay({ sid = null, cids = null, step = false, onDone = null }) {
         // the highlighted words themselves open their comment
         for (const t of notesBy[s.id] || []) if (t.quote) markIn(span, t.quote, m => pop(m, noteBody(t))).forEach(m => {
           m._open = () => pop(m, noteBody(t)); m._keys = ["n" + L.task_comments.indexOf(t)]; m._kind = KIND[t.kind] || "Nhận xét";
+          if (PRAISED.has("n" + (L.task_comments.indexOf(t) + 1))) m.classList.add("good");
         });
         if (s.id === sid) span.classList.add("hl");
         if (cids) span.querySelectorAll(".corr").forEach(x => { if (cids.includes(x.dataset.c)) x.classList.add("focus"); });

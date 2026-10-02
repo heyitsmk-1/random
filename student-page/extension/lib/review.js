@@ -45,7 +45,7 @@ const VOICE = [
   // flow 2
   /^logic\.summary\.\d+$/, /^logic\.points\.\d+\.line$/, /^logic\.issues\.\d+\.say\.\d+$/,
   /^language\.intro\.\d+$/, /^language\.phrases\.line$/, /^language\.items\.\d+\.ask\.(q|right|wrong)$/,
-  /^language\.focus$/, /^language\.groups\.\d+\.ask\.(q|right|wrong)$/, /^logic\.issues\.\d+\.changes\.\d+\.why$/,
+  /^language\.focus$/, /^language\.(items|groups)\.\d+\.board\.rule$/, /^language\.groups\.\d+\.ask\.(q|right|wrong)$/, /^logic\.issues\.\d+\.changes\.\d+\.why$/,
 ];
 export const isVoice = path => VOICE.some(r => r.test(path));
 
@@ -287,6 +287,7 @@ export function checks2(L, { checkLesson } = {}) {
   ((L.language && L.language.items) || []).forEach((it, i) => {
     const sid = sidOfRef(it.ref);
     if (it.swap && it.swap.from && !inSents([sid], it.swap.from)) flag(`language.items.${i}.swap.from`, "language", `"${it.swap.from}" không có trong câu của em`);
+    ((it.board && it.board.lines) || []).forEach((t, j) => { if (t.length > BOARD_MAX) flag(`language.items.${i}.board.lines.${j}`, "language", `Bảng: dòng quá dài (${t.length} ký tự, nên dưới ${BOARD_MAX})`); });
     if (it.mode !== "socratic") return;
     const g = it.group && groups.find(x => x.id === it.group);
     if (g && g.refs[0] !== it.ref) return;                // a group asks once, on its first item

@@ -32,11 +32,13 @@ New lessons (**flow 2**: the teacher decides, Claude writes little):
    Week 1: each paraphrase topic ✓ / ✗.
 4. **Language** (LR · GRA): per tab, the systematic mistake (a name, then tick the corrections that belong to
    it) or "Không có lỗi hệ thống". Every correction and note from the grammar/vocab editor, in essay order:
-   **Dạy** (shown as the teacher wrote it) / **Socratic** (asked first) / **Khen** / **Bỏ qua**, and its part
+   **Hiện** (the fix, then the teacher's comment) / **Dạy** (the same, then a small chalkboard: 1-2 formulas and
+   one rule line Claude writes from the comment) / **Socratic** (asked first) / **Khen** / **Bỏ qua**, and its part
    (Từ vựng / Ngữ pháp / **Logic**: plain "=> COMMENT" notes start in Logic). **Gộp với…** puts corrections
    that are the same point on one screen, with an optional group note; **Chuyển nhận xét sang…** moves a
    comment to the correction it belongs to (only in the lesson: the CRM is never touched). A note already
-   used in a ✗ / ~ idea starts as Bỏ qua.
+   used in a ✗ / ~ idea starts as Bỏ qua. **⬆ Nâng cấp** marks a fix that isn't a mistake, only a better way to
+   say it (guessed from the comment: "nâng cấp", "hay hơn"…): on the page her words aren't struck through.
 5. **Viết lại**: the exact sentences to rewrite.
 6. **Soạn**: one Claude pass in small parts (`lib/draft2.js`), only Đậu's words around those decisions: the
    Logic summary and one screen per problem, the chains of ✗ ideas, "Cụm em đã dùng tốt", the Socratic
@@ -63,6 +65,16 @@ vocabulary first, then grammar, each in essay order) → practice (only with a s
   where she typed them, with the sentence before shown faded. A group is one screen.
 - The lines between parts ("Giờ mình xem 4 chỗ từ vựng anh Khoa sửa cho em nha") come from the page, so they
   always match what comes next; Claude only names a focus when the teacher named a systematic mistake.
+- Three looks: red wavy / struck through for a mistake, orange dotted → green for a Nâng cấp, green for Khen.
+- The overall score: the count slows down before the last step, then a celebration by band (6.0 a pop,
+  6.5 cheers and a gold ring, 7.0 confetti, 7.5 a star stamp, 8.0+ the lights go down, fireworks, gold confetti
+  and a "Xuất sắc" badge). Only the first time; going back or reduced motion shows the result still.
+- The mascot stickers each have a job: section title cards (Logic: magnifying glass, Language: writing,
+  Luyện tập: thumbs-up, the end: cheering), a thinking Đậu beside every question, an oops Đậu on a wrong
+  practice answer; a flame counts practice answers right in a row.
+- The last screen's button is **Tải sổ tay về**: one picture (1080 px wide, drawn on a canvas) with "Cụm em
+  dùng tốt" and "Lỗi cần để ý" (the systematic mistake with its board, then each fix with the teacher's
+  comment). On a phone it opens the share sheet (save to Photos, Zalo); elsewhere it downloads.
 
 Drafts started before flow 2 (and `editor.html?flow=1`) keep the old steps: Framework tagging → a 6-part
 draft (`lib/draft.js`) → "Cần duyệt" review → export. Old lessons still build and play as before.

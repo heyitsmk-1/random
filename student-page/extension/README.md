@@ -69,6 +69,8 @@ vocabulary first, then grammar, each in essay order) → practice (only with a s
 - The overall score: the count slows down before the last step, then a celebration by band (6.0 a pop,
   6.5 cheers and a gold ring, 7.0 confetti, 7.5 a star stamp, 8.0+ the lights go down, fireworks, gold confetti
   and a "Xuất sắc" badge). Only the first time; going back or reduced motion shows the result still.
+- Chalkboards (the systematic mistake's "Quy tắc", and every Dạy card) are Đậu pointing at a big board
+  (`assets/dau_board.webp`), the formulas chalked on it and sized to fit; a plain board only if they don't.
 - The mascot stickers each have a job: section title cards (Logic: magnifying glass, Language: writing,
   Luyện tập: thumbs-up, the end: cheering), a thinking Đậu beside every question, an oops Đậu on a wrong
   practice answer; a flame counts practice answers right in a row.

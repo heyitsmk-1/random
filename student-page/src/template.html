@@ -427,8 +427,6 @@ mark.good { background: var(--mint-soft); color: var(--mint-deep); font-weight: 
 .corr.up s, .corr.live.up s { text-decoration: none; background: none; animation: none; color: inherit; border-bottom: 2.5px dotted var(--orange); }
 .corr.up s::after { content: " →"; color: var(--orange-deep); font-weight: 800; }
 .pill img { width: 1.15em; height: 1.15em; vertical-align: -.22em; margin-right: .3em; }
-/* Dạy: a small chalkboard under the fix */
-.board-card.mini { align-self: flex-start; font-size: 22px; padding: 8px 18px; border-width: 6px; }
 /* a sticker beside a question, and the section title cards */
 .ask-q { display: flex; gap: .6em; align-items: center; }
 .ask-q .qtext { flex: 1; }
@@ -471,13 +469,13 @@ mark.good { background: var(--mint-soft); color: var(--mint-deep); font-weight: 
 .mcard .t b { display: block; }
 
 /* chalkboard */
-.board-wrap { position: relative; container-type: inline-size; width: calc(72% * var(--k)); max-width: 300px; align-self: center; flex: none; }
+.board-wrap { position: relative; container-type: inline-size; width: calc(96% * var(--k)); max-width: 460px; align-self: center; flex: none; }
 .board-wrap img { width: 100%; display: block; }
-/* the board's inner area in dau_explaining is x 57-93%, y 33-68%; Đậu's pointer crosses it below ~50%,
-   so the chalk stays in the strip above it, one formula per line */
-.board-text { position: absolute; left: 59%; top: 33.5%; width: 33%; height: 16.5%; display: flex; flex-direction: column; justify-content: center; align-items: center; font: 400 5.2cqw/1.05 var(--font-chalk); color: var(--chalk); text-align: center; white-space: nowrap; }
-.board-wrap.big { width: calc(92% * var(--k)); max-width: 100%; }
-.board-text.one { font-size: 7.5cqw; }
+/* the board's inner area in dau_board is x 36-96%, y 17-80%; Đậu's hand and chalk touch its left edge
+   (x < 41%), so the chalk starts right of them, one formula per line */
+.board-text { position: absolute; left: 42%; top: 22%; width: 51%; height: 53%; display: flex; flex-direction: column; justify-content: center; align-items: center; font: 400 5.2cqw/1.05 var(--font-chalk); color: var(--chalk); text-align: center; white-space: nowrap; }
+.board-wrap.big { width: 100%; max-width: 100%; }
+.board-text.one { font-size: 9cqw; }
 .board-text span { opacity: 0; animation: chalk .5s forwards; }
 .board-text span.later, .board-card span.later { animation: none; opacity: 0; }
 .board-card { align-self: center; max-width: 100%; background: #2F4A3F; color: var(--chalk); border: 7px solid #B8763A; border-radius: 12px; padding: 12px 18px;
@@ -1823,16 +1821,7 @@ function addMistake(m, optional, lead = []) {
   add(m.tab, async c => {
     c.show(head("Quy tắc"));
     c.show(h("h2", { class: "h2" }, m.title));
-    // all lines are laid out first (invisible) so the chalk can be sized to fit the board
-    const lines = m.board.map(line => h("span", { class: "later" }, line));
-    const text = h("div", { class: "board-text" + (m.board.length === 1 ? " one" : ""), "aria-label": m.board.join(", ") }, lines);
-    const pic = img("dau_explaining", "", "anh Đậu chỉ lên bảng");
-    const wrap = c.show(h("div", { class: "board-wrap" }, pic, text));
-    if (!(await fitBoard(wrap, text, pic))) {
-      // too long for the drawn board even in small chalk: a plain board that grows with its lines
-      wrap.replaceWith(h("div", { class: "board-card", "aria-label": m.board.join(", ") }, lines)); fit();
-    }
-    for (const [i, line] of lines.entries()) { await c.wait(i ? 450 : 600); line.classList.remove("later"); }
+    await chalkBoard(c, m.board);
     const ul = h("ul", { class: "rules" });
     c.show(h("div", { class: "card" }, ul));
     for (const [i, r] of m.rule.entries()) { if (i) await c.gate(); else await c.wait(700); ul.append(h("li", {}, r)); fit(); }
@@ -1999,7 +1988,7 @@ function addUnit(u, { pill, bridge = null } = {}, opts = {}) {
     // Dạy: a small chalkboard and the rule in one line
     if (u.mode === "board" && u.board && u.board.lines.length) {
       await c.gate();
-      c.show(h("div", { class: "board-card mini", "aria-label": u.board.lines.join(", ") }, u.board.lines.map(t => h("span", {}, t))));
+      await chalkBoard(c, u.board.lines);
       if (u.board.rule) await c.say(u.board.rule, "explaining");
     }
   }, opts);
@@ -2608,6 +2597,19 @@ async function drawNotebook() {
   return await new Promise((res, rej) => cv.toBlob(b => b ? res(b) : rej(new Error("toBlob")), "image/png"));
 }
 
+/* Đậu pointing at the chalkboard, the formulas written on it one line at a time. All lines are laid out
+   first (invisible) so the chalk can be sized to fit the board; a plain board if they're too long */
+async function chalkBoard(c, board) {
+  const lines = board.map(line => h("span", { class: "later" }, line));
+  const text = h("div", { class: "board-text" + (board.length === 1 ? " one" : ""), "aria-label": board.join(", ") }, lines);
+  const pic = img("dau_board", "", "anh Đậu chỉ lên bảng");
+  const wrap = c.show(h("div", { class: "board-wrap" }, pic, text));
+  if (!(await fitBoard(wrap, text, pic))) {
+    wrap.replaceWith(h("div", { class: "board-card", "aria-label": board.join(", ") }, lines)); fit();
+  }
+  for (const [i, line] of lines.entries()) { await c.wait(i ? 450 : 600); line.classList.remove("later"); }
+}
+
 /* the chalk on the drawn board: shrink until every line fits, never below 12px (readable on a phone);
    if that's not enough, make the picture full width and try again; false = use a plain board */
 async function fitBoard(wrap, text, pic) {
@@ -2617,7 +2619,7 @@ async function fitBoard(wrap, text, pic) {
   const over = () => text.scrollWidth > text.clientWidth + 1 || text.scrollHeight > text.clientHeight + 1;
   const tryFit = () => {
     const minK = 12 / (wrap.clientWidth || 1) * 100;               // cqw: % of the board picture's width
-    let k = text.classList.contains("one") ? 7.5 : 5.2;
+    let k = text.classList.contains("one") ? 9 : 7;
     text.style.fontSize = k + "cqw";
     while (over() && k - 0.2 >= minK) { k -= 0.2; text.style.fontSize = k + "cqw"; }
     return !over();

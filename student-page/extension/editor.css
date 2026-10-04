@@ -192,3 +192,20 @@ label.crm-note { align-items: flex-start; font-size: 13px; }
 .group-tag { color: #2E6FA8; font-weight: 600; }
 .group-note { width: 100%; }
 .lang-item select.small { font-size: 13px; padding: 3px 6px; }
+/* flow 2 · Language: up to 3 systematic mistakes per tab (chips 1·2·3), comments dragged between rows */
+.sys-names { display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 260px; }
+.sys-name input { flex: 1; }
+.sys-chips { display: inline-flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+.sys-chip { display: inline-flex; align-items: center; justify-content: center; min-width: 24px; height: 24px; padding: 0 8px; border-radius: 999px; border: 1.5px solid var(--line); background: var(--paper); font: inherit; font-size: 12.5px; font-weight: 700; cursor: pointer; }
+span.sys-chip { cursor: default; color: #fff; border: 0; }
+.sys-chip.c0 { --c: #D9483B; } .sys-chip.c1 { --c: #8E6CC8; } .sys-chip.c2 { --c: #2F9E74; }
+span.sys-chip, .sys-chip[aria-pressed="true"] { background: var(--c); border-color: var(--c); color: #fff; }
+.lang-item.sys-0 { border-left: 3px solid #D9483B; padding-left: 10px; }
+.lang-item.sys-1 { border-left: 3px solid #8E6CC8; padding-left: 10px; }
+.lang-item.sys-2 { border-left: 3px solid #2F9E74; padding-left: 10px; }
+.crow-comment.drag-comment { cursor: grab; }
+.lang-item.drop-on { outline: 2px dashed var(--orange); outline-offset: 2px; background: var(--orange-soft); }
+/* systematic mistake: which corrections follow each board formula */
+.pat-refs { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 6px; }
+.pat-ref { font: inherit; font-size: 12.5px; padding: 3px 10px; border-radius: 999px; border: 1px solid var(--line, #ddd); background: #fff; cursor: pointer; }
+.pat-ref[aria-pressed="true"] { background: #FFF1DC; border-color: #FF9800; color: #8A4B00; font-weight: 600; }

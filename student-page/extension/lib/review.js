@@ -43,9 +43,9 @@ const VOICE = [
   /^t1\.overview\.(intro|lines)\.\d+$/, /^t1\.data\.intro$/, /^t1\.data\.verdict\.\d+$/, /^t1\.data\.items\.\d+\.note$/,
   /^paraphrase\.intro\.\d+$/, /^paraphrase\.items\.\d+\.line$/, /^paraphrase\.outro$/,
   // flow 2
-  /^logic\.summary\.\d+$/, /^logic\.points\.\d+\.line$/, /^logic\.issues\.\d+\.say\.\d+$/,
-  /^language\.intro\.\d+$/, /^language\.phrases\.line$/, /^language\.items\.\d+\.ask\.(q|right|wrong)$/,
-  /^language\.focus$/, /^language\.(items|groups)\.\d+\.board\.rule$/, /^language\.groups\.\d+\.ask\.(q|right|wrong)$/, /^logic\.issues\.\d+\.changes\.\d+\.why$/,
+  /^logic\.summary\.\d+$/, /^logic\.points\.\d+\.line$/, /^logic\.issues\.\d+\.(say|missing)\.\d+$/, /^logic\.issues\.\d+\.rule$/,
+  /^logic\.issues\.\d+\.ask\.(q|right|wrong)$/, /^logic\.issues\.\d+\.changes\.\d+\.why$/, /^ideas\.details\.\d+\.ask\.(right|wrong)$/,
+  /^language\.phrases\.line$/, /^mistakes\.main\.\d+\.patterns\.\d+\.rule$/,
 ];
 export const isVoice = path => VOICE.some(r => r.test(path));
 
@@ -262,45 +262,37 @@ export function checks2(L, { checkLesson } = {}) {
     if (it.quote && !inSents(it.sids, it.quote)) flag(`logic.issues.${i}.quote`, "logic", "Chữ trích không có trong câu của em");
     if (!(it.sids || []).length) flag(`logic.issues.${i}.sids`, "logic", "Chỗ cần sửa này chưa gắn với câu nào trong bài (em không biết nó ở đâu)");
     (it.changes || []).forEach((ch, j) => { if (ch.from && !inSents(it.sids, ch.from)) flag(`logic.issues.${i}.changes.${j}.from`, "logic", `"${ch.from}" không có trong câu của em`); });
-    if (!(it.say || []).some(x => x && x.trim())) flag(`logic.issues.${i}.say`, "logic", "Chỗ cần sửa này chưa có lời Đậu", true);
+    if (!(it.missing || it.say || []).some(x => x && x.trim())) flag(`logic.issues.${i}.missing`, "logic", "Chỗ cần sửa này chưa có lời Đậu (câu của em thiếu gì)", true);
+    if (it.prompt_focus && !norm(L.prompt || "").includes(norm(it.prompt_focus))) flag(`logic.issues.${i}.prompt_focus`, "logic", "Chữ tô vàng không có trong đề bài");
+    if (it.ask && it.ask.q && !(it.ask.answer >= 0 && it.ask.answer < (it.ask.options || []).length)) flag(`logic.issues.${i}.ask.answer`, "logic", "Đáp án đúng không trỏ tới lựa chọn nào", true);
     if (L.t1 && it.series && L.t1.kind !== "map" && chartValue(L.t1, it) === undefined) flag(`logic.issues.${i}.series`, "logic", `Không thấy "${it.series}" / "${it.col}" trên biểu đồ`);
   });
   if (G.points.some(p => !p.ok) && !G.issues.length && !L.ideas) flag("logic.issues", "logic", "Có điểm ✗ nhưng chưa có màn nào giải thích cho em");
 
-  // Language: "Cụm em đã dùng tốt" really in her essay; Socratic questions that work
+  // Language: "Cụm em đã dùng tốt" really in her essay
   ((L.language && L.language.phrases && L.language.phrases.groups) || []).forEach((g, gi) => g.items.forEach((x, xi) => {
     const s = sents[x.sid] || "";
     let from = 0;
     const found = norm(x.text).split(/\s*(?:…|\.\.\.)\s*/).filter(Boolean).every(piece => { const k = s.indexOf(piece, from); if (k < 0) return false; from = k + piece.length; return true; });
     if (!found) flag(`language.phrases.groups.${gi}.items.${xi}`, "language", `"${x.text}" không có trong câu ${x.sid}`);
   }));
-  const sidOfRef = ref => {
-    if (ref[0] === "c") { for (const p of L.essay.paragraphs) for (const s of p.sentences) if (s.segs.some(g => typeof g !== "string" && g.c === ref)) return s.id; return null; }
-    return ((L.task_comments[+ref.slice(1) - 1] || {}).sentence_ids || [])[0] || null;
-  };
-  const groups = (L.language && L.language.groups) || [];
-  const askCheck = (ask, path, sidsOf) => {
-    if (!ask || !ask.q) return flag(path, "language", "Câu Socratic chưa có câu hỏi", true);
-    if (!(ask.answer >= 0 && ask.answer < (ask.options || []).length)) flag(`${path}.answer`, "language", "Đáp án đúng không trỏ tới lựa chọn nào", true);
-    if (ask.focus && !inSents(sidsOf, ask.focus)) flag(`${path}.focus`, "language", `"${ask.focus}" (chữ được tô khi hỏi) không có trong câu của em`);
-  };
-  ((L.language && L.language.items) || []).forEach((it, i) => {
-    const sid = sidOfRef(it.ref);
-    if (it.swap && it.swap.from && !inSents([sid], it.swap.from)) flag(`language.items.${i}.swap.from`, "language", `"${it.swap.from}" không có trong câu của em`);
-    ((it.board && it.board.lines) || []).forEach((t, j) => { if (t.length > BOARD_MAX) flag(`language.items.${i}.board.lines.${j}`, "language", `Bảng: dòng quá dài (${t.length} ký tự, nên dưới ${BOARD_MAX})`); });
-    if (it.mode !== "socratic") return;
-    const g = it.group && groups.find(x => x.id === it.group);
-    if (g && g.refs[0] !== it.ref) return;                // a group asks once, on its first item
-    if (g && g.ask) return askCheck(g.ask, `language.groups.${groups.indexOf(g)}.ask`, g.refs.map(sidOfRef));
-    askCheck(it.ask, `language.items.${i}.ask`, [sid]);
-  });
-
-  // the systematic mistake: a figure instead of {n} must be right; the chalkboard must fit
+  // the systematic mistakes: a figure instead of {n} must be right; one formula per board line, each with its corrections
   const size = g => g.cids.length + (g.points || []).length;
   ((L.mistakes && L.mistakes.main) || []).forEach((m, i) => {
     if (m.count_line && nums(m.count_line).some(n => n !== size(m))) flag(`mistakes.main.${i}.count_line`, "systemic", `Số lỗi không khớp: lỗi này có ${size(m)} chỗ`);
-    (m.board || []).forEach((t, j) => { if (t.length > BOARD_MAX) flag(`mistakes.main.${i}.board.${j}`, "systemic", `Bảng: dòng quá dài (${t.length} ký tự, nên dưới ${BOARD_MAX})`); });
-    if (!(m.ask.answer >= 0 && m.ask.answer < (m.ask.options || []).length)) flag(`mistakes.main.${i}.ask.answer`, "systemic", "Đáp án đúng không trỏ tới lựa chọn nào", true);
+    const pats = m.patterns || [];
+    if (pats.length) {
+      pats.forEach((x, j) => {
+        if (x.formula.length > BOARD_MAX) flag(`mistakes.main.${i}.patterns.${j}.formula`, "systemic", `Bảng: dòng quá dài (${x.formula.length} ký tự, nên dưới ${BOARD_MAX})`);
+        if (/[\/,]/.test(x.formula)) flag(`mistakes.main.${i}.patterns.${j}.formula`, "systemic", "Bảng: mỗi dòng chỉ một công thức (dòng này có “/” hoặc “,”: tách thành 2 dòng)");
+        if (!x.refs.length) flag(`mistakes.main.${i}.patterns.${j}.refs`, "systemic", `Công thức “${x.formula}” chưa gắn chỗ sửa nào trong bài`);
+      });
+      if (pats.length > 4) flag(`mistakes.main.${i}.patterns`, "systemic", `Bảng có ${pats.length} dòng, nhiều nhất 4`);
+      const tagged = new Set(pats.flatMap(x => x.refs));
+      const loose = [...m.cids, ...(m.points || []).map(x => x.nid)].filter(r => !tagged.has(r));
+      if (loose.length) flag(`mistakes.main.${i}.patterns`, "systemic", `${loose.length} chỗ chưa thuộc công thức nào (${loose.join(", ")}): thêm một dòng cho nó`);
+    } else (m.board || []).forEach((t, j) => { if (t.length > BOARD_MAX) flag(`mistakes.main.${i}.board.${j}`, "systemic", `Bảng: dòng quá dài (${t.length} ký tự, nên dưới ${BOARD_MAX})`); });
+    if (m.ask.q && !(m.ask.answer >= 0 && m.ask.answer < (m.ask.options || []).length)) flag(`mistakes.main.${i}.ask.answer`, "systemic", "Đáp án đúng không trỏ tới lựa chọn nào", true);
   });
   ((L.practice && L.practice.items) || []).forEach((it, i) => {
     if (it.type === "choose" && !(it.answer >= 0 && it.answer < (it.options || []).length)) flag(`practice.items.${i}.answer`, "practice", "Đáp án đúng không trỏ tới lựa chọn nào", true);

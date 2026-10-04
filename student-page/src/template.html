@@ -417,6 +417,9 @@ button.mcard { width: 100%; text-align: left; font: inherit; color: inherit; cur
 .corr.live ins { animation-delay: calc(var(--d, 0s) + .4s); }
 .prev-ctx { color: var(--muted); }
 mark.hl-bad { background: linear-gradient(transparent 55%, var(--coral-soft) 55%); color: var(--coral); font-weight: 600; padding: 0 .1em; }
+.fw-rule { display: flex; gap: .7em; align-items: center; border: 2px solid var(--orange); background: var(--orange-soft); animation: popIn .45s cubic-bezier(.3, 1.5, .5, 1) both; }
+.fw-rule b { font-weight: 600; line-height: 1.4; }
+.quote.lit { background: linear-gradient(transparent 8%, var(--coral-soft) 8%, var(--coral-soft) 92%, transparent 92%); border-radius: 6px; transition: background .4s; }
 mark.hl-good { background: linear-gradient(transparent 55%, var(--mint-soft) 55%); color: var(--mint-deep); font-weight: 600; padding: 0 .1em; }
 .pt-comment.rise, .pt-better.rise { animation: rise .4s both; }
 /* praise is green, never the red wavy of a mistake */
@@ -578,6 +581,27 @@ textarea.write:focus { outline: none; border-color: var(--orange); }
 .tr-mark.active { outline: 2px solid var(--orange); }
 .other-row { padding: 12px 0; border-top: 1px solid var(--line); font-size: 15px; }
 .other-row:first-child { border-top: 0; }
+.lrow .row { gap: .4em; }
+.lrow-words { margin: .4em 0 .2em; line-height: 1.5; }
+.lrow-words s { color: var(--coral); }
+.lrow-words ins { text-decoration: none; color: var(--mint-deep); font-weight: 600; }
+.lrow .pt-comment { margin-top: .35em; }
+.pill.small { font-size: .72em; padding: .15em .6em; }
+.btn-link { background: none; border: 0; padding: .4em 0 0; color: var(--orange-deep); font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
+.mcard .n small { display: block; font-size: .5em; font-weight: 700; margin-top: -.3em; }
+.ptags { display: flex; flex-wrap: wrap; gap: .35em; margin-top: .45em; }
+.ptag { font: 700 12px/1.2 var(--font-display); padding: .3em .6em; border-radius: 999px; color: #fff; animation: popIn .4s cubic-bezier(.3, 1.5, .5, 1) both; }
+.ptag.p0, .rules li.p0::before { background: #D9483B; }
+.rules li.p0 .pf { color: #D9483B; }
+.ptag.p1, .rules li.p1::before { background: #8E6CC8; }
+.rules li.p1 .pf { color: #8E6CC8; }
+.ptag.p2, .rules li.p2::before { background: #2F9E74; }
+.rules li.p2 .pf { color: #2F9E74; }
+.ptag.p3, .rules li.p3::before { background: #B88A1E; }
+.rules li.p3 .pf { color: #B88A1E; }
+.rules li .pf { font: 700 .85em var(--font-display); margin-right: .35em; }
+.pdot { display: inline-block; width: .42em; height: .42em; border-radius: 50%; margin-right: .3em; vertical-align: .12em; }
+.pdot.p0 { background: #FF8A7A; } .pdot.p1 { background: #B9A0EA; } .pdot.p2 { background: #6FD3AA; } .pdot.p3 { background: #F2CC6B; }
 .other-row .ex { color: var(--muted); font-size: 14px; margin-top: 2px; }
 
 canvas.confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 30; }
@@ -662,7 +686,15 @@ const SENT = {};
 L.essay.paragraphs.forEach(p => p.sentences.forEach(s => { SENT[s.id] = s; }));
 const C = L.corrections;
 const CID_SENT = {};
-const PRAISED = new Set(((L.language || {}).items || []).filter(it => it.mode === "praise").map(it => it.ref));   // notes the teacher praised
+/* flow 2: the corrections the teacher praised (Khen) and the ones only listed (Danh sách). Lessons made before
+   the list existed: every shown vocabulary and grammar item goes to the list */
+if (L.flow === 2 && L.language && !L.language.list) {
+  const LN0 = L.language, lang = it => it.tab !== "LOGIC";
+  LN0.praise = LN0.items.filter(it => lang(it) && it.mode === "praise").map(it => it.ref);
+  LN0.list = LN0.items.filter(it => lang(it) && it.mode !== "praise" && it.mode !== "skip").map(it => ({ ref: it.ref, tab: it.tab, ...(it.upgrade ? { upgrade: true } : {}) }));
+  LN0.items = LN0.items.filter(it => !lang(it));
+}
+const PRAISED = new Set([...((L.language || {}).praise || []), ...((L.language || {}).items || []).filter(it => it.mode === "praise").map(it => it.ref)]);   // what the teacher praised
 Object.values(SENT).forEach(s => s.segs.forEach(g => { if (typeof g !== "string") CID_SENT[g.c] = s.id; }));
 /* counts Đậu says are written as {n} and filled in here, so they stay right when the teacher adds or
    removes an item (finish.extra_prompt keeps its {n}: that one is filled after the practice) */
@@ -1209,7 +1241,8 @@ topH();
 add("intro", async c => {
   c.show(h("h1", { class: "h" }, "Chào " + NAME));
   c.show(h("span", { class: "pill tone-orange" }, L.homework + " · " + L.essay_type));
-  c.show(h("div", { class: "card stack" }, h("div", { class: "label" }, "Đề bài"), h("div", { class: "en" }, L.prompt)));
+  // Task 1 shows its prompt here; an essay's prompt comes where it matters (and stays behind "Đề")
+  if (L.t1) c.show(h("div", { class: "card stack" }, h("div", { class: "label" }, "Đề bài"), h("div", { class: "en" }, L.prompt)));
   await c.say(L.hello[0], "waving");
   for (const line of L.hello.slice(1)) { await c.gate(); await c.say(line); }
 }, { label: "Bắt đầu nha", noSave: true });
@@ -1430,20 +1463,55 @@ if (LG) add("LOGIC", async c => {
 }, { name: "logic" });
 // Task 2: the ideas with the teacher's ✓ / ~ / ✗; ~ gets a one-line tip, ✗ opens its chain
 // (added below with the rest of Logic, in essay order)
-const addIdeasOverview2 = () => add("LOGIC", async c => {
-  const I = L.ideas;
-  c.show(h("h1", { class: "h" }, "Các ý của em"));
-  for (const [k, o] of I.overview.entries()) {
-    await c.wait(k ? 380 : 150);
-    const st = ideaStatus(o), tap = st === "fix" && detailIdx[o.tag] != null;
-    const inner = [statusIcon(st), h("div", { class: "t" }, h("b", {}, o.tag + " · " + o.text), o.note ? h("span", {}, o.note) : null, tap ? h("span", { class: "go" }, " · chạm để xem") : null)];
-    c.show(tap ? h("button", { class: "card ov tap reveal fix", type: "button", onclick: () => jump(detailIdx[o.tag]) }, inner, h("span", { class: "chev", "aria-hidden": "true" }, "›"))
-      : h("div", { class: "card ov" }, inner));
-  }
-  await c.wait(300);
-  await c.say((I.intro || [])[0], "explaining");
-  for (const line of (I.intro || []).slice(1)) { await c.gate(); await c.say(line, "explaining"); }
-}, { name: "ideas" });
+const addIdeasOverview2 = () => {
+  const I = L.ideas, paras = L.essay.paragraphs;
+  // the map of her essay: one row per paragraph, ✓ / ✗ from the teacher's decisions, its ideas as chips
+  add("LOGIC", async c => {
+    await c.say("Rồi bây giờ mình xem các idea của em nhé", "explaining");
+    const map = h("div", { class: "map" });
+    c.show(h("div", { class: "card stack" }, h("div", { class: "label" }, "Tổng quan bài của em"), map));
+    if (mode === "talk") setMode("away");
+    const issueSids = new Set((LG ? LG.issues : []).flatMap(it => it.sids || []));
+    const nBody = paras.length - 2;
+    for (const [k, p] of paras.entries()) {
+      const ids = p.sentences.map(x => x.id);
+      const name = paras.length < 3 ? `Đoạn ${k + 1}` : k === 0 ? "Mở bài" : k === paras.length - 1 ? "Kết bài" : nBody > 1 ? `Body ${k}` : "Body";
+      const ideas = I.overview.filter(o => (o.sids || []).some(x => ids.includes(x)));
+      const ok = !ids.some(x => issueSids.has(x)) && !ideas.some(o => ideaStatus(o) === "fix");
+      // two chips a row (one alone spans both columns)
+      const chip = (o, alone) => h("div", { class: "chip " + (ideaStatus(o) === "fix" ? "o" : ideaStatus(o) === "improve" ? "s" : "c"), style: alone ? "grid-column: 2 / 4" : null }, o.short || o.text);
+      const row = [h("div", { class: "lab" }, TICK(ok), name)];
+      if (!ideas.length) row.push(h("div", { class: "wide" }, (I.paras || [])[k] || ""));
+      for (let j = 0; j < ideas.length; j += 2) { if (j) row.push(h("div")); row.push(chip(ideas[j], !ideas[j + 1]), ideas[j + 1] ? chip(ideas[j + 1]) : null); }
+      await c.wait(k ? 550 : 300);
+      map.append(...row.filter(Boolean)); fit();
+    }
+  }, { name: "ideas-map" });
+  // the ideas drop in one by one with the teacher's ✓ / ~ / ✗; the ✗ ones open their chain
+  add("LOGIC", async c => {
+    c.show(h("h1", { class: "h" }, "Em phát triển ý tới đâu?"));
+    const st = I.overview.map(ideaStatus), cnt = x => st.filter(y => y === x).length;
+    const parts = [cnt("ok") && `${cnt("ok")} ý ổn rồi`, cnt("improve") && `${cnt("improve")} ý nâng cấp thêm được`, cnt("fix") && `${cnt("fix")} ý cần sửa`].filter(Boolean);
+    await c.say(`Em có ${I.overview.length} ý: ${parts.join(", ")} nè`, "magnify");
+    for (const line of I.intro || []) { await c.gate(); await c.say(line, "explaining"); }
+    await c.gate();
+    if (mode === "talk") setMode("away");
+    const ovInner = (o, hint) => [statusIcon(ideaStatus(o)),
+      h("div", { class: "t" }, h("b", {}, o.tag + " · " + o.text), o.note ? h("span", {}, o.note) : null, hint ? h("span", { class: "go" }, " · chạm để xem") : null)];
+    const later = [];
+    for (const [k, o] of I.overview.entries()) {
+      await c.wait(k ? 420 : 150);
+      const card = c.show(h("div", { class: "card ov" }, ovInner(o, false)));
+      if (ideaStatus(o) !== "ok" && detailIdx[o.tag] != null) later.push([card, o]);
+    }
+    await c.wait(350);
+    if (!later.length) return void await c.say(cnt("improve") ? "Mấy ý có dấu ~ em đọc gợi ý của " + TEACHER + " để thêm vào nha" : "Ý nào em cũng phát triển ổn rồi nè", "thumbsup");
+    for (const [card, o] of later) card.replaceWith(h("button", { class: "card ov tap reveal " + ideaStatus(o), type: "button", onclick: () => jump(detailIdx[o.tag]) },
+      ovInner(o, true), h("span", { class: "chev", "aria-hidden": "true" }, "›")));
+    fit();
+    await c.say(later.length > 1 ? "Mấy ý có dấu ✗ mình sửa từng cái nha, em chạm vào ý nào cũng được" : "Ý có dấu ✗ mình xem cách sửa nha, em chạm vào để xem", "explaining");
+  }, { end: "dock", name: "ideas" });
+};
 
 // ---------------- TR: idea development ----------------
 if (L.ideas && !V2) add("TR", async c => {
@@ -1557,23 +1625,62 @@ function addIdeaDetail(D, k) {
 }
 if (!V2) (L.ideas ? L.ideas.details : []).forEach(addIdeaDetail);
 
-// flow 2: each problem the teacher noted under Logic, one screen each (Task 1: on the chart). When the
-// teacher rewrote a sentence, Đậu goes through each change while it lights up in both cards
+// flow 2: each problem the teacher noted under Logic, one screen each (Task 1: on the chart). Đậu walks
+// through it: where we are and what she wrote, then the prompt (its key words lit) or the framework rule,
+// a question so she sees it herself, what her sentence lacks (it lights up), and the teacher's rewrite,
+// each change lit in both cards while he says why. Lessons drafted before the walk: his lines, then the fix
 function addIssue(it, k, n, opts) {
   add("LOGIC", async c => {
     c.show(h("div", { class: "row" }, h("span", { class: "pill tone-blush" }, `Cần sửa ${k + 1}/${n}`), it.title ? h("span", { class: "small muted" }, it.title) : null));
     if (L.t1 && it.series) c.show(h("div", { class: "card chart-card" }, chartView({ series: it.series, col: it.col })));
     const mine = (it.sids || []).map(origText).join(" ");
-    const mineQ = h("div", { class: "quote en" }, markFocus(mine, it.quote));
-    if (mine) c.show(h("div", { class: "card stack" }, h("div", { class: "label" }, "Em viết"), mineQ, cite(it.sids[0])));
-    await c.say(it.say[0], "magnify");
-    for (const line of it.say.slice(1)) { await c.gate(); await c.say(line, "explaining"); }
-    if (!it.fix) return;
-    await c.gate();
+    const walk = !!it.part;
+    const mineQ = h("div", { class: "quote en" }, walk ? mine : markFocus(mine, it.quote));
+    const mineCard = mine ? c.show(h("div", { class: "card stack" }, h("div", { class: "label" }, "Em viết"), mineQ, cite(it.sids[0]))) : null;
+    const said = it.missing && it.missing.length ? it.missing : it.say || [];
+    if (walk) {
+      await c.say(`Mình xét ${it.part} nha, em đã viết như vầy nè`, "magnify", mineCard ? { spot: mineCard } : {});
+      // the prompt with the words that matter lit, or the framework rule
+      const refs = [];
+      if (it.prompt_focus) {
+        const line = (L.prompt.match(/[^.?!]+[.?!]*/g) || [L.prompt]).find(x => x.toLowerCase().includes(it.prompt_focus.toLowerCase())) || L.prompt;
+        await c.gate();
+        const card = c.show(h("div", { class: "card stack" }, h("div", { class: "label" }, "Đề bài"), h("div", { class: "en" }, markPhrase(line.trim(), it.prompt_focus, "hl"))));
+        refs.push(card);
+        await c.say("Đề bài hỏi như vầy nè", "explaining", { spot: card });
+      }
+      if (it.rule) {
+        await c.gate();
+        const card = c.show(h("div", { class: "card fw-rule" }, img("icon_bulb", "icon"), h("div", {}, h("div", { class: "label" }, "Framework"), h("b", {}, it.rule.replace(/^theo framework\s*(thì)?\s*,?\s*/i, "").replace(/^./, x => x.toUpperCase())))));
+        refs.push(card);
+        await c.say("Theo Framework thì mình cần vầy nè", "explaining", { spot: card });
+      }
+      if (it.ask && it.ask.q) {
+        await c.gate();
+        await c.say(it.ask.q, "thinking");
+        const i = await c.ask(it.ask.options, { answer: it.ask.answer, key: "issue" + k, q: it.ask.q });
+        const right = i === it.ask.answer;
+        await c.say(right ? it.ask.right || "Đúng rồi á em" : it.ask.wrong || `Chưa đúng nè ${NAME}, đáp án đúng là câu tô xanh á`, right ? "thumbsup" : "oops");
+        await c.gate();
+        content.querySelector(".ask").remove(); fit();
+      } else if (said.length) await c.gate();
+      // what is missing: her sentence lights up while he says it
+      if (mineCard) { mineQ.replaceChildren(...markFocus(mine, it.quote)); if (!it.quote) mineQ.classList.add("lit"); fit(); }
+      for (const [j, line] of said.entries()) { if (j) await c.gate(); await c.say(line, "explaining", mineCard ? { spot: mineCard } : {}); }
+      if (!it.fix) return;
+      await c.gate();
+      refs.forEach(x => x.remove()); mineQ.classList.remove("lit"); fit();
+      await c.say(`${TEACHER} đề xuất em sửa lại như sau nhé`, "writing");
+    } else {
+      await c.say(said[0], "magnify");
+      for (const line of said.slice(1)) { await c.gate(); await c.say(line, "explaining"); }
+      if (!it.fix) return;
+      await c.gate();
+    }
     const fixQ = h("div", { class: "quote en" }, it.fix);
     const fixCard = c.show(h("div", { class: "card stack" }, h("div", { class: "label" }, "Viết lại"), fixQ));
     for (const [j, ch] of (it.changes || []).entries()) {
-      if (j) await c.gate();
+      if (j || walk) await c.gate();
       const kept = ch.from && ch.from === ch.to;
       if (mine) mineQ.replaceChildren(...markPhrase(mine, ch.from, kept ? "hl-good" : "hl-bad"));
       fixQ.replaceChildren(...markPhrase(it.fix, ch.to, "hl-good"));
@@ -1780,16 +1887,25 @@ const mainCard = m => h("button", { class: "card mcard main", type: "button", on
 const minorCard = m => h("button", { class: "card mcard minor", type: "button", onclick: () => jump(mistakeIdx[m.id]) },
   h("div", { class: "n" }, mCount(m) + "×"), h("div", { class: "t" }, h("b", {}, m.title)));
 
-function addMistake(m, optional, lead = []) {
+/* the board's lines: one per pattern when the mistake has them */
+const boardOf = m => (m.patterns || []).length ? m.patterns.map(x => x.formula) : m.board || [];
+/* one mistake group: her sentences, a question, the fixes, then the rule. Flow 2 (pos = { k, back }): the
+   k-th systematic mistake, opened with one line that counts its places; each fix gets a tag for the
+   pattern it follows, and the board has one line per pattern */
+function addMistake(m, optional, lead = [], pos = null) {
   const sids = [...new Set(m.cids.map(x => CID_SENT[x]))];
   const opts = { group: "m-" + m.id, optional };
-  const head = label => h("div", { class: "row" }, h("button", { class: "backchip", type: "button", onclick: () => jump(tabIdx[m.tab]) }, "‹ Tất cả lỗi"), h("span", { class: "pill " + (label === "Quy tắc" ? "tone-orange" : "tone-blush") }, label));
+  const head = label => h("div", { class: "row" }, h("button", { class: "backchip", type: "button", onclick: () => jump(pos && pos.back >= 0 ? pos.back : tabIdx[m.tab]) }, "‹ Tất cả lỗi"), h("span", { class: "pill " + (label === "Quy tắc" ? "tone-orange" : "tone-blush") }, label));
   mistakeIdx[m.id] = screens.length;
   add(m.tab, async c => {
     c.show(head(V2 ? "Lỗi hệ thống" : m.tab === "LR" && optional ? "Từ vựng" : optional ? "Lỗi phụ" : "Lỗi quan trọng nhất"));
     for (const line of lead.filter(Boolean)) { await c.say(line, "explaining"); await c.gate(); }
     const spots = [...sids.map(sid => ({ sid })), ...ptsOf(m).map(p => ({ p, sid: p.sids[0] }))];
-    await c.say(`Em để ý ${spots.length} câu này nè ${NAME}`, "magnify");
+    // flow 2: one opening line, said with the first sentence already on screen
+    const opening = !pos ? `Em để ý ${spots.length} câu này nè ${NAME}`
+      : pos.k ? `Lỗi ${ORDINAL[pos.k] || "tiếp theo"} em hay lặp lại là ${m.title} nè, em để ý ${mCount(m)} chỗ này nha`
+      : `Giờ mình xem lỗi em hay lặp lại nhất nha, em để ý ${mCount(m)} chỗ này nè`;
+    if (!pos) await c.say(opening, "magnify");
     const cards = [], snips = h("div", { class: "stack" });
     for (const [i, spot] of spots.entries()) {
       if (i) await c.gate();
@@ -1798,14 +1914,17 @@ function addMistake(m, optional, lead = []) {
       const card = h("button", { class: "card snip", type: "button", "aria-label": "Xem câu này trong bài", onclick: () => openEssay({ sid: spot.sid, cids: m.cids }) }, col, h("span", { class: "pin", html: CITE_SVG }));
       card.body = body; card.col = col; card.sid = spot.sid; card.p = spot.p; cards.push(card);
       if (i) { card.classList.add("rise"); snips.append(card); } else { snips.append(card); c.show(snips); }
+      if (!i && pos) await c.say(opening, "magnify");
     }
     await c.gate();
-    await c.say(m.ask.q, "thinking");
-    const i = await c.ask(m.ask.options, { answer: m.ask.answer, key: "m-" + m.id, q: m.ask.q });
-    await c.say(i === m.ask.answer ? "Đúng rồi á em" : `Chưa đúng nè ${NAME}, đáp án đúng là câu tô xanh á`, i === m.ask.answer ? "thumbsup" : "oops");
-    await c.gate();
-    content.querySelector(".ask").remove(); fit();
-    await c.say(m.count_line, "explaining");
+    if (m.ask.q && (m.ask.options || []).length > 1) {
+      await c.say(m.ask.q, "thinking");
+      const i = await c.ask(m.ask.options, { answer: m.ask.answer, key: "m-" + m.id, q: m.ask.q });
+      await c.say(i === m.ask.answer ? "Đúng rồi á em" : `Chưa đúng nè ${NAME}, đáp án đúng là câu tô xanh á`, i === m.ask.answer ? "thumbsup" : "oops");
+      await c.gate();
+      content.querySelector(".ask").remove(); fit();
+    }
+    if (!pos) await c.say(m.count_line, "explaining");
     for (const card of cards) {
       // a correction shows the fix in place; a note gets the teacher's comment and a better version under it
       if (card.p) card.col.append(...[card.p.comment ? h("div", { class: "pt-comment" }, h("b", {}, TEACHER + ": "), card.p.comment) : null,
@@ -1813,18 +1932,36 @@ function addMistake(m, optional, lead = []) {
       else card.body.replaceChildren(sentence(card.sid, { mode: "diff", focus: m.cids, live: !replay, window: 5 }));
       fit(); await c.wait(500);
     }
+    // flow 2: each fix tagged with the pattern it follows (the board's lines)
+    const pats = m.patterns || [];
+    if (pos && pats.length) {
+      await c.wait(300);
+      for (const card of cards) {
+        const refs = card.p ? [card.p.nid] : m.cids.filter(x => CID_SENT[x] === card.sid);
+        const ks = [...new Set(refs.map(r => pats.findIndex(x => x.refs.includes(r))).filter(x => x >= 0))];
+        if (ks.length) { card.col.append(h("div", { class: "ptags" }, ks.map(x => h("span", { class: "ptag p" + (x % 4) }, pats[x].formula)))); fit(); await c.wait(250); }
+      }
+    }
     await c.wait(300);
-    c.show(h("div", { class: "card times" }, h("div", { class: "n" }, mCount(m)), h("div", { class: "l" }, m.count_line)));
+    if (pos) {
+      // the number big, the line said by Đậu
+      const times = c.show(h("div", { class: "card times" }, h("div", { class: "n" }, mCount(m)), h("div", { class: "l" }, "lần trong bài")));
+      await c.say(m.count_line, "explaining", { spot: times });
+    } else c.show(h("div", { class: "card times" }, h("div", { class: "n" }, mCount(m)), h("div", { class: "l" }, m.count_line)));
     await c.gate();
     await c.say(m.reason, "thinking");
   }, opts);
   add(m.tab, async c => {
     c.show(head("Quy tắc"));
     c.show(h("h2", { class: "h2" }, m.title));
-    await chalkBoard(c, m.board);
+    await chalkBoard(c, boardOf(m), { dots: (m.patterns || []).length > 1 });
     const ul = h("ul", { class: "rules" });
     c.show(h("div", { class: "card" }, ul));
-    for (const [i, r] of m.rule.entries()) { if (i) await c.gate(); else await c.wait(700); ul.append(h("li", {}, r)); fit(); }
+    // with patterns: one rule per board line, in the board line's colour
+    const pats = (m.patterns || []).filter(x => x.rule);
+    const rules = pats.length ? pats.map((x, k) => h("li", { class: "p" + ((m.patterns.indexOf(x)) % 4) }, h("div", {}, h("span", { class: "pf en" }, x.formula), x.rule)))
+      : m.rule.map(r => h("li", {}, r));
+    for (const [i, li] of rules.entries()) { if (i) await c.gate(); else await c.wait(700); ul.append(li); fit(); }
     await c.gate();
     c.show(h("div", { class: "card stack" },
       h("div", { class: "ex-line" }, img("icon_cross", "icon"), h("span", {}, m.example.bad)),
@@ -1994,16 +2131,41 @@ function addUnit(u, { pill, bridge = null } = {}, opts = {}) {
   }, opts);
 }
 const LN = V2 ? L.language : null;
+/* flow 2: the other mistakes (Danh sách), listed in a sheet only if she wants: her words → the fix (an
+   upgrade is not struck through), the teacher's own comment, and a link to the sentence in her essay */
+const ORDINAL = ["", "thứ hai", "thứ ba", "thứ tư", "thứ năm", "thứ sáu"];
+function listRow(it) {
+  const isC = it.ref[0] === "c", note = isC ? null : L.task_comments[+it.ref.slice(1) - 1];
+  if (isC ? !C[it.ref] : !note) return null;
+  const sid = isC ? CID_SENT[it.ref] : (note.sentence_ids || [])[0], up = !!it.upgrade;
+  let words;
+  if (isC) {
+    const from = C[it.ref].orig.trim(), to = C[it.ref].fix.trim();
+    words = h("div", { class: "lrow-words en" }, from ? h(up ? "span" : "s", { class: up ? "keep" : null }, from) : null, from && to ? " → " : !from && to ? "+ " : "", to ? h("ins", {}, to) : from ? h("span", { class: "small muted" }, " (bỏ)") : null);
+  } else {
+    const add = typedWords(note), mine = note.quote || (note.sentence_ids || []).map(origText).join(" ");
+    words = h("div", { class: "lrow-words en" }, add ? ["+ ", h("ins", {}, add)] : h("span", { class: up ? "keep" : null }, mine.length > 160 ? mine.slice(0, 157) + "…" : mine),
+      note.fix ? h("div", { class: "pt-better" }, h("span", { class: "lbl" }, "Viết lại"), h("span", { class: "en" }, note.fix)) : null);
+  }
+  const comment = isC ? C[it.ref].comment : note.comment;
+  return h("div", { class: "other-row lrow" },
+    h("div", { class: "row" }, h("span", { class: "pill small " + (it.tab === "LR" ? "tone-sky" : "tone-orange") }, it.tab === "LR" ? "Từ vựng" : "Ngữ pháp"), up ? h("span", { class: "pill small tone-mint" }, "⬆ Nâng cấp") : null),
+    words,
+    comment ? h("div", { class: "pt-comment" }, h("b", {}, TEACHER + ": "), comment) : null,
+    sid ? h("button", { class: "btn-link", type: "button", onclick: () => openEssay({ sid, cids: isC ? [it.ref] : null }) }, "Xem trong bài ›") : null);
+}
+function openList() {
+  const rows = (LN.list || []).map(listRow).filter(Boolean);
+  sheet(`${rows.length} lỗi khác`, null, h("div", { class: "sheet-body" }, rows));
+}
 if (LN) {
   tabIdx.LANG = tabIdx.LR = tabIdx.GRA = screens.length;
-  const units = langUnits().filter(u => u.tab !== "LOGIC");
-  const lr = units.filter(u => u.tab === "LR"), gra = units.filter(u => u.tab === "GRA");
   const sys = L.mistakes.main;
-  // the tone: Claude's line only when the teacher named a systematic mistake (said on that lesson);
-  // otherwise the page says it, so it never promises something that doesn't come
-  const tone = LN.intro ? LN.intro[0]
-    : sys.length ? null
-    : units.length ? `Phần này không có lỗi nào em lặp lại nhiều, chỉ có mấy chỗ nhỏ thôi nè ${NAME}` : "Từ vựng và ngữ pháp bài này ổn rồi nè";
+  const listN = (LN.list || []).filter(it => it.ref[0] === "c" ? C[it.ref] : L.task_comments[+it.ref.slice(1) - 1]).length;
+  const praised = (LN.praise || []).filter(r => r[0] === "c" ? C[r] : L.task_comments[+r.slice(1) - 1]);
+  // the tone, said by the page so it never promises something that doesn't come
+  const tone = sys.length ? null
+    : listN ? `Phần này không có lỗi nào em lặp lại nhiều, chỉ có mấy chỗ nhỏ thôi nè ${NAME}` : "Từ vựng và ngữ pháp bài này ổn rồi nè";
   add("LANG", async c => {
     c.show(secTitle("dau_writing", "Phần 2 · LR và GRA", "Language"));
     const P = LN.phrases, has = P && P.groups.some(g => g.items.length);
@@ -2027,27 +2189,43 @@ if (LN) {
       await c.wait(300);
       await c.say(P.line, "thumbsup");
     }
-    for (const line of (LN.intro || []).slice(1)) { await c.gate(); await c.say(line, "explaining"); }
   }, { name: "language" });
-  // the systematic mistake (only when the teacher named one): the full mini-lesson, opened by the
-  // page's bridge and Claude's focus line
-  sys.forEach((m, k) => addMistake(m, false, k ? [] : [LN.intro ? null : "Giờ mình xem lỗi em hay lặp lại nhất nha", LN.focus]));
-  // then the other corrections: vocabulary, then grammar, each in essay order, with a bridge from the page
-  const fixes = list => list.filter(u => u.mode !== "praise").length;
-  const bridgeFor = (list, t) => {
-    const n = fixes(list), what = t === "LR" ? "từ vựng" : "ngữ pháp";
-    if (!n) return `Có mấy chỗ ${TEACHER} khen em nè`;
-    if (t === "GRA" && lr.length) return `Giờ tới ngữ pháp nha, ${n} chỗ`;
-    return `Giờ mình xem ${n} chỗ ${what} ${TEACHER} sửa cho em nha`;
-  };
-  let firstItem = true;
-  for (const [t, list] of [["LR", lr], ["GRA", gra]]) {
-    const counted = list.filter(u => u.mode !== "praise");
-    list.forEach((u, k) => {
-      addUnit(u, { pill: `${t === "LR" ? "Từ vựng" : "Ngữ pháp"} · ${counted.indexOf(u) + 1}/${counted.length}`, bridge: k === 0 ? bridgeFor(list, t) : null }, firstItem ? { name: "lang-items" } : {});
-      firstItem = false;
-    });
-  }
+  // what the teacher praised (Khen): her words with the teacher's comment, all on one screen
+  if (praised.length) add("LANG", async c => {
+    c.show(h("div", { class: "row" }, h("span", { class: "pill tone-mint" }, img("icon_star"), TEACHER + " khen")));
+    await c.say(praised.length > 1 ? `Có ${praised.length} chỗ ${TEACHER} khen em nè ${NAME}` : `Có một chỗ ${TEACHER} khen em nè ${NAME}`, "cheering");
+    for (const [k, ref] of praised.entries()) {
+      await c.wait(k ? 420 : 200);
+      const isC = ref[0] === "c", note = isC ? null : L.task_comments[+ref.slice(1) - 1];
+      const sid = isC ? CID_SENT[ref] : (note.sentence_ids || [])[0];
+      const v = isC ? { sid, refs: [ref], up: [ref] } : { sid, sp: { ref, sid, isC, note, swap: null, upgrade: false } };
+      const comment = isC ? C[ref].comment : note.comment;
+      c.show(h("div", { class: "card stack rise" }, h("div", { class: "quote en" }, spotView(v, { after: isC, live: false, praise: !isC })),
+        comment ? h("div", { class: "pt-comment" }, h("b", {}, TEACHER + ": "), comment) : null, sid ? cite(sid, isC ? [ref] : null) : null));
+    }
+  }, { name: "praise" });
+  // the map: the biggest mistakes (tap to jump), and the rest in a list she can open
+  if (sys.length || listN) add("LANG", async c => {
+    c.show(h("h1", { class: "h" }, sys.length ? "Lỗi em cần chú ý" : "Các chỗ " + TEACHER + " sửa"));
+    if (sys.length) {
+      await c.say(sys.length > 1 ? `Bài này có ${sys.length} lỗi em hay lặp lại, mình đi lần lượt từng lỗi nha` : "Bài này có một lỗi em hay lặp lại, mình học kỹ lỗi này nha", "explaining");
+      for (const [k, m] of sys.entries()) {
+        await c.wait(k ? 380 : 200);
+        c.show(h("button", { class: "card mcard main rise", type: "button", onclick: () => jump(mistakeIdx[m.id]) },
+          h("div", { class: "n" }, mCount(m), h("small", {}, "chỗ")),
+          h("div", { class: "t" }, h("span", { class: "small muted" }, `Lỗi lớn nhất ${k + 1} · ${m.tab === "LR" ? "Từ vựng" : "Ngữ pháp"}`), h("b", {}, m.title)),
+          h("span", { class: "chev", style: "color:var(--orange-deep)", "aria-hidden": "true" }, "›")));
+      }
+    }
+    if (listN) {
+      if (sys.length) await c.gate();
+      const btn = c.show(h("button", { class: "btn btn-ghost rise", type: "button", onclick: openList }, `Xem ${listN} lỗi khác`));
+      await c.say(sys.length ? `Mấy lỗi nhỏ khác ${TEACHER} sửa thì em bấm vào đây xem nha, không bắt buộc đâu` : `Em bấm vào đây xem ${listN} chỗ ${TEACHER} sửa nha`, "explaining", { spot: btn });
+    }
+  }, { name: "lang-map", end: "dock" });
+  const mapAt = named("lang-map");
+  // each systematic mistake: its full mini-lesson
+  sys.forEach((m, k) => addMistake(m, false, [], { k, back: mapAt }));
 }
 
 // flow 2: practice only exists when the teacher named a systematic mistake
@@ -2389,7 +2567,7 @@ function notebookData() {
   const good = [];                                   // [group label, [phrases]]
   const P = (L.language && L.language.phrases) || (L.linking && L.linking.groups ? { groups: L.linking.groups } : null);
   for (const g of (P && P.groups) || []) if (g.items.length) good.push([g.label, g.items.map(x => x.text)]);
-  const praised = [...PRAISED].map(r => (L.task_comments[+r.slice(1) - 1] || {}).quote).filter(Boolean);
+  const praised = [...PRAISED].map(r => r[0] === "c" ? (C[r] ? (C[r].fix || C[r].orig).trim() : "") : (L.task_comments[+r.slice(1) - 1] || {}).quote).filter(Boolean);
   if (praised.length) good.push([TEACHER + " khen", praised]);
   // her words around a correction, a few on each side
   const around = cid => {
@@ -2409,9 +2587,10 @@ function notebookData() {
   };
   const sys = [], mistakes = [];
   const M = L.mistakes || { main: [], others: [] };
-  for (const m of M.main || []) sys.push({ title: m.title, board: m.board || [], rule: m.rule || [], items: [...m.cids.filter(c => C[c]).map(c => fromC(c, false)), ...(m.points || []).map(p => fromNote(p.nid)).filter(Boolean)] });
+  for (const m of M.main || []) sys.push({ title: m.title, board: boardOf(m), rule: (m.patterns || []).length ? m.patterns.map(x => x.rule).filter(Boolean) : m.rule || [], items: [...m.cids.filter(c => C[c]).map(c => fromC(c, false)), ...(m.points || []).map(p => fromNote(p.nid)).filter(Boolean)] });
   if (L.language) {
-    for (const t of ["LR", "GRA"]) for (const it of L.language.items) if (it.tab === t && it.mode !== "praise" && it.mode !== "skip") {
+    // the list (Danh sách): vocabulary first, then grammar, each in essay order
+    for (const t of ["LR", "GRA"]) for (const it of L.language.list || []) if (it.tab === t) {
       const x = it.ref[0] === "c" ? (C[it.ref] ? fromC(it.ref, !!it.upgrade) : null) : fromNote(it.ref, it);
       if (x) mistakes.push(x);
     }
@@ -2599,8 +2778,9 @@ async function drawNotebook() {
 
 /* Đậu pointing at the chalkboard, the formulas written on it one line at a time. All lines are laid out
    first (invisible) so the chalk can be sized to fit the board; a plain board if they're too long */
-async function chalkBoard(c, board) {
-  const lines = board.map(line => h("span", { class: "later" }, line));
+async function chalkBoard(c, board, { dots = false } = {}) {
+  // dots: each line marked with its pattern's colour, as on the tags under her sentences
+  const lines = board.map((line, k) => h("span", { class: "later" }, dots ? h("i", { class: "pdot p" + (k % 4), "aria-hidden": "true" }) : null, line));
   const text = h("div", { class: "board-text" + (board.length === 1 ? " one" : ""), "aria-label": board.join(", ") }, lines);
   const pic = img("dau_board", "", "anh Đậu chỉ lên bảng");
   const wrap = c.show(h("div", { class: "board-wrap" }, pic, text));

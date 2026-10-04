@@ -30,56 +30,70 @@ New lessons (**flow 2**: the teacher decides, Claude writes little):
    "=> COMMENT" notes) are filled in under it, each with a tick to leave it out, plus a note box. A ✗ idea
    needs its fix type: **Đổi hướng** (a new direction), **Sửa mắt xích** (a wrong link) or **Thiếu bước**.
    Week 1: each paraphrase topic ✓ / ✗.
-4. **Language** (LR · GRA): per tab, the systematic mistake (a name, then tick the corrections that belong to
-   it) or "Không có lỗi hệ thống". Every correction and note from the grammar/vocab editor, in essay order:
-   **Hiện** (the fix, then the teacher's comment) / **Dạy** (the same, then a small chalkboard: 1-2 formulas and
-   one rule line Claude writes from the comment) / **Socratic** (asked first) / **Khen** / **Bỏ qua**, and its part
-   (Từ vựng / Ngữ pháp / **Logic**: plain "=> COMMENT" notes start in Logic). **Gộp với…** puts corrections
-   that are the same point on one screen, with an optional group note; **Chuyển nhận xét sang…** moves a
-   comment to the correction it belongs to (only in the lesson: the CRM is never touched). A note already
-   used in a ✗ / ~ idea starts as Bỏ qua. **⬆ Nâng cấp** marks a fix that isn't a mistake, only a better way to
-   say it (guessed from the comment: "nâng cấp", "hay hơn"…): on the page her words aren't struck through.
+4. **Language** (LR · GRA): per tab, up to 3 **systematic mistakes** (numbered names; "+ Thêm lỗi hệ thống")
+   or "Không có lỗi hệ thống". Every correction and note from the grammar/vocab editor, in essay order, with
+   chips **1 · 2 · 3** (which systematic mistake it belongs to) and where else it goes: **Danh sách** (default:
+   the optional "Xem N lỗi khác" list, with the teacher's own comment) / **Khen** (shown with "Cụm em dùng
+   tốt", with the comment) / **Ẩn** (not shown anywhere), plus its part (Từ vựng / Ngữ pháp / **Logic**: plain
+   "=> COMMENT" notes start in Logic, as **Hiện ở Logic** / **Ẩn**). **⬆ Nâng cấp** marks a fix that isn't a
+   mistake, only a better way to say it (guessed from the comment: "nâng cấp", "hay hơn"…): her words aren't
+   struck through. Drag a comment onto another correction to move it there (only in the lesson: the CRM is
+   never touched; "Trả nhận xét như CRM" undoes it). A note already used in a ✗ / ~ idea starts as Ẩn.
 5. **Viết lại**: the exact sentences to rewrite.
 6. **Soạn**: one Claude pass in small parts (`lib/draft2.js`), only Đậu's words around those decisions: the
-   Logic summary and one screen per problem, the chains of ✗ ideas, "Cụm em đã dùng tốt", the Socratic
-   questions, the systematic mistake's mini-lesson and exercises (only when one is named), the rewrite,
-   hello and goodbye. Nothing is asked for what the teacher already decided.
+   Logic summary and each problem's walk-through, the map of the essay and the chains of ✗ ideas, "Cụm em
+   đã dùng tốt", each systematic mistake's mini-lesson (split into 1-4 patterns: one board formula each,
+   with the corrections that follow it) and the exercises (only when one is named), the rewrite, hello and
+   goodbye. Nothing is asked for what the teacher already decided. Socratic questions follow fixed rules:
+   facts only (a word's meaning, a gap, a form, a missing word, what the prompt says), one clearly right
+   answer, replies that explain; none rather than a bad one. The part that streams first warms the prompt
+   cache before the others start; after a draft the editor shows the tokens (new / read from the cache /
+   written to the cache) and roughly what it cost.
 7. **Xem lại**: Claude's lines by screen with the phone preview, and the automatic checks (`checks2` in
-   `lib/review.js`: quotes verbatim, figures on the chart, Socratic answers, Đậu's voice).
+   `lib/review.js`: quotes verbatim, figures on the chart, Socratic answers, board lines with two formulas in
+   one ("/" or ","), patterns with no correction and corrections in no pattern, Đậu's voice).
 8. **Xuất**: the `.html` (built exactly like `build.py`), the `.json`, or a Netlify link (`lib/netlify.js`: every
    publish is a new unguessable `/r/<random>/` address; old pages are never removed).
 
 The student page of a flow-2 lesson (`"flow": 2`) has two parts, **Logic** and **Language**. The tabs show
-"TR · CC" until the results screen has counted the scores up, then "TR 7 · CC 6". Results → Logic (the
-checklist on one screen, then in essay order: each problem, the comments moved to Logic, and the ideas, whose
-✗ ones open their chain; when the teacher rewrote a sentence, Đậu goes through each change while it lights up
-in both cards) → Language ("Cụm em đã dùng tốt", the systematic mistake if any, then the corrections:
-vocabulary first, then grammar, each in essay order) → practice (only with a systematic mistake) → Viết lại
-(it opens on the idea's chain from Logic) → end.
+"TR · CC" until the results screen has counted the scores up, then "TR 7 · CC 6". An essay's prompt isn't on
+the first screen (it comes where it matters, and stays behind "Đề"). Results → Logic (the checklist on one
+screen, then in essay order: each problem, the comments moved to Logic, and the ideas) → Language → practice
+(only with a systematic mistake) → Viết lại (it opens on the idea's chain from Logic) → end.
 
-- An idea's chain is drawn unmarked while the student answers; then the wrong link turns red and the fix is
-  drawn by its type: a new direction under her struck-through chain, the new links after the last good one,
-  or the missing steps.
-- Corrections draw in: the line strikes through, the fix pops in, then the teacher's comment. Socratic asks
-  first, with the words it is about underlined. Words the teacher typed into the essay (a linker) pop in
-  where she typed them, with the sentence before shown faded. A group is one screen.
-- The lines between parts ("Giờ mình xem 4 chỗ từ vựng anh Khoa sửa cho em nha") come from the page, so they
-  always match what comes next; Claude only names a focus when the teacher named a systematic mistake.
+- A Logic problem is walked through step by step: "Mình xét câu thesis của em nha, em đã viết…", then the
+  prompt with its key words lit or the framework rule, a Socratic question, what her sentence lacks (it
+  lights up), "anh Khoa đề xuất em sửa lại như sau nhé" and the rewrite, each change lit in both cards while
+  Đậu says why.
+- The ideas: "Rồi bây giờ mình xem các idea của em nhé", the map of her essay (Mở bài / Body / Kết bài with
+  ✓ / ✗ and the ideas as chips), then "Em phát triển ý tới đâu?": the page counts them ("Em có 4 ý: 2 ý ổn
+  rồi…"), the cards drop in one by one, and the ✗ ones open their chain (drawn unmarked while she answers,
+  then fixed by its type: a new direction under her struck-through chain, the new links after the last good
+  one, or the missing steps).
+- Language: "Cụm em đã dùng tốt", what the teacher praised (one screen), then a map: **Lỗi lớn nhất 1, 2…**
+  (tap to jump) and **Xem N lỗi khác**, a sheet listing every other correction (her words → the fix, the
+  teacher's comment, "Xem trong bài"). Then each systematic mistake: one opening line that counts its places
+  ("Giờ mình xem lỗi em hay lặp lại nhất nha, em để ý 5 chỗ này nè"), the question, the fixes drawing in with
+  a coloured tag for the pattern each follows, the number big ("5 lần trong bài") while Đậu says it, and the
+  board: one formula per line, dotted in the tags' colours, with its rule beside it. Mistakes are counted in
+  places (corrections + highlighted notes) everywhere.
+- The lines between parts come from the page, so they always match what comes next.
 - Three looks: red wavy / struck through for a mistake, orange dotted → green for a Nâng cấp, green for Khen.
 - The overall score: the count slows down before the last step, then a celebration by band (6.0 a pop,
   6.5 cheers and a gold ring, 7.0 confetti, 7.5 a star stamp, 8.0+ the lights go down, fireworks, gold confetti
   and a "Xuất sắc" badge). Only the first time; going back or reduced motion shows the result still.
-- Chalkboards (the systematic mistake's "Quy tắc", and every Dạy card) are Đậu pointing at a big board
+- Chalkboards (the systematic mistake's "Quy tắc") are Đậu pointing at a big board
   (`assets/dau_board.webp`), the formulas chalked on it and sized to fit; a plain board only if they don't.
 - The mascot stickers each have a job: section title cards (Logic: magnifying glass, Language: writing,
   Luyện tập: thumbs-up, the end: cheering), a thinking Đậu beside every question, an oops Đậu on a wrong
   practice answer; a flame counts practice answers right in a row.
 - The last screen's button is **Tải sổ tay về**: one picture (1080 px wide, drawn on a canvas) with "Cụm em
-  dùng tốt" and "Lỗi cần để ý" (the systematic mistake with its board, then each fix with the teacher's
-  comment). On a phone it opens the share sheet (save to Photos, Zalo); elsewhere it downloads.
+  dùng tốt" and "Lỗi cần để ý" (each systematic mistake with its board, then the listed fixes with the
+  teacher's comment). On a phone it opens the share sheet (save to Photos, Zalo); elsewhere it downloads.
 
 Drafts started before flow 2 (and `editor.html?flow=1`) keep the old steps: Framework tagging → a 6-part
-draft (`lib/draft.js`) → "Cần duyệt" review → export. Old lessons still build and play as before.
+draft (`lib/draft.js`) → "Cần duyệt" review → export. Old lessons still build and play as before; flow-2 lessons made before the Language map put every shown
+vocabulary and grammar fix in the "Xem N lỗi khác" list.
 
 Drafts autosave in `chrome.storage.local`, keyed by the CRM writing id.
 

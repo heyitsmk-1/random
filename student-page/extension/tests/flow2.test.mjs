@@ -42,46 +42,40 @@ const words = (t, n) => t.trim().split(/\s+/).slice(0, n).join(" ");
 function fakePart(part, payload) {
   const D = payload.decisions, S = Object.fromEntries(payload.sentences.map(s => [s.id, s]));
   const first = Object.values(S).find(s => s.paragraph > 0) || payload.sentences[0];
+  const ASK = { q: "Chữ này nghĩa là gì nè em?", options: ["Nghĩa thứ nhất", "Nghĩa thứ hai"], answer: 0, right: "Đúng rồi, chữ này hợp nghĩa hơn nè", wrong: "Chưa đúng nha, mình xem lại nghĩa của chữ này" };
   if (part === "logic") return { logic: {
     summary: D.checklist.every(c => c.ok) ? ["Logic của em chuẩn Framework hết rồi á"] : ["Em làm đúng Framework gần hết rồi nè", "Chỉ còn một chỗ cần sửa thôi"],
     points: D.checklist.map((c, i) => ({ line: `Điểm ${i + 1} của Framework` })),
     issues: [
-      ...D.checklist.filter(c => !c.ok).map(c => ({ point: c.point, title: "Số liệu chưa có năm", sids: [first.id], quote: words(first.original, 3), say: ["Chỗ này em nhớ ghi năm nha", "Số liệu luôn đi kèm năm"],
+      ...D.checklist.filter(c => !c.ok).map(c => ({ point: c.point, title: "Số liệu chưa có năm", sids: [first.id], quote: words(first.original, 3), part: "Body 1",
+        prompt_focus: payload.prompt_words || "", rule: "Theo Framework, số liệu phải đi kèm năm", ask: { ...ASK, q: "Đề bài hỏi về cái gì nè em?" }, missing: ["Câu của em còn thiếu năm nè", "Số liệu luôn đi kèm năm"],
         fix: "A corrected sentence with the year.", changes: [{ from: words(first.original, 2), to: "A corrected sentence", why: "Mình nói rõ hơn nha" }, { from: "", to: "with the year", why: "Số liệu luôn đi kèm năm" }],
         series: payload.chart_row || "", col: payload.chart_col || "" })),
-      ...(D.topics || []).filter(t => !t.ok).map(t => ({ point: -1, title: t.tag, sids: [t.sid], quote: "", say: ["Topic này em còn giữ nguyên từ của đề"], fix: "A better paraphrase.", changes: [], series: "", col: "" })),
+      ...(D.topics || []).filter(t => !t.ok).map(t => ({ point: -1, title: t.tag, sids: [t.sid], quote: "", part: t.tag, prompt_focus: "", rule: "", ask: { q: "", options: [], answer: 0, right: "", wrong: "" },
+        missing: ["Topic này em còn giữ nguyên từ của đề"], fix: "A better paraphrase.", changes: [], series: "", col: "" })),
     ],
   } };
   if (part === "ideas") return { ideas: {
-    intro: ["Ý có dấu ✗ em chạm vào để xem cách sửa nha"],
-    names: D.ideas.map(x => ({ tag: x.tag, text: "Ý về " + words(S[x.sids[0]].original, 3), problem: x.status === "fix" ? "Chưa tới kết quả cuối" : "" })),
+    intro: ["Ý nào cũng có hướng rồi, mình đào sâu thêm nha"],
+    paras: [...new Set(payload.sentences.map(s => s.paragraph))].map(k => ({ short: `Đoạn ${k + 1} nói gì` })),
+    names: D.ideas.map(x => ({ tag: x.tag, short: "Ý " + words(S[x.sids[0]].original, 2), text: "Ý về " + words(S[x.sids[0]].original, 3), problem: x.status === "fix" ? "Chưa tới kết quả cuối" : "" })),
     tips: D.ideas.filter(x => x.status === "improve").map(x => ({ tag: x.tag, tip: "Thêm một ví dụ cụ thể nữa nha" })),
     details: D.ideas.filter(x => x.status === "fix").map(x => ({ tag: x.tag, title: "Ý cần sửa", sids: x.sids, chain: ["Nguyên nhân", "Kết quả", "Hệ quả"],
       mode: { replace: "replace", link: "bad_link", missing: "missing_end" }[x.fix_type] || "missing_end", bad_node: x.fix_type === "link" ? 1 : -1, gap_after: -1,
       ask: { q: "Rồi sao nữa nè?", options: ["Ảnh hưởng tới người đọc", "Không có gì"], answer: 0, right: "Đúng rồi nè", wrong: "Chưa đúng nha" },
       fix_intro: "Mình sửa chuỗi ý nha", fix_chain: ["Chính phủ tăng thuế", "Người dân chi tiêu ít", "Kinh tế chậm lại"], fix_label: "Hướng anh Khoa gợi ý", fix_en: "tax → spending → economy", outro: "Vậy là ý đủ rồi" })),
   } };
-  if (part === "language") {
-    const grouped = new Set(D.language.groups.flatMap(g => g.refs));
-    const note = ref => payload.notes.find(n => n.id === ref);
-    const sentOf = ref => ref[0] === "n" ? S[(note(ref).sentence_ids || [])[0]] : payload.sentences.find(s => s.original.includes((payload.corrections.find(c => c.id === ref) || {}).orig || "\0"));
-    const ask = ref => ({ ref, focus: sentOf(ref) ? words(sentOf(ref).original, 2) : "", q: "Chữ này nghĩa là gì nè em?", options: ["Nghĩa thứ nhất", "Nghĩa thứ hai"], answer: 0, right: "Đúng rồi, chữ này hợp nghĩa hơn nè", wrong: "Chưa đúng nha, mình xem lại nghĩa của chữ này" });
-    return { language: {
-      focus: D.language.systemic.length ? "Chỗ mình cần chú ý nhất là " + D.language.systemic[0].name : "",
-      phrases: { line: "Em dùng mấy cụm này hay ghê", groups: [{ label: "Cụm hay", items: payload.sentences.slice(0, 3).map(s => ({ text: words(s.original, 2), sid: s.id })) }] },
-      asks: [...D.language.items.filter(i => i.mode === "socratic" && !grouped.has(i.ref)).map(i => ask(i.ref)),
-        ...D.language.groups.filter(g => (D.language.items.find(i => i.ref === g.refs[0]) || {}).mode === "socratic").map(g => ({ ...ask(g.refs[0]), ref: g.id }))],
-      swaps: D.language.items.filter(i => i.ref[0] === "n" && i.mode !== "skip" && note(i.ref).quote).slice(0, 1).map(i => ({ ref: i.ref, from: note(i.ref).quote, to: "a better phrase" })),
-      boards: [...D.language.items.filter(i => i.mode === "board" && !grouped.has(i.ref)).map(i => i.ref), ...D.language.groups.filter(g => (D.language.items.find(i => i.ref === g.refs[0]) || {}).mode === "board").map(g => g.id)]
-        .map(ref => ({ ref, lines: ["the + other + N"], rule: "Trước other mà đã xác định thì cần the nha" })),
-    } };
-  }
-  if (part === "systemic") return { systemic: D.language.systemic.map(x => ({ tab: x.tab, title: x.name, count_line: "Em mắc lỗi này {n} lần",
-    ask: { q: "Mấy chỗ này có lỗi gì giống nhau?", options: ["Một", "Hai", "Ba"], answer: 0 }, reason: "Em quen tay viết vậy á", board: ["a → the"], rule: ["Quy tắc một", "Quy tắc hai", "Quy tắc ba"],
+  if (part === "language") return { language: {
+    phrases: { line: "Em dùng mấy cụm này hay ghê", groups: [{ label: "Cụm hay", items: payload.sentences.slice(0, 3).map(s => ({ text: words(s.original, 2), sid: s.id })) }] },
+  } };
+  // each systematic mistake split in two patterns: the first correction, then the rest
+  if (part === "systemic") return { systemic: D.language.systemic.map(x => ({ tab: x.tab, title: x.name, count_line: "Lỗi này em mắc tới {n} chỗ lận á",
+    ask: { q: "Mấy chỗ này có điểm gì giống nhau nè?", options: ["Một", "Hai", "Ba"], answer: 0 }, reason: "Em quen tay viết vậy á",
+    patterns: [{ formula: "help + O + V0", rule: "Sau help là động từ nguyên mẫu nha", refs: x.refs.slice(0, 1) }, ...(x.refs.length > 1 ? [{ formula: "should + V0", rule: "Sau should cũng vậy", refs: x.refs.slice(1) }] : [])],
     example: { bad: "Bad one.", good: "Good one." }, better: x.refs.filter(r => r[0] === "n").map(r => ({ ref: r, text: "A better sentence." })) })) };
   if (part === "practice") return { practice: { intro: ["Luyện chút nha", "3 câu thôi á"], core: ["p1", "p2", "p3"],
     choose: [{ id: "p1", mistake: "s1", q: "Chọn câu đúng", sentence: "", options: ["The right one.", "A wrong one."], answer: 0, explain: "Câu đầu đúng" }],
-    tap: [{ id: "p2", mistake: "s1", q: "Chạm vào chữ sai", sentence: "Prices rise sharply in 2001.", wrong: "rise", fix: "rose", explain: "Quá khứ" }],
+    tap: [{ id: "p2", mistake: D.language.systemic.length > 1 ? "s2" : "s1", q: "Chạm vào chữ sai", sentence: "Prices rise sharply in 2001.", wrong: "rise", fix: "rose", explain: "Quá khứ" }],
     build: [{ id: "p3", mistake: "s1", vi: "Giá tăng năm 1998.", answer_words: ["Prices", "rose", "in 1998."], extra: ["rise"], explain: "Quá khứ" }] } };
   return {                                         // frame
     hello: [`Chào ${payload.call_name} nha`, "Mình xem bài của em nhé"],
@@ -107,6 +101,8 @@ await ctx.route("https://api.anthropic.com/**", route => {
   const part = FIELD[/only: (\w+)/.exec(body.messages[0].content.at(-1).text)[1]];
   const payload = JSON.parse(body.messages[0].content[0].text.replace(/^[^{]*/, ""));
   payload.chart_row = TASK1 ? TASK1.row : ""; payload.chart_col = TASK1 ? TASK1.col : "";
+  const prompt = /Prompts?:\n- [^:]+: (.+)/.exec(body.system.map(b => b.text).join("\n"));
+  payload.prompt_words = prompt && !TASK1 ? prompt[1].split(/\s+/).slice(2, 5).join(" ") : "";
   asked.push({ part, body, payload });
   return route.fulfill({ status: 200, headers: { ...cors, "content-type": "text/event-stream" }, body: sse(JSON.stringify(fakePart(part, payload))) });
 });
@@ -175,30 +171,34 @@ try {
   const gItems = grammar.locator(".lang-item");
   const sysWanted = await gItems.count() >= 3;
   if (sysWanted) {
-    await grammar.locator(".sys input:not([type])").fill("Chia thì của động từ");
-    await grammar.locator(".sys input:not([type])").press("Tab");
-    await gItems.nth(0).locator("label", { hasText: "thuộc lỗi hệ thống" }).locator("input").check();
-    await gItems.nth(1).locator("label", { hasText: "thuộc lỗi hệ thống" }).locator("input").check();
-    await gItems.nth(2).locator(".modes button", { hasText: "Socratic" }).click();
-  } else {
-    await grammar.locator(".sys input[type=checkbox]").check();
-    await page.locator(".lang-item").first().locator(".modes button", { hasText: "Socratic" }).click();
-  }
-  if (ni > 1) await page.locator(".lang-item").last().locator(".modes button", { hasText: "Bỏ qua" }).click();
-  // Dạy (a small board) on one grammar fix, and one fix marked as an upgrade
-  const gLast = grammar.locator(".lang-item").last();
-  await gLast.locator(".modes button", { hasText: "Dạy" }).click();
-  const upBox = vocab.locator(".lang-item").last().locator("label", { hasText: "Nâng cấp" }).locator("input");
-  if (await upBox.count()) await upBox.check();
-  // two vocabulary fixes that are the same point: one screen
+    // two systematic mistakes in grammar: the first two fixes in 1, the third in 2
+    await grammar.locator(".sys-name input").first().fill("Chia thì của động từ");
+    await grammar.locator(".sys-name input").first().press("Tab");
+    await grammar.getByRole("button", { name: "+ Thêm lỗi hệ thống" }).click();
+    await grammar.locator(".sys-name input").nth(1).fill("Mạo từ");
+    await grammar.locator(".sys-name input").nth(1).press("Tab");
+    await gItems.nth(0).locator(".sys-chip.c0").click();
+    await gItems.nth(1).locator(".sys-chip.c0").click();
+    await gItems.nth(2).locator(".sys-chip.c1").click();
+    ok(await grammar.locator(".lang-item.sys-0").count() === 2 && await grammar.locator(".lang-item.sys-1").count() === 1, "fixes sorted into systematic mistakes 1 and 2");
+  } else await grammar.locator(".sys input[type=checkbox]").check();
+  // the last item hidden, a vocabulary fix praised, another marked as an upgrade
+  await page.locator(".lang-item:not(.sys-0):not(.sys-1)").last().locator(".modes button", { hasText: "Ẩn" }).click();
   const vItems = vocab.locator(".lang-item");
-  let grouped = false;
-  if (await vItems.count() >= 2) {
-    const target = await vItems.nth(1).getAttribute("data-ref");
-    await vItems.nth(0).locator("select[aria-label='Gộp với']").selectOption(target);
-    await vocab.locator(".group-note").fill("Cứ dùng một chữ đơn giản là được");
-    grouped = await vocab.locator(".lang-item.grouped").count() === 2;
-    ok(grouped, "two vocabulary fixes grouped");
+  const nv = await vItems.count();
+  if (nv >= 2) await vItems.nth(0).locator(".modes button", { hasText: "Khen" }).click();
+  for (let k = 1; k < nv; k++) { const up = vItems.nth(k).locator("label", { hasText: "Nâng cấp" }).locator("input"); if (await up.count()) { await up.check(); break; } }
+  // a comment dragged onto another fix moves there (only in the lesson)
+  const src = page.locator(".lang-item:not(.skipped) .drag-comment").first();
+  if (await src.count()) {
+    const from = await src.locator("xpath=ancestor::div[contains(@class,'lang-item')][1]").getAttribute("data-ref");
+    const text = (await src.textContent()).trim();
+    const dest = page.locator(`.lang-item:not([data-ref="${from}"])`).first();
+    const to = await dest.getAttribute("data-ref");
+    await src.dragTo(dest);
+    const moved = (await page.locator(`.lang-item[data-ref="${to}"]`).textContent()).includes(text.slice(0, 20));
+    ok(moved, `a comment dragged from ${from} to ${to}`);
+    if (moved) for (const r of [from, to]) await page.locator(`.lang-item[data-ref="${r}"]`).getByRole("button", { name: "Trả nhận xét như CRM" }).click();
   }
   await page.screenshot({ path: join(OUT, `${KIND}-language.png`), fullPage: true });
   await page.getByRole("button", { name: "Tiếp: Viết lại" }).click();
@@ -217,8 +217,9 @@ try {
   ok(parts === want, `parts asked: ${parts}`);
   const D = asked[0].payload.decisions;
   ok(D.checklist.filter(c => c.ok === false).length === 1 && D.language.items.length === ni && D.rewrite.sids.length === 1, "the teacher's decisions are sent");
-  ok(!grouped || (D.language.groups.length === 1 && D.language.groups[0].note), "the group and its note are sent");
-  ok(D.language.items.some(i => i.mode === "board"), "a Dạy item is sent");
+  ok(D.language.items.some(i => i.mode === "hide") && (nv < 2 || D.language.items.some(i => i.mode === "praise")), "Ẩn and Khen are sent");
+  ok(!sysWanted || (D.language.systemic.length === 2 && D.language.systemic[0].refs.length === 2 && D.language.systemic[1].refs.length === 1), "two systematic mistakes sent with their fixes");
+  ok(!D.language.groups && D.language.items.every(i => ["systemic", "list", "praise", "hide", "teach"].includes(i.mode)), "items: systemic / list / praise / hide / teach");
   if (KIND === "essay" || KIND === "week1") ok(D.ideas[0].status === "fix" && D.ideas[0].fix_type === "replace", "the fix type is sent");
   ok(!asked.some(a => /praise_candidates|framework_checklist/.test(JSON.stringify(a.body))), "no old-flow parts asked");
   ok(asked.every(a => a.body.model === "claude-opus-5-5"), "model claude-opus-5-5");
@@ -236,6 +237,14 @@ try {
     await page.waitForTimeout(500);
     ok((await f.locator("#app").textContent()).includes(title), `preview of ${name} opens on its screen`);
     await page.screenshot({ path: join(OUT, `${KIND}-edit-${name.replace(/\W+/g, "_")}.png`) });
+  }
+  if (sysWanted) {
+    await page.locator(".mod-btn", { hasText: "Lỗi hệ thống" }).first().click();
+    const f = page.frameLocator("#pv");
+    await page.waitForTimeout(2500);
+    const t = await f.locator("#app").textContent();
+    ok(t.includes("Lỗi lớn nhất 1") && t.includes("Lỗi lớn nhất 2") && t.includes("Mạo từ"), "the Language map lists both systematic mistakes");
+    await page.screenshot({ path: join(OUT, `${KIND}-edit-map.png`) });
   }
   const tabs = await page.frameLocator("#pv").locator(".tab b").allTextContents();
   ok(tabs.join(",") === "Logic,Language", "the page has two parts: " + tabs.join(","));

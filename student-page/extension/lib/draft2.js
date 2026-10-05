@@ -42,6 +42,12 @@ export const PARTS2 = {
     })) }),
   },
   practice: { ...PARTS.practice, after: "systemic" },
+  // the frame without the rewrite, when the teacher didn't assign one
+  frame_nr: {
+    label: "Lời chào và kết thúc",
+    fields: "hello, results, takeaways, finish",
+    schema: O({ hello: A(S), results: O({ score: A(S), criteria: S }), takeaways: A(S), finish: O({ summary: A(S), extra_prompt: S, later: A(S), done: A(S) }) }),
+  },
   frame: {
     label: "Lời chào, viết lại và kết thúc",
     fields: "hello, results, rewrite, takeaways, finish",
@@ -56,7 +62,7 @@ export const PARTS2 = {
 export function partsFor2(d) {
   const ideas = (d.ideas || []).length > 0;
   const systemic = d.language.systemic.length > 0;
-  return ["logic", ...(ideas ? ["ideas"] : []), "language", ...(systemic ? ["systemic", "practice"] : []), "frame"];
+  return ["logic", ...(ideas ? ["ideas"] : []), "language", ...(systemic ? ["systemic", "practice"] : []), d.no_rewrite ? "frame_nr" : "frame"];
 }
 
 /* ---------- the instructions (stable per week, so they are cached) ---------- */
@@ -70,7 +76,7 @@ The teacher went through the essay and decided (in "decisions"):
 - topics (Week 1): whether each paraphrase topic is right, with notes.
 - language.items: what the student sees of each correction and note: "systemic" (taught in a systematic mistake lesson), "list" (only listed, with the teacher's own comment, in an optional list of other mistakes), "praise" (a compliment from the teacher, shown with the good phrases), "hide" (not shown), "teach" (a comment about her ideas, shown as is in the Logic part). tab = "LR" (vocabulary), "GRA" (grammar) or "LOGIC". upgrade true = her words are not wrong: the teacher suggests a better way to say it (never call it a mistake).
 - language.systemic: the systematic mistakes, in order (at most 3 per tab), each named by the teacher, with the corrections and notes that belong to it (refs). Often there is none.
-- rewrite_target: the exact sentences she rewrites.
+- rewrite_target: the exact sentences she rewrites. no_rewrite true: the teacher gave no rewrite this time: never mention rewriting anywhere.
 Never change, soften or add to these decisions: no extra points, mistakes, corrections or praise of your own. Write only Đậu's words around them, short. Everything else on the page is the teacher's own words.
 
 # Đậu's voice (Vietnamese)
@@ -181,7 +187,7 @@ const pointOf = t => ({ sids: t.sentence_ids, quote: t.quote || "", comment: t.c
 export function toLesson2(parts, { page, meta, teacher, zalo, week, decisions }) {
   const P = structuredClone(parts), D = decisions;
   const sids = new Set(page.essay.paragraphs.flatMap(p => p.sentences.map(s => s.id)));
-  const lg = P.logic.logic, ln = P.language.language, f = P.frame;
+  const lg = P.logic.logic, ln = P.language.language, f = P.frame || P.frame_nr, noRw = !!D.no_rewrite || !f.rewrite;
   const noteAt = ref => page.task_comments[+ref.slice(1) - 1];
   // where each correction and note sits in the essay, so lists follow her text
   const pos = {}, sidPos = {};
@@ -261,7 +267,8 @@ export function toLesson2(parts, { page, meta, teacher, zalo, week, decisions })
     },
     mistakes: { total: Object.keys(page.corrections).length, main: sys, others: [], lr_intro: [], gra_intro: [] },
     practice: sys.length && P.practice ? practiceToLesson({ intro: P.practice.practice.intro, core: P.practice.practice.core, items: practiceItems(P.practice.practice) }) : null,
-    rewrite: { ...f.rewrite, target: (D.rewrite && D.rewrite.target) || f.rewrite.target, sids: D.rewrite && D.rewrite.sids.length ? D.rewrite.sids : f.rewrite.sids.filter(s => sids.has(s)) },
+    // null: the teacher didn't assign a rewrite (the page goes from practice to the end)
+    rewrite: noRw ? null : { ...f.rewrite, target: (D.rewrite && D.rewrite.target) || f.rewrite.target, sids: D.rewrite && D.rewrite.sids.length ? D.rewrite.sids : f.rewrite.sids.filter(s => sids.has(s)) },
     praise: [], praise_status: "ok",
     finish: { summary: f.finish.summary, takeaways: f.takeaways, extra_prompt: f.finish.extra_prompt, later: f.finish.later, done: f.finish.done, quote: null },
     scores: page.scores, word_count: page.word_count, essay: page.essay, corrections: page.corrections, task_comments: page.task_comments,

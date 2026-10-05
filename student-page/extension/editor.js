@@ -1427,9 +1427,12 @@ function decisions2() {
         refs: items.filter(it => itemState(it).tab === t && inSystemic(it) && sysOf(it) === k).map(it => it.ref) })).filter(x => x.name)),
       items: items.map(it => ({ ref: it.ref, tab: itemState(it).tab, mode: inSystemic(it) ? "systemic" : modeOf(it), ...(isUpgrade(it) ? { upgrade: true } : {}) })),
     },
-    rewrite: S.rewriteTarget && S.rewriteTarget.sids.length ? S.rewriteTarget : null,
+    rewrite: noRewrite() ? null : S.rewriteTarget && S.rewriteTarget.sids.length ? { target: S.rewriteTarget.target, sids: S.rewriteTarget.sids } : null,
+    ...(noRewrite() ? { no_rewrite: true } : {}),
   };
 }
+/* the teacher chose not to assign a rewrite this time */
+const noRewrite = () => !!(S.rewriteTarget && S.rewriteTarget.none);
 /* what still has to be decided before Claude can write: [step, message] */
 function blockers2() {
   const D = d2(), out = [], items = langItems();
@@ -1448,7 +1451,7 @@ function blockers2() {
     if (!names.some(n => n.trim())) out.push(["language", `Language · ${name}: ghi lỗi hệ thống, hoặc tick "Không có lỗi hệ thống"`]);
     names.forEach((n, k) => { if (n.trim() && !items.some(it => itemState(it).tab === t && inSystemic(it) && sysOf(it) === k)) out.push(["language", `Language · ${name}: lỗi hệ thống "${n.trim()}" chưa có chỗ sửa nào (bấm chip ${k + 1} ở các chỗ sửa của lỗi này)`]); });
   }
-  if (!(S.rewriteTarget && S.rewriteTarget.sids.length)) out.push(["rewrite", "Viết lại: chưa chọn câu"]);
+  if (!noRewrite() && !(S.rewriteTarget && S.rewriteTarget.sids.length)) out.push(["rewrite", "Viết lại: chưa chọn câu (hoặc tick \"Không giao viết lại\")"]);
   return out;
 }
 
@@ -1588,13 +1591,16 @@ function renderRewrite() {
   const order = allSents().map(s => s.id);
   $("#main").replaceChildren(h("div", { class: "panel" }, h("div", { class: "card" },
     h("h1", {}, "Viết lại"),
-    h("p", { class: "muted" }, "Chạm vào đúng câu anh muốn em viết lại (một ý thì chỉ chọn câu của ý đó). Gợi ý và bài mẫu chỉ nói về những câu này."),
-    field("Em viết lại", h("select", { onchange: e => { rt.target = e.target.value; touch(); } }, targetsFor().map(([v, l]) => h("option", { value: v, selected: rt.target === v ? true : null }, l)))),
-    h("div", { class: "essay" }, essayView({ onClick: sid => {
-      const l = rt.sids; l.includes(sid) ? l.splice(l.indexOf(sid), 1) : l.push(sid);
-      l.sort((a, b) => order.indexOf(a) - order.indexOf(b)); touch(); renderRewrite();
-    }, mark: sid => rt.sids.includes(sid) })),
-    h("p", {}, rt.sids.length ? `Đã chọn ${rt.sids.length} câu.` : h("span", { class: "warn" }, "Chưa chọn câu nào.")),
+    h("label", { class: "inline" }, h("input", { type: "checkbox", checked: !!rt.none, onchange: e => { rt.none = e.target.checked; touch(); renderRewrite(); } }),
+      "Không giao viết lại cho bài này (em học xong phần luyện tập là tới cuối bài)"),
+    rt.none ? null : [
+      h("p", { class: "muted" }, "Chạm vào đúng câu anh muốn em viết lại (một ý thì chỉ chọn câu của ý đó). Gợi ý và bài mẫu chỉ nói về những câu này."),
+      field("Em viết lại", h("select", { onchange: e => { rt.target = e.target.value; touch(); } }, targetsFor().map(([v, l]) => h("option", { value: v, selected: rt.target === v ? true : null }, l)))),
+      h("div", { class: "essay" }, essayView({ onClick: sid => {
+        const l = rt.sids; l.includes(sid) ? l.splice(l.indexOf(sid), 1) : l.push(sid);
+        l.sort((a, b) => order.indexOf(a) - order.indexOf(b)); touch(); renderRewrite();
+      }, mark: sid => rt.sids.includes(sid) })),
+      h("p", {}, rt.sids.length ? `Đã chọn ${rt.sids.length} câu.` : h("span", { class: "warn" }, "Chưa chọn câu nào."))],
     h("div", { class: "row" }, h("button", { class: "btn primary", type: "button", onclick: () => go("draft") }, "Tiếp: Soạn")))));
 }
 
@@ -1607,14 +1613,14 @@ function renderDraft2() {
   const status = h("div", { id: "draftStatus" });
   $("#main").replaceChildren(h("div", { class: "panel" }, h("div", { class: "card" },
     h("h1", {}, "Soạn với Claude"),
-    h("p", {}, "Claude chỉ viết lời của Đậu quanh quyết định của anh: tổng kết Logic, từng chỗ cần sửa, câu hỏi Socratic, cụm em dùng tốt, bài giảng lỗi hệ thống (nếu có), phần viết lại, lời chào và kết thúc. Nhận xét và chỗ sửa vẫn là chữ của anh."),
+    h("p", {}, "Claude chỉ viết lời của Đậu quanh quyết định của anh: tổng kết Logic, từng chỗ cần sửa, câu hỏi Socratic, cụm em dùng tốt, bài giảng lỗi hệ thống (nếu có), phần viết lại (nếu anh giao), lời chào và kết thúc. Nhận xét và chỗ sửa vẫn là chữ của anh."),
     h("ul", {},
       h("li", {}, `Logic: ${D.checklist.filter(c => c.ok === true).length} ✓, ${D.checklist.filter(c => c.ok === false).length} ✗` +
         (D.ideas.length ? ` · ${D.ideas.length} ý (${D.ideas.filter(x => x.status === "fix").length} ✗, ${D.ideas.filter(x => x.status === "improve").length} ~)` : "") +
         (D.topics.length ? ` · ${D.topics.filter(x => !x.ok).length}/${D.topics.length} topic ✗` : "")),
       h("li", {}, `Language: ${n.systemic} chỗ trong lỗi hệ thống, ${n.list} trong danh sách, ${n.praise} khen, ${n.hide} ẩn` + (n.teach ? `, ${n.teach} hiện ở Logic` : "") + " · " +
         (D.language.systemic.length ? "lỗi hệ thống: " + D.language.systemic.map(x => x.name).join(", ") : "không có lỗi hệ thống")),
-      h("li", {}, D.rewrite ? `Viết lại: ${D.rewrite.sids.length} câu (${D.rewrite.sids.join(", ")})` : "Viết lại: chưa chọn")),
+      h("li", {}, D.no_rewrite ? "Viết lại: không giao" : D.rewrite ? `Viết lại: ${D.rewrite.sids.length} câu (${D.rewrite.sids.join(", ")})` : "Viết lại: chưa chọn")),
     block.length ? h("div", { class: "notice bad blockers" }, h("b", {}, "Còn thiếu:"), h("ul", { class: "problems" }, block.map(([step, msg]) =>
       h("li", {}, h("button", { class: "btn link", type: "button", onclick: () => go(step) }, msg))))) : null,
     !hasKey ? h("div", { class: "notice bad" }, "Chưa có Claude API key. ", h("a", { href: "options.html", target: "_blank" }, "Mở Cài đặt"), " rồi quay lại đây.") : null,
@@ -1701,7 +1707,7 @@ const MODULES2 = [
   ["rewrite", "Viết lại", ["rewrite"], "rewrite"],
   ["frame", "Chào & kết thúc", ["hello", "results", "finish"], "intro"],
 ];
-const curModules = () => isFlow2() ? MODULES2.filter(([id]) => S.lesson && (id === "ideas" ? !!S.lesson.ideas : id === "systemic" ? S.lesson.mistakes.main.length > 0 : id === "practice" ? !!S.lesson.practice : true))
+const curModules = () => isFlow2() ? MODULES2.filter(([id]) => S.lesson && (id === "ideas" ? !!S.lesson.ideas : id === "systemic" ? S.lesson.mistakes.main.length > 0 : id === "practice" ? !!S.lesson.practice : id === "rewrite" ? !!S.lesson.rewrite : true))
   : visibleModules();
 function refLabel(ref) {
   if (ref[0] === "c") { const c = S.lesson.corrections[ref]; return c ? `${c.orig.trim() || "…"} → ${c.fix.trim() || "(bỏ)"}` : ref; }

@@ -80,8 +80,8 @@ function fakePart(part, payload) {
   return {                                         // frame
     hello: [`Chào ${payload.call_name} nha`, "Mình xem bài của em nhé"],
     results: { score: [`Overall của em là ${payload.overall || "?"} nè`, "Lần này mình tập trung vào mấy chỗ nhỏ"], criteria: "Đây là 4 điểm thành phần nè" },
-    rewrite: { target: D.rewrite.target, label: "Câu em đã viết", sids: D.rewrite.sids, intro: ["Giờ em viết lại câu này nha", "Nhớ mấy chỗ mình vừa xem"], task: "",
-      flow: "idea → detail", starters: ["Notably, …"], phrases: ["by far"], checklist: ["Có năm cho số liệu"], model: "A model sentence." },
+    ...(D.no_rewrite ? {} : { rewrite: { target: D.rewrite.target, label: "Câu em đã viết", sids: D.rewrite.sids, intro: ["Giờ em viết lại câu này nha", "Nhớ mấy chỗ mình vừa xem"], task: "",
+      flow: "idea → detail", starters: ["Notably, …"], phrases: ["by far"], checklist: ["Có năm cho số liệu"], model: "A model sentence." } }),
     takeaways: ["Ghi năm cho từng số liệu", "Đọc kỹ đề", "Dò lại bài trước khi nộp"],
     finish: { summary: ["Xong rồi nè", "Em làm tốt lắm á"], extra_prompt: "Em muốn luyện thêm {n} câu nữa không?", later: ["Để lần sau cũng được nha"], done: ["Hẹn gặp em tuần sau", "Cố lên nha : )"] },
   };
@@ -203,9 +203,15 @@ try {
   await page.screenshot({ path: join(OUT, `${KIND}-language.png`), fullPage: true });
   await page.getByRole("button", { name: "Tiếp: Viết lại" }).click();
 
-  /* Viết lại */
-  await page.locator(".essay .sent").nth(2).click();
-  ok(await page.locator(".essay .sent.picked").count() === 1, "pick one sentence to rewrite");
+  /* Viết lại: Task 1 pages try a lesson without one (the teacher didn't assign it) */
+  const noRw = KIND.startsWith("task1");
+  if (noRw) {
+    await page.locator("label", { hasText: "Không giao viết lại" }).locator("input").check();
+    ok(await page.locator(".essay .sent").count() === 0, "no rewrite: the sentence picker is gone");
+  } else {
+    await page.locator(".essay .sent").nth(2).click();
+    ok(await page.locator(".essay .sent.picked").count() === 1, "pick one sentence to rewrite");
+  }
   await page.getByRole("button", { name: "Tiếp: Soạn" }).click();
 
   /* Soạn */
@@ -216,7 +222,8 @@ try {
   const want = ["frame", "language", "logic", ...(KIND === "essay" || KIND === "week1" ? ["ideas"] : []), ...(sysWanted ? ["practice", "systemic"] : [])].sort().join(",");
   ok(parts === want, `parts asked: ${parts}`);
   const D = asked[0].payload.decisions;
-  ok(D.checklist.filter(c => c.ok === false).length === 1 && D.language.items.length === ni && D.rewrite.sids.length === 1, "the teacher's decisions are sent");
+  ok(D.checklist.filter(c => c.ok === false).length === 1 && D.language.items.length === ni && (noRw ? D.no_rewrite && !D.rewrite : D.rewrite.sids.length === 1), "the teacher's decisions are sent");
+  ok(!noRw || !JSON.stringify(asked.find(a => a.part === "frame").body.output_config || {}).includes("starters"), "no rewrite: Claude isn't asked for one");
   ok(D.language.items.some(i => i.mode === "hide") && (nv < 2 || D.language.items.some(i => i.mode === "praise")), "Ẩn and Khen are sent");
   ok(!sysWanted || (D.language.systemic.length === 2 && D.language.systemic[0].refs.length === 2 && D.language.systemic[1].refs.length === 1), "two systematic mistakes sent with their fixes");
   ok(!D.language.groups && D.language.items.every(i => ["systemic", "list", "praise", "hide", "teach"].includes(i.mode)), "items: systemic / list / praise / hide / teach");
@@ -226,11 +233,11 @@ try {
 
   /* read-through */
   const mods = (await page.locator(".mod-btn").allTextContents()).map(t => t.replace(/\d+$/, "").trim());
-  ok(mods.includes("Logic") && mods.includes("Language") && mods.includes("Viết lại") && mods.includes("Chào & kết thúc"), "modules: " + mods.join(" · "));
+  ok(mods.includes("Logic") && mods.includes("Language") && mods.includes("Viết lại") === !noRw && mods.includes("Chào & kết thúc"), "modules: " + mods.join(" · "));
   ok(mods.includes("Lỗi hệ thống") === sysWanted && mods.includes("Luyện tập") === sysWanted, "systematic mistake and practice only when named");
   const flags = (await page.locator(".form .problems li").allTextContents());
   console.log("     checks: " + (flags.join(" | ") || "none"));
-  for (const [name, title] of [["Logic", "Logic"], ["Language", "Language"], ["Viết lại", "Viết lại"]]) {
+  for (const [name, title] of [["Logic", "Logic"], ["Language", "Language"], ...(noRw ? [] : [["Viết lại", "Viết lại"]])]) {
     await page.locator(".mod-btn", { hasText: name }).first().click();
     const f = page.frameLocator("#pv");
     await f.locator("#app .content").waitFor({ state: "attached", timeout: 8000 });
@@ -257,6 +264,7 @@ try {
   await dl.saveAs(saved);
   const html = readFileSync(saved, "utf8");
   ok(/"flow": ?2/.test(html) && html.includes('"logic"') && html.includes('"language"'), "the page carries a flow-2 lesson");
+  ok(noRw ? /"rewrite": ?null/.test(html) : /"rewrite": ?\{/.test(html), noRw ? "no rewrite in the lesson" : "the rewrite is in the lesson");
   ok(errors.length === 0, "no errors " + errors.join(" | "));
   console.log("     exported " + saved);
 } finally {

@@ -436,6 +436,11 @@ mark.good { background: var(--mint-soft); color: var(--mint-deep); font-weight: 
 .ask-icon { width: 3.2em; height: 3.2em; flex: none; object-fit: contain; animation: popIn .45s both; }
 .explain.oops { display: flex; gap: .6em; align-items: center; }
 .explain.oops img { width: 2.8em; height: 2.8em; flex: none; object-fit: contain; }
+.explain.mini-say { display: flex; gap: .6em; align-items: center; }
+.explain.mini-say.oops { background: var(--coral-soft); border-left-color: var(--coral); }
+.explain.mini-say img { width: 2.8em; height: 2.8em; flex: none; object-fit: contain; animation: popIn .4s cubic-bezier(.3, 1.5, .5, 1) both; }
+.explain.mini-say b { display: block; font-weight: 700; }
+.explain.mini-say span { display: block; margin-top: .15em; }
 /* practice streak */
 .streak { display: inline-flex; align-items: center; gap: .3em; font: 800 .8em var(--font-display); color: #C2410C; background: #FFEAD5; border-radius: 999px; padding: .15em .6em .15em .3em; animation: popIn .45s cubic-bezier(.3, 1.6, .5, 1) both; }
 .streak img { width: 1.5em; height: 1.5em; }
@@ -1036,6 +1041,7 @@ async function praise(c, key) { for (const line of praiseAt(key)) { await c.gate
 /* the sections, in order: [section, tab label, score key (or null), name said in the roadmap] */
 /* lessons made with the new editor (flow 2): two parts, Logic (TR/TA + CC) and Language (LR + GR) */
 const V2 = L.flow === 2;
+const NO_RW = V2 && L.rewrite === null;            // flow 2: the teacher didn't assign a rewrite this time
 const TABS = L.tabs || (V2 ? [["LOGIC", "Logic", ["TR", "CC"], L.t1 ? "Bố cục, overview và số liệu" : "Bố cục và ý"], ["LANG", "Language", ["LR", "GR"], "Từ vựng và ngữ pháp"]]
   : [["TR", "TR", "TR", "Ý tưởng"], ["CC", "CC", "CC", "Liên kết"], ["LR", "LR", "LR", "Từ vựng"], ["GRA", "GRA", "GR", "Ngữ pháp"]]);
 const scoreOf = k => Array.isArray(k) ? k.map(scoreOf).filter(Boolean).join(" · ") : k && L.scores && L.scores[k] ? L.scores[k] : "";
@@ -1343,7 +1349,7 @@ add("intro", async c => {
     road.append(h("div", { class: "card road" }, h("b", {}, code), h("span", {}, name), scoreOf(sk) ? h("em", {}, "band " + scoreOf(sk)) : null));
     fit();
   }
-  if (V2) return void await c.say("Mình xem Logic trước, rồi tới Language, cuối cùng em viết lại một chỗ nha", "explaining");
+  if (V2) return void await c.say(NO_RW ? "Mình xem Logic trước, rồi tới Language nha" : "Mình xem Logic trước, rồi tới Language, cuối cùng em viết lại một chỗ nha", "explaining");
   await c.say(`Mình đi lần lượt ${TABS.length} phần nha, bắt đầu từ ${/^Exercise/.test(TABS[0][3]) ? TABS[0][3] : TABS[0][3].charAt(0).toLowerCase() + TABS[0][3].slice(1)} (${TABS[0][1]})`, "explaining");
 }, { label: "Bắt đầu " + TABS[0][1] });
 
@@ -2258,13 +2264,22 @@ function exercise(c, item, key, counter) {
   const flame = () => { headRow.querySelectorAll(".streak").forEach(x => x.remove()); if ((S.streak || 0) >= 2) headRow.append(h("span", { class: "streak" }, img("icon_flame"), `${S.streak} câu liên tiếp`)); };
   flame();
   c.show(h("div", { class: "stack" }, headRow, body), { replace: true });
+  // practice: Đậu never talks over the exercise (a tap must land on the answer, not on him). The
+  // question sits beside a small Đậu; his reaction and the explanation come in a card under the answers
   const q = item.type === "build" ? "Dịch câu này sang tiếng Anh nha" : item.q;
-  body.append(h("div", { class: "qtext" }, q));
-  if (!rec.done) c.say(q, "magnify");
+  body.append(h("div", { class: "ask-q" }, img("dau_magnify", "ask-icon", ""), h("div", { class: "qtext" }, q)));
+  if (mode === "talk") setMode("away");
   return new Promise(resolve => {
     let finished = false, reveal = () => {};
-    // the explanation, as its own card under the exercise (never spliced into Đậu's line)
-    const explain = oops => { if (item.explain && !body.querySelector(".explain")) { body.append(h("div", { class: "explain" + (oops ? " oops" : "") }, oops ? img("dau_oops", "", "") : null, h("span", {}, item.explain))); fit(); } };
+    // pose: dau_thumbsup, dau_cheering, dau_oops or dau_thinking (named here so the build embeds them)
+    const react = (line, pose, withExplain) => {
+      body.querySelectorAll(".explain").forEach(x => x.remove());
+      body.append(h("div", { class: "explain mini-say" + (pose === "oops" ? " oops" : "") }, img("dau_" + pose, "", ""),
+        h("div", {}, h("b", {}, line), withExplain && item.explain ? h("span", {}, item.explain) : null)));
+      fit();
+      const last = body.lastElementChild;
+      if (content && content.classList.contains("overflow")) last.scrollIntoView({ block: "nearest", behavior: REDUCED ? "auto" : "smooth" });
+    };
     const lock = () => body.querySelectorAll(".tok, .wchip, .choice").forEach(b => { b.disabled = true; });
     const end = ok => { finished = true; rec.done = true; save(); lock(); needAnswer = null; setBtn(); resolve(ok); };
     async function result(ok) {
@@ -2272,9 +2287,9 @@ function exercise(c, item, key, counter) {
       rec.tries++; if (rec.first == null) rec.first = ok; save();
       // right first time keeps the streak going (the flame); a miss starts it again
       S.streak = ok && rec.tries === 1 ? (S.streak || 0) + 1 : 0; save(); flame(); fit();
-      if (ok) { end(true); if (rec.tries === 1) explain(); await c.say(S.streak >= 3 ? `${S.streak} câu liên tiếp rồi nè, giữ lửa nha` : RIGHT[rightCount++ % RIGHT.length], S.streak >= 3 ? "cheering" : "thumbsup"); }
-      else if (rec.tries < 2) { explain(true); await c.say(`Chưa đúng nè ${NAME}, em thử lại nhen`, "oops"); }
-      else { reveal(); end(false); await c.say("Đáp án ở đây nè, câu này mình ôn lại cuối bài nha", "thinking"); }
+      if (ok) { end(true); react(S.streak >= 3 ? `${S.streak} câu liên tiếp rồi nè, giữ lửa nha` : RIGHT[rightCount++ % RIGHT.length], S.streak >= 3 ? "cheering" : "thumbsup", true); }
+      else if (rec.tries < 2) react(`Chưa đúng nè ${NAME}, em thử lại nhen`, "oops", true);
+      else { reveal(); end(false); react("Đáp án ở đây nè, câu này mình ôn lại cuối bài nha", "thinking", true); }
     }
     if (item.type === "choose") {
       if (item.sentence) body.append(h("div", { class: "card quote en" }, item.sentence));
@@ -2318,7 +2333,7 @@ function exercise(c, item, key, counter) {
       body.append(b.el, check); needAnswer = b.el;
     }
     fit(); setBtn(); settle();
-    if (rec.done) { reveal(); end(rec.first); c.say(rec.first ? RIGHT[0] : "Đáp án ở đây nè", rec.first ? "thumbsup" : "thinking"); }
+    if (rec.done) { reveal(); end(rec.first); react(rec.first ? RIGHT[0] : "Đáp án ở đây nè", rec.first ? "thumbsup" : "thinking", true); }
   });
 }
 
@@ -2402,7 +2417,7 @@ const chainView = () => h("div", { class: "chain" }, RW_CHAIN.nodes.flatMap((n, 
   h("div", { class: "node" + (n.fresh ? " new" : "") + (n.en ? " en" : ""), style: "animation:none" }, n.t)]));
 
 // 1. what she will rewrite, and why
-add("rewrite", async c => {
+if (!NO_RW) add("rewrite", async c => {
   c.show(h("div", { class: "card rw-title" }, img("icon_dau_happy", "rw-icon", ""),
     h("div", {}, h("div", { class: "label" }, "Nhiệm vụ của " + TEACHER), h("h1", { class: "h" }, "Viết lại"))));
   await c.say(RW.intro[0] || `Giờ tới nhiệm vụ viết lại nè ${NAME}`, "writing");
@@ -2421,7 +2436,7 @@ add("rewrite", async c => {
 }, { label: "Bắt đầu viết" });
 
 // 2. write, with hints she opens one at a time
-add("rewrite", async c => {
+if (!NO_RW) add("rewrite", async c => {
   S.rwHints = S.rwHints || 0;
   // the chain comes first (open), then what she wrote; the hints unlock one at a time
   const hints = [
@@ -2464,7 +2479,7 @@ add("rewrite", async c => {
 }, { end: "dock" });
 
 // 3. check against the list, see the model, send it to the teacher
-add("rewrite", async c => {
+if (!NO_RW) add("rewrite", async c => {
   const wrote = (S.draft || "").trim().length > 0;
   c.show(rwHead());
   if (RW.checklist.length) c.show(h("div", { class: "selfcheck card" }, h("div", { class: "label" }, "Em tự check nha"),
@@ -2587,15 +2602,10 @@ function notebookData() {
   };
   const sys = [], mistakes = [];
   const M = L.mistakes || { main: [], others: [] };
-  for (const m of M.main || []) sys.push({ title: m.title, board: boardOf(m), rule: (m.patterns || []).length ? m.patterns.map(x => x.rule).filter(Boolean) : m.rule || [], items: [...m.cids.filter(c => C[c]).map(c => fromC(c, false)), ...(m.points || []).map(p => fromNote(p.nid)).filter(Boolean)] });
-  if (L.language) {
-    // the list (Danh sách): vocabulary first, then grammar, each in essay order
-    for (const t of ["LR", "GRA"]) for (const it of L.language.list || []) if (it.tab === t) {
-      const x = it.ref[0] === "c" ? (C[it.ref] ? fromC(it.ref, !!it.upgrade) : null) : fromNote(it.ref, it);
-      if (x) mistakes.push(x);
-    }
-  }                                                  // older lessons: their main mistakes only (the small ones stay on the page)
-  return { good, sys, mistakes };
+  for (const m of M.main || []) sys.push({ title: m.title, board: boardOf(m), dots: (m.patterns || []).length > 1, rule: (m.patterns || []).length ? m.patterns.map(x => x.rule).filter(Boolean) : m.rule || [], items: [...m.cids.filter(c => C[c]).map(c => fromC(c, false)), ...(m.points || []).map(p => fromNote(p.nid)).filter(Boolean)] });
+  // only the main things: the list of other fixes (Danh sách) stays on the page
+  const take = ((L.finish && L.finish.takeaways) || []).filter(t => t && t.trim());
+  return { good, take, sys, mistakes };
 }
 async function saveNotebook() {
   const btn = $("#nextBtn"), label = btn.textContent;
@@ -2622,7 +2632,7 @@ async function drawNotebook() {
   const COL = { paper: "#FFF7EC", ink: "#2B2118", muted: "#8A7B6E", orange: "#FF9800", deep: "#C65D00", mint: "#2F9E74", mintSoft: "#E1F5EA", coral: "#D9483B", coralSoft: "#FDE6E2", line: "#EFE3D3", chalk: "#F4F1E8", board: "#2F4A3F", wood: "#B8763A", upSoft: "#FFF0D6" };
   try { await Promise.race([Promise.all([document.fonts.load(`800 60px ${F.disp}`), document.fonts.load(`600 30px ${F.body}`), document.fonts.load(`italic 400 30px ${F.body}`)]), new Promise(r => setTimeout(r, 1500))]); } catch (e) { /* system fonts then */ }
   const pic = key => new Promise(res => { const im = new Image(); im.onload = () => res(im); im.onerror = () => res(null); im.src = A[key]; });
-  const [wave, check, bulb, head] = await Promise.all(["dau_waving", "icon_check", "icon_bulb", "icon_dau"].map(pic));
+  const [wave, check, bulb, head, star] = await Promise.all(["dau_waving", "icon_check", "icon_bulb", "icon_dau", "icon_star"].map(pic));
   const cv = document.createElement("canvas"), x = cv.getContext("2d");
   const font = (w, size, fam = "body", style = "") => `${style} ${w} ${size}px ${F[fam]}`.trim();
   const rr = (X, Y, w, hh, r, fill, stroke) => { x.beginPath(); x.roundRect ? x.roundRect(X, Y, w, hh, r) : x.rect(X, Y, w, hh); if (fill) { x.fillStyle = fill; x.fill(); } if (stroke) { x.strokeStyle = stroke; x.lineWidth = 2; x.stroke(); } };
@@ -2719,7 +2729,18 @@ async function drawNotebook() {
       };
       sectionH = measureSection(body); y += section(check, "Cụm em dùng tốt", D.good.reduce((n, g) => n + g[1].length, 0), COL.mint, body) + 32;
     }
-    // 2. mistakes to watch out for: the repeated one on its board first, then each fix
+    // 2. what to remember for the next essay (the lesson's takeaways)
+    if (D.take.length) {
+      const body = yy => {
+        for (const t of D.take) {
+          if (draw) { x.beginPath(); x.arc(PAD + IN + 12, yy + 24, 8, 0, Math.PI * 2); x.fillStyle = COL.orange; x.fill(); }
+          yy += drawLines(wrap([{ t, f: font(600, 30), c: COL.ink }], CW - 2 * IN - 40), PAD + IN + 36, yy, 44, draw) + 14;
+        }
+        return yy - 14;
+      };
+      sectionH = measureSection(body); y += section(star, "Nhớ cho bài sau", 0, COL.orange, body) + 32;
+    }
+    // 3. the repeated mistakes: each on its board, then its fixes
     if (D.sys.length || D.mistakes.length) {
       const item = (it, k, yy) => {
         // a number, then her words → the fix (struck through unless it's an upgrade), then the comment
@@ -2744,13 +2765,17 @@ async function drawNotebook() {
           yy += 86;
           if (g.board.length) {
             const bh = 40 + g.board.length * 52;
-            if (draw) { rr(PAD + IN, yy, CW - 2 * IN, bh, 16, COL.wood); rr(PAD + IN + 10, yy + 10, CW - 2 * IN - 20, bh - 20, 10, COL.board); x.fillStyle = COL.chalk; x.font = font(700, 36, "disp"); g.board.forEach((t, i) => x.fillText(t, PAD + IN + 40, yy + 62 + i * 52)); }
+            if (draw) { rr(PAD + IN, yy, CW - 2 * IN, bh, 16, COL.wood); rr(PAD + IN + 10, yy + 10, CW - 2 * IN - 20, bh - 20, 10, COL.board); x.font = font(700, 36, "disp"); g.board.forEach((t, i) => {
+              // with several patterns, each line dotted in its colour (as on the page)
+              if (g.dots) { x.beginPath(); x.arc(PAD + IN + 46, yy + 50 + i * 52, 8, 0, Math.PI * 2); x.fillStyle = ["#FF8A7A", "#B9A0EA", "#6FD3AA", "#F2CC6B"][i % 4]; x.fill(); }
+              x.fillStyle = COL.chalk; x.fillText(t, PAD + IN + (g.dots ? 66 : 40), yy + 62 + i * 52);
+            }); }
             yy += bh + 16;
           }
           for (const r of g.rule) yy += drawLines(wrap([{ t: "• " + r, f: font(500, 26), c: COL.ink }], CW - 2 * IN), PAD + IN, yy, 38, draw) + 4;
           yy += 22;
           for (const it of g.items) yy = item(it, k++, yy);
-          if (D.mistakes.length && draw) { x.strokeStyle = COL.line; x.lineWidth = 2; x.beginPath(); x.moveTo(PAD + IN, yy); x.lineTo(PAD + CW - IN, yy); x.stroke(); }
+          if ((D.mistakes.length || g !== D.sys[D.sys.length - 1]) && draw) { x.strokeStyle = COL.line; x.lineWidth = 2; x.beginPath(); x.moveTo(PAD + IN, yy); x.lineTo(PAD + CW - IN, yy); x.stroke(); }
           yy += 24;
         }
         for (const it of D.mistakes) yy = item(it, k++, yy);

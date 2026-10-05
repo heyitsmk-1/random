@@ -39,7 +39,8 @@ New lessons (**flow 2**: the teacher decides, Claude writes little):
    mistake, only a better way to say it (guessed from the comment: "nâng cấp", "hay hơn"…): her words aren't
    struck through. Drag a comment onto another correction to move it there (only in the lesson: the CRM is
    never touched; "Trả nhận xét như CRM" undoes it). A note already used in a ✗ / ~ idea starts as Ẩn.
-5. **Viết lại**: the exact sentences to rewrite.
+5. **Viết lại**: the exact sentences to rewrite, or **Không giao viết lại** (no rewrite this time: Claude
+   isn't asked for one, and the student page goes from practice straight to the end).
 6. **Soạn**: one Claude pass in small parts (`lib/draft2.js`), only Đậu's words around those decisions: the
    Logic summary and each problem's walk-through, the map of the essay and the chains of ✗ ideas, "Cụm em
    đã dùng tốt", each systematic mistake's mini-lesson (split into 1-4 patterns: one board formula each,
@@ -87,9 +88,13 @@ screen, then in essay order: each problem, the comments moved to Logic, and the 
 - The mascot stickers each have a job: section title cards (Logic: magnifying glass, Language: writing,
   Luyện tập: thumbs-up, the end: cheering), a thinking Đậu beside every question, an oops Đậu on a wrong
   practice answer; a flame counts practice answers right in a row.
-- The last screen's button is **Tải sổ tay về**: one picture (1080 px wide, drawn on a canvas) with "Cụm em
-  dùng tốt" and "Lỗi cần để ý" (each systematic mistake with its board, then the listed fixes with the
-  teacher's comment). On a phone it opens the share sheet (save to Photos, Zalo); elsewhere it downloads.
+- Practice: Đậu never talks over an exercise, so the first tap lands on the answer. The question sits beside a
+  small Đậu; his reaction ("Chuẩn rồi á em", "Chưa đúng nè, em thử lại nhen") and the explanation come in a
+  card under the answers.
+- The last screen's button is **Tải sổ tay về**: one picture (1080 px wide, drawn on a canvas) with only the
+  main things: "Cụm em dùng tốt" (with what the teacher praised), "Nhớ cho bài sau" (the lesson's takeaways)
+  and "Lỗi cần để ý" (each systematic mistake with its board, its rules and its fixes with the teacher's
+  comment). The other fixes (the "Xem N lỗi khác" list) stay on the page only. On a phone it opens the share sheet (save to Photos, Zalo); elsewhere it downloads.
 
 Drafts started before flow 2 (and `editor.html?flow=1`) keep the old steps: Framework tagging → a 6-part
 draft (`lib/draft.js`) → "Cần duyệt" review → export. Old lessons still build and play as before; flow-2 lessons made before the Language map put every shown

@@ -24,7 +24,7 @@ export function checkLesson(lesson) {
     for (const sid of rw.sids) if (!sids.has(sid)) problems.push(`viết lại: không có câu ${sid}`);
     if (!["idea", "paragraph", "skeleton", "overview", "paraphrase"].includes(rw.target)) problems.push("viết lại: chọn một ý, một đoạn, mở bài + câu chủ đề, overview hoặc paraphrase");
     if (!rw.sids.length) problems.push("viết lại: chưa chọn câu nào");
-  } else if (!practice.challenge) problems.push("chưa có phần viết lại");
+  } else if (!practice.challenge && !(lesson.flow === 2 && rw === null)) problems.push("chưa có phần viết lại");   // flow 2: null = the teacher didn't assign one
   for (const it of (lesson.language || { items: [] }).items) {  // flow 2: the corrections shown one by one
     const r = it.ref, n = /^n(\d+)$/.exec(r);
     if (!(r in lesson.corrections) && !(n && +n[1] > 0 && +n[1] <= lesson.task_comments.length)) problems.push(`language: không có ${r} trên trang chấm`);

@@ -83,7 +83,7 @@ def check(lesson):
         problems += [f"rewrite: unknown sentence id {sid}" for sid in rw["sids"] if sid not in sids]
         if rw.get("target") not in ("idea", "paragraph", "skeleton", "overview", "paraphrase"):
             problems.append("rewrite target must be idea, paragraph, skeleton, overview or paraphrase")
-    elif not practice.get("challenge"):
+    elif not practice.get("challenge") and not (lesson.get("flow") == 2 and "rewrite" in lesson and rw is None):  # flow 2: null = not assigned
         problems.append("no rewrite section (lesson.rewrite)")
     for it in (lesson.get("language") or {"items": []})["items"]:  # flow 2: the corrections shown one by one
         ref = it["ref"]

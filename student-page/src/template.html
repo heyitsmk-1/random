@@ -1499,6 +1499,8 @@ if (LG) add("LOGIC", async c => {
 }, { name: "logic" });
 // Task 2: the ideas with the teacher's ✓ / ~ / ✗; ~ gets a one-line tip, ✗ opens its chain
 // (added below with the rest of Logic, in essay order)
+/* a homework of one body paragraph plus paraphrases (Week 1): no Mở bài / Body / Kết bài */
+const PARA_HW = L.layout === "paragraph" || (!L.t1 && L.essay.paragraphs.some(p => p.sentences.some(x => /^\s*topic\s*\d/i.test(origText(x.id)))));
 const addIdeasOverview2 = () => {
   const I = L.ideas, paras = L.essay.paragraphs;
   // the map of her essay: one row per paragraph, ✓ / ✗ from the teacher's decisions, its ideas as chips
@@ -1507,6 +1509,17 @@ const addIdeasOverview2 = () => {
     const map = h("div", { class: "map" });
     c.show(h("div", { class: "card stack" }, h("div", { class: "label" }, "Tổng quan bài của em"), map));
     if (mode === "talk") setMode("away");
+    const chip = (o, alone) => h("div", { class: "chip " + ({ fix: "r", improve: "y" }[ideaStatus(o)] || "c"), style: alone ? "grid-column: 2 / 4" : null }, o.short || o.text);
+    if (PARA_HW) {
+      // Week 1 (one body paragraph + paraphrases): only the paragraph, its topic sentence then each idea
+      const ideaSids = new Set(I.overview.flatMap(o => o.sids || []));
+      const k = paras.reduce((best, p, i) => p.sentences.filter(x => ideaSids.has(x.id)).length > paras[best].sentences.filter(x => ideaSids.has(x.id)).length ? i : best, 0);
+      const ts = paras[k].sentences.find(x => !ideaSids.has(x.id) && !/^\s*exercise\s*\d/i.test(origText(x.id)));
+      const tsLine = (I.paras || [])[k] || (ts ? origText(ts.id).split(/\s+/).slice(0, 8).join(" ") + "…" : "");
+      const rows = [[h("div", { class: "lab" }, "Câu chủ đề"), h("div", { class: "wide" }, tsLine)],
+        ...I.overview.map(o => [h("div", { class: "lab" }, o.tag), chip(o, true)])];
+      for (const [i, r] of rows.entries()) { await c.wait(i ? 550 : 300); map.append(...r); fit(); }
+    } else {
     const nBody = paras.length - 2;
     for (const [k, p] of paras.entries()) {
       const ids = p.sentences.map(x => x.id);
@@ -1514,12 +1527,12 @@ const addIdeasOverview2 = () => {
       const ideas = I.overview.filter(o => (o.sids || []).some(x => ids.includes(x)));
       // what each part is, no verdict on the part; an idea's chip is coloured by its status
       // (green ổn, yellow nâng cấp thêm, red cần sửa), two a row (one alone spans both columns)
-      const chip = (o, alone) => h("div", { class: "chip " + ({ fix: "r", improve: "y" }[ideaStatus(o)] || "c"), style: alone ? "grid-column: 2 / 4" : null }, o.short || o.text);
       const row = [h("div", { class: "lab" }, name)];
       if (!ideas.length) row.push(h("div", { class: "wide" }, (I.paras || [])[k] || ""));
       for (let j = 0; j < ideas.length; j += 2) { if (j) row.push(h("div")); row.push(chip(ideas[j], !ideas[j + 1]), ideas[j + 1] ? chip(ideas[j + 1]) : null); }
       await c.wait(k ? 550 : 300);
       map.append(...row.filter(Boolean)); fit();
+    }
     }
     // what the colours mean (only those on the map)
     const used = new Set(I.overview.map(ideaStatus));

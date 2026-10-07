@@ -17,7 +17,9 @@ In Chrome: `chrome://extensions` → Developer mode → **Load unpacked** → pi
 options) and add the Claude API key; the Netlify token is optional.
 
 ## How it works
-1. **Tạo bài ôn Đậu** (orange button on a grading page) copies the page and opens the editor.
+1. **Tạo bài ôn Đậu** (orange button on a grading page) opens the **Bài gốc** tab for a moment to read her
+   essay exactly as she sent it, goes back to **Bài sửa của giáo viên** (only the view changes, nothing is
+   saved), copies the page with her original kept in it (`#dau-bai-goc`), and opens the editor.
 2. **Bài**: week and prompt, detected from the homework title; the teacher confirms. A homework marked out
    of 100 ("Tổng điểm" with "Scale 100 điểm" ticked in the CRM, e.g. Week 1) has no bands: the score is read
    from the page (editable here) and the student sees it instead of bands.
@@ -84,6 +86,8 @@ screen, then in essay order: each problem, the comments moved to Logic, and the 
   prompt with its key words lit or the framework rule, a Socratic question, what her sentence lacks (it
   lights up), "anh Khoa đề xuất em sửa lại như sau nhé" and the rewrite, each change lit in both cards while
   Đậu says why.
+- Week 1 (one body paragraph + paraphrases): the recap shows only the paragraph: Câu chủ đề, then Ý 1, Ý 2
+  as coloured chips (the Exercise 2 topics have their own Logic screens).
 - The ideas: "Rồi bây giờ mình xem các idea của em nhé", the map of her essay (what Mở bài / each Body / Kết
   bài is, no verdict per part; a body's ideas as chips coloured green ổn / yellow nâng cấp thêm / red cần
   sửa, with a legend; the same three colours everywhere), then "Em phát triển ý tới đâu?": the page counts them ("Em có 4 ý: 2 ý ổn
@@ -127,7 +131,12 @@ Drafts autosave in `chrome.storage.local`, keyed by the CRM writing id.
 page. So the preview frame loads `preview.html`, a sandboxed page (`"sandbox"` in the manifest: no extension
 APIs, no storage), and the editor posts the built page to it (`lib/preview.js`).
 
-**Reading the grading page** (`lib/extract.js`, same as `tools/extract_page.py`): a letter that only changed
+**Reading the grading page** (`lib/extract.js`, same as `tools/extract_page.py`): her own words are
+checked against Bài gốc (the essay as she sent it), so nothing the teacher typed into the essay ("(( … ))",
+"=> COMMENT ...", "// FIX", CAPS, a linker) is ever quoted as hers; without Bài gốc, the "Lập luận và Mạch
+lạc" editor; with neither, the obvious marks are dropped. Spaces left where typing was taken out are tidied.
+A correction may be crossed out with the editor's strikethrough span instead of `<s>` ("small /", the " /"
+is the teacher's). `tools/extract_page.py page.html out.json [page_saved_with_Bai_goc_open.html]`. a letter that only changed
 case between the two copies stays the student's ("Golf"); words crossed out with the line-through style
 (not the editor's strikethrough) and the teacher's version after them read as one correction, with her words
 the new version swallowed taken from the original and the teacher's CAPS lowercased ("~~accounting for 16%~~

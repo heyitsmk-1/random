@@ -16,6 +16,23 @@ mkdirSync(OUT, { recursive: true });
 let failures = 0;
 const ok = (c, what) => { console.log((c ? "ok   " : "FAIL ") + what); if (!c) failures++; };
 
+/* BAI_GOC=<the same page saved with the "Bài gốc" tab open>: the fake page switches views like the CRM
+   (Bài gốc shows her essay as sent; Bài sửa của giáo viên brings the editors back) */
+const { BAI_GOC } = process.env;
+function crmPage() {
+  const html = readFileSync(CRM, "utf8");
+  if (!BAI_GOC) return html;
+  const goc = readFileSync(BAI_GOC, "utf8");
+  const m = /<div class="text-sm leading-loose xl:text-base whitespace-pre-line">[\s\S]*?<\/div>/.exec(goc);
+  const fake = `<template id="fake-goc"><div class="fake-goc">${m ? m[0] : ""}</div></template><script>
+    document.addEventListener("click", e => {
+      const t = (e.target.textContent || "").trim(), ms = document.querySelector("#main-scroll");
+      if (t === "Bài gốc") setTimeout(() => { if (!ms.querySelector(".fake-goc")) ms.prepend(document.getElementById("fake-goc").content.cloneNode(true)); }, 250);
+      if (t === "Bài sửa của giáo viên") setTimeout(() => ms.querySelectorAll(".fake-goc").forEach(n => n.remove()), 250);
+    }, true);<\/script>`;
+  return html.replace("</body>", fake + "</body>");
+}
+
 const ctx = await chromium.launchPersistentContext(mkdtempSync(join(tmpdir(), "dau-")), {
   channel: "chromium", headless: true, viewport: { width: 1400, height: 900 },
   args: [`--disable-extensions-except=${EXT}`, `--load-extension=${EXT}`],
@@ -24,7 +41,7 @@ try {
   const crmCalls = [];
   await ctx.route("https://admin.ielts1984.vn/**", r => {
     crmCalls.push(r.request().method() + " " + r.request().url());
-    if (r.request().url().includes("/writing/")) return r.fulfill({ contentType: "text/html", body: readFileSync(CRM) });
+    if (r.request().url().includes("/writing/")) return r.fulfill({ contentType: "text/html", body: crmPage() });
     return r.fulfill({ status: 204, body: "" });
   });
   await ctx.route(/fonts\.(googleapis|gstatic)\.com/, r => r.fulfill({ status: 200, contentType: "text/css", body: "" }));
@@ -56,6 +73,14 @@ try {
   await editor.waitForTimeout(600);
   const keys2 = await editor.evaluate(async () => Object.keys(await chrome.storage.local.get(null)));
   ok(keys2.includes("draft:w12345"), "draft saved under the writing id " + JSON.stringify(keys2));
+  if (BAI_GOC) {
+    // her sentences come from Bài gốc: none of the teacher's typing in them
+    const d = await editor.evaluate(async () => (await chrome.storage.local.get("draft:w12345"))["draft:w12345"]);
+    const P = (d.lesson || d).page, C = P.corrections;
+    const text = P.essay.paragraphs.flatMap(p => p.sentences).map(s => s.segs.map(g => typeof g === "string" ? g : C[g.c].orig).join("")).join(" ");
+    ok(text.length > 200 && !/=>|COMMENT|\(\(|\)\)/.test(text), "Bài gốc read: her sentences without the teacher's typing");
+    ok(await page.evaluate(() => !document.querySelector(".fake-goc")), "back on Bài sửa của giáo viên");
+  }
 
   // options page
   const opt = await ctx.newPage();

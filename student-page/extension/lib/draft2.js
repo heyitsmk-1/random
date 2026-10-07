@@ -273,6 +273,8 @@ export function toLesson2(parts, { page, meta, teacher, zalo, week, decisions })
       }),
     } } : {}),
     ...(week.task === 1 ? { t1: { kind: week.kind.replace("task1-", ""), chart: week.chart || {} } } : {}),
+    // one body paragraph + paraphrases (Week 1): the page's recap shows just the paragraph
+    ...(week.kind === "paragraph+paraphrase" ? { layout: "paragraph" } : {}),
     language: {
       phrases: ln.phrases && ln.phrases.groups.some(g => g.items.length) ? { line: ln.phrases.line, groups: ln.phrases.groups.map(g => ({ label: g.label, items: g.items.filter(x => sids.has(x.sid)) })) } : null,
       // Khen: shown with the good phrases, with the teacher's comment

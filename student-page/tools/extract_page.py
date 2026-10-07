@@ -1,6 +1,11 @@
 """Extract essay, corrections and comments from a saved admin.ielts1984.vn writing page.
 
-Usage: python3 extract_page.py saved_page.html out.json
+Usage: python3 extract_page.py saved_page.html out.json [saved_page_with_Bai_goc_open.html]
+
+Her own words are checked against "Bài gốc" (the essay as she sent it): the copy the extension keeps
+in #dau-bai-goc, a third argument saved with the Bài gốc tab open, or the tab itself if the page was
+saved with it open; else the "Lập luận và Mạch lạc" editor; with neither, the obvious teacher marks
+("((", "))", "=> COMMENT", "// FIX") are dropped.
 
 Output shape (consumed by the lesson author, and later by the extension):
   essay.paragraphs[].sentences[] = {id, segs: [str | {c: correction_id}]}
@@ -126,17 +131,44 @@ def same_but_case(a, b):
     return len(a) == len(b) and all(x == y or x.lower() == y.lower() for x, y in zip(a, b))
 
 
+# what the teacher types into the essay, for pages with no copy of her original at all
+TEACHER_MARKS = re.compile(r"\(\(|\)\)|=>\s*COMMENT\b(?:\s*(?:\.{2,}|…))?|//\s*[^a-z\n/]*[A-Z][^a-z\n/]*?(?=\s+[a-z]|[.,;:]?\s*$|$)")
+
+
+def bai_goc(soup):
+    """Her essay exactly as she sent it (the CRM's "Bài gốc" tab): kept by the extension in #dau-bai-goc,
+    or the tab's text in a page saved with it open. "" when the page has neither."""
+    kept = soup.select_one("#dau-bai-goc")
+    if kept and kept.get_text().strip():
+        return kept.get_text().replace("\xa0", " ").strip()
+    for el in soup.select("#main-scroll .whitespace-pre-line"):
+        if "ielts-editor" in (el.get("class") or []) or el.find_parent(class_="writing-ai-note") or el.select_one(".codex-editor"):
+            continue
+        if el.get_text().strip():
+            return el.get_text().replace("\xa0", " ").strip()
+    return ""
+
+
 def student_mask(stream, original):
-    """For each character of `stream`, whether it is in the student's original essay."""
+    """For each character of `stream`, whether it is in the student's original essay. What the teacher
+    obviously typed ("((", "))", "=> COMMENT ...", "// FIX") is never hers, and is left out before comparing
+    (so her own full stop is not matched to the teacher's dots)."""
+    marked = [False] * len(stream)
+    for m in TEACHER_MARKS.finditer(stream):
+        for i in range(m.start(), m.end()):
+            marked[i] = True
     if not original:
-        return [True] * len(stream)
-    keep = [False] * len(stream)
-    sm = difflib.SequenceMatcher(None, stream, original, autojunk=False)
-    for tag, i1, i2, j1, j2 in sm.get_opcodes():
-        # a letter whose case differs between the copies ("Golf" / "golf") is still hers
-        if tag == "equal" or (tag == "replace" and same_but_case(stream[i1:i2], original[j1:j2])):
-            for i in range(i1, i2):
-                keep[i] = True
+        keep = [not x for x in marked]
+    else:
+        idx = [i for i in range(len(stream)) if not marked[i]]
+        sub = "".join(stream[i] for i in idx)
+        keep = [False] * len(stream)
+        sm = difflib.SequenceMatcher(None, sub, original, autojunk=False)
+        for tag, i1, i2, j1, j2 in sm.get_opcodes():
+            # a letter whose case differs between the copies ("Golf" / "golf") is still hers
+            if tag == "equal" or (tag == "replace" and same_but_case(sub[i1:i2], original[j1:j2])):
+                for i in range(i1, i2):
+                    keep[idx[i]] = True
     # whitespace is never worth dropping on its own
     for i, ch in enumerate(stream):
         if ch.isspace():
@@ -302,8 +334,44 @@ def merge_in_word(paragraphs, corrections, original):
                 break
 
 
-def main(src, dst):
+def tidy_spaces(paragraphs, original):
+    """Spaces left where the teacher's typing was taken out: one space, and none before a full stop or comma
+    she didn't space herself."""
+    for p in paragraphs:
+        for s in p["sentences"]:
+            out = []
+            for g in s["segs"]:
+                if isinstance(g, str) and out and isinstance(out[-1], str):
+                    out[-1] += g
+                else:
+                    out.append(g)
+            hers_spaced = lambda w, p_: not original or re.search(re.escape(w) + r" +" + re.escape(p_), original)
+            def fix(g):
+                g = re.sub(r"(?<=\S) {2,}(?=\S)", " ", g)
+                return re.sub(r"([A-Za-z0-9']+) +([.,;:!?])", lambda m: m.group(0) if hers_spaced(m.group(1), m.group(2)) else m.group(1) + m.group(2), g)
+            out = [fix(g) if isinstance(g, str) else g for g in out]
+            # across a note's marker (what it was about is gone): no double space, no space before her full stop
+            prev = None
+            for i, g in enumerate(out):
+                if not isinstance(g, str):
+                    if "n" not in g:
+                        prev = None
+                    continue
+                if prev is not None and out[prev][-1:] == " " and g[:1] == " ":
+                    g = g.lstrip(" ")
+                    m = re.match(r"[.,;:!?]", g)
+                    w = re.search(r"([A-Za-z0-9']+) $", out[prev])
+                    if m and w and not hers_spaced(w.group(1), m.group(0)):
+                        out[prev] = out[prev].rstrip(" ")
+                    out[i] = g
+                prev = i
+            s["segs"] = out
+
+
+def main(src, dst, bai_goc_src=None):
     soup = BeautifulSoup(open(src, encoding="utf-8").read(), "html.parser")
+    # her essay as she sent it ("Bài gốc"): what every quote of hers is checked against
+    sent = bai_goc(BeautifulSoup(open(bai_goc_src, encoding="utf-8").read(), "html.parser")) if bai_goc_src else bai_goc(soup)
     blocks = soup.select("#lrgr #editorjs .ce-paragraph")  # the editor may split the essay into blocks
     # the student's original, with its line breaks (<br>) kept
     original = "\n".join(BeautifulSoup(re.sub(r"<br\s*/?>", "\n", str(b)), "html.parser").get_text()
@@ -326,11 +394,14 @@ def main(src, dst):
             if bare in ("((", "))") and not comment_text(box):
                 items.append(("o" if bare == "((" else "x", ""))
                 continue
-            orig = tok.s.get_text() if tok.s else ""
+            # her words crossed out: the editor's <s>, or a span with its strikethrough class ("small /": the
+            # teacher's " /" separator is not hers)
+            s_el = tok.s or tok.select_one(".cdx-strikethrough")
+            orig = re.sub(r"\s*/\s*$", "", s_el.get_text()) if s_el else ""
             fix = tok.mark.get_text() if tok.mark else ""
-            struck = None if tok.s is not None or tok.mark is not None else tok.find(
+            struck = None if s_el is not None or tok.mark is not None else tok.find(
                 lambda t: "line-through" in (t.get("style") or ""))
-            if tok.s is not None or tok.mark is not None:
+            if s_el is not None or tok.mark is not None:
                 if orig or fix:  # a correction may have no comment box
                     items.append(("c", orig, fix, kind_of(tok), comment_text(box)))
             elif struck is not None and struck.get_text().strip():
@@ -342,6 +413,8 @@ def main(src, dst):
                 items.append(("n", tok.get_text().replace("\xa0", " "), kind_of(tok), comment_text(box)))
 
     # 1b. paragraph breaks the corrected copy lost ("former.On the one hand"): take them from the original
+    if not original and sent:
+        original = sent                                  # no TR/CC copy (left empty): Bài gốc is the original
     if original:
         text_of = lambda it: "\n" if it is None else it[1]
         stream = "".join(text_of(it) for it in items)
@@ -375,6 +448,10 @@ def main(src, dst):
         original, rewrites = teacher_rewrites("".join("\n" if it is None else it[1] for it in items), original, trcc_marks)
     else:
         rewrites = {}
+    # from here on, her words are what she sent (Bài gốc) when the page has it: anything the teacher typed,
+    # in either editor, is not hers
+    if sent:
+        original = sent
 
     # 1d. a hand-made correction whose new version swallowed some of her words ("accounting for 16%" ->
     #     "REACHING 16% IN 2010"): her words right after the crossed-out part belong to it
@@ -481,6 +558,8 @@ def main(src, dst):
                             closed = norm(bracket)
                         bracket = None
                     continue
+                if not ok and re.fullmatch(r"\s*(?:\.{2,}|…)[\s.…]*", chunk):  # "=> COMMENT ...": the teacher's dots, not a fix
+                    continue
                 if not ok:
                     n += 1
                     corrections[f"c{n}"] = {"orig": "", "fix": chunk, "kind": "teacher", "comment": ""}
@@ -491,10 +570,10 @@ def main(src, dst):
                 if after_stop and text[:1].isspace():
                     close()
                     text = text.lstrip()
-                after_stop = False
                 hers(text)
                 if text:
                     text_in(text)
+                after_stop = bool(re.search(r"[.?!]\s*$", text))  # her full stop, then the teacher's typing
             continue
         if it[0] == "n":
             _, _, kind, comment = it
@@ -526,7 +605,8 @@ def main(src, dst):
                 hers(mine)
             if mine:
                 text_in(re.sub(r" {2,}", " ", mine))
-            after_stop = bool(re.search(r"[.?!]\s*$", mine))
+            if mine.strip():  # a mark with none of her words ("=> COMMENT") doesn't end or open a sentence
+                after_stop = bool(re.search(r"[.?!]\s*$", mine))
             continue
         _, orig, fix, kind, comment = it
         n += 1
@@ -536,6 +616,7 @@ def main(src, dst):
         after_stop = bool(re.search(r"[.?!]\s*$", fix or orig))
     close()
     paragraphs.append({"sentences": sentences})
+    tidy_spaces(paragraphs, original)
 
     # 4. link notes to their sentence; a note alone in its "sentence" (a marker after a full stop)
     #    belongs to the sentence before it
@@ -626,4 +707,4 @@ def main(src, dst):
 
 
 if __name__ == "__main__":
-    main(*sys.argv[1:3])
+    main(*sys.argv[1:4])

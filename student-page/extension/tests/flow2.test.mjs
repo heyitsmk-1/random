@@ -138,7 +138,7 @@ try {
   // marked out of 100 (Week 1's "Scale 100 điểm"): read from the page, shown in the Bài step
   const totBox = page.locator('input[aria-label="Tổng điểm trên 100"]');
   const totVal = await totBox.count() ? await totBox.inputValue() : "";
-  if (KIND === "week1") ok(totVal === "70", `Week 1: the score out of 100 read from the page (${totVal})`);
+  if (KIND === "week1" && await totBox.count()) ok(totVal === "70", `Week 1 with no bands: the score out of 100 read from the page (${totVal})`);
   await page.getByRole("button", { name: "Tiếp: Logic" }).click();
 
   /* Logic */

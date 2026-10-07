@@ -167,12 +167,35 @@ function paraTokens(p) {                      // split on <br> into paragraphs o
 }
 
 const sameButCase = (a, b) => a.length === b.length && a.every((x, i) => x === b[i] || x.toLowerCase() === b[i].toLowerCase());
-function studentMask(stream, original) {      // for each code point of stream: is it in her original?
-  if (!original.length) return stream.map(() => true);
-  const keep = stream.map(() => false);
-  for (const [tag, i1, i2, j1, j2] of new SequenceMatcher(stream, original).getOpcodes()) {
-    // a letter whose case differs between the copies ("Golf" / "golf") is still hers
-    if (tag === "equal" || (tag === "replace" && sameButCase(stream.slice(i1, i2), original.slice(j1, j2)))) for (let i = i1; i < i2; i++) keep[i] = true;
+// what the teacher types into the essay, for pages with no copy of her original at all
+const TEACHER_MARKS = /\(\(|\)\)|=>\s*COMMENT\b(?:\s*(?:\.{2,}|…))?|\/\/\s*[^a-z\n/]*[A-Z][^a-z\n/]*?(?=\s+[a-z]|[.,;:]?\s*$|$)/gu;
+/* her essay exactly as she sent it (the CRM's "Bài gốc" tab): kept by content.js in #dau-bai-goc, or the
+   tab's text in a page saved with it open; "" when the page has neither */
+function baiGoc(doc) {
+  const kept = doc.querySelector("#dau-bai-goc");
+  if (kept && kept.textContent.trim()) return kept.textContent.replace(/\u00a0/g, " ").trim();
+  for (const el of doc.querySelectorAll("#main-scroll .whitespace-pre-line")) {
+    if (el.classList.contains("ielts-editor") || el.closest(".writing-ai-note") || el.querySelector(".codex-editor")) continue;
+    if (el.textContent.trim()) return el.textContent.replace(/\u00a0/g, " ").trim();
+  }
+  return "";
+}
+/* for each code point of stream: is it in her original? What the teacher obviously typed ("((", "))",
+   "=> COMMENT ...", "// FIX") is never hers, and is left out before comparing (so her own full stop is not
+   matched to the teacher's dots) */
+function studentMask(stream, original) {
+  const marked = stream.map(() => false), text = stream.join("");
+  for (const m of text.matchAll(TEACHER_MARKS)) { const a = cps(text.slice(0, m.index)).length, b = a + cps(m[0]).length; for (let i = a; i < b; i++) marked[i] = true; }
+  let keep;
+  if (!original.length) keep = marked.map(x => !x);
+  else {
+    const idx = []; stream.forEach((_, i) => { if (!marked[i]) idx.push(i); });
+    const sub = idx.map(i => stream[i]);
+    keep = stream.map(() => false);
+    for (const [tag, i1, i2, j1, j2] of new SequenceMatcher(sub, original).getOpcodes()) {
+      // a letter whose case differs between the copies ("Golf" / "golf") is still hers
+      if (tag === "equal" || (tag === "replace" && sameButCase(sub.slice(i1, i2), original.slice(j1, j2)))) for (let i = i1; i < i2; i++) keep[idx[i]] = true;
+    }
   }
   stream.forEach((ch, i) => { if (isSpace(ch)) keep[i] = true; });   // whitespace is never worth dropping on its own
   return keep;
@@ -309,10 +332,37 @@ function mergeInWord(paragraphs, corrections, original) {
   }
 }
 
+/* spaces left where the teacher's typing was taken out: one space, and none before a full stop or comma
+   she didn't space herself */
+function tidySpaces(paragraphs, original) {
+  for (const p of paragraphs) for (const s of p.sentences) {
+    const out = [];
+    for (const g of s.segs) { if (typeof g === "string" && typeof out[out.length - 1] === "string") out[out.length - 1] += g; else out.push(g); }
+    const hersSpaced = (w, p_) => !original || new RegExp(w.replace(/'/g, "\\'") + " +\\" + p_).test(original);
+    const segs = out.map(g => typeof g !== "string" ? g : g.replace(/(?<=\S) {2,}(?=\S)/g, " ")
+      .replace(/([A-Za-z0-9']+) +([.,;:!?])/g, (m, w, p_) => hersSpaced(w, p_) ? m : w + p_));
+    // across a note's marker (what it was about is gone): no double space, no space before her full stop
+    let prev = null;
+    segs.forEach((g, i) => {
+      if (typeof g !== "string") { if (!("n" in g)) prev = null; return; }
+      if (prev !== null && segs[prev].endsWith(" ") && g.startsWith(" ")) {
+        g = g.replace(/^ +/, "");
+        const m = /^[.,;:!?]/.exec(g), w = /([A-Za-z0-9']+) $/.exec(segs[prev]);
+        if (m && w && !hersSpaced(w[1], m[0])) segs[prev] = segs[prev].replace(/ +$/, "");
+        segs[i] = g;
+      }
+      prev = i;
+    });
+    s.segs = segs;
+  }
+}
+
 export function extractPage(html) {
   const doc = new DOMParser().parseFromString(html, "text/html");
   const blocks = [...doc.querySelectorAll("#lrgr #editorjs .ce-paragraph")];
   let original = cps([...doc.querySelectorAll("#trcc .ce-paragraph")].map(textWithBreaks).join("\n").replace(/\u00a0/g, " "));
+  // her essay as she sent it ("Bài gốc"): what every quote of hers is checked against
+  const sent = cps(baiGoc(doc));
   const kindOf = tok => [...tok.classList].find(k => k !== "comment-inline" && k !== "focus") || "other";
   const byId = id => doc.getElementById(id);
 
@@ -327,8 +377,10 @@ export function extractPage(html) {
       // "((words)) => COMMENT": the brackets mark the words the comment is about
       const bare = tok.textContent.trim();
       if ((bare === "((" || bare === "))") && !commentText(box)) { items.push([bare === "((" ? "o" : "x", ""]); continue; }
-      const s = tok.querySelector("s"), mk = tok.querySelector("mark");
-      const orig = s ? s.textContent : "", fix = mk ? mk.textContent : "";
+      // her words crossed out: the editor's <s>, or a span with its strikethrough class ("small /": the
+      // teacher's " /" separator is not hers)
+      const s = tok.querySelector("s") || tok.querySelector(".cdx-strikethrough"), mk = tok.querySelector("mark");
+      const orig = s ? s.textContent.replace(/\s*\/\s*$/, "") : "", fix = mk ? mk.textContent : "";
       const struck = s || mk ? null : tok.querySelector('[style*="line-through"]');
       if (s || mk) {
         if (orig || fix) items.push(["c", orig, fix, kindOf(tok), commentText(box)]);   // a correction may have no comment box
@@ -345,6 +397,7 @@ export function extractPage(html) {
   const textOf = it => it === null ? "\n" : it[1];
 
   // 1b. paragraph breaks the corrected copy lost ("former.On the one hand"): take them from the original
+  if (!original.length && sent.length) original = sent;   // no TR/CC copy (left empty): Bài gốc is the original
   if (original.length) {
     const stream = cps(items.map(textOf).join(""));
     const cuts = new Set();
@@ -375,6 +428,9 @@ export function extractPage(html) {
   const trccMarks = [...doc.querySelectorAll("#trcc .comment-inline")];
   let rewrites = new Map();
   if (original.length) ({ original, rewrites } = teacherRewrites(cps(items.map(textOf).join("")), original, trccMarks));
+  // from here on, her words are what she sent (Bài gốc) when the page has it: anything the teacher typed,
+  // in either editor, is not hers
+  if (sent.length) original = sent;
 
   // 1d. a hand-made correction whose new version swallowed some of her words ("accounting for 16%" ->
   //     "REACHING 16% IN 2010"): her words right after the crossed-out part belong to it
@@ -458,6 +514,7 @@ export function extractPage(html) {
           else { if (bracket !== null) closed = norm(bracket); bracket = null; }
           continue;
         }
+        if (!ok && /^\s*(?:\.{2,}|…)[\s.…]*$/.test(chunk)) continue;   // "=> COMMENT ...": the teacher's dots, not a fix
         if (!ok) {
           n++;
           corrections["c" + n] = { orig: "", fix: chunk, kind: "teacher", comment: "" };
@@ -467,9 +524,9 @@ export function extractPage(html) {
         }
         let text = chunk.replace(/ {2,}/g, " ");
         if (afterStop && /^\s/.test(text)) { close(); text = text.replace(/^\s+/, ""); }
-        afterStop = false;
         hers(text);
         if (text) textIn(text);
+        afterStop = /[.?!]\s*$/.test(text);   // her full stop, then the teacher's typing
       }
       return;
     }
@@ -498,7 +555,7 @@ export function extractPage(html) {
       segs.push({ n: notes.length - 1 });
       if (quote === null) hers(mine);
       if (mine) textIn(mine.replace(/ {2,}/g, " "));
-      afterStop = /[.?!]\s*$/.test(mine);
+      if (mine.trim()) afterStop = /[.?!]\s*$/.test(mine);   // a mark with none of her words ("=> COMMENT") doesn't end or open a sentence
       return;
     }
     const [, orig, fix, kind, comment] = it;
@@ -510,6 +567,7 @@ export function extractPage(html) {
   });
   close();
   paragraphs.push({ sentences });
+  tidySpaces(paragraphs, original.join(""));
 
   // 4. link notes to their sentence; a note alone in its "sentence" (a marker after a full stop)
   //    belongs to the sentence before it

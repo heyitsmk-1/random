@@ -10,7 +10,14 @@ export function checkLesson(lesson) {
   for (const item of practice.items) {
     if (item.type === "tap" && !item.sentence.split(/\s+/).map(bare).includes(bare(item.wrong)))
       problems.push(`câu luyện ${item.id}: chữ "${item.wrong}" không phải một chữ trong câu`);
+    if (item.type === "choose" && !(Number.isInteger(item.answer) && item.answer >= 0 && item.answer < (item.options || []).length))
+      problems.push(`câu luyện ${item.id}: đáp án đúng không trỏ tới lựa chọn nào`);
   }
+  // a question whose right answer points at no option would leave the student stuck
+  const badAsk = a => a && a.q && (a.options || []).length > 1 && !(Number.isInteger(a.answer) && a.answer >= 0 && a.answer < a.options.length);
+  for (const m of (lesson.mistakes || { main: [] }).main) if (badAsk(m.ask)) problems.push(`lỗi ${m.id}: đáp án câu hỏi không trỏ tới lựa chọn nào`);
+  for (const d of (lesson.ideas || { details: [] }).details || []) if (badAsk(d.ask)) problems.push(`ý ${d.tag}: đáp án câu hỏi không trỏ tới lựa chọn nào`);
+  for (const [i, it] of ((lesson.logic || { issues: [] }).issues || []).entries()) if (badAsk(it.ask)) problems.push(`logic: chỗ cần sửa ${i + 1}: đáp án câu hỏi không trỏ tới lựa chọn nào`);
   for (const m of (lesson.mistakes || { main: [] }).main)
     for (const c of m.cids) if (!(c in lesson.corrections)) problems.push(`lỗi ${m.id}: không có chỗ sửa ${c}`);
   for (const t of lesson.task_comments)

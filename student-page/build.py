@@ -67,6 +67,20 @@ def check(lesson):
             bare = lambda w: re.sub(r"[^\w'-]", "", w).lower()
             if bare(item["wrong"]) not in [bare(w) for w in item["sentence"].split()]:
                 problems.append(f"tap item {item.get('id')}: '{item['wrong']}' is not a single word of its sentence")
+        if item["type"] == "choose" and not (isinstance(item.get("answer"), int) and 0 <= item["answer"] < len(item.get("options") or [])):
+            problems.append(f"choose item {item.get('id')}: the answer points at no option")
+    def bad_ask(a):
+        return bool(a and a.get("q") and len(a.get("options") or []) > 1
+                    and not (isinstance(a.get("answer"), int) and 0 <= a["answer"] < len(a["options"])))
+    for m in (lesson.get("mistakes") or {"main": []})["main"]:
+        if bad_ask(m.get("ask")):
+            problems.append(f"mistake {m['id']}: the question's answer points at no option")
+    for d in (lesson.get("ideas") or {}).get("details") or []:
+        if bad_ask(d.get("ask")):
+            problems.append(f"idea {d.get('tag')}: the question's answer points at no option")
+    for i, it in enumerate((lesson.get("logic") or {}).get("issues") or []):
+        if bad_ask(it.get("ask")):
+            problems.append(f"logic issue {i + 1}: the question's answer points at no option")
     for m in (lesson.get("mistakes") or {"main": []})["main"]:
         problems += [f"mistake {m['id']}: unknown correction {c}" for c in m["cids"] if c not in lesson["corrections"]]
     for t in lesson["task_comments"]:

@@ -86,7 +86,9 @@ function fakePart(part, payload) {
     finish: { summary: ["Xong rồi nè", "Em làm tốt lắm á"], extra_prompt: "Em muốn luyện thêm {n} câu nữa không?", later: ["Để lần sau cũng được nha"], done: ["Hẹn gặp em tuần sau", "Cố lên nha : )"] },
   };
 }
-const FIELD = { logic: "logic", ideas: "ideas", language: "language", systemic: "systemic", practice: "practice", hello: "frame" };
+const FIELD = { logic: "logic", ideas: "ideas", language: "language", systemic: "systemic", practice: "practice", hello: "frame", suggestions: "suggest" };
+/* the suggested systematic mistakes: the first three grammar fixes, as one group */
+const fakeSuggest = items => ({ LR: [], GRA: items.filter(x => x.tab === "GRA").length >= 3 ? [{ name: "Gợi ý: chia động từ", refs: items.filter(x => x.tab === "GRA").slice(0, 3).map(x => x.id) }] : [] });
 
 const browser = await chromium.launch();
 const ctx = await browser.newContext({ viewport: { width: 1440, height: 1000 }, acceptDownloads: true, ignoreHTTPSErrors: true, reducedMotion: "reduce" });
@@ -98,8 +100,15 @@ await ctx.route("https://api.anthropic.com/**", route => {
   const req = route.request(), cors = { "access-control-allow-origin": "*", "access-control-allow-headers": "*", "access-control-allow-methods": "*" };
   if (req.method() === "OPTIONS") return route.fulfill({ status: 204, headers: cors });
   const body = JSON.parse(req.postData());
-  const part = FIELD[/only: (\w+)/.exec(body.messages[0].content.at(-1).text)[1]];
-  const payload = JSON.parse(body.messages[0].content[0].text.replace(/^[^{]*/, ""));
+  const blocks = body.messages[0].content;
+  const part = FIELD[/only: (\w+)/.exec(blocks.at(-1).text)[1]];
+  if (part === "suggest") {
+    const items = JSON.parse(blocks[0].text.replace(/^[^[]*/, ""));
+    asked.push({ part, body, items });
+    return route.fulfill({ status: 200, headers: { ...cors, "content-type": "text/event-stream" }, body: sse(JSON.stringify(fakeSuggest(items))) });
+  }
+  // two cached blocks: the marked essay, then the teacher's decisions
+  const payload = { ...JSON.parse(blocks[0].text.replace(/^[^{]*/, "")), ...JSON.parse(blocks[1].text.replace(/^[^{]*/, "")) };
   payload.chart_row = TASK1 ? TASK1.row : ""; payload.chart_col = TASK1 ? TASK1.col : "";
   const prompt = /Prompts?:\n- [^:]+: (.+)/.exec(body.system.map(b => b.text).join("\n"));
   payload.prompt_words = prompt && !TASK1 ? prompt[1].split(/\s+/).slice(2, 5).join(" ") : "";
@@ -179,14 +188,20 @@ try {
   const gItems = grammar.locator(".lang-item");
   const sysWanted = await gItems.count() >= 3;
   if (sysWanted) {
-    // two systematic mistakes in grammar: the first two fixes in 1, the third in 2
+    ok(asked.some(a => a.part === "suggest") && asked.find(a => a.part === "suggest").body.model === "claude-sonnet-5-5", "systematic mistakes suggested (Sonnet) when the Logic step opened");
+    // Claude's suggestion: one click puts the name in and the first three grammar fixes under it
+    await grammar.locator(".suggest").waitFor({ timeout: 8000 });
+    await grammar.locator(".suggest").scrollIntoViewIfNeeded();
+    await page.screenshot({ path: join(OUT, `${KIND}-suggest.png`) });
+    await grammar.getByRole("button", { name: "Dùng gợi ý" }).click();
+    ok(await grammar.locator(".sys-name input").first().inputValue() === "Gợi ý: chia động từ" && await grammar.locator(".lang-item.sys-0").count() === 3 && await grammar.locator(".suggest").count() === 0,
+      "the suggestion used: name and chips in place");
+    // then the teacher changes it: renames it, adds a second one, moves the third fix there
     await grammar.locator(".sys-name input").first().fill("Chia thì của động từ");
     await grammar.locator(".sys-name input").first().press("Tab");
     await grammar.getByRole("button", { name: "+ Thêm lỗi hệ thống" }).click();
     await grammar.locator(".sys-name input").nth(1).fill("Mạo từ");
     await grammar.locator(".sys-name input").nth(1).press("Tab");
-    await gItems.nth(0).locator(".sys-chip.c0").click();
-    await gItems.nth(1).locator(".sys-chip.c0").click();
     await gItems.nth(2).locator(".sys-chip.c1").click();
     ok(await grammar.locator(".lang-item.sys-0").count() === 2 && await grammar.locator(".lang-item.sys-1").count() === 1, "fixes sorted into systematic mistakes 1 and 2");
   } else await grammar.locator(".sys input[type=checkbox]").check();
@@ -206,7 +221,11 @@ try {
     await src.dragTo(dest);
     const moved = (await page.locator(`.lang-item[data-ref="${to}"]`).textContent()).includes(text.slice(0, 20));
     ok(moved, `a comment dragged from ${from} to ${to}`);
-    if (moved) for (const r of [from, to]) await page.locator(`.lang-item[data-ref="${r}"]`).getByRole("button", { name: "Trả nhận xét như CRM" }).click();
+    // dragged back, only that comment goes home (the target keeps its own)
+    const own = (await page.locator(`.lang-item[data-ref="${to}"] .drag-comment`).first().textContent()).trim();
+    await page.locator(`.lang-item[data-ref="${to}"] .drag-comment`, { hasText: text.slice(0, 20) }).dragTo(page.locator(`.lang-item[data-ref="${from}"]`));
+    const back = (await page.locator(`.lang-item[data-ref="${from}"]`).textContent()).includes(text.slice(0, 20)) && (own === text || (await page.locator(`.lang-item[data-ref="${to}"]`).textContent()).includes(own.slice(0, 20)));
+    ok(moved && back && await page.getByRole("button", { name: "Trả nhận xét như CRM" }).count() === 0, "dragged back: each comment where the CRM has it");
   }
   await page.screenshot({ path: join(OUT, `${KIND}-language.png`), fullPage: true });
   await page.getByRole("button", { name: "Tiếp: Viết lại" }).click();
@@ -222,14 +241,15 @@ try {
   }
   await page.getByRole("button", { name: "Tiếp: Soạn" }).click();
 
-  /* Soạn */
+  /* Soạn: Logic (and the ideas) were drafted when the teacher left the Logic step */
+  ok(asked.some(a => a.part === "logic"), "Logic drafted early, before Soạn");
   ok(await page.locator(".blockers").count() === 0, "nothing left to decide: " + (await page.locator(".blockers").allTextContents()).join(" "));
-  await page.getByRole("button", { name: "Soạn", exact: true }).click();
+  await page.locator("#draftBtn").click();
   await page.locator(".edit").waitFor({ timeout: 20000 }).catch(async e => { console.log("     draft: " + (await page.locator("#draftStatus").textContent())); throw e; });
-  const parts = asked.map(a => a.part).sort().join(",");
+  const parts = asked.filter(a => a.part !== "suggest").map(a => a.part).sort().join(",");
   const want = ["frame", "language", "logic", ...(KIND === "essay" || KIND === "week1" ? ["ideas"] : []), ...(sysWanted ? ["practice", "systemic"] : [])].sort().join(",");
   ok(parts === want, `parts asked: ${parts}`);
-  const D = asked[0].payload.decisions;
+  const D = asked.find(a => a.part === "frame").payload.decisions;
   ok(D.checklist.filter(c => c.status === "fix").length === 1 && D.checklist.filter(c => c.status === "minor").length === 1 && D.language.items.length === ni && (noRw ? D.no_rewrite && !D.rewrite : D.rewrite.sids.length === 1), "the teacher's decisions are sent");
   ok(D.checklist.some(c => c.item === "Có ví dụ cụ thể cho mỗi ý") && !D.checklist.some(c => c.item === second), "the edited checklist is sent");
   ok(!noRw || !JSON.stringify(asked.find(a => a.part === "frame").body.output_config || {}).includes("starters"), "no rewrite: Claude isn't asked for one");
@@ -238,7 +258,8 @@ try {
   ok(!D.language.groups && D.language.items.every(i => ["systemic", "list", "praise", "hide", "teach"].includes(i.mode)), "items: systemic / list / praise / hide / teach");
   if (KIND === "essay" || KIND === "week1") ok(D.ideas[0].status === "fix" && D.ideas[0].fix_type === "replace", "the fix type is sent");
   ok(!asked.some(a => /praise_candidates|framework_checklist/.test(JSON.stringify(a.body))), "no old-flow parts asked");
-  ok(asked.every(a => a.body.model === "claude-opus-5-5"), "model claude-opus-5-5");
+  ok(asked.filter(a => a.part !== "suggest").every(a => a.body.model === "claude-opus-5-5"), "model claude-opus-5-5");
+  ok(asked.filter(a => a.part !== "suggest").every(a => a.body.messages[0].content.filter(b => b.cache_control).length === 2), "essay and decisions cached as two blocks");
 
   /* read-through */
   const mods = (await page.locator(".mod-btn").allTextContents()).map(t => t.replace(/\d+$/, "").trim());
@@ -265,6 +286,24 @@ try {
   const tabs = await page.frameLocator("#pv").locator(".tab b").allTextContents();
   ok(tabs.join(",") === "Logic,Language", "the page has two parts: " + tabs.join(","));
 
+  /* a decision changed after Soạn: the page follows it with no Claude call (an item hidden) */
+  const before = asked.length;
+  await page.getByRole("button", { name: "3 · Language" }).click();
+  const listed = page.locator(".lang-item:not(.skipped):not(.sys-0):not(.sys-1)").filter({ has: page.locator('.modes button[aria-pressed="true"]', { hasText: "Danh sách" }) }).first();
+  const hidRef = await listed.count() ? await listed.getAttribute("data-ref") : null;
+  if (hidRef) await listed.locator(".modes button", { hasText: "Ẩn" }).click();
+  // and one Claude has to write about: the second systematic mistake renamed, so only it is redrafted
+  if (sysWanted) {
+    await grammar.locator(".sys-name input").nth(1).fill("Mạo từ the");
+    await grammar.locator(".sys-name input").nth(1).press("Tab");
+    await page.getByRole("button", { name: "5 · Soạn" }).click();
+    const again = page.getByRole("button", { name: /Soạn lại 2 phần/ });
+    ok(await again.count() === 1, "renamed: 2 parts (Lỗi hệ thống, Luyện tập) to redraft");
+    await again.click();
+    await page.locator(".edit").waitFor({ timeout: 20000 });
+    ok(asked.slice(before).map(a => a.part).sort().join(",") === "practice,systemic", "only those parts redrafted: " + asked.slice(before).map(a => a.part).join(","));
+  } else ok(asked.length === before, "no Claude call for a change the page can follow");
+
   /* export */
   await page.getByRole("button", { name: "7 · Xuất" }).click();
   ok(await page.getByText("Bài ôn dựng được.").count() === 1, "export: no blocking problems " + (await page.locator("#main .notice").allTextContents()).join(" | ").slice(0, 300));
@@ -274,6 +313,9 @@ try {
   const html = readFileSync(saved, "utf8");
   ok(/"flow": ?2/.test(html) && html.includes('"logic"') && html.includes('"language"'), "the page carries a flow-2 lesson");
   ok(noRw ? /"rewrite": ?null/.test(html) : /"rewrite": ?\{/.test(html), noRw ? "no rewrite in the lesson" : "the rewrite is in the lesson");
+  const Lx = JSON.parse(/<script type="application\/json" id="lesson-data">([\s\S]*?)<\/script>/.exec(html)[1].replace(/<\\\//g, "</"));
+  ok(!hidRef || !Lx.language.list.some(x => x.ref === hidRef), `hidden after Soạn (${hidRef}): not in the list`);
+  ok(!sysWanted || Lx.mistakes.main.some(m => m.title === "Mạo từ the"), "the redrafted mistake carries its new name");
   ok(errors.length === 0, "no errors " + errors.join(" | "));
   console.log("     exported " + saved);
 } finally {

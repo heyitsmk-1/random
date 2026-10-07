@@ -263,7 +263,7 @@ export function checks2(L, { checkLesson } = {}) {
     if (!(it.sids || []).length) flag(`logic.issues.${i}.sids`, "logic", "Chỗ cần sửa này chưa gắn với câu nào trong bài (em không biết nó ở đâu)");
     (it.changes || []).forEach((ch, j) => { if (ch.from && !inSents(it.sids, ch.from)) flag(`logic.issues.${i}.changes.${j}.from`, "logic", `"${ch.from}" không có trong câu của em`); });
     if (!(it.missing || it.say || []).some(x => x && x.trim())) flag(`logic.issues.${i}.missing`, "logic", "Chỗ cần sửa này chưa có lời Đậu (câu của em thiếu gì)", true);
-    if (it.prompt_focus && !norm(L.prompt || "").includes(norm(it.prompt_focus))) flag(`logic.issues.${i}.prompt_focus`, "logic", "Chữ tô vàng không có trong đề bài");
+    if (it.prompt_focus && !norm(it.prompt_text || L.prompt || "").includes(norm(it.prompt_focus))) flag(`logic.issues.${i}.prompt_focus`, "logic", "Chữ tô vàng không có trong đề bài");
     if (it.ask && it.ask.q && !(it.ask.answer >= 0 && it.ask.answer < (it.ask.options || []).length)) flag(`logic.issues.${i}.ask.answer`, "logic", "Đáp án đúng không trỏ tới lựa chọn nào", true);
     if (L.t1 && it.series && L.t1.kind !== "map" && chartValue(L.t1, it) === undefined) flag(`logic.issues.${i}.series`, "logic", `Không thấy "${it.series}" / "${it.col}" trên biểu đồ`);
   });
@@ -314,6 +314,6 @@ export function checks2(L, { checkLesson } = {}) {
     const v = get(L, p);
     if (typeof v === "string" && v && lint(v).length) flag(p, moduleOf2(p), "Giọng Đậu: " + lint(v).join(", "));
   }
-  if (checkLesson) for (const msg of checkLesson(L)) flag("", /^câu luyện/.test(msg) ? "practice" : /^lỗi|chỗ sửa/.test(msg) ? "systemic" : /^viết lại/.test(msg) ? "rewrite" : /^language/.test(msg) ? "language" : "review", msg, true);
+  if (checkLesson) for (const msg of checkLesson(L)) flag("", /^câu luyện/.test(msg) ? "practice" : /^lỗi|chỗ sửa/.test(msg) ? "systemic" : /^viết lại/.test(msg) ? "rewrite" : /^language/.test(msg) ? "language" : /^ý /.test(msg) ? "ideas" : /^logic/.test(msg) ? "logic" : "review", msg, true);
   return flags;
 }

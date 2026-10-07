@@ -11,7 +11,7 @@ import { draftLesson, draftToLesson, mergeParts, draftGroup, redraftPractice, pa
 import { getSettings, setSettings, takePage, saveDraft, loadDraft, listDrafts, saveLog, studentCode } from "./lib/store.js";
 import { publishPage } from "./lib/netlify.js";
 import { reviewUnits, checks, checks2, lint, isVoice } from "./lib/review.js";
-import { draftLesson2, toLesson2, partsFor2, PARTS2 } from "./lib/draft2.js";
+import { draftLesson2, toLesson2, partsFor2, PARTS2, suggestSystemic } from "./lib/draft2.js";
 import { buildRecord } from "./lib/telemetry.js";
 
 /* ---------- tiny DOM helper ---------- */
@@ -182,7 +182,7 @@ function touch() {
 // don't lose the last few keystrokes when the tab closes
 addEventListener("pagehide", () => { if (saveTimer) flush(); });
 document.addEventListener("visibilitychange", () => { if (document.hidden && saveTimer) flush(); });
-const snapshot = () => ({ flow: S.flow, d2: S.d2, page: S.page, meta: S.meta, tags: S.tags, checklist: S.checklist, notes: S.notes, rewriteTarget: S.rewriteTarget, lesson: S.lesson, partial: S.partial, src: S.src, ok: S.ok, usage: S.usage, step: S.step,
+const snapshot = () => ({ flow: S.flow, d2: S.d2, page: S.page, meta: S.meta, tags: S.tags, checklist: S.checklist, notes: S.notes, rewriteTarget: S.rewriteTarget, lesson: S.lesson, partial: S.partial, partSig: S.partSig, suggest: S.suggest, src: S.src, ok: S.ok, usage: S.usage, step: S.step,
   aiDraft: S.aiDraft, events: S.events, draftAt: S.draftAt });
 
 /* ---------- the editing log (lib/telemetry.js) ---------- */
@@ -200,7 +200,10 @@ async function recordLesson(how) {
     await saveLog(S.key, record);
   } catch (e) { console.warn("nhật ký:", e); }  // the log must never block an export
 }
-function restore(snap) { S.flow = undefined; S.d2 = null; Object.assign(S, snap); }
+function restore(snap) {
+  S.flow = undefined; S.d2 = null; S.partSig = {}; S.suggest = null; Object.assign(S, snap);
+  if (S.suggest && S.suggest.status === "running") S.suggest = null;   // the tab closed mid-call: ask again
+}
 
 /* ---------- boot ---------- */
 async function loadBundle() {
@@ -264,7 +267,7 @@ async function openPageHtml(html, url) {
   if (existing && existing.lesson && existing.lesson.page && confirm("Bài này đang soạn dở. Tiếp tục bản đang soạn? (Bấm Hủy để soạn lại từ đầu)")) {
     restore(existing.lesson); S.key = key; return go(S.step || "page");
   }
-  S.key = key; S.page = page; S.lesson = null; S.partial = {}; S.src = {}; S.ok = {}; S.tags = {}; S.usage = null;
+  S.key = key; S.page = page; S.lesson = null; S.partial = {}; S.partSig = {}; S.suggest = null; S.src = {}; S.ok = {}; S.tags = {}; S.usage = null;
   S.flow = new URLSearchParams(location.search).get("flow") === "1" ? undefined : 2; S.d2 = null; S.rewriteTarget = null;
   const week = weekOf(page.homework);
   setWeek(week);
@@ -348,7 +351,14 @@ function renderSteps() {
   $("#who").textContent = S.meta && S.meta.call_name ? `${S.meta.call_name} · ${S.meta.homework || ""}` : "";
 }
 function go(step) {
-  S.step = step; renderSteps(); touch();
+  const from = S.step;
+  S.step = step;
+  if (isFlow2() && S.page) {
+    if (step === "logic" || step === "language") startSuggest();
+    if (from === "logic" && step !== "logic") startEarly();
+  }
+  if (step === "edit" || step === "export" || step === "draft") syncLesson();   // decisions changed since the draft: follow them
+  renderSteps(); touch();
   ({ page: renderPage, framework: renderFramework, draft: isFlow2() ? renderDraft2 : renderDraft, edit: renderEdit, export: renderExport,
     logic: renderLogic, language: renderLanguage, rewrite: renderRewrite })[step]();
   window.scrollTo(0, 0);
@@ -356,12 +366,16 @@ function go(step) {
 
 /* what a draft cost: the input split into new / read from the cache / written to the cache (they are
    billed differently), and the total in dollars ($ per million tokens: Claude Opus 5.5 by default) */
-const PRICES = { "claude-opus-5-5": { in: 4, out: 20, read: 0.2, write: 5 } };
+const PRICES = { "claude-opus-5-5": { in: 4, out: 20, read: 0.2, write: 5 }, "claude-sonnet-5-5": { in: 2, out: 10, read: 0.2, write: 2.5 } };
+const costOf = (u, model) => { const p = PRICES[model] || PRICES["claude-opus-5-5"];
+  return ((u.input_tokens || 0) * p.in + (u.cache_read_input_tokens || 0) * p.read + (u.cache_creation_input_tokens || 0) * p.write + (u.output_tokens || 0) * p.out) / 1e6; };
 function usageLine(u) {
-  const p = PRICES[u.model] || PRICES["claude-opus-5-5"], fresh = u.input_tokens || 0, read = u.cache_read_input_tokens || 0, write = u.cache_creation_input_tokens || 0;
-  const usd = (fresh * p.in + read * p.read + write * p.write + (u.output_tokens || 0) * p.out) / 1e6;
+  const fresh = u.input_tokens || 0, read = u.cache_read_input_tokens || 0, write = u.cache_creation_input_tokens || 0;
   const n = x => x.toLocaleString("vi-VN");
-  return `Lần soạn nháp: ${n(fresh + read + write)} token vào (${n(fresh)} mới · ${n(read)} đọc lại từ cache · ${n(write)} lưu vào cache), ${n(u.output_tokens || 0)} token ra · khoảng $${usd.toFixed(2)} (${u.model}).`;
+  const others = Object.entries(u.other || {}), extra = others.reduce((t, [m, x]) => t + costOf(x, m), 0);
+  const total = costOf(u, u.model) + extra;
+  return `Các lần soạn bài này: ${n(fresh + read + write)} token vào (${n(fresh)} mới · ${n(read)} đọc lại từ cache · ${n(write)} lưu vào cache), ${n(u.output_tokens || 0)} token ra (${u.model || MODEL})` +
+    (others.length ? ` · gợi ý lỗi hệ thống: khoảng $${extra.toFixed(3)} (${others.map(([m]) => m).join(", ")})` : "") + ` · tổng khoảng $${total.toFixed(2)}.`;
 }
 
 /* ---------- 1. the page ---------- */
@@ -1262,7 +1276,7 @@ async function renderExport() {
   if (lintCount) warns.push(`${lintCount} dòng của Đậu chưa đúng giọng (dấu chấm, emoji…)`);
   const status = h("div", { id: "pubStatus" });
   $("#main").replaceChildren(h("div", { class: "panel" }, h("div", { class: "card" },
-    h("h1", {}, "Xuất bài ôn"),
+    h("h1", {}, "Xuất bài ôn"), staleNotice(),
     problems.length ? h("div", { class: "notice bad" }, h("b", {}, "Phải sửa trước khi xuất:"), h("ul", { class: "problems" }, problems.map(p => h("li", {}, p)))) : h("div", { class: "notice good" }, "Bài ôn dựng được."),
     aiLeft ? h("div", { class: "notice" }, isFlow2() ? `Còn ${aiLeft} chỗ máy thấy chưa ổn (xem "Kiểm tra"). Vẫn xuất được.` : `Còn ${aiLeft} mục cần duyệt (xem "Cần duyệt"). Vẫn xuất được, nhưng anh nên đọc qua.`) : null,
     warns.length ? h("div", { class: "notice" }, h("ul", { class: "problems" }, warns.map(w => h("li", {}, w)))) : null,
@@ -1358,19 +1372,27 @@ const ideaNote = x => [...ideaUsed(x).map(c => c.text), ideaState(x).note.trim()
 /* a CRM note already said inside an idea the student fixes or upgrades: not shown again in Language */
 const usedInIdea = ref => hasIdeas() && ideasFromTags().some(x => ideaState(x).status !== "ok" && ideaUsed(x).some(c => c.ref === ref));
 /* comments the teacher moved in the editor ("chuyển nhận xét sang…"); the CRM is never touched */
-function commentOf(ref) {
-  const o = (d2().comments || {})[ref];
-  if (o != null) return o;
-  if (ref[0] === "c") return (S.page.corrections[ref] || {}).comment || "";
-  return (noteOf(ref) || {}).comment || "";
+/* moved comments: D.commentAt[origin] = the correction or note the CRM comment of `origin` now sits on
+   (only in the lesson; the CRM is never touched). Each comment moves on its own, so dragging one back
+   never takes another with it. Drafts from before kept whole texts in D.comments: still honoured */
+const ownComment = ref => ref[0] === "c" ? (S.page.corrections[ref] || {}).comment || "" : (noteOf(ref) || {}).comment || "";
+const commentLoc = origin => (d2().commentAt || {})[origin] || origin;
+function commentPieces(ref) {
+  const at = d2().commentAt || {};
+  return [ref, ...Object.keys(at).filter(o => o !== ref && at[o] === ref)]
+    .filter(o => commentLoc(o) === ref).map(o => ({ origin: o, text: ownComment(o).trim() })).filter(p => p.text);
 }
+function commentOf(ref) {
+  const legacy = (d2().comments || {})[ref];
+  if (legacy != null) return legacy;
+  return commentPieces(ref).map(p => p.text).join("\n");
+}
+const commentMoved = ref => (d2().comments || {})[ref] != null || commentLoc(ref) !== ref || commentPieces(ref).some(p => p.origin !== ref);
 /* the page as Claude and the student page see it: the moved comments in place */
 function pageFor2() {
-  const P = structuredClone(S.page), o = d2().comments || {};
-  for (const [ref, text] of Object.entries(o)) {
-    if (ref[0] === "c" && P.corrections[ref]) P.corrections[ref].comment = text;
-    else if (ref[0] === "n" && P.task_comments[+ref.slice(1) - 1]) P.task_comments[+ref.slice(1) - 1].comment = text;
-  }
+  const P = structuredClone(S.page);
+  for (const ref of Object.keys(P.corrections)) P.corrections[ref].comment = commentOf(ref);
+  P.task_comments.forEach((t, i) => { t.comment = commentOf("n" + (i + 1)); });
   return P;
 }
 const topicSents = () => allSents().filter(s => /^Topic\s*\d/i.test(sentText(s, "orig").trim()));
@@ -1410,6 +1432,7 @@ const sysOf = it => { const s = itemState(it).sys; return s === true ? 0 : typeo
    screen in Logic, or nothing. Older drafts: Dạy / Socratic / Bỏ qua all mean the list now */
 function modeOf(it) {
   const st = itemState(it), logic = st.tab === "LOGIC";
+  if (st.mode === "skip") return "hide";             // "Bỏ qua" in drafts from before
   if (st.mode === "hide" || st.mode === "praise") return logic && st.mode === "praise" ? "teach" : st.mode;
   if (st.mode) return logic ? "teach" : "list";
   if (it.note && usedInIdea(it.ref)) return "hide";
@@ -1538,20 +1561,33 @@ const SHOW = [["list", "Danh sách", "Em xem trong danh sách \"N lỗi khác\" 
   ["praise", "Khen", "Hiện trong \"Cụm em đã dùng tốt\", tô xanh, kèm lời khen của anh"], ["hide", "Ẩn", "Không hiện cho em ở đâu cả (vd: anh lỡ đánh dấu trong CRM)"]];
 const SHOW_LOGIC = [["teach", "Hiện ở Logic", "Một màn riêng trong phần Logic, theo thứ tự trong bài"], ["hide", "Ẩn", "Không hiện cho em"]];
 /* moving a comment to the correction it belongs to: drag it there (only in the lesson: the CRM is never touched) */
-function moveComment(from, to) {
-  if (!from || !to || from === to) return;
-  const D = d2(), text = commentOf(from).trim(); if (!text) return;
-  D.comments = D.comments || {};
-  D.comments[to] = [commentOf(to).trim(), text].filter(Boolean).join("\n"); D.comments[from] = "";
+/* origin: whose CRM comment is dragged; to: where it is dropped (back home = not moved) */
+function moveComment(origin, to) {
+  if (!origin || !to || commentLoc(origin) === to) return;
+  const D = d2();
+  D.commentAt = D.commentAt || {};
+  if (D.comments) { delete D.comments[commentLoc(origin)]; delete D.comments[to]; }
+  if (origin === to) delete D.commentAt[origin]; else D.commentAt[origin] = to;
+  touch(); renderLanguage();
+}
+/* every comment that left this item or came to it goes back where the CRM has it */
+function resetComments(ref) {
+  const D = d2(), at = D.commentAt || {};
+  for (const o of Object.keys(at)) if (o === ref || at[o] === ref) delete at[o];
+  if (D.comments) delete D.comments[ref];
   touch(); renderLanguage();
 }
 function itemRow(it) {
   const D = d2(), st = itemState(it), mode = modeOf(it), comment = commentOf(it.ref), logic = st.tab === "LOGIC";
   const shown = it.ref[0] === "c" ? corrRow(it.ref, { drag: false, comment }) : pointRow({ ...pointOfNote({ ...it.note, comment }), nid: it.ref }, { path: "" });
   const cEl = shown.querySelector(".crow-comment");
-  if (cEl && comment.trim()) {
-    cEl.draggable = true; cEl.title = "Kéo nhận xét này thả vào chỗ sửa khác"; cEl.classList.add("drag-comment");
-    cEl.addEventListener("dragstart", e => { e.stopPropagation(); e.dataTransfer.setData("text/x-comment", it.ref); });
+  if (cEl && comment.trim() && (d2().comments || {})[it.ref] == null) {
+    // one draggable piece per CRM comment, so each one moves on its own
+    cEl.replaceChildren(...commentPieces(it.ref).map(p => {
+      const piece = h("span", { class: "drag-comment", draggable: "true", title: p.origin === it.ref ? "Kéo nhận xét này thả vào chỗ sửa khác" : "Nhận xét chuyển từ chỗ khác: kéo về chỗ cũ hoặc chỗ khác" }, p.text);
+      piece.addEventListener("dragstart", e => { e.stopPropagation(); e.dataTransfer.setData("text/x-comment", p.origin); });
+      return piece;
+    }));
   }
   const names = logic ? [] : sysNames(st.tab), L = logic ? { none: true } : D.lang[st.tab];
   const sys = sysOf(it), inSys = inSystemic(it);
@@ -1573,7 +1609,40 @@ function itemRow(it) {
         h("input", { type: "checkbox", checked: isUpgrade(it), onchange: e => { st.up = e.target.checked; touch(); renderLanguage(); } }), "⬆ Nâng cấp") : null,
       h("select", { class: "small", "aria-label": "Phần", onchange: e => { st.tab = e.target.value; st.sys = null; st.mode = null; touch(); renderLanguage(); } },
         Object.entries(TAB_NAMES).map(([v, l]) => h("option", { value: v, selected: st.tab === v ? true : null }, "Phần: " + l))),
-      (D.comments || {})[it.ref] != null ? h("button", { class: "btn link small", type: "button", onclick: () => { delete D.comments[it.ref]; touch(); renderLanguage(); } }, "Trả nhận xét như CRM") : null));
+      commentMoved(it.ref) ? h("button", { class: "btn link small", type: "button", onclick: () => resetComments(it.ref) }, "Trả nhận xét như CRM") : null));
+}
+/* Claude's suggested systematic mistakes for a tab: one click puts the names in and the chips on; the
+   teacher then changes anything (it is only a starting point) */
+function suggestCard(t, mine) {
+  const G = S.suggest;
+  if (!G) return null;
+  if (G.status === "running") return h("p", { class: "small muted suggest-wait" }, "Claude đang gợi ý lỗi hệ thống…");
+  if (G.status === "failed") return h("p", { class: "small muted" }, "Không gợi ý được lỗi hệ thống (" + G.message + "). ",
+    h("button", { class: "btn link small", type: "button", onclick: () => { S.suggest = null; startSuggest(); renderLanguage(); } }, "Thử lại"));
+  const here = new Set(mine.map(it => it.ref));
+  const groups = (G[t] || []).map(g => ({ ...g, refs: g.refs.filter(r => here.has(r)) })).filter(g => g.refs.length >= 2);
+  if (!groups.length || (G.used || {})[t] || (G.dismissed || {})[t]) return null;
+  const label = ref => { const it = mine.find(x => x.ref === ref); if (!it) return ref;
+    if (ref[0] === "c") { const c = S.page.corrections[ref]; return `${c.orig.trim() || "+"} → ${c.fix.trim() || "(bỏ)"}`; }
+    return (it.note.quote || it.note.added || it.comment || ref).slice(0, 40); };
+  const use = () => {
+    const D = d2(), L = D.lang[t];
+    L.none = false; L.names = groups.map(g => g.name);
+    for (const it of mine) {
+      const st = itemState(it), k = groups.findIndex(g => g.refs.includes(it.ref));
+      if (k >= 0 && modeOf(it) === "list") st.sys = k; else if (k < 0 && st.sys != null) st.sys = null;
+    }
+    S.suggest = { ...G, used: { ...(G.used || {}), [t]: true } };
+    logEvent("suggest", { tab: t, used: true, groups: groups.length });
+    touch(); renderLanguage();
+  };
+  return h("div", { class: "suggest" },
+    h("div", { class: "row" }, h("b", {}, "Claude gợi ý"), h("span", { class: "small muted" }, " · chưa dùng cho tới khi anh bấm “Dùng gợi ý”; dùng rồi vẫn sửa được")),
+    groups.map((g, k) => h("div", { class: "suggest-group" }, h("span", { class: "sys-chip c" + k }, String(k + 1)), h("b", {}, g.name), h("span", { class: "small muted" }, ` · ${g.refs.length} chỗ: `),
+      h("span", { class: "small" }, g.refs.map(label).join(" · ")))),
+    h("div", { class: "row" },
+      h("button", { class: "btn small primary", type: "button", onclick: use }, "Dùng gợi ý"),
+      h("button", { class: "btn link small", type: "button", onclick: () => { S.suggest = { ...G, dismissed: { ...(G.dismissed || {}), [t]: true } }; logEvent("suggest", { tab: t, used: false }); touch(); renderLanguage(); } }, "Bỏ qua")));
 }
 function renderLanguage() {
   const D = d2(), items = langItems();
@@ -1590,6 +1659,7 @@ function renderLanguage() {
               names.splice(k, 1); mine.forEach(it => { const s0 = sysOf(it); const st = itemState(it); if (s0 === k) st.sys = null; else if (s0 != null && s0 > k) st.sys = s0 - 1; }); touch(); renderLanguage(); } }, "×") : null)),
           !L.none && names.length < SYS_MAX ? h("button", { class: "btn small", type: "button", onclick: () => { names.push(""); touch(); renderLanguage(); } }, "+ Thêm lỗi hệ thống") : null),
         h("label", { class: "inline" }, h("input", { type: "checkbox", checked: L.none, onchange: e => { L.none = e.target.checked; touch(); renderLanguage(); } }), "Không có lỗi hệ thống")),
+      suggestCard(t, mine),
       mine.length ? mine.map(it => itemRow(it)) : h("p", { class: "muted small" }, "Không có chỗ sửa nào ở phần này."));
   };
   const logicItems = items.filter(it => itemState(it).tab === "LOGIC");
@@ -1627,11 +1697,122 @@ function renderRewrite() {
 
 /* ---------- 5. one Claude pass ---------- */
 const draftWeek2 = () => { const w = curWeek(); return w.kind === "paragraph+paraphrase" ? w : { ...w, prompts: [{ label: w.essay_type, prompt: S.meta.prompt }] }; };
+/* ---------- getting ahead while the teacher works ----------
+   startSuggest: when the Logic step opens, a cheap call (Sonnet) groups the vocabulary and grammar fixes
+   into recurring mistakes; the Language step offers them as "gợi ý" (nothing is used until the teacher
+   takes it). startEarly: when the teacher leaves the Logic step with it complete, Claude drafts the Logic
+   and ideas parts while the Language step is being done; Soạn then only drafts the rest */
+function startSuggest() {
+  if (!SETTINGS.apiKey || (S.suggest && S.suggest.status !== "failed")) return;
+  const items = langItems().filter(it => itemState(it).tab !== "LOGIC").map(it => {
+    const c = it.ref[0] === "c" ? S.page.corrections[it.ref] : null, n = c ? null : it.note || {};
+    return { id: it.ref, tab: itemState(it).tab, her_words: c ? c.orig.trim() : n.quote || n.added || "", fix: c ? c.fix.trim() : n.fix || "", comment: commentOf(it.ref) };
+  });
+  if (items.filter(x => x.tab === "LR").length < 3 && items.filter(x => x.tab === "GRA").length < 3) { S.suggest = { status: "done", LR: [], GRA: [] }; return; }
+  S.suggest = { status: "running" };
+  suggestSystemic({ apiKey: SETTINGS.apiKey, items })
+    .then(r => { S.suggest = { status: "done", ...r.suggestions }; addUsage(r.usage, r.model); })
+    .catch(e => { S.suggest = { status: "failed", message: e.message || String(e) }; if (e.usage) addUsage(e.usage, e.model); })
+    .finally(() => { touch(); if (S.step === "language") renderLanguage(); });
+}
+function startEarly() {
+  if (!SETTINGS.apiKey || S.lesson || drafting || earlyDraft) return;
+  if (blockers2().some(([step]) => step === "logic")) return;
+  const D = decisions2(), list = ["logic", ...(D.ideas.length ? ["ideas"] : [])].filter(p => !partFresh(p, D));
+  if (!list.length) return;
+  earlyDraft = draftLesson2({ apiKey: SETTINGS.apiKey, week: draftWeek2(), teacher: SETTINGS.teacher, input: { page: pageFor2(), meta: S.meta, decisions: D }, list, done: {}, noStrict: SETTINGS.noStrict2 || [] })
+    .then(r => {
+      S.partial = S.partial || {}; S.partSig = S.partSig || {};
+      for (const p of list) if (r.parts[p]) { S.partial[p] = r.parts[p]; S.partSig[p] = sigOf(p, D); }
+      addUsage(r.usage, r.model); touch();
+    })
+    .catch(e => console.warn("soạn trước:", e))
+    .finally(() => { earlyDraft = null; });
+}
+
+/* ---------- what each drafted part was written from ----------
+   Claude's parts are kept with the lesson (S.partial), each with a fingerprint of the decisions it was
+   drafted from (S.partSig). A change the page can follow by itself (Danh sách / Khen / Ẩn, which fixes
+   are in a systematic mistake, moved comments, no rewrite) is applied at once (syncLesson); a change
+   Claude has to write about makes only that part stale, and "Soạn lại N phần" redrafts just those */
+const SIGS = {
+  logic: D => [D.checklist.map(c => [c.item, c.status, c.note]), D.topics],
+  ideas: D => D.ideas,
+  language: () => 0,
+  systemic: D => D.language.systemic.map(x => [x.tab, x.name]),
+  practice: D => D.language.systemic.map(x => [x.tab, x.name]),
+  frame: D => [D.rewrite && D.rewrite.target, D.rewrite && D.rewrite.sids],
+};
+const sigOf = (part, D) => JSON.stringify((SIGS[part === "frame_nr" ? "frame" : part] || (() => 0))(D));
+/* the parts this lesson needs now; a frame drafted with a rewrite also serves a lesson without one */
+const neededParts = D => partsFor2(D).map(p => p === "frame_nr" && (S.partial || {}).frame && !(S.partial || {}).frame_nr ? "frame" : p);
+function partFresh(part, D) {
+  const P = S.partial || {}, sig = S.partSig || {};
+  if (!P[part]) return false;
+  if (part === "frame" && D.no_rewrite) return true;
+  return sig[part] === sigOf(part, D);
+}
+const staleParts = D => neededParts(D).filter(p => !partFresh(p, D));
+const lessonCtx = D => ({ page: pageFor2(), meta: { ...S.meta, word_target: curWeek().task === 1 ? 150 : 250 }, teacher: SETTINGS.teacher, zalo: SETTINGS.zalo, week: draftWeek2(), decisions: D });
+// the lesson roots each part writes
+const ROOTS = { logic: ["logic"], ideas: ["ideas"], language: ["language.phrases"], systemic: ["mistakes"], practice: ["practice"],
+  frame: ["hello", "results", "rewrite", "finish"], frame_nr: ["hello", "results", "rewrite", "finish"] };
+const getAt = (o, path) => path.split(".").reduce((x, k) => x == null ? x : x[k], o);
+function setAt(o, path, v) { const ks = path.split("."), last = ks.pop(); const t = ks.reduce((x, k) => x[k] = x[k] || {}, o); if (v === undefined) delete t[last]; else t[last] = v; }
+/* the teacher's lesson (with the edits made in Xem lại) + a fresh build from the parts and today's decisions:
+   what the decisions say comes from the fresh build, the redrafted parts come from it whole, the rest stays */
+function mergeLesson(old, fresh, redrafted, D) {
+  const out = structuredClone(old);
+  for (const k of ["corrections", "task_comments", "essay", "scores"]) out[k] = fresh[k];
+  out.language = { ...out.language, praise: fresh.language.praise, list: fresh.language.list, items: fresh.language.items };
+  // the checklist: status from the decisions; the lines stay the teacher's unless the points changed
+  if (out.logic && fresh.logic) {
+    if (out.logic.points.length === fresh.logic.points.length) out.logic.points = out.logic.points.map((p, i) => ({ ...p, ok: fresh.logic.points[i].ok, status: fresh.logic.points[i].status }));
+    else out.logic.points = fresh.logic.points;
+  }
+  // the systematic mistakes: which fixes are in each comes from the decisions; Claude's teaching stays
+  const fm = fresh.mistakes.main, om = out.mistakes.main;
+  if (!fm.length) { out.mistakes.main = []; out.practice = null; }
+  else if (fm.length === om.length && fm.every((m, i) => m.tab === om[i].tab)) out.mistakes.main = om.map((m, i) => {
+    const own = new Set([...fm[i].cids, ...fm[i].points.map(p => p.nid)]);
+    return { ...m, cids: fm[i].cids, points: fm[i].points, ...(m.patterns ? { patterns: m.patterns.map(x => ({ ...x, refs: x.refs.filter(r => own.has(r)) })) } : {}) };
+  });
+  else out.mistakes = fresh.mistakes;
+  out.mistakes.total = fresh.mistakes.total;
+  if (!fresh.ideas) delete out.ideas;
+  for (const part of redrafted) for (const root of ROOTS[part] || []) setAt(out, root, structuredClone(getAt(fresh, root)));
+  if (redrafted.some(p => p === "frame" || p === "frame_nr") && old.finish) out.finish.quote = old.finish.quote;
+  // the rewrite: none when the teacher gave none; back from the drafted frame when given again
+  if (D.no_rewrite) out.rewrite = null;
+  else if (!out.rewrite && fresh.rewrite) out.rewrite = fresh.rewrite;
+  return out;
+}
+/* apply what the decisions say to the drafted lesson (no Claude call) */
+function syncLesson() {
+  if (!isFlow2() || !S.lesson || !Object.keys(S.partial || {}).length) return;
+  try {
+    const D = decisions2();
+    const P = { ...S.partial };
+    S.lesson = mergeLesson(S.lesson, toLesson2(P, lessonCtx(D)), [], D);
+  } catch (e) { console.warn("sync:", e); }
+}
+/* "N phần cần soạn lại": a notice with the button, for Soạn, Xem lại and Xuất */
+function staleNotice() {
+  if (!isFlow2() || !S.lesson || !Object.keys(S.partial || {}).length) return null;
+  const st = staleParts(decisions2());
+  if (!st.length) return null;
+  return h("div", { class: "notice" }, `Anh đã đổi quyết định sau khi soạn: ${st.map(p => PARTS2[p].label).join(", ")} cần Claude viết lại (những phần khác giữ nguyên, kể cả chỗ anh đã sửa). `,
+    h("button", { class: "btn small primary", type: "button", disabled: drafting ? true : null, onclick: () => go("draft") }, `Soạn lại ${st.length} phần`));
+}
+
 function renderDraft2() {
   const D = decisions2(), block = blockers2(), hasKey = !!SETTINGS.apiKey;
   const n = { systemic: 0, list: 0, praise: 0, hide: 0, teach: 0 };
   D.language.items.forEach(i => { n[i.mode] = (n[i.mode] || 0) + 1; });
   const status = h("div", { id: "draftStatus" });
+  const stale = staleParts(D), have = neededParts(D).filter(p => partFresh(p, D));
+  const legacy = S.lesson && !Object.keys(S.partial || {}).length;           // drafted before parts were kept
+  const label = !S.lesson ? (have.length ? `Soạn ${stale.length} phần còn lại` : "Soạn") : legacy ? "Soạn lại" : stale.length ? `Soạn lại ${stale.length} phần` : null;
   $("#main").replaceChildren(h("div", { class: "panel" }, h("div", { class: "card" },
     h("h1", {}, "Soạn với Claude"),
     h("p", {}, "Claude chỉ viết lời của Đậu quanh quyết định của anh: tổng kết Logic, từng chỗ cần sửa, câu hỏi Socratic, cụm em dùng tốt, bài giảng lỗi hệ thống (nếu có), phần viết lại (nếu anh giao), lời chào và kết thúc. Nhận xét và chỗ sửa vẫn là chữ của anh."),
@@ -1645,69 +1826,107 @@ function renderDraft2() {
     block.length ? h("div", { class: "notice bad blockers" }, h("b", {}, "Còn thiếu:"), h("ul", { class: "problems" }, block.map(([step, msg]) =>
       h("li", {}, h("button", { class: "btn link", type: "button", onclick: () => go(step) }, msg))))) : null,
     !hasKey ? h("div", { class: "notice bad" }, "Chưa có Claude API key. ", h("a", { href: "options.html", target: "_blank" }, "Mở Cài đặt"), " rồi quay lại đây.") : null,
-    S.lesson ? h("div", { class: "notice" }, "Bài này đã có bản soạn. Soạn lại sẽ thay bản cũ (những chỗ anh đã sửa cũng mất).") : null,
-    h("p", { class: "small muted" }, `Model ${MODEL}, ${partsFor2(D).length} phần nhỏ: phần đầu chạy trước để lưu phần hướng dẫn và bài của em vào cache, các phần còn lại đọc lại từ cache (rẻ hơn) và chạy cùng lúc. Thường dưới 1 phút.`),
-    S.lesson && S.usage ? h("p", { class: "small muted" }, usageLine(S.usage)) : null,
+    !S.lesson && have.length ? h("div", { class: "notice good" }, `Đã soạn sẵn: ${have.map(p => PARTS2[p].label).join(", ")}. Claude chỉ soạn phần còn lại.`) : null,
+    S.lesson && !legacy ? h("div", { class: "notice" }, stale.length
+      ? `Anh đã đổi quyết định sau khi soạn: ${stale.map(p => PARTS2[p].label).join(", ")} cần Claude viết lại. Những phần khác giữ nguyên, kể cả chỗ anh đã sửa ở Xem lại.`
+      : "Bài này đã có bản soạn, khớp với mọi quyết định của anh (đổi Danh sách / Khen / Ẩn, lỗi hệ thống, nhận xét kéo sang chỗ khác thì bài tự cập nhật).") : null,
+    legacy ? h("div", { class: "notice" }, "Bài này đã có bản soạn. Soạn lại sẽ thay bản cũ (những chỗ anh đã sửa cũng mất).") : null,
+    h("p", { class: "small muted" }, `Model ${MODEL}, ${neededParts(D).length} phần nhỏ: phần đầu chạy trước để lưu phần hướng dẫn và bài của em vào cache, các phần còn lại đọc lại từ cache (rẻ hơn) và chạy cùng lúc. Thường dưới 1 phút.`),
+    S.usage ? h("p", { class: "small muted" }, usageLine(S.usage)) : null,
     h("div", { class: "row" },
-      h("button", { class: "btn primary", type: "button", disabled: !hasKey || block.length || drafting ? true : null, onclick: () => runDraft2() }, S.lesson ? "Soạn lại" : "Soạn"),
-      S.lesson ? h("button", { class: "btn", type: "button", onclick: () => go("edit") }, "Tới phần xem lại") : null),
+      label ? h("button", { class: "btn primary", id: "draftBtn", type: "button", disabled: !hasKey || block.length || drafting ? true : null, onclick: () => runDraft2({ restart: legacy }) }, label) : null,
+      S.lesson ? h("button", { class: "btn", type: "button", onclick: () => go("edit") }, "Tới phần xem lại") : null,
+      S.lesson && !legacy ? h("button", { class: "btn link", type: "button", disabled: !hasKey || block.length || drafting ? true : null, onclick: () => runDraft2({ restart: true }) }, "Soạn lại toàn bộ") : null),
     status)));
+  if (earlyDraft) waitEarly();
 }
-async function runDraft2({ retry = false } = {}) {
-  if (!retry) {
-    if (S.lesson && !confirm("Soạn lại sẽ thay bản soạn cũ. Tiếp tục?")) return;
-    S.partial = {};
-  }
-  const D = decisions2(), list = partsFor2(D);
+/* while the early draft (Logic, ideas) is still running, say so */
+function waitEarly() {
   const status = $("#draftStatus");
-  const todo = list.filter(p => !(S.partial || {})[p]);
-  const bar = h("progress", { max: String(6000 * todo.length), value: "0", style: "width:100%" });
-  status.replaceChildren(h("p", {}, `Claude đang soạn ${todo.map(p => PARTS2[p].label).join(", ")}…`), bar, h("p", { class: "small muted", id: "draftChars" }, ""));
+  if (status && earlyDraft) status.replaceChildren(h("p", { class: "small muted" }, "Claude đang soạn trước phần Logic…"));
+  earlyDraft.finally(() => { if (S.step === "draft" && !drafting) renderDraft2(); });
+}
+let earlyDraft = null;
+/* every Claude call for this lesson adds up here: the drafts (Opus) and the suggestions (Sonnet), each priced
+   at its own rate in usageLine */
+function addUsage(u, model) {
+  if (!u) return;
+  const keys = ["input_tokens", "output_tokens", "cache_read_input_tokens", "cache_creation_input_tokens"];
+  const sum = structuredClone(S.usage || { model: MODEL });
+  const bucket = !model || model === MODEL || /opus/.test(model) ? sum : ((sum.other = sum.other || {})[model] = (sum.other || {})[model] || {});
+  for (const k of keys) bucket[k] = (bucket[k] || 0) + (u[k] || 0);
+  S.usage = sum;
+}
+/* draft the parts that are missing or stale (restart: all of them, from scratch) */
+async function runDraft2({ restart = false } = {}) {
+  if (drafting) return;
+  if (restart) {
+    if (S.lesson && !confirm("Soạn lại toàn bộ sẽ thay bản soạn cũ (những chỗ anh đã sửa cũng mất). Tiếp tục?")) return;
+  }
   const ctrl = new AbortController();
   drafting = ctrl; renderSteps();
+  const btn = $("#draftBtn"); if (btn) btn.disabled = true;
+  const status = $("#draftStatus");
+  if (earlyDraft) { status.replaceChildren(h("p", {}, "Đợi phần Logic Claude đang soạn trước…")); await earlyDraft.catch(() => {}); }
+  if (restart) { S.partial = {}; S.partSig = {}; }
+  const D = decisions2(), list = neededParts(D);
+  const todo = staleParts(D);
+  const done = Object.fromEntries(list.filter(p => partFresh(p, D)).map(p => [p, S.partial[p]]));
+  const bar = h("progress", { max: String(6000 * Math.max(1, todo.length)), value: "0", style: "width:100%" });
+  status.replaceChildren(h("p", {}, `Claude đang soạn ${todo.map(p => PARTS2[p].label).join(", ")}…`), bar, h("p", { class: "small muted", id: "draftChars" }, ""));
   let result;
   try {
     result = await draftLesson2({
       apiKey: SETTINGS.apiKey, week: draftWeek2(), teacher: SETTINGS.teacher,
-      input: { page: pageFor2(), meta: S.meta, decisions: D },
+      input: { page: pageFor2(), meta: S.meta, decisions: D }, list,
       onProgress: n => { bar.value = Math.min(n, +bar.max - 300); const el = $("#draftChars"); if (el) el.textContent = `${n.toLocaleString("vi-VN")} ký tự`; },
-      signal: ctrl.signal, done: S.partial || {}, noStrict: SETTINGS.noStrict2 || [],
+      signal: ctrl.signal, done, noStrict: SETTINGS.noStrict2 || [],
     });
   } catch (e) {
-    result = { parts: S.partial || {}, failed: [{ label: "Bản soạn", message: e.message || String(e) }] };
+    result = { parts: { ...(S.partial || {}), ...done }, failed: [{ label: "Bản soạn", message: e.message || String(e) }] };
   }
   drafting = null;
-  S.partial = result.parts;
+  S.partSig = S.partSig || {};
+  for (const p of todo) if (result.parts[p] && result.parts[p] !== (S.partial || {})[p]) S.partSig[p] = sigOf(p, D);
+  S.partial = { ...(S.partial || {}), ...result.parts };
   if (result.noStrict && result.noStrict.join() !== (SETTINGS.noStrict2 || []).join()) {
     SETTINGS = { ...SETTINGS, noStrict2: result.noStrict };
     setSettings({ noStrict2: result.noStrict });
   }
-  if (result.usage) {
-    const u = S.usage && retry ? S.usage : { input_tokens: 0, output_tokens: 0, cache_read_input_tokens: 0, cache_creation_input_tokens: 0 };
-    for (const k of Object.keys(result.usage)) u[k] = (u[k] || 0) + result.usage[k];
-    S.usage = { ...u, model: result.model };
-  }
+  addUsage(result.usage, result.model);
   touch();
   if (result.failed.length) {
     renderSteps();
-    const ok = list.filter(p => S.partial[p]).map(p => PARTS2[p].label);
-    status.replaceChildren(h("div", { class: "notice bad" },
+    const ok = list.filter(p => partFresh(p, D)).map(p => PARTS2[p].label);
+    const st = $("#draftStatus") || status;
+    st.replaceChildren(h("div", { class: "notice bad" },
       h("b", {}, "Chưa soạn xong:"), h("ul", { class: "problems" }, result.failed.map(f => h("li", {}, h("b", {}, f.label + ": "), f.message))),
-      ok.length ? h("p", { class: "small" }, "Đã xong: " + ok.join(", ") + ". Thử lại chỉ soạn phần còn thiếu.") : null),
+      ok.length ? h("p", { class: "small" }, "Đã xong: " + ok.join(", ") + ". Thử lại chỉ soạn phần còn thiếu (các phần đã xong được giữ, kể cả khi anh rời trang này).") : null),
       h("div", { class: "row" },
-        h("button", { class: "btn primary", type: "button", onclick: () => runDraft2({ retry: true }) }, "Thử lại phần lỗi"),
-        h("button", { class: "btn", type: "button", onclick: () => { S.partial = {}; touch(); go("draft"); } }, "Bỏ, soạn lại từ đầu")));
+        h("button", { class: "btn primary", type: "button", onclick: () => runDraft2() }, "Thử lại phần lỗi"),
+        h("button", { class: "btn", type: "button", onclick: () => runDraft2({ restart: true }) }, "Bỏ, soạn lại từ đầu")));
+    const b2 = $("#draftBtn"); if (b2) b2.disabled = false;
     return;
   }
-  try {
-    S.lesson = toLesson2(S.partial, { page: pageFor2(), meta: { ...S.meta, word_target: curWeek().task === 1 ? 150 : 250 }, teacher: SETTINGS.teacher, zalo: SETTINGS.zalo, week: draftWeek2(), decisions: D });
-  } catch (e) {
-    S.partial = {};
+  let fresh;
+  try { fresh = toLesson2(S.partial, lessonCtx(D)); }
+  catch (e) {
+    for (const p of todo) { delete S.partial[p]; delete S.partSig[p]; }
     status.replaceChildren(h("div", { class: "notice bad" }, "Bản soạn của Claude thiếu thông tin (" + e.message + "). Soạn lại nha."),
       h("button", { class: "btn", type: "button", onclick: () => go("draft") }, "Soạn lại"));
     renderSteps(); return;
   }
-  S.partial = {};
+  if (S.lesson && !restart) {
+    // an update: only the redrafted parts are new; the teacher's edits elsewhere stay
+    S.lesson = mergeLesson(S.lesson, fresh, todo, D);
+    const roots = todo.flatMap(p => ROOTS[p] || []), under = k => roots.some(r => k === r || k.startsWith(r + "."));
+    for (const k of Object.keys(S.ok || {})) if (under(k)) delete S.ok[k];
+    for (const k of Object.keys(S.src || {})) if (under(k)) delete S.src[k];
+    if (S.aiDraft) for (const r of roots) setAt(S.aiDraft, r, structuredClone(getAt(fresh, r)));
+    logEvent("redraft", { parts: todo });
+    touch(); go("edit"); return;
+  }
+  S.lesson = fresh;
   S.src = { "": "ai", flow: "teacher", scores: "page", word_count: "page", essay: "page", corrections: "page", task_comments: "page", student: "teacher", teacher: "teacher", zalo: "teacher",
     homework: "page", prompt: "teacher", essay_type: "page", overall: "page", word_target: "page", t1: "page", "logic.points": "teacher", "language.items": "teacher" };
   S.ok = {}; S.mod = "review";
@@ -1740,13 +1959,15 @@ function moduleForm2(id) {
   switch (id) {
     case "review": {
       const fl = review().flags.filter(f => flagOpen(f));
-      return [...head("Kiểm tra", "Claude chỉ viết lời của Đậu quanh quyết định của anh. Đây là những chỗ máy thấy chưa ổn; còn lại anh xem nhanh trên điện thoại bên phải, sửa chỗ nào thì chọn phần đó ở bên trái."),
+      return [...head("Kiểm tra", "Claude chỉ viết lời của Đậu quanh quyết định của anh. Đây là những chỗ máy thấy chưa ổn; còn lại anh xem nhanh trên điện thoại bên phải, sửa chỗ nào thì chọn phần đó ở bên trái."), staleNotice(),
         fl.length ? h("ul", { class: "problems" }, fl.map(f => h("li", {}, f.msg, " ", f.path ? h("button", { class: "btn link small", type: "button", onclick: () => goTo(f.module, f.path) }, "Sửa") : null)))
           : h("div", { class: "notice good" }, "Không thấy gì cần sửa.")];
     }
     case "logic": return [...head("Logic", "Màn tổng kết (✓/✗ là của anh), rồi từng chỗ cần sửa, mỗi chỗ một màn."),
       fLines("logic.summary", "Đậu tổng kết"),
-      cards("logic.points", p => `${p.ok ? "✓" : "✗"} ${p.line}`, p => [fLine(`${p}.line`, "Hiện cho em (ngắn)"), fBool(`${p}.ok`, "Đạt")], { remove: false }),
+      // ✓ / ~ / ✗ is the teacher's tick at the Logic step (changing it there updates the lesson)
+      cards("logic.points", p => `${p.status === "minor" ? "~" : p.ok ? "✓" : "✗"} ${p.line}`, p => [fLine(`${p}.line`, "Hiện cho em (ngắn)"),
+        h("p", { class: "small muted" }, "Đạt / chỉnh nhẹ / chưa đạt: đổi ở bước Logic, bài tự cập nhật.")], { remove: false }),
       h("h3", {}, "Từng chỗ cần sửa"),
       cards("logic.issues", x => x.title || "(chưa có tên)", (p, x) => [
         h("div", { class: "grid2" }, fLine(`${p}.title`, "Tên", { voice: false }), fSids(`${p}.sids`, "Câu")),
@@ -1769,7 +1990,8 @@ function moduleForm2(id) {
       cards("ideas.overview", o => `${o.tag} · ${o.text}`, p => [h("div", { class: "grid2" }, fLine(`${p}.text`, "Ý", { voice: false }), fLine(`${p}.short`, "Tên ngắn (trong tổng quan bài)", { voice: false })), fLine(`${p}.note`, "Ghi chú / gợi ý", { voice: false }), fStatus(p)], { remove: false }),
       h("h3", {}, "Ý cần sửa"), ideaDetailCards()];
     case "language": {
-      const LN = L.language, row = ref => ref[0] === "c" ? corrRow(ref, { drag: false }) : pointRow({ ...pointOfNote(noteOf(ref) || {}), nid: ref }, {});
+      // the lesson's own corrections and notes: with the comments where the teacher moved them
+      const LN = L.language, row = ref => ref[0] === "c" ? corrRow(ref, { drag: false }) : pointRow({ ...pointOfNote(L.task_comments[+ref.slice(1) - 1] || noteOf(ref) || {}), nid: ref }, {});
       return [...head("Language", "Cụm em dùng tốt (và chỗ anh khen), rồi màn “Lỗi lớn nhất” với nút xem các lỗi khác, rồi bài giảng từng lỗi hệ thống. Lời nối giữa các phần do trang tự viết. Muốn đổi chỗ nào vào danh sách / khen / ẩn thì sửa ở bước Language bên trên."),
         LN.phrases ? [h("h3", {}, "Cụm em đã dùng tốt"), fLine("language.phrases.line", "Đậu khen"),
           cards("language.phrases.groups", g => g.label, p => [fLine(`${p}.label`, "Nhóm", { voice: false }),

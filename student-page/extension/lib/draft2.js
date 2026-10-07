@@ -3,7 +3,7 @@
    are part of a systematic mistake (up to 3 per tab), which are only listed, praised or hidden, and the
    sentences to rewrite. Claude only writes Đậu's words around those decisions, in one pass of small parts
    (run by draftLesson in draft.js). The rest of the page is the teacher's own words, taken from the CRM. */
-import { draftLesson, PARTS, S, I, A, E, O, ASK, practiceItems, practiceToLesson } from "./draft.js";
+import { draftLesson, oneCall, PARTS, S, I, A, E, O, ASK, practiceItems, practiceToLesson } from "./draft.js";
 
 const DETAIL = O({
   tag: S, title: S, sids: A(S), chain: A(S), mode: E("missing_end", "bad_link", "gap", "replace"),
@@ -98,7 +98,7 @@ A question makes her notice a fact; it never asks for an opinion or a guess at w
 - If no question meets these rules, leave q "", options [], right "" and wrong "": the page then skips the question.
 
 # What you write, part by part
-- logic.points: one per logic_checklist item, in the same order: line = that point in plain Vietnamese for the student, under 12 words, saying what she did or didn't do (e.g. "Em nhận ra đây là dữ liệu động", "Overview có đủ Trends và Differences", "Body 2 còn thiếu năm cho số liệu"). It must agree with the teacher's status (a "minor" point: what she did, with the small thing to adjust).
+- logic.points: one per checklist point, in the same order and exactly as many, in the same order: line = that point in plain Vietnamese for the student, under 12 words, saying what she did or didn't do (e.g. "Em nhận ra đây là dữ liệu động", "Overview có đủ Trends và Differences", "Body 2 còn thiếu năm cho số liệu"). It must agree with the teacher's status (a "minor" point: what she did, with the small thing to adjust).
 - logic.summary: 1-2 lines. If every point is ok: one specific line of praise for her logic. Otherwise: her logic is right except the ✗ points (and the small ~ adjustments), named briefly (e.g. "Em tả đúng chart dynamic rồi, overview và body cũng đúng Framework hết á, chỉ có phần data em tả hơi thiếu nè").
 - logic.issues: one per problem the teacher noted under a "fix" or "minor" point (one note may list several problems: one issue each, in essay order); none for ok points. point = the checklist index. title = 2-5 Vietnamese words. sids = the sentence(s) it is about, never empty: when the problem is something missing (no overview, no conclusion), the sentence nearest to where it should be. quote = her exact words there, verbatim from the original text ("" if the problem is something missing).
   The page walks her through each issue one step at a time, so write each step:
@@ -151,6 +151,8 @@ ${(fw.language || []).map(x => "- " + x).join("\n")}`;
 }
 
 /* ---------- what we send: the marked essay and the teacher's decisions ---------- */
+/* two blocks: the marked essay (the same all through a lesson, so every request reads it from the
+   cache), then the teacher's decisions (they can change between an early draft and the rest) */
 export function userMessage2({ page, meta, decisions }) {
   const C = page.corrections;
   const sentences = page.essay.paragraphs.flatMap((p, pi) => p.sentences.map(s => ({
@@ -166,16 +168,16 @@ export function userMessage2({ page, meta, decisions }) {
     corrections: Object.entries(C).map(([id, c]) => ({ id, orig: c.orig, fix: c.fix, comment: c.comment })),
     notes: page.task_comments.map((t, i) => ({ id: "n" + (i + 1), sentence_ids: t.sentence_ids, quote: t.quote, typed_by_teacher: t.added,
       teacher_rewrite: t.fix || null, comment: t.comment })),
-    decisions,
   };
-  return "Here is the marked homework and the teacher's decisions.\n\n" + JSON.stringify(payload, null, 1);
+  return ["Here is the marked homework.\n\n" + JSON.stringify(payload, null, 1),
+    "The teacher's decisions:\n\n" + JSON.stringify({ decisions }, null, 1)];
 }
 
 /** Draft the parts. Same return shape as draftLesson. */
-export function draftLesson2({ apiKey, week, teacher, input, onProgress, fetchImpl, signal, done = {}, noStrict = [] }) {
+export function draftLesson2({ apiKey, week, teacher, input, onProgress, fetchImpl, signal, done = {}, noStrict = [], list = null }) {
   return draftLesson({
     apiKey, week, teacher, onProgress, fetchImpl, signal, done, noStrict,
-    specs: PARTS2, list: partsFor2(input.decisions),
+    specs: PARTS2, list: list || partsFor2(input.decisions),
     system: systemBlocks2(week, teacher), essay: userMessage2(input),
     depExtra: (dep, d) => "The systematic mistake groups are drafted. Their ids, for `mistake`: " +
       JSON.stringify(d.systemic.map((g, i) => ({ id: "s" + (i + 1), title: g.title, tab: g.tab }))),
@@ -183,6 +185,12 @@ export function draftLesson2({ apiKey, week, teacher, input, onProgress, fetchIm
 }
 
 /* ---------- parts + decisions + page -> the lesson the student page reads ---------- */
+/* exercises the page can't run (a choice whose answer points at no option) are left out */
+function cleanPractice(p) {
+  const ok = it => it.type !== "choose" || (Number.isInteger(it.answer) && it.answer >= 0 && it.answer < (it.options || []).length);
+  const items = p.items.filter(ok), ids = new Set(items.map(it => it.id));
+  return { ...p, items, core: p.core.filter(id => ids.has(id)) };
+}
 /* a checklist point's status (older drafts sent ok true/false) */
 const statusOf = c => c.status || (c.ok === true ? "ok" : c.ok === "minor" ? "minor" : c.ok === false ? "fix" : "ok");
 const pointOf = t => ({ sids: t.sentence_ids, quote: t.quote || "", comment: t.comment || "", ...(t.fix ? { fix: t.fix } : {}) });
@@ -200,6 +208,7 @@ export function toLesson2(parts, { page, meta, teacher, zalo, week, decisions })
   });
   page.task_comments.forEach((t, i) => { pos["n" + (i + 1)] = (sidPos[(t.sentence_ids || [])[0]] ?? 1e6) + 999; });
   const byPos = (a, b) => (pos[a.ref] ?? 1e7) - (pos[b.ref] ?? 1e7);
+  const askOf = a => a && a.q && (a.options || []).length > 1 && a.answer >= 0 && a.answer < a.options.length ? a : null;
   // the teacher's systematic mistakes (up to 3 per tab), with Claude's teaching, matched in order
   const drafted = (P.systemic && P.systemic.systemic) || [];
   const sys = D.language.systemic.map((s, i) => {
@@ -213,14 +222,13 @@ export function toLesson2(parts, { page, meta, teacher, zalo, week, decisions })
       id: "s" + (i + 1), title: g.title || s.name, tag: s.tab === "LR" ? "Vocab" : "Grammar", tab: s.tab,
       cids: s.refs.filter(r => r[0] === "c" && page.corrections[r]).sort((a, b) => pos[a] - pos[b]),
       points: s.refs.filter(r => r[0] === "n" && noteAt(r)).map(r => ({ nid: r, ...pointOf(noteAt(r)), better: noteAt(r).fix || better[r] || "" })),
-      count_line: g.count_line || "Lỗi này em mắc {n} chỗ á", ask: g.ask || { q: "", options: [], answer: 0 }, reason: g.reason || "",
+      count_line: g.count_line || "Lỗi này em mắc {n} chỗ á", ask: askOf(g.ask) || { q: "", options: [], answer: 0 }, reason: g.reason || "",
       board: patterns.length ? patterns.map(x => x.formula) : g.board || [], rule: patterns.length ? patterns.map(x => x.rule).filter(Boolean) : g.rule || [],
       patterns, example: g.example || { bad: "", good: "" },
     };
   });
   const items = D.language.items;
   const prompts = [meta.prompt || "", ...((week.prompts || []).map(x => x.prompt))];
-  const askOf = a => a && a.q && (a.options || []).length > 1 && a.answer >= 0 && a.answer < a.options.length ? a : null;
   const ideas = P.ideas && P.ideas.ideas;
   const lesson = {
     flow: 2,
@@ -235,7 +243,9 @@ export function toLesson2(parts, { page, meta, teacher, zalo, week, decisions })
         const ask = askOf(x.ask), missing = x.missing || x.say || [];
         const minor = x.point >= 0 && statusOf(D.checklist[x.point] || {}) === "minor";
         return { title: x.title, sids: x.sids.filter(s => sids.has(s)), quote: x.quote, part: minor ? "" : x.part || "", ...(minor ? { minor: true } : {}),
-          prompt_focus: x.prompt_focus && prompts.some(p => p.includes(x.prompt_focus)) ? x.prompt_focus : "", rule: x.rule || "",
+          // the prompt the words are in (Week 1: a topic's prompt, not Exercise 1's)
+          ...(() => { const pt = x.prompt_focus ? prompts.find(p => p.includes(x.prompt_focus)) : null;
+            return { prompt_focus: pt ? x.prompt_focus : "", ...(pt && pt !== (meta.prompt || "") ? { prompt_text: pt } : {}) }; })(), rule: x.rule || "",
           ...(ask ? { ask } : {}), missing, say: missing, fix: x.fix,
           ...(x.fix && (x.changes || []).length ? { changes: x.changes.filter(ch => ch.why && (ch.from || ch.to)) } : {}), series: x.series, col: x.col };
       }),
@@ -254,7 +264,7 @@ export function toLesson2(parts, { page, meta, teacher, zalo, week, decisions })
         let mode = ft === "replace" ? "replace" : ft === "link" ? "bad_link" : ft === "missing" ? (x.mode === "gap" ? "gap" : "missing_end") : x.mode;
         if (mode === "bad_link" && !(x.bad_node >= 0 && x.bad_node < x.chain.length)) mode = "missing_end";
         const out = { tag: x.tag, title: x.title, sids: x.sids.filter(s => sids.has(s)), chain: x.chain, bad_node: mode === "bad_link" ? x.bad_node : null,
-          ask: x.ask, fix_intro: x.fix_intro, fix_chain: x.fix_chain, fix_en: x.fix_en, outro: x.outro };
+          ask: askOf(x.ask) || { q: "", options: [], answer: 0, right: "", wrong: "" }, fix_intro: x.fix_intro, fix_chain: x.fix_chain, fix_en: x.fix_en, outro: x.outro };
         if (mode === "gap") out.gap_after = x.gap_after >= 0 ? x.gap_after : 0;
         if (mode === "replace") out.replace = x.fix_label || `Hướng ${teacher} gợi ý`;
         return out;
@@ -271,7 +281,7 @@ export function toLesson2(parts, { page, meta, teacher, zalo, week, decisions })
       items: items.filter(it => it.tab === "LOGIC" && it.mode === "teach").map(it => ({ ref: it.ref, tab: "LOGIC", mode: "teach" })),
     },
     mistakes: { total: Object.keys(page.corrections).length, main: sys, others: [], lr_intro: [], gra_intro: [] },
-    practice: sys.length && P.practice ? practiceToLesson({ intro: P.practice.practice.intro, core: P.practice.practice.core, items: practiceItems(P.practice.practice) }) : null,
+    practice: sys.length && P.practice ? cleanPractice(practiceToLesson({ intro: P.practice.practice.intro, core: P.practice.practice.core, items: practiceItems(P.practice.practice) })) : null,
     // null: the teacher didn't assign a rewrite (the page goes from practice to the end)
     rewrite: noRw ? null : { ...f.rewrite, target: (D.rewrite && D.rewrite.target) || f.rewrite.target, sids: D.rewrite && D.rewrite.sids.length ? D.rewrite.sids : f.rewrite.sids.filter(s => sids.has(s)) },
     praise: [], praise_status: "ok",
@@ -279,4 +289,29 @@ export function toLesson2(parts, { page, meta, teacher, zalo, week, decisions })
     scores: page.scores, word_count: page.word_count, essay: page.essay, corrections: page.corrections, task_comments: page.task_comments,
   };
   return lesson;
+}
+
+/* ---------- suggestions for the Language step: the recurring mistakes, before the teacher sorts ----------
+   A small, cheap call (Sonnet) when the Logic step opens. It only proposes: the teacher sees the groups
+   marked "gợi ý" and decides (Dùng gợi ý / change / ignore). Nothing reaches the student unless taken. */
+export const SUGGEST_MODEL = "claude-sonnet-5-5";
+const SUGGEST = {
+  label: "Gợi ý lỗi hệ thống",
+  fields: "suggestions",
+  schema: O({ LR: A(O({ name: S, refs: A(S) })), GRA: A(O({ name: S, refs: A(S) })) }),
+};
+export async function suggestSystemic({ apiKey, items, fetchImpl, signal }) {
+  const system = [{ type: "text", text: `You help an IELTS writing teacher sort the corrections they made on a student's essay. The teacher wrote every correction and comment (in Vietnamese); you only group them.
+
+Find the student's systematic mistakes: the same kind of error made again and again (at least 3 places), in vocabulary (LR) and in grammar (GRA) separately. For each tab give 0 to 3 groups, the most frequent first:
+- name: a short Vietnamese name a teacher would write, 2-6 words, e.g. "Mạo từ", "Số ít / số nhiều", "Thiếu động từ chính (FV)", "Nối hai mệnh đề", "Từ loại", "Chọn từ chưa sát nghĩa".
+- refs: the ids of the corrections and notes that belong to it (only ids given, only from that tab, each id in at most one group).
+Group by the rule behind the fix (what the comment explains), not by the words. Leave out one-off mistakes: most items stay in no group. If nothing repeats, return empty lists. Output only the JSON.` }];
+  const essay = "The corrections (tab, her words → the fix, the teacher's comment):\n\n" + JSON.stringify(items, null, 1);
+  const { data, usage, model } = await oneCall({ apiKey, spec: SUGGEST, system, essay, model: SUGGEST_MODEL, effort: "medium", fetchImpl, signal });
+  // keep only real ids of the right tab, each once, groups with 2+ places
+  const seen = new Set(), tabOf = Object.fromEntries(items.map(x => [x.id, x.tab]));
+  const clean = t => (data[t] || []).map(g => ({ name: String(g.name || "").trim(), refs: (g.refs || []).filter(r => tabOf[r] === t && !seen.has(r) && seen.add(r)) }))
+    .filter(g => g.name && g.refs.length >= 2).slice(0, 3);
+  return { suggestions: { LR: clean("LR"), GRA: clean("GRA") }, usage, model };
 }

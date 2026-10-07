@@ -277,9 +277,11 @@ export function userMessage({ page, meta, tags, checklist, notes, rewriteTarget 
 }
 
 /* the essay block is the same in every call (cached); the last block names the part */
+/* essay: one text, or several (flow 2: the marked essay, then the teacher's decisions), each cached:
+   a later request with other decisions still reads the essay from the cache */
 function partContent(essay, fields, extra) {
   return [
-    { type: "text", text: essay, cache_control: { type: "ephemeral" } },
+    ...[essay].flat().map(text => ({ type: "text", text, cache_control: { type: "ephemeral" } })),
     { type: "text", text: `Draft this part of the lesson only: ${fields}.${extra ? "\n\n" + extra : ""}` },
   ];
 }
@@ -312,7 +314,7 @@ function parseJson(text) {
 
 /* one request. strict = structured outputs; otherwise the schema goes in the prompt and the
    reply is checked here (once more with the problems listed if it doesn't fit) */
-async function requestPart(client, { part, spec, system, essay, extra, strict, onChars, onFirstEvent, signal }) {
+async function requestPart(client, { part, spec, system, essay, extra, strict, onChars, onFirstEvent, signal, onUsage = () => {}, model = MODEL, effort = "high" }) {
   const P = spec || PARTS[part];
   let hint = "";
   for (let attempt = 0; attempt < (strict ? 1 : 2); attempt++) {
@@ -320,11 +322,11 @@ async function requestPart(client, { part, spec, system, essay, extra, strict, o
       "Reply with only one JSON object that matches this JSON Schema exactly (every field present, no extra fields, no prose, no code fences):",
       JSON.stringify(P.schema), hint].filter(Boolean).join("\n\n");
     const stream = client.beta.messages.stream({
-      model: MODEL,
+      model,
       max_tokens: 32000,
       betas: ["server-side-fallback-2026-07-01"],
       fallbacks: "default",                          // a declined request is re-run on a fallback model
-      output_config: strict ? { effort: "high", format: { type: "json_schema", schema: P.schema } } : { effort: "high" },
+      output_config: strict ? { effort, format: { type: "json_schema", schema: P.schema } } : { effort },
       system,
       messages: [{ role: "user", content: partContent(essay, P.fields, ask) }],
     }, { signal });
@@ -332,6 +334,7 @@ async function requestPart(client, { part, spec, system, essay, extra, strict, o
     stream.on("streamEvent", () => { if (first) { first = false; if (onFirstEvent) onFirstEvent(); } });
     stream.on("text", t => onChars(t.length));
     const msg = await stream.finalMessage();
+    onUsage(msg.usage, msg.model);                   // every attempt is billed, kept or not
     if (msg.stop_reason === "refusal") throw new DraftError("Claude từ chối soạn phần này.");
     if (msg.stop_reason === "max_tokens") throw new DraftError("Phần này dài quá nên bị cắt.");
     const data = parseJson(msg.content.filter(b => b.type === "text").map(b => b.text).join(""));
@@ -366,7 +369,8 @@ export async function draftLesson({ apiKey, week, teacher, input, onProgress, fe
   const todo = (list || partsFor(week)).filter(p => !have[p]);
 
   async function one(part, extra, onFirstEvent) {
-    const args = { part, spec: specs[part], system, essay, extra, onChars, onFirstEvent, signal };
+    const onUsage = (u, m) => { for (const k of Object.keys(usage)) usage[k] += (u && u[k]) || 0; model = m || model; };
+    const args = { part, spec: specs[part], system, essay, extra, onChars, onFirstEvent, signal, onUsage };
     let r;
     if (!refused.has(part)) {
       try { r = await requestPart(client, { ...args, strict: true }); }
@@ -376,8 +380,6 @@ export async function draftLesson({ apiKey, week, teacher, input, onProgress, fe
       }
     }
     if (!r) r = await requestPart(client, { ...args, strict: false });
-    model = r.model || model;
-    for (const k of Object.keys(usage)) usage[k] += r.usage[k] || 0;
     return r.data;
   }
 
@@ -565,6 +567,24 @@ export function draftToLesson(draft, { page, meta, teacher, zalo, week = null })
   };
   if (lesson.prompt_check) lesson.prompt_check.items.forEach(it => { if (it.ask === undefined) delete it.ask; });
   return lesson;
+}
+
+/* one standalone request with its own model (flow 2's suggestions): strict, else checked here */
+export async function oneCall({ apiKey, spec, system, essay, extra = "", model, effort = "medium", fetchImpl, signal }) {
+  const client = new Anthropic({ apiKey, dangerouslyAllowBrowser: true, ...(fetchImpl ? { fetch: fetchImpl } : {}) });
+  const usage = { input_tokens: 0, output_tokens: 0, cache_read_input_tokens: 0, cache_creation_input_tokens: 0 };
+  let used = model;
+  const onUsage = (u, m) => { for (const k of Object.keys(usage)) usage[k] += (u && u[k]) || 0; used = m || used; };
+  const args = { spec, system, essay, extra, onChars: () => {}, signal, onUsage, model, effort };
+  try {
+    let r;
+    try { r = await requestPart(client, { ...args, strict: true }); }
+    catch (e) {
+      if (!(e instanceof Anthropic.BadRequestError && TOO_BIG.test(friendly(e)))) throw e;
+      r = await requestPart(client, { ...args, strict: false });
+    }
+    return { data: r.data, usage, model: used };
+  } catch (e) { const err = new DraftError(friendly(e)); err.usage = usage; err.model = used; throw err; }
 }
 
 /* the building blocks draft2.js (the flow-2 lesson) shares */

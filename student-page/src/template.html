@@ -1022,6 +1022,9 @@ function makeCtx(id) {
     },
     async ask(options, { answer = null, key, en = false, q = null, icon = "dau_thinking" }) {
       alive(id);
+      options = (options || []).filter(o => o != null && String(o).trim());
+      if (!options.length) return null;              // nothing to ask: never leave her stuck on an empty question
+      if (!(Number.isInteger(answer) && answer >= 0 && answer < options.length)) answer = null;
       if (!(S.answers[key] != null && replay)) await ctx.away();
       app.classList.add("nofade");
       const box = h("div", { class: "choices" });
@@ -1039,7 +1042,7 @@ function makeCtx(id) {
           resolve(i);
         };
         btns.forEach((b, i) => b.addEventListener("click", () => pick(i)));
-        if (S.answers[key] != null && replay) pick(S.answers[key]);
+        if (S.answers[key] != null && replay && btns[S.answers[key]]) pick(S.answers[key]);
         else { needAnswer = box; setBtn(); settle(); }
       });
     },
@@ -1456,7 +1459,7 @@ if (L.prompt_check) add("TR", async c => {
       const i = await c.ask(it.ask.options, { answer: it.ask.answer, key: "prompt" + k, q: it.ask.q });
       await c.say(i === it.ask.answer ? it.ask.right : it.ask.wrong, i === it.ask.answer ? "thumbsup" : "oops");
       await c.gate();
-      content.querySelector(".ask").remove(); prompt.remove(); fit();
+      content.querySelector(".ask")?.remove(); prompt.remove(); fit();
     } else {
       await c.gate();
       prompt.remove(); fit();
@@ -1600,13 +1603,19 @@ function addIdeaDetail(D, k) {
     chain.append(nodes[i] = h("div", { class: "node" }, n)); fit();
   }
   await c.wait(500);
-  await c.say(D.ask.q, "thinking");
-  const i = await c.ask(D.ask.options, { answer: D.ask.answer, key: "idea" + k, q: D.ask.q });
-  // now what is wrong shows on her chain
-  if (D.bad_node != null && nodes[D.bad_node]) nodes[D.bad_node].classList.add("bad");
-  await c.say(i === D.ask.answer ? D.ask.right : D.ask.wrong, i === D.ask.answer ? "thumbsup" : "oops");
-  await c.gate();
-  content.querySelector(".ask").remove(); fit();
+  // a question only when Claude found a good one (else straight to what is wrong)
+  const A0 = D.ask || {}, asking = A0.q && (A0.options || []).filter(o => o && String(o).trim()).length > 1;
+  if (asking) {
+    await c.say(A0.q, "thinking");
+    const i = await c.ask(A0.options, { answer: A0.answer, key: "idea" + k, q: A0.q });
+    if (D.bad_node != null && nodes[D.bad_node]) nodes[D.bad_node].classList.add("bad");     // now what is wrong shows on her chain
+    await c.say(i === A0.answer ? A0.right || "Đúng rồi á em" : A0.wrong || `Chưa đúng nè ${NAME}, đáp án đúng là câu tô xanh á`, i === A0.answer ? "thumbsup" : "oops");
+    await c.gate();
+    content.querySelector(".ask")?.remove(); fit();
+  } else {
+    if (D.bad_node != null && nodes[D.bad_node]) nodes[D.bad_node].classList.add("bad");
+    await c.gate();
+  }
   await c.say(D.fix_intro, "explaining");
   const grow = async (into, before = null) => {
     for (const [j, n] of D.fix_chain.entries()) {
@@ -1667,7 +1676,8 @@ function addIssue(it, k, n, opts) {
       // the prompt with the words that matter lit, or the framework rule
       const refs = [];
       if (it.prompt_focus) {
-        const line = (L.prompt.match(/[^.?!]+[.?!]*/g) || [L.prompt]).find(x => x.toLowerCase().includes(it.prompt_focus.toLowerCase())) || L.prompt;
+        const ptext = it.prompt_text || L.prompt;
+        const line = (ptext.match(/[^.?!]+[.?!]*/g) || [ptext]).find(x => x.toLowerCase().includes(it.prompt_focus.toLowerCase())) || ptext;
         await c.gate();
         const card = c.show(h("div", { class: "card stack" }, h("div", { class: "label" }, "Đề bài"), h("div", { class: "en" }, markPhrase(line.trim(), it.prompt_focus, "hl"))));
         refs.push(card);
@@ -1686,7 +1696,7 @@ function addIssue(it, k, n, opts) {
         const right = i === it.ask.answer;
         await c.say(right ? it.ask.right || "Đúng rồi á em" : it.ask.wrong || `Chưa đúng nè ${NAME}, đáp án đúng là câu tô xanh á`, right ? "thumbsup" : "oops");
         await c.gate();
-        content.querySelector(".ask").remove(); fit();
+        content.querySelector(".ask")?.remove(); fit();
       } else if (said.length) await c.gate();
       // what is missing: her sentence lights up while he says it
       if (mineCard) { mineQ.replaceChildren(...markFocus(mine, it.quote)); if (!it.quote) mineQ.classList.add("lit"); fit(); }
@@ -1946,7 +1956,7 @@ function addMistake(m, optional, lead = [], pos = null) {
       const i = await c.ask(m.ask.options, { answer: m.ask.answer, key: "m-" + m.id, q: m.ask.q });
       await c.say(i === m.ask.answer ? "Đúng rồi á em" : `Chưa đúng nè ${NAME}, đáp án đúng là câu tô xanh á`, i === m.ask.answer ? "thumbsup" : "oops");
       await c.gate();
-      content.querySelector(".ask").remove(); fit();
+      content.querySelector(".ask")?.remove(); fit();
     }
     if (!pos) await c.say(m.count_line, "explaining");
     for (const card of cards) {
@@ -2130,7 +2140,7 @@ function addUnit(u, { pill, bridge = null } = {}, opts = {}) {
       const right = i === u.ask.answer;
       await c.say(right ? u.ask.right || "Đúng rồi á em" : u.ask.wrong || `Chưa đúng nè ${NAME}, đáp án đúng là câu tô xanh á`, right ? "thumbsup" : "oops");
       await c.gate();
-      content.querySelector(".ask").remove(); fit();
+      content.querySelector(".ask")?.remove(); fit();
     } else if (u.group) await c.say(`${u.spots.length} chỗ này cùng một chuyện nè ${NAME}`, "magnify");
     else if (upgrade) await c.say(`Chỗ này em viết đúng rồi, ${TEACHER} gợi ý cách nói hay hơn nè`, "thumbsup");
     else if (views.some(v => v.sp && typedWords(v.sp.note))) await c.say(`Chỗ này ${TEACHER} thêm ${views.some(v => v.sp && isLinker(v.sp.note)) ? "một từ nối" : "chữ"} cho em nè`, "explaining");
@@ -2317,7 +2327,7 @@ function exercise(c, item, key, counter) {
         if (i === item.answer) { btns[i].classList.add("right"); result(true); }
         else { btns[i].classList.add("wrong"); btns[i].disabled = true; result(false); }
       } }, o));
-      reveal = () => btns[item.answer].classList.add("right");
+      reveal = () => { if (btns[item.answer]) btns[item.answer].classList.add("right"); };
       const box = h("div", { class: "choices" }, btns); body.append(box); needAnswer = box;
     } else if (item.type === "tap") {
       const words = item.sentence.split(" ");

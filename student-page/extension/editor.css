@@ -203,7 +203,9 @@ span.sys-chip, .sys-chip[aria-pressed="true"] { background: var(--c); border-col
 .lang-item.sys-0 { border-left: 3px solid #D9483B; padding-left: 10px; }
 .lang-item.sys-1 { border-left: 3px solid #8E6CC8; padding-left: 10px; }
 .lang-item.sys-2 { border-left: 3px solid #2F9E74; padding-left: 10px; }
-.crow-comment.drag-comment { cursor: grab; }
+.drag-comment { cursor: grab; display: block; border-radius: 6px; padding: 1px 4px; margin: 0 -4px; }
+.drag-comment:hover { background: var(--orange-soft, #FFF0DB); }
+.drag-comment + .drag-comment { margin-top: 4px; border-top: 1px dashed var(--line, #ddd); padding-top: 4px; }
 .lang-item.drop-on { outline: 2px dashed var(--orange); outline-offset: 2px; background: var(--orange-soft); }
 /* systematic mistake: which corrections follow each board formula */
 .pat-refs { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 6px; }
@@ -214,3 +216,7 @@ span.sys-chip, .sys-chip[aria-pressed="true"] { background: var(--c); border-col
 .check-item { display: flex; gap: 4px; align-items: center; }
 .check-item .item-text { flex: 1; border: 1px solid transparent; background: transparent; padding: 4px 6px; border-radius: 6px; font: inherit; }
 .check-item .item-text:hover, .check-item .item-text:focus { border-color: var(--line); background: var(--paper); }
+/* Claude's suggested systematic mistakes (Language step) */
+.suggest { margin: 8px 0 12px; padding: 10px 12px; border: 1.5px dashed var(--orange, #FF9800); border-radius: 10px; background: var(--orange-soft, #FFF0DB); }
+.suggest-group { display: flex; flex-wrap: wrap; gap: 6px; align-items: baseline; margin: 6px 0; }
+.suggest .row { gap: 8px; }

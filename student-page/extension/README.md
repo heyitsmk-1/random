@@ -40,18 +40,31 @@ New lessons (**flow 2**: the teacher decides, Claude writes little):
    "=> COMMENT" notes start in Logic, as **Hiện ở Logic** / **Ẩn**). **⬆ Nâng cấp** marks a fix that isn't a
    mistake, only a better way to say it (guessed from the comment: "nâng cấp", "hay hơn"…): her words aren't
    struck through. Drag a comment onto another correction to move it there (only in the lesson: the CRM is
-   never touched; "Trả nhận xét như CRM" undoes it). A note already used in a ✗ / ~ idea starts as Ẩn.
+   never touched; each CRM comment moves on its own, so dragging one back never takes another with it;
+   "Trả nhận xét như CRM" undoes it). A note already used in a ✗ / ~ idea starts as Ẩn.
+   **Claude gợi ý**: when the Logic step opens, a small Sonnet call (a few cents) groups the vocabulary and
+   grammar fixes into recurring mistakes; each tab shows them as a suggestion (names + which fixes).
+   **Dùng gợi ý** fills in the names and the 1 · 2 · 3 chips, which the teacher then changes freely; **Bỏ
+   qua** hides it. Nothing is used unless the teacher clicks.
 5. **Viết lại**: the exact sentences to rewrite, or **Không giao viết lại** (no rewrite this time: Claude
    isn't asked for one, and the student page goes from practice straight to the end).
 6. **Soạn**: one Claude pass in small parts (`lib/draft2.js`), only Đậu's words around those decisions: the
    Logic summary and each problem's walk-through, the map of the essay and the chains of ✗ ideas, "Cụm em
    đã dùng tốt", each systematic mistake's mini-lesson (split into 1-4 patterns: one board formula each,
    with the corrections that follow it) and the exercises (only when one is named), the rewrite, hello and
-   goodbye. Nothing is asked for what the teacher already decided. Socratic questions follow fixed rules:
+   goodbye. Nothing is asked for what the teacher already decided. Leaving the Logic step with it complete
+   starts the Logic and ideas parts in the background, so Soạn only drafts the rest.
+   Claude's parts stay with the lesson, each with a fingerprint of the decisions it was written from. A
+   change the page can follow by itself (Danh sách / Khen / Ẩn, which fixes are in a systematic mistake,
+   moved comments, no rewrite, ✓ / ~ / ✗) updates the lesson at once, keeping every edit made in Xem lại.
+   A change Claude has to write about (a checklist note, an idea, a mistake's name, the rewrite sentences)
+   marks just that part: **Soạn lại N phần** redrafts only those. A failed part can be retried alone, even
+   after leaving the page. Soạn can't be started twice. Socratic questions follow fixed rules:
    facts only (a word's meaning, a gap, a form, a missing word, what the prompt says), one clearly right
    answer, replies that explain; none rather than a bad one. The part that streams first warms the prompt
-   cache before the others start; after a draft the editor shows the tokens (new / read from the cache /
-   written to the cache) and roughly what it cost.
+   cache before the others start; Soạn and Xuất show the tokens of every Claude
+   call for the lesson (new / read from the cache / written to the cache, failed and retried calls included)
+   and roughly what it cost, the suggestions priced at Sonnet's rate.
 7. **Xem lại**: Claude's lines by screen with the phone preview, and the automatic checks (`checks2` in
    `lib/review.js`: quotes verbatim, figures on the chart, Socratic answers, board lines with two formulas in
    one ("/" or ","), patterns with no correction and corrections in no pattern, Đậu's voice).

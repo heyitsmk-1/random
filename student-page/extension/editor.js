@@ -37,7 +37,7 @@ const S = {
   page: null,             // extracted page
   meta: {},               // homework, week, track, prompt, essay_type, overall, student_full, call_name
   tags: {},               // sid -> "intro" | "ts1" | "i1" | ... (the teacher's framework tagging)
-  checklist: [],          // [{ item, ok: true|false|null, note }]
+  checklist: [],          // [{ item, ok: true | "minor" | false | null, note }]: ✓ / ~ (a small fix) / ✗
   notes: "",
   rewriteTarget: null,    // { target, sids } or null (Claude chooses)
   lesson: null,
@@ -283,8 +283,14 @@ function setWeek(week) {
   S.meta.track = w && w.tracks ? w.tracks[0].id : null;
   S.meta.essay_type = w ? w.essay_type : "";
   S.meta.prompt = w ? w.prompts[0].prompt : "";
-  S.checklist = w ? (w.framework.checklist || []).map(item => ({ item, ok: null, note: "" })) : [];
+  S.checklist = checklistFor(week).map(item => ({ item, ok: null, note: "" }));
 }
+/* the week's framework points: the teacher's own list if saved ("Lưu làm mặc định"), else the course's */
+function checklistFor(week) {
+  const w = COURSE.weeks.find(x => x.week === week), mine = ((SETTINGS && SETTINGS.checklists) || {})[week];
+  return mine && mine.length ? [...mine] : w ? [...(w.framework.checklist || [])] : [];
+}
+const checkStatus = c => c.ok === true ? "ok" : c.ok === "minor" ? "minor" : c.ok === false ? "fix" : null;
 
 /* obvious tags: first paragraph = intro, last = conclusion, first sentence of each body = topic sentence */
 function autoTags() {
@@ -1415,7 +1421,7 @@ const inSystemic = it => itemState(it).tab !== "LOGIC" && modeOf(it) === "list" 
 function decisions2() {
   const D = d2(), items = langItems();
   return {
-    checklist: S.checklist.map((c, i) => ({ point: i, item: c.item, ok: c.ok, note: c.note })),
+    checklist: S.checklist.map((c, i) => ({ point: i, item: c.item, status: checkStatus(c), note: c.note })),
     ideas: hasIdeas() ? ideasFromTags().map(x => {
       const st = ideaState(x);
       return { tag: x.tag, sids: x.sids, status: st.status || "ok", ...(st.status === "fix" ? { fix_type: st.fixType || null } : {}), note: ideaNote(x), card_note: st.note.trim() };
@@ -1438,8 +1444,9 @@ function blockers2() {
   const D = d2(), out = [], items = langItems();
   const open = S.checklist.filter(c => c.ok == null).length;
   if (open) out.push(["logic", `Logic: còn ${open} điểm chưa tick ✓ hoặc ✗`]);
-  const bare = S.checklist.filter(c => c.ok === false && !c.note.trim()).length;
-  if (bare) out.push(["logic", `Logic: ${bare} điểm ✗ chưa có ghi chú (Claude cần biết sai ở đâu)`]);
+  const bare = S.checklist.filter(c => (c.ok === false || c.ok === "minor") && !c.note.trim()).length;
+  if (bare) out.push(["logic", `Logic: ${bare} điểm ✗ / ~ chưa có ghi chú (Claude cần biết sai ở đâu)`]);
+  if (S.checklist.some(c => !c.item.trim())) out.push(["logic", "Logic: có điểm Framework chưa có nội dung (ghi vào, hoặc bấm × để bỏ)"]);
   if (hasIdeas() && !ideasFromTags().length) out.push(["logic", "Logic: chưa gắn nhãn ý nào (Ý 1, Ý 2…)"]);
   const badIdeas = ideasFromTags().filter(x => ideaState(x).status === "fix" && !ideaNote(x)).length;
   if (badIdeas) out.push(["logic", `Logic: ${badIdeas} ý ✗ chưa có ghi chú`]);
@@ -1466,11 +1473,25 @@ function renderLogic() {
   const rerender = () => { touch(); renderLogic(); };
   const checklist = h("div", { class: "card" },
     h("h1", {}, "Logic"),
-    h("p", { class: "muted" }, "Tick từng điểm Framework của tuần: ✓ đạt · ✗ chưa đạt, và ghi chú cái sai. Claude không tự chấm: nó chỉ viết lời Đậu từ dấu tick và ghi chú của anh."),
-    S.checklist.map(c => h("div", { class: "check-row" },
-      triRow([["yes", "✓"], ["no", "✗"]], c.ok === true ? "yes" : c.ok === false ? "no" : null, v => { c.ok = v === "yes" ? true : v === "no" ? false : null; rerender(); }),
-      h("div", {}, c.item),
-      h("input", { placeholder: c.ok === false ? "sai ở đâu (bắt buộc)" : "ghi chú", value: c.note, oninput: e => { c.note = e.target.value; touch(); } }))),
+    h("p", { class: "muted" }, "Tick từng điểm Framework của tuần: ✓ đạt · ~ cần chỉnh nhẹ · ✗ chưa đạt, và ghi chú cái sai (bắt buộc với ~ và ✗). Claude không tự chấm: nó chỉ viết lời Đậu từ dấu tick và ghi chú của anh. Sửa chữ của một điểm, bấm × để bỏ, hoặc thêm điểm của anh."),
+    S.checklist.map((c, i) => h("div", { class: "check-row" },
+      triRow([["yes", "✓"], ["minor", "~"], ["no", "✗"]], c.ok === true ? "yes" : c.ok === "minor" ? "minor" : c.ok === false ? "no" : null,
+        v => { c.ok = v === "yes" ? true : v === "minor" ? "minor" : v === "no" ? false : null; rerender(); }),
+      h("div", { class: "check-item" },
+        h("input", { class: "item-text", value: c.item, placeholder: "điểm Framework", "aria-label": "Điểm Framework", oninput: e => { c.item = e.target.value; touch(); } }),
+        h("button", { class: "btn link small", type: "button", title: "Bỏ điểm này", "aria-label": "Bỏ điểm này", onclick: () => { S.checklist.splice(i, 1); rerender(); } }, "×")),
+      h("input", { placeholder: c.ok === false ? "sai ở đâu (bắt buộc)" : c.ok === "minor" ? "chỉnh gì (bắt buộc)" : "ghi chú", value: c.note, oninput: e => { c.note = e.target.value; touch(); } }))),
+    h("div", { class: "row" },
+      h("button", { class: "btn small", type: "button", onclick: () => { S.checklist.push({ item: "", ok: null, note: "" }); rerender(); setTimeout(() => { const all = document.querySelectorAll(".check-item .item-text"); if (all.length) all[all.length - 1].focus(); }); } }, "+ Thêm điểm"),
+      h("button", { class: "btn small", type: "button", title: "Bài sau của tuần này sẽ bắt đầu với danh sách này (lưu trong Chrome của anh)", onclick: async () => {
+        const items = S.checklist.map(c => c.item.trim()).filter(Boolean);
+        const checklists = { ...(SETTINGS.checklists || {}), [S.meta.week]: items };
+        SETTINGS = { ...SETTINGS, checklists }; await setSettings({ checklists }); rerender();
+      } }, `Lưu làm mặc định cho Week ${S.meta.week}`),
+      ((SETTINGS.checklists || {})[S.meta.week] || []).length ? h("button", { class: "btn link small", type: "button", title: "Bài sau dùng lại danh sách gốc của khoá học", onclick: async () => {
+        const checklists = { ...(SETTINGS.checklists || {}) }; delete checklists[S.meta.week];
+        SETTINGS = { ...SETTINGS, checklists }; await setSettings({ checklists }); rerender();
+      } }, "Bỏ mặc định đã lưu") : null),
     w.task === 1 ? h("p", { class: "small muted" }, "Số liệu sai thì ghi vào ghi chú, vd: “56% là năm 2010 không phải 2000; thiếu năm 2000 của swimming”. Claude lấy đúng số từ biểu đồ.") : null,
     trcc.length ? h("details", {}, h("summary", {}, `Nhận xét của anh ở phần Lập luận và Mạch lạc (${trcc.length})`),
       h("div", { class: "crows static" }, trcc.map(t => h("div", { class: "crow" }, t.quote ? h("div", { class: "crow-text", lang: "en" }, t.quote) : null, h("div", { class: "crow-comment" }, t.comment))))) : null);
@@ -1615,7 +1636,7 @@ function renderDraft2() {
     h("h1", {}, "Soạn với Claude"),
     h("p", {}, "Claude chỉ viết lời của Đậu quanh quyết định của anh: tổng kết Logic, từng chỗ cần sửa, câu hỏi Socratic, cụm em dùng tốt, bài giảng lỗi hệ thống (nếu có), phần viết lại (nếu anh giao), lời chào và kết thúc. Nhận xét và chỗ sửa vẫn là chữ của anh."),
     h("ul", {},
-      h("li", {}, `Logic: ${D.checklist.filter(c => c.ok === true).length} ✓, ${D.checklist.filter(c => c.ok === false).length} ✗` +
+      h("li", {}, `Logic: ${D.checklist.filter(c => c.status === "ok").length} ✓, ${D.checklist.filter(c => c.status === "minor").length} ~, ${D.checklist.filter(c => c.status === "fix").length} ✗` +
         (D.ideas.length ? ` · ${D.ideas.length} ý (${D.ideas.filter(x => x.status === "fix").length} ✗, ${D.ideas.filter(x => x.status === "improve").length} ~)` : "") +
         (D.topics.length ? ` · ${D.topics.filter(x => !x.ok).length}/${D.topics.length} topic ✗` : "")),
       h("li", {}, `Language: ${n.systemic} chỗ trong lỗi hệ thống, ${n.list} trong danh sách, ${n.praise} khen, ${n.hide} ẩn` + (n.teach ? `, ${n.teach} hiện ở Logic` : "") + " · " +

@@ -209,3 +209,8 @@ span.sys-chip, .sys-chip[aria-pressed="true"] { background: var(--c); border-col
 .pat-refs { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 6px; }
 .pat-ref { font: inherit; font-size: 12.5px; padding: 3px 10px; border-radius: 999px; border: 1px solid var(--line, #ddd); background: #fff; cursor: pointer; }
 .pat-ref[aria-pressed="true"] { background: #FFF1DC; border-color: #FF9800; color: #8A4B00; font-weight: 600; }
+/* the framework checklist: ✓ / ~ / ✗, each point editable */
+.tri button[aria-pressed="true"][data-v="minor"] { background: var(--orange-soft); border-color: var(--orange); }
+.check-item { display: flex; gap: 4px; align-items: center; }
+.check-item .item-text { flex: 1; border: 1px solid transparent; background: transparent; padding: 4px 6px; border-radius: 6px; font: inherit; }
+.check-item .item-text:hover, .check-item .item-text:focus { border-color: var(--line); background: var(--paper); }

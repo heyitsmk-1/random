@@ -44,10 +44,10 @@ function fakePart(part, payload) {
   const first = Object.values(S).find(s => s.paragraph > 0) || payload.sentences[0];
   const ASK = { q: "Chữ này nghĩa là gì nè em?", options: ["Nghĩa thứ nhất", "Nghĩa thứ hai"], answer: 0, right: "Đúng rồi, chữ này hợp nghĩa hơn nè", wrong: "Chưa đúng nha, mình xem lại nghĩa của chữ này" };
   if (part === "logic") return { logic: {
-    summary: D.checklist.every(c => c.ok) ? ["Logic của em chuẩn Framework hết rồi á"] : ["Em làm đúng Framework gần hết rồi nè", "Chỉ còn một chỗ cần sửa thôi"],
+    summary: D.checklist.every(c => c.status === "ok") ? ["Logic của em chuẩn Framework hết rồi á"] : ["Em làm đúng Framework gần hết rồi nè", "Chỉ còn một chỗ cần sửa thôi"],
     points: D.checklist.map((c, i) => ({ line: `Điểm ${i + 1} của Framework` })),
     issues: [
-      ...D.checklist.filter(c => !c.ok).map(c => ({ point: c.point, title: "Số liệu chưa có năm", sids: [first.id], quote: words(first.original, 3), part: "Body 1",
+      ...D.checklist.filter(c => c.status !== "ok").map(c => ({ point: c.point, title: "Số liệu chưa có năm", sids: [first.id], quote: words(first.original, 3), part: "Body 1",
         prompt_focus: payload.prompt_words || "", rule: "Theo Framework, số liệu phải đi kèm năm", ask: { ...ASK, q: "Đề bài hỏi về cái gì nè em?" }, missing: ["Câu của em còn thiếu năm nè", "Số liệu luôn đi kèm năm"],
         fix: "A corrected sentence with the year.", changes: [{ from: words(first.original, 2), to: "A corrected sentence", why: "Mình nói rõ hơn nha" }, { from: "", to: "with the year", why: "Số liệu luôn đi kèm năm" }],
         series: payload.chart_row || "", col: payload.chart_col || "" })),
@@ -132,9 +132,17 @@ try {
   const rows = page.locator(".card").first().locator(".check-row");
   const n = await rows.count();
   ok(n === W.framework.checklist.length, `the week's checklist (${n} points)`);
+  // the teacher's own list: drop the second point, add one
+  const second = await rows.nth(1).locator(".item-text").inputValue();
+  await rows.nth(1).getByRole("button", { name: "Bỏ điểm này" }).click();
+  await page.getByRole("button", { name: "+ Thêm điểm" }).click();
+  await rows.last().locator(".item-text").fill("Có ví dụ cụ thể cho mỗi ý");
+  ok(await rows.count() === n, "a point removed and one added");
   for (let i = 0; i < n; i++) await rows.nth(i).locator(".tri button").first().click();      // ✓
-  await rows.nth(n - 1).locator(".tri button").nth(1).click();                                // last point ✗
-  await rows.nth(n - 1).locator("input").fill(W.task === 1 ? "56% là năm 2010 không phải 2000" : "Ý 2 chưa tới kết quả cuối");
+  await rows.nth(n - 1).locator(".tri button").nth(2).click();                                // last point ✗
+  await rows.nth(n - 1).locator("input:not(.item-text)").fill(W.task === 1 ? "56% là năm 2010 không phải 2000" : "Ý 2 chưa tới kết quả cuối");
+  await rows.nth(0).locator(".tri button").nth(1).click();                                    // first point ~
+  await rows.nth(0).locator("input:not(.item-text)").fill("Câu mở bài hơi dài, cắt bớt nha");
   if (KIND !== "essay" && KIND !== "week1") ok(await page.locator(".card .essay").count() === 0, "Task 1: no idea tagging");
   if (KIND === "essay" || KIND === "week1") {
     const ideaRows = page.locator(".card").nth(1).locator(".idea-row");
@@ -222,7 +230,8 @@ try {
   const want = ["frame", "language", "logic", ...(KIND === "essay" || KIND === "week1" ? ["ideas"] : []), ...(sysWanted ? ["practice", "systemic"] : [])].sort().join(",");
   ok(parts === want, `parts asked: ${parts}`);
   const D = asked[0].payload.decisions;
-  ok(D.checklist.filter(c => c.ok === false).length === 1 && D.language.items.length === ni && (noRw ? D.no_rewrite && !D.rewrite : D.rewrite.sids.length === 1), "the teacher's decisions are sent");
+  ok(D.checklist.filter(c => c.status === "fix").length === 1 && D.checklist.filter(c => c.status === "minor").length === 1 && D.language.items.length === ni && (noRw ? D.no_rewrite && !D.rewrite : D.rewrite.sids.length === 1), "the teacher's decisions are sent");
+  ok(D.checklist.some(c => c.item === "Có ví dụ cụ thể cho mỗi ý") && !D.checklist.some(c => c.item === second), "the edited checklist is sent");
   ok(!noRw || !JSON.stringify(asked.find(a => a.part === "frame").body.output_config || {}).includes("starters"), "no rewrite: Claude isn't asked for one");
   ok(D.language.items.some(i => i.mode === "hide") && (nv < 2 || D.language.items.some(i => i.mode === "praise")), "Ẩn and Khen are sent");
   ok(!sysWanted || (D.language.systemic.length === 2 && D.language.systemic[0].refs.length === 2 && D.language.systemic[1].refs.length === 1), "two systematic mistakes sent with their fixes");

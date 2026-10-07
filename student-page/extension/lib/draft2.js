@@ -71,7 +71,7 @@ export function systemBlocks2(week, teacher) {
 
 # The teacher has already decided everything
 The teacher went through the essay and decided (in "decisions"):
-- logic_checklist: which points of this week's framework she met (ok true/false) with the teacher's notes.
+- checklist: each point of this week's framework (the teacher may have added or removed points) with its status: "ok" (met), "minor" (met, but needs a small correction) or "fix" (not met), and the teacher's note.
 - ideas (essays): how each idea is developed: "ok", "improve" (could go further) or "fix" (broken), with notes (the teacher's CRM comments on it, then anything the teacher added). A "fix" idea has a fix_type: "replace" (the idea goes the wrong way: a new direction replaces her chain), "link" (one step of her chain is wrong, the steps before it hold), "missing" (the chain is right but stops short, or skips a step).
 - topics (Week 1): whether each paraphrase topic is right, with notes.
 - language.items: what the student sees of each correction and note: "systemic" (taught in a systematic mistake lesson), "list" (only listed, with the teacher's own comment, in an optional list of other mistakes), "praise" (a compliment from the teacher, shown with the good phrases), "hide" (not shown), "teach" (a comment about her ideas, shown as is in the Logic part). tab = "LR" (vocabulary), "GRA" (grammar) or "LOGIC". upgrade true = her words are not wrong: the teacher suggests a better way to say it (never call it a mistake).
@@ -98,9 +98,9 @@ A question makes her notice a fact; it never asks for an opinion or a guess at w
 - If no question meets these rules, leave q "", options [], right "" and wrong "": the page then skips the question.
 
 # What you write, part by part
-- logic.points: one per logic_checklist item, in the same order: line = that point in plain Vietnamese for the student, under 12 words, saying what she did or didn't do (e.g. "Em nhận ra đây là dữ liệu động", "Overview có đủ Trends và Differences", "Body 2 còn thiếu năm cho số liệu"). It must agree with the teacher's ok.
-- logic.summary: 1-2 lines. If every point is ok: one specific line of praise for her logic. Otherwise: her logic is right except the ✗ points, named briefly (e.g. "Em tả đúng chart dynamic rồi, overview và body cũng đúng Framework hết á, chỉ có phần data em tả hơi thiếu nè").
-- logic.issues: one per problem the teacher noted under a ✗ point (one note may list several problems: one issue each, in essay order); none for ok points. point = the checklist index. title = 2-5 Vietnamese words. sids = the sentence(s) it is about, never empty: when the problem is something missing (no overview, no conclusion), the sentence nearest to where it should be. quote = her exact words there, verbatim from the original text ("" if the problem is something missing).
+- logic.points: one per logic_checklist item, in the same order: line = that point in plain Vietnamese for the student, under 12 words, saying what she did or didn't do (e.g. "Em nhận ra đây là dữ liệu động", "Overview có đủ Trends và Differences", "Body 2 còn thiếu năm cho số liệu"). It must agree with the teacher's status (a "minor" point: what she did, with the small thing to adjust).
+- logic.summary: 1-2 lines. If every point is ok: one specific line of praise for her logic. Otherwise: her logic is right except the ✗ points (and the small ~ adjustments), named briefly (e.g. "Em tả đúng chart dynamic rồi, overview và body cũng đúng Framework hết á, chỉ có phần data em tả hơi thiếu nè").
+- logic.issues: one per problem the teacher noted under a "fix" or "minor" point (one note may list several problems: one issue each, in essay order); none for ok points. point = the checklist index. title = 2-5 Vietnamese words. sids = the sentence(s) it is about, never empty: when the problem is something missing (no overview, no conclusion), the sentence nearest to where it should be. quote = her exact words there, verbatim from the original text ("" if the problem is something missing).
   The page walks her through each issue one step at a time, so write each step:
   - part = where we are in her essay, as Đậu says it after "Mình xét": "câu thesis của em", "Body 1", "câu mở bài", "phần overview", "câu topic sentence của Body 2".
   - prompt_focus = when the problem is about what the prompt asks (off-topic, half of the question missing, the wrong position), the words of the prompt that matter, copied verbatim from the prompt (the page shows the prompt with them highlighted); else "".
@@ -109,6 +109,7 @@ A question makes her notice a fact; it never asks for an opinion or a guess at w
   - missing = 1-2 Đậu lines naming exactly what her sentence lacks or gets wrong, built on the teacher's note (Task 1: with the right numbers and years from the data), e.g. "Vậy nên câu của em còn thiếu mức độ em đồng ý nè". The page highlights her sentence while it says them.
   - fix = the corrected sentence in English ("" if the fix isn't a sentence). The page introduces it with "${teacher} đề xuất em sửa lại như sau nhé". changes (only when fix is a sentence, else []): the changes from her sentence to fix, in order, 1-4 of them: from = her words verbatim ("" when words are added), to = the words in fix ("" when words are dropped), why = 1 short Đậu line on why, built on the teacher's note (e.g. from "I mostly agree", to "", why "mostly nghe như em chỉ đồng ý một phần, người đọc không chắc em đứng ở đâu"). One entry may keep a good part (from = to) with a line saying to keep it.
   - series and col = for a Task 1 data problem, the row and column of the figure on the chart, as written in the data (else "").
+  For a "minor" point the page shows one short screen (her sentence, one line, the rewrite): part, prompt_focus and rule are "", ask has q "" and no options, missing = 1 short line on what to adjust.
   Week 1: each paraphrase topic with ok false is an issue too (point -1, title "Topic N", part "Topic N", fix = a corrected paraphrase, the teacher's when the note gives one).
 - ideas (essays): intro = 1 line said after the page counts her ideas (e.g. "Ý nào cũng có hướng rồi, mình đào sâu thêm mấy ý này nha"). paras = one per paragraph of her essay, in order: short = what that paragraph says, 2-5 Vietnamese words (e.g. "Đồng ý một phần", "Tóm lại ý chính"). names = every idea in order: tag, short = the idea in 2-4 Vietnamese words for a small chip (e.g. "Chi phí thấp"), text = the idea in Vietnamese, under 10 words, problem = for a "fix" idea what is wrong in under 8 Vietnamese words, from the teacher's note (e.g. "Người cần nhà vốn ít đi làm"), else "". tips = one per "improve" idea: tip = 1 short line from the teacher's note (what to add). details = one per "fix" idea, built on the teacher's note:
   - sids = the idea's sentences; chain = her reasoning as 2-5 short Vietnamese links (under 9 words each), paraphrased faithfully; bad_node and gap_after are -1 unless the mode uses them.
@@ -122,7 +123,7 @@ A question makes her notice a fact; it never asks for an opinion or a guess at w
   example = a new bad/good pair (not from her essay). better = for each note ref (n…) in it, the better version of her sentence in English (the teacher's when given).
 - practice (only with systematic mistakes): 4-6 core items covering every systematic mistake (1-2 for each), using these kinds where they fit: a "choose" item with sentence "" (3 English sentences as options), a "choose" item with a sentence containing "___" (3 options), a "tap" item (a sentence with exactly one wrong word; wrong = that word as it appears between spaces, fix = the right word), a "build" item (vi = a Vietnamese sentence, answer_words = 4-8 English chunks in order, extra = 2 wrong chunks). mistake = the id of the systematic mistake it practises. New sentences on the essay's topic, never copied from her essay. explain = 1 short line. core = their ids in order. intro = 2 lines.
 - hello: 2 lines. Line 1 introduces Đậu as ${teacher}'s TA. Line 2 says you'll look at the homework together.
-- results: criteria = 1 line introducing the 4 scores; score = 2 lines (the overall band, then what this lesson focuses on: only things the teacher decided, i.e. the ✗ Logic points, the ideas to fix, the systematic mistakes if any).
+- results: criteria = 1 line introducing the 4 scores; score = 2 lines (the overall band, then what this lesson focuses on: only things the teacher decided, i.e. the ✗ (and ~) Logic points, the ideas to fix, the systematic mistakes if any).
 - rewrite: exactly rewrite_target.sids: sids = them, target = rewrite_target.target, and label, intro, task, flow and model talk about nothing else. label = what she rewrites (e.g. "Câu về swimming em đã viết"). intro = 2 lines saying it's ${teacher}'s request and what to keep in mind (from the decisions about those sentences). task = 1 line (can be empty). flow = English chain with "→". starters = 2-3 sentence starters ending with "…". phrases = 3-4 useful phrases. checklist = 2-3 short checks. model = the teacher's model when given, else one written for her level, about as long as what she wrote there.
 - takeaways: 3-4 short Vietnamese lines, only from the decisions (the ✗ points, the systematic mistakes, the most useful fixes).
 - finish: summary = 2 lines, extra_prompt = "Em muốn luyện thêm {n} câu nữa không?", later = 2 lines, done = 2 lines (the last ends warmly; the page adds a quote after it).
@@ -182,6 +183,8 @@ export function draftLesson2({ apiKey, week, teacher, input, onProgress, fetchIm
 }
 
 /* ---------- parts + decisions + page -> the lesson the student page reads ---------- */
+/* a checklist point's status (older drafts sent ok true/false) */
+const statusOf = c => c.status || (c.ok === true ? "ok" : c.ok === "minor" ? "minor" : c.ok === false ? "fix" : "ok");
 const pointOf = t => ({ sids: t.sentence_ids, quote: t.quote || "", comment: t.comment || "", ...(t.fix ? { fix: t.fix } : {}) });
 
 export function toLesson2(parts, { page, meta, teacher, zalo, week, decisions }) {
@@ -226,10 +229,12 @@ export function toLesson2(parts, { page, meta, teacher, zalo, week, decisions })
     hello: f.hello, results: f.results,
     logic: {
       summary: lg.summary,
-      points: D.checklist.map((c, i) => ({ ok: c.ok !== false, line: (lg.points[i] && lg.points[i].line) || c.item })),
+      // status: ok / minor (a small correction) / fix; ok kept for older pages
+      points: D.checklist.map((c, i) => { const st = statusOf(c); return { ok: st === "ok", status: st, line: (lg.points[i] && lg.points[i].line) || c.item }; }),
       issues: lg.issues.map(x => {
         const ask = askOf(x.ask), missing = x.missing || x.say || [];
-        return { title: x.title, sids: x.sids.filter(s => sids.has(s)), quote: x.quote, part: x.part || "",
+        const minor = x.point >= 0 && statusOf(D.checklist[x.point] || {}) === "minor";
+        return { title: x.title, sids: x.sids.filter(s => sids.has(s)), quote: x.quote, part: minor ? "" : x.part || "", ...(minor ? { minor: true } : {}),
           prompt_focus: x.prompt_focus && prompts.some(p => p.includes(x.prompt_focus)) ? x.prompt_focus : "", rule: x.rule || "",
           ...(ask ? { ask } : {}), missing, say: missing, fix: x.fix,
           ...(x.fix && (x.changes || []).length ? { changes: x.changes.filter(ch => ch.why && (ch.from || ch.to)) } : {}), series: x.series, col: x.col };

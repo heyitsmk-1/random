@@ -22,8 +22,10 @@ options) and add the Claude API key; the Netlify token is optional.
 
 New lessons (**flow 2**: the teacher decides, Claude writes little):
 
-3. **Logic** (TR/TA · CC): the week's framework checklist from `course.json`, blank: ✓ / ✗ and a note for
-   each point (data mistakes go in the note: "56% là năm 2010 không phải 2000"). Essays: the idea sentences
+3. **Logic** (TR/TA · CC): the week's framework checklist from `course.json`, blank: ✓ (met) / ~ (a small
+   correction) / ✗ (not met) and a note for each point, required for ~ and ✗ (data mistakes go in the note:
+   "56% là năm 2010 không phải 2000"). Points can be reworded, removed (×) or added (+ Thêm điểm), and
+   **Lưu làm mặc định cho Week N** keeps that list for the week's next essays (in Chrome). Essays: the idea sentences
    are guessed (Ý 1–4: "The first…", the sentence after the topic sentence, "Moreover / On top of that / In
    terms of / Regarding…"); the teacher fixes the tags (sentences tagged with the same Ý are one idea) and
    marks each idea ✓ / ~ / ✗. The teacher's CRM comments on an idea's sentences (TR/CC comments and plain
@@ -62,12 +64,14 @@ the first screen (it comes where it matters, and stays behind "Đề"). Results 
 screen, then in essay order: each problem, the comments moved to Logic, and the ideas) → Language → practice
 (only with a systematic mistake) → Viết lại (it opens on the idea's chain from Logic) → end.
 
-- A Logic problem is walked through step by step: "Mình xét câu thesis của em nha, em đã viết…", then the
+- A ~ point gets one short "Chỉnh nhẹ" screen (her sentence, one line, the rewrite); a ✗ point is walked
+  through step by step: "Mình xét câu thesis của em nha, em đã viết…", then the
   prompt with its key words lit or the framework rule, a Socratic question, what her sentence lacks (it
   lights up), "anh Khoa đề xuất em sửa lại như sau nhé" and the rewrite, each change lit in both cards while
   Đậu says why.
-- The ideas: "Rồi bây giờ mình xem các idea của em nhé", the map of her essay (Mở bài / Body / Kết bài with
-  ✓ / ✗ and the ideas as chips), then "Em phát triển ý tới đâu?": the page counts them ("Em có 4 ý: 2 ý ổn
+- The ideas: "Rồi bây giờ mình xem các idea của em nhé", the map of her essay (what Mở bài / each Body / Kết
+  bài is, no verdict per part; a body's ideas as chips coloured green ổn / yellow nâng cấp thêm / red cần
+  sửa, with a legend; the same three colours everywhere), then "Em phát triển ý tới đâu?": the page counts them ("Em có 4 ý: 2 ý ổn
   rồi…"), the cards drop in one by one, and the ✗ ones open their chain (drawn unmarked while she answers,
   then fixed by its type: a new direction under her struck-through chain, the new links after the last good
   one, or the missing steps).

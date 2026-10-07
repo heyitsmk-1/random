@@ -24,6 +24,9 @@
   --blush-soft: #FDEBE7;
   --sky-soft: #E3EFFB;
   --sky-deep: #2F6CA6;
+  --yellow-soft: #FFF1C7;
+  --yellow-deep: #8A5A00;
+  --yellow: #E0A800;
   --chalk: #F4F1E6;
   --grid: rgba(80, 140, 200, .10);
   --grid-strong: rgba(80, 140, 200, .20);
@@ -38,6 +41,7 @@
     --orange: #FFA42E; --orange-deep: #FFB866; --orange-soft: #3A2A17;
     --mint: #6FC9A2; --mint-deep: #7FD8B1; --mint-soft: #1D3A2E;
     --coral: #FF8373; --coral-soft: #402421; --blush-soft: #3A2622; --chalk: #F4F1E6; --sky-soft: #1D2F42; --sky-deep: #8FC3F2;
+    --yellow-soft: #3A3115; --yellow-deep: #F2CC6B; --yellow: #E0B53A;
     --grid: rgba(120, 170, 230, .07); --grid-strong: rgba(120, 170, 230, .13);
     --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 6px 18px rgba(0, 0, 0, .25);
     color-scheme: dark;
@@ -45,6 +49,7 @@
 }
 :root[data-theme="dark"] {
   --bg: #1B1815; --paper: #26211D; --ink: #F3ECE5; --muted: #B4A79C; --line: #3A322C;
+  --yellow-soft: #3A3115; --yellow-deep: #F2CC6B; --yellow: #E0B53A;
   --orange: #FFA42E; --orange-deep: #FFB866; --orange-soft: #3A2A17;
   --mint: #6FC9A2; --mint-deep: #7FD8B1; --mint-soft: #1D3A2E;
   --coral: #FF8373; --coral-soft: #402421; --blush-soft: #3A2622; --chalk: #F4F1E6; --sky-soft: #1D2F42; --sky-deep: #8FC3F2;
@@ -298,6 +303,14 @@ mark.hl { background: linear-gradient(transparent 55%, var(--orange-soft) 55%); 
 .map .c { background: var(--mint-soft); color: var(--mint-deep); }
 .map .s { background: var(--sky-soft); color: var(--sky-deep); }
 .map .o { background: var(--orange-soft); color: var(--orange-deep); }
+.map .y { background: var(--yellow-soft); color: var(--yellow-deep); }
+.map .r { background: var(--coral-soft); color: var(--coral); }
+.map-legend { display: flex; flex-wrap: wrap; gap: .4em 1em; font-size: .8em; color: var(--muted); margin-top: .2em; }
+.map-legend span { display: inline-flex; align-items: center; gap: .35em; }
+.map-legend i { width: .8em; height: .8em; border-radius: 4px; }
+.map-legend i.c { background: var(--mint-soft); box-shadow: inset 0 0 0 1.5px var(--mint-deep); }
+.map-legend i.y { background: var(--yellow-soft); box-shadow: inset 0 0 0 1.5px var(--yellow); }
+.map-legend i.r { background: var(--coral-soft); box-shadow: inset 0 0 0 1.5px var(--coral); }
 /* Task 1 */
 .t1-type { display: block; font: 700 .7em/1.2 var(--font-display); letter-spacing: .05em; text-transform: uppercase; color: var(--orange-deep); }
 .chart-card { padding: .7em .8em; }
@@ -357,9 +370,9 @@ mark.hl { background: linear-gradient(transparent 55%, var(--orange-soft) 55%); 
 .ov.tap:active { transform: translateY(2px); }
 .chev { flex: none; font: 800 1.5em/1 var(--font-display); color: var(--coral); }
 .ov.tap .go { color: var(--coral); font-weight: 600; }
-.ov.tap.improve { border-color: var(--orange); }
-.ov.tap.improve .go, .ov.tap.improve .chev { color: var(--orange-deep); }
-.icon.tilde { display: inline-grid; place-items: center; border-radius: 50%; background: var(--orange-soft); color: var(--orange-deep); font: 900 1em/1 var(--font-display); }
+.ov.tap.improve { border-color: var(--yellow); }
+.ov.tap.improve .go, .ov.tap.improve .chev { color: var(--yellow-deep); }
+.icon.tilde { display: inline-grid; place-items: center; border-radius: 50%; background: var(--yellow-soft); color: var(--yellow-deep); font: 900 1em/1 var(--font-display); }
 .icon.tilde b { font-size: 1.5em; line-height: 1; margin-top: -.15em; }
 .ov.reveal .go, .ov.reveal .chev { animation: hintIn .5s ease both; }
 @keyframes hintIn { from { opacity: 0; } }
@@ -1461,7 +1474,7 @@ if (LG) add("LOGIC", async c => {
   const list = c.show(h("div", { class: "stack" }));
   for (const [k, p] of LG.points.entries()) {
     await c.wait(k ? 380 : 150);
-    list.append(h("div", { class: "card ov rise" }, statusIcon(p.ok ? "ok" : "fix"), h("div", { class: "t" }, h("b", {}, p.line)))); fit();
+    list.append(h("div", { class: "card ov rise" }, statusIcon(p.status === "minor" ? "improve" : p.ok ? "ok" : "fix"), h("div", { class: "t" }, h("b", {}, p.line)))); fit();
   }
   await c.wait(300);
   await c.say(LG.summary[0], LG.points.every(p => p.ok) ? "cheering" : "explaining");
@@ -1477,21 +1490,25 @@ const addIdeasOverview2 = () => {
     const map = h("div", { class: "map" });
     c.show(h("div", { class: "card stack" }, h("div", { class: "label" }, "Tổng quan bài của em"), map));
     if (mode === "talk") setMode("away");
-    const issueSids = new Set((LG ? LG.issues : []).flatMap(it => it.sids || []));
     const nBody = paras.length - 2;
     for (const [k, p] of paras.entries()) {
       const ids = p.sentences.map(x => x.id);
       const name = paras.length < 3 ? `Đoạn ${k + 1}` : k === 0 ? "Mở bài" : k === paras.length - 1 ? "Kết bài" : nBody > 1 ? `Body ${k}` : "Body";
       const ideas = I.overview.filter(o => (o.sids || []).some(x => ids.includes(x)));
-      const ok = !ids.some(x => issueSids.has(x)) && !ideas.some(o => ideaStatus(o) === "fix");
-      // two chips a row (one alone spans both columns)
-      const chip = (o, alone) => h("div", { class: "chip " + (ideaStatus(o) === "fix" ? "o" : ideaStatus(o) === "improve" ? "s" : "c"), style: alone ? "grid-column: 2 / 4" : null }, o.short || o.text);
-      const row = [h("div", { class: "lab" }, TICK(ok), name)];
+      // what each part is, no verdict on the part; an idea's chip is coloured by its status
+      // (green ổn, yellow nâng cấp thêm, red cần sửa), two a row (one alone spans both columns)
+      const chip = (o, alone) => h("div", { class: "chip " + ({ fix: "r", improve: "y" }[ideaStatus(o)] || "c"), style: alone ? "grid-column: 2 / 4" : null }, o.short || o.text);
+      const row = [h("div", { class: "lab" }, name)];
       if (!ideas.length) row.push(h("div", { class: "wide" }, (I.paras || [])[k] || ""));
       for (let j = 0; j < ideas.length; j += 2) { if (j) row.push(h("div")); row.push(chip(ideas[j], !ideas[j + 1]), ideas[j + 1] ? chip(ideas[j + 1]) : null); }
       await c.wait(k ? 550 : 300);
       map.append(...row.filter(Boolean)); fit();
     }
+    // what the colours mean (only those on the map)
+    const used = new Set(I.overview.map(ideaStatus));
+    const legend = [["ok", "c", "ý ổn"], ["improve", "y", "nâng cấp thêm"], ["fix", "r", "cần sửa"]].filter(([st]) => used.has(st));
+    await c.wait(300);
+    if (legend.length) map.parentNode.append(h("div", { class: "map-legend rise" }, legend.map(([, cl, t]) => h("span", {}, h("i", { class: cl }), t)))); fit();
   }, { name: "ideas-map" });
   // the ideas drop in one by one with the teacher's ✓ / ~ / ✗; the ✗ ones open their chain
   add("LOGIC", async c => {
@@ -1637,7 +1654,8 @@ if (!V2) (L.ideas ? L.ideas.details : []).forEach(addIdeaDetail);
 // each change lit in both cards while he says why. Lessons drafted before the walk: his lines, then the fix
 function addIssue(it, k, n, opts) {
   add("LOGIC", async c => {
-    c.show(h("div", { class: "row" }, h("span", { class: "pill tone-blush" }, `Cần sửa ${k + 1}/${n}`), it.title ? h("span", { class: "small muted" }, it.title) : null));
+    // a ~ point (a small correction) is one short screen: her sentence, one line, the rewrite
+    c.show(h("div", { class: "row" }, h("span", { class: "pill " + (it.minor ? "tone-orange" : "tone-blush") }, `${it.minor ? "Chỉnh nhẹ" : "Cần sửa"} ${k + 1}/${n}`), it.title ? h("span", { class: "small muted" }, it.title) : null));
     if (L.t1 && it.series) c.show(h("div", { class: "card chart-card" }, chartView({ series: it.series, col: it.col })));
     const mine = (it.sids || []).map(origText).join(" ");
     const walk = !!it.part;

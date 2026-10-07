@@ -138,7 +138,20 @@ function pageInfo(doc) {
   if (box && box.textContent.trim()) info.teacher_comment = box.textContent.trim();
   const m = /Writing Week \d+/.exec(allText(doc, " "));
   if (m) info.homework = m[0];
+  const total = score100(doc);
+  if (total != null) info.total = { score: total, max: 100 };
   return info;
+}
+/* the "Tổng điểm" box when the teacher marks out of 100 ("Scale 100 điểm" ticked), else null */
+function score100(doc) {
+  const label = [...doc.querySelectorAll("p")].find(p => p.textContent.trim() === "Tổng điểm");
+  const box = label && label.parentElement.querySelector("input");
+  const scale = [...doc.querySelectorAll("div")].find(d => !d.querySelector("div") && d.textContent.trim() === "Scale 100 điểm");
+  const dot = scale && scale.previousElementSibling, fill = dot && dot.querySelector(".bg-primary");
+  const picked = !!(fill && !/opacity:\s*0(?![.\d])/.test(fill.getAttribute("style") || ""));
+  const value = box ? String(box.value || box.getAttribute("value") || "").trim().replace(",", ".") : "";
+  if (!picked || !/^\d+(\.\d+)?$/.test(value)) return null;
+  return +value;
 }
 
 function paraTokens(p) {                      // split on <br> into paragraphs of text / highlight tokens

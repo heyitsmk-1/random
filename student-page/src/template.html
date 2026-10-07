@@ -462,6 +462,9 @@ mark.good { background: var(--mint-soft); color: var(--mint-deep); font-weight: 
 .overall .ring { position: relative; z-index: 1; }
 .ring.squash { animation: squash .55s cubic-bezier(.3, 1.6, .5, 1) both; }
 @keyframes squash { 0% { transform: scale(1); } 30% { transform: scale(1.28, .78); } 60% { transform: scale(.9, 1.14); } 100% { transform: scale(1); } }
+.ring.pct::before { content: ""; position: absolute; inset: -8px; border-radius: 50%; background: conic-gradient(var(--orange-deep) calc(var(--p, 0) * 1%), var(--orange-soft) 0);
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 7px), #000 calc(100% - 6px)); mask: radial-gradient(farthest-side, transparent calc(100% - 7px), #000 calc(100% - 6px)); }
+.ring.pct { box-shadow: none; }
 .ring.gold { background: linear-gradient(135deg, #FFD166, #FF9800); box-shadow: 0 0 0 5px #FFE9B0, 0 0 26px rgba(255, 186, 60, .75); }
 .ring.shine { overflow: hidden; }
 .ring.shine::after { content: ""; position: absolute; inset: 0; border-radius: 50%; background: linear-gradient(115deg, transparent 30%, rgba(255, 255, 255, .8) 50%, transparent 70%); transform: translateX(-130%); animation: shine 1.4s .2s ease-in-out 3; }
@@ -1270,25 +1273,35 @@ add("intro", async c => {
 }, { label: "Bắt đầu nha", noSave: true });
 
 // results: each score ticks up one at a time, then overall (no word count: it isn't what matters)
-if (hasScores) add("intro", async c => {
+/* a score out of 100 ("Scale 100 điểm" in the CRM, e.g. Week 1): no band scores, the total instead */
+const TOT = L.total && Number(L.total.max) > 0 && L.total.score != null && !isNaN(Number(L.total.score)) ? { score: Number(L.total.score), max: Number(L.total.max) } : null;
+if (hasScores || TOT) add("intro", async c => {
   c.show(h("h1", { class: "h" }, "Kết quả của em"));
-  await c.say(L.results.criteria, "explaining");
-  const grid = h("div", { class: "scores" });
-  c.show(grid);
-  for (const [k, lab] of [["TR", "Task"], ["CC", "Mạch lạc"], ["LR", "Từ vựng"], ["GR", "Ngữ pháp"]]) {
-    const n = h("b", {}, "0");
-    grid.append(h("div", { class: "score" }, n, h("span", {}, k), h("em", {}, lab))); fit();
-    await c.wait(300);
-    await tick(n, Number(L.scores[k]), 1, 0, 120, c.id);
-    if (Number(L.scores[k]) >= 7) burst(n.parentElement);              // a little sparkle on a strong score
-    await c.wait(550);
+  if (hasScores) {
+    await c.say(L.results.criteria, "explaining");
+    const grid = h("div", { class: "scores" });
+    c.show(grid);
+    for (const [k, lab] of [["TR", "Task"], ["CC", "Mạch lạc"], ["LR", "Từ vựng"], ["GR", "Ngữ pháp"]]) {
+      const n = h("b", {}, "0");
+      grid.append(h("div", { class: "score" }, n, h("span", {}, k), h("em", {}, lab))); fit();
+      await c.wait(300);
+      await tick(n, Number(L.scores[k]), 1, 0, 120, c.id);
+      if (Number(L.scores[k]) >= 7) burst(n.parentElement);              // a little sparkle on a strong score
+      await c.wait(550);
+    }
+    await c.gate();
   }
-  await c.gate();
-  const ring = h("div", { class: "ring" }, "0.0");
-  const card = c.show(h("div", { class: "card overall" }, ring, h("div", {}, h("div", { class: "h2" }, "Overall"), h("div", { class: "muted small" }, L.teacher + " chấm"))));
+  // out of 100: the ring fills as it counts; under 60 a pop, 60 cheers, 70 confetti, 80 a star, 90 fireworks
+  const ring = h("div", { class: "ring" + (TOT && !hasScores ? " pct" : "") }, TOT && !hasScores ? "0" : "0.0");
+  const byTotal = TOT && !hasScores;
+  const card = c.show(h("div", { class: "card overall" }, ring, h("div", {}, h("div", { class: "h2" }, byTotal ? "Tổng điểm" : "Overall"),
+    h("div", { class: "muted small" }, byTotal ? `trên ${TOT.max} · ${L.teacher} chấm` : L.teacher + " chấm"))));
   await c.wait(400);
-  const O = Number(L.overall), tier = O >= 8 ? 5 : O >= 7.5 ? 4 : O >= 7 ? 3 : O >= 6.5 ? 2 : O >= 6 ? 1 : 0;
-  await scoreShow(c, ring, card, O, tier);
+  const pct = byTotal ? TOT.score / TOT.max * 100 : 0;
+  const O = byTotal ? TOT.score : Number(L.overall);
+  const tier = byTotal ? (pct >= 90 ? 5 : pct >= 80 ? 4 : pct >= 70 ? 3 : pct >= 60 ? 2 : 1)
+    : O >= 8 ? 5 : O >= 7.5 ? 4 : O >= 7 ? 3 : O >= 6.5 ? 2 : O >= 6 ? 1 : 0;
+  await scoreShow(c, ring, card, O, tier, byTotal ? { step: Math.max(1, Math.round(TOT.max / 20)), max: TOT.max } : {});
   scoresSeen();
   await c.say(L.results.score[0], tier >= 2 ? "cheering" : tier ? "thumbsup" : "explaining");
   for (const line of L.results.score.slice(1)) { await c.gate(); await c.say(line, "explaining"); }
@@ -1299,18 +1312,19 @@ if (hasScores) add("intro", async c => {
    celebration that grows with the band: 6.0 a pop, 6.5 cheers and gold, 7.0 confetti, 7.5 a star
    stamp, 8.0+ the lights go down, then gold, fireworks and a "Xuất sắc" badge. Played once: going
    back shows the result without the show; reduced motion shows it still. */
-async function scoreShow(c, ring, card, to, tier) {
+async function scoreShow(c, ring, card, to, tier, { step = .5, max = null } = {}) {
   const live = !replay && !REDUCED;
   const steps = [];
-  for (let v = .5; v < to - 1e-9; v += .5) steps.push(v);
+  for (let v = step; v < to - 1e-9; v += step) steps.push(v);
+  const show = v => { ring.textContent = max ? String(Math.round(v)) : v.toFixed(1); if (max) ring.style.setProperty("--p", Math.min(100, v / max * 100)); };
   let dim = null;
   for (const [i, v] of steps.entries()) {
-    ring.textContent = v.toFixed(1);
+    show(v);
     const left = steps.length - i;
     if (live && tier >= 5 && left === 2) { dim = h("div", { class: "dimmer" }); document.body.append(dim); requestAnimationFrame(() => dim.classList.add("on")); }
     await c.wait(left > 3 ? 75 : left === 3 ? 170 : left === 2 ? 290 : tier >= 5 ? 1000 : tier >= 3 ? 600 : 420);
   }
-  ring.textContent = to.toFixed(1);
+  show(to);
   if (dim) { dim.classList.remove("on"); setTimeout(() => dim.remove(), 500); }
   if (tier >= 2) ring.classList.add("gold");
   // the star stamps in behind the ring, its points around it
@@ -1326,7 +1340,7 @@ async function scoreShow(c, ring, card, to, tier) {
   if (tier >= 4) { star(); holder().append(h("div", { class: "shock" })); fit(); }
   if (tier >= 5) {
     ring.classList.add("shine");
-    const waves = to >= 8.5 ? 2 : 1;
+    const waves = (max ? to / max >= .95 : to >= 8.5) ? 2 : 1;
     for (let w = 0; w < waves; w++) for (let k = 0; k < 5; k++) setTimeout(() => burstAt(innerWidth * (.15 + Math.random() * .7), innerHeight * (.12 + Math.random() * .45), 22, 90), 250 + w * 900 + k * 170);
     await c.wait(500);
     badge(); fit();
@@ -2712,11 +2726,17 @@ async function drawNotebook() {
       x.fillStyle = "#3A1D00"; x.font = font(800, 30, "disp"); x.fillText("SỔ TAY CỦA", PAD + 262, y + 82);
       x.font = font(800, 66, "disp"); x.fillText(clip(NAME, 16), PAD + 262, y + 146);
       x.font = font(500, 28); x.fillStyle = "#5A3200"; x.fillText(clip(`${L.homework || ""}${L.essay_type ? " · " + L.essay_type : ""}`, 34), PAD + 262, y + 196);
-      if (L.overall) {
+      // the band, or the score out of 100 when there are no bands (its circle filled that far)
+      const byTotal = TOT && !hasScores;
+      if (L.overall || byTotal) {
         const cx = PAD + CW - 100, cy = y + HH / 2;
         x.beginPath(); x.arc(cx, cy, 70, 0, Math.PI * 2); x.fillStyle = "#FFF7EC"; x.fill();
-        x.fillStyle = COL.deep; x.textAlign = "center"; x.font = font(800, 56, "disp"); x.fillText(Number(L.overall).toFixed(1), cx, cy + 16);
-        x.font = font(700, 20, "disp"); x.fillText("OVERALL", cx, cy + 46); x.textAlign = "left";
+        if (byTotal) {
+          x.beginPath(); x.arc(cx, cy, 64, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * Math.min(1, TOT.score / TOT.max)); x.strokeStyle = COL.orange; x.lineWidth = 9; x.lineCap = "round"; x.stroke();
+        }
+        x.fillStyle = COL.deep; x.textAlign = "center"; x.font = font(800, byTotal ? 52 : 56, "disp");
+        x.fillText(byTotal ? String(TOT.score) : Number(L.overall).toFixed(1), cx, cy + (byTotal ? 12 : 16));
+        x.font = font(700, 20, "disp"); x.fillText(byTotal ? "/ " + TOT.max : "OVERALL", cx, cy + 42); x.textAlign = "left";
       }
     }
     y += HH + 36;

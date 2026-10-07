@@ -274,6 +274,7 @@ async function openPageHtml(html, url) {
   S.meta.student_full = page.student_full || "";
   S.meta.call_name = callName(page.student_full);
   S.meta.overall = page.overall ? (/\./.test(page.overall) ? page.overall : page.overall + ".0") : "";
+  S.meta.total = page.total || null;                // marked out of 100 ("Scale 100 điểm"), e.g. Week 1
   S.meta.homework = page.homework || (week ? "Writing Week " + week : "");
   if (isFlow2()) autoTags2(); else autoTags();
   touch();
@@ -392,6 +393,11 @@ function renderPage() {
         w && w.tracks ? field("Cách lập luận", h("select", { onchange: e => { S.meta.track = e.target.value; touch(); } },
           w.tracks.map(t => h("option", { value: t.id, selected: t.id === S.meta.track ? true : null }, t.label)))) : null,
         field("Điểm", h("div", {}, Object.entries(P.scores || {}).map(([k, v]) => `${k} ${v}`).join(" · "), S.meta.overall ? ` · Overall ${S.meta.overall}` : "")),
+        // no bands: the score out of 100 (read from "Tổng điểm" when the CRM is on "Scale 100 điểm"), editable
+        !Object.values(P.scores || {}).some(Boolean) ? field("Tổng điểm", h("div", { class: "row" },
+          h("input", { type: "number", min: "0", max: "100", step: "0.5", style: "width:6em", value: S.meta.total ? S.meta.total.score : "", placeholder: "không có",
+            "aria-label": "Tổng điểm trên 100", oninput: e => { const v = e.target.value.trim(); S.meta.total = v === "" ? null : { score: +v, max: 100 }; touch(); } }),
+          h("span", {}, "/ 100"), h("span", { class: "small muted" }, " · em thấy điểm này thay cho band (để trống nếu không chấm điểm)"))) : null,
         field("Số chữ", h("div", {}, String(P.word_count))),
         field("Chỗ sửa · nhận xét", h("div", {}, `${Object.keys(C).length} chỗ sửa · ${P.task_comments.length} nhận xét`))),
       field("Đề bài", h("textarea", { value: S.meta.prompt, oninput: e => { S.meta.prompt = e.target.value; touch(); } })),
@@ -1764,6 +1770,7 @@ function setAt(o, path, v) { const ks = path.split("."), last = ks.pop(); const 
 function mergeLesson(old, fresh, redrafted, D) {
   const out = structuredClone(old);
   for (const k of ["corrections", "task_comments", "essay", "scores"]) out[k] = fresh[k];
+  if (fresh.total) out.total = fresh.total; else delete out.total;
   out.language = { ...out.language, praise: fresh.language.praise, list: fresh.language.list, items: fresh.language.items };
   // the checklist: status from the decisions; the lines stay the teacher's unless the points changed
   if (out.logic && fresh.logic) {

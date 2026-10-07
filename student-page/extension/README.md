@@ -18,7 +18,9 @@ options) and add the Claude API key; the Netlify token is optional.
 
 ## How it works
 1. **Tạo bài ôn Đậu** (orange button on a grading page) copies the page and opens the editor.
-2. **Bài**: week and prompt, detected from the homework title; the teacher confirms.
+2. **Bài**: week and prompt, detected from the homework title; the teacher confirms. A homework marked out
+   of 100 ("Tổng điểm" with "Scale 100 điểm" ticked in the CRM, e.g. Week 1) has no bands: the score is read
+   from the page (editable here) and the student sees it instead of bands.
 
 New lessons (**flow 2**: the teacher decides, Claude writes little):
 
@@ -97,6 +99,8 @@ screen, then in essay order: each problem, the comments moved to Logic, and the 
   places (corrections + highlighted notes) everywhere.
 - The lines between parts come from the page, so they always match what comes next.
 - Three looks: red wavy / struck through for a mistake, orange dotted → green for a Nâng cấp, green for Khen.
+- Out of 100: the score counts up while its ring fills (70/100 → 70%), then a celebration by score (under
+  60 a pop, 60 cheers, 70 confetti, 80 a star stamp, 90+ fireworks); the sổ tay shows "70 / 100".
 - The overall score: the count slows down before the last step, then a celebration by band (6.0 a pop,
   6.5 cheers and a gold ring, 7.0 confetti, 7.5 a star stamp, 8.0+ the lights go down, fireworks, gold confetti
   and a "Xuất sắc" badge). Only the first time; going back or reduced motion shows the result still.

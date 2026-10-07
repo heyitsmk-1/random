@@ -254,6 +254,9 @@ export function checks2(L, { checkLesson } = {}) {
   ((L.results && L.results.score) || []).forEach((t, i) => {
     const bad = bandNums(t).filter(n => !okBands.includes(n));
     if (bad.length) flag(`results.score.${i}`, "frame", `Số ${bad.join(", ")} không khớp trang chấm (overall ${L.overall})`);
+    // a score out of 100: "70/100" must be the teacher's
+    if (L.total) for (const m of String(t).matchAll(/(\d+(?:[.,]\d+)?)\s*\/\s*(\d+)/g))
+      if (+m[1].replace(",", ".") !== +L.total.score || +m[2] !== +L.total.max) flag(`results.score.${i}`, "frame", `Điểm ${m[0]} không khớp trang chấm (${L.total.score}/${L.total.max})`);
   });
 
   // Logic: quotes really hers, data on the chart

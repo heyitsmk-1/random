@@ -79,7 +79,7 @@ function fakePart(part, payload) {
     build: [{ id: "p3", mistake: "s1", vi: "Giá tăng năm 1998.", answer_words: ["Prices", "rose", "in 1998."], extra: ["rise"], explain: "Quá khứ" }] } };
   return {                                         // frame
     hello: [`Chào ${payload.call_name} nha`, "Mình xem bài của em nhé"],
-    results: { score: [`Overall của em là ${payload.overall || "?"} nè`, "Lần này mình tập trung vào mấy chỗ nhỏ"], criteria: "Đây là 4 điểm thành phần nè" },
+    results: { score: [payload.total ? `Em được ${payload.total.score}/${payload.total.max} điểm nè` : `Overall của em là ${payload.overall || "?"} nè`, "Lần này mình tập trung vào mấy chỗ nhỏ"], criteria: "Đây là 4 điểm thành phần nè" },
     ...(D.no_rewrite ? {} : { rewrite: { target: D.rewrite.target, label: "Câu em đã viết", sids: D.rewrite.sids, intro: ["Giờ em viết lại câu này nha", "Nhớ mấy chỗ mình vừa xem"], task: "",
       flow: "idea → detail", starters: ["Notably, …"], phrases: ["by far"], checklist: ["Có năm cho số liệu"], model: "A model sentence." } }),
     takeaways: ["Ghi năm cho từng số liệu", "Đọc kỹ đề", "Dò lại bài trước khi nộp"],
@@ -135,6 +135,10 @@ try {
   if (W.task === 1 && W.kind === "task1-pie") { const charts = Object.keys(W.chart.series); TASK1 = { row: charts[0], col: Object.keys(W.chart.series[charts[0]])[0] }; }
   console.log(`     ${W.homework} · ${KIND}`);
   ok((await page.locator(".step-btn").allTextContents()).join("|") === "1 · Bài|2 · Logic|3 · Language|4 · Viết lại|5 · Soạn|6 · Xem lại|7 · Xuất", "new steps");
+  // marked out of 100 (Week 1's "Scale 100 điểm"): read from the page, shown in the Bài step
+  const totBox = page.locator('input[aria-label="Tổng điểm trên 100"]');
+  const totVal = await totBox.count() ? await totBox.inputValue() : "";
+  if (KIND === "week1") ok(totVal === "70", `Week 1: the score out of 100 read from the page (${totVal})`);
   await page.getByRole("button", { name: "Tiếp: Logic" }).click();
 
   /* Logic */
@@ -316,6 +320,7 @@ try {
   const Lx = JSON.parse(/<script type="application\/json" id="lesson-data">([\s\S]*?)<\/script>/.exec(html)[1].replace(/<\\\//g, "</"));
   ok(!hidRef || !Lx.language.list.some(x => x.ref === hidRef), `hidden after Soạn (${hidRef}): not in the list`);
   ok(!sysWanted || Lx.mistakes.main.some(m => m.title === "Mạo từ the"), "the redrafted mistake carries its new name");
+  ok(totVal ? Lx.total && String(Lx.total.score) === totVal && Lx.total.max === 100 : !Lx.total, totVal ? `the lesson carries ${totVal}/100` : "no score out of 100");
   ok(errors.length === 0, "no errors " + errors.join(" | "));
   console.log("     exported " + saved);
 } finally {

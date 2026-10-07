@@ -123,7 +123,7 @@ A question makes her notice a fact; it never asks for an opinion or a guess at w
   example = a new bad/good pair (not from her essay). better = for each note ref (n…) in it, the better version of her sentence in English (the teacher's when given).
 - practice (only with systematic mistakes): 4-6 core items covering every systematic mistake (1-2 for each), using these kinds where they fit: a "choose" item with sentence "" (3 English sentences as options), a "choose" item with a sentence containing "___" (3 options), a "tap" item (a sentence with exactly one wrong word; wrong = that word as it appears between spaces, fix = the right word), a "build" item (vi = a Vietnamese sentence, answer_words = 4-8 English chunks in order, extra = 2 wrong chunks). mistake = the id of the systematic mistake it practises. New sentences on the essay's topic, never copied from her essay. explain = 1 short line. core = their ids in order. intro = 2 lines.
 - hello: 2 lines. Line 1 introduces Đậu as ${teacher}'s TA. Line 2 says you'll look at the homework together.
-- results: criteria = 1 line introducing the 4 scores; score = 2 lines (the overall band, then what this lesson focuses on: only things the teacher decided, i.e. the ✗ (and ~) Logic points, the ideas to fix, the systematic mistakes if any).
+- results: criteria = 1 line introducing the 4 scores ("" when there are no band scores); score = 2 lines (the overall band, or when total is given the score out of it written like "70/100" (no band then), then what this lesson focuses on: only things the teacher decided, i.e. the ✗ (and ~) Logic points, the ideas to fix, the systematic mistakes if any).
 - rewrite: exactly rewrite_target.sids: sids = them, target = rewrite_target.target, and label, intro, task, flow and model talk about nothing else. label = what she rewrites (e.g. "Câu về swimming em đã viết"). intro = 2 lines saying it's ${teacher}'s request and what to keep in mind (from the decisions about those sentences). task = 1 line (can be empty). flow = English chain with "→". starters = 2-3 sentence starters ending with "…". phrases = 3-4 useful phrases. checklist = 2-3 short checks. model = the teacher's model when given, else one written for her level, about as long as what she wrote there.
 - takeaways: 3-4 short Vietnamese lines, only from the decisions (the ✗ points, the systematic mistakes, the most useful fixes).
 - finish: summary = 2 lines, extra_prompt = "Em muốn luyện thêm {n} câu nữa không?", later = 2 lines, done = 2 lines (the last ends warmly; the page adds a quote after it).
@@ -162,7 +162,7 @@ export function userMessage2({ page, meta, decisions }) {
   })));
   const payload = {
     call_name: meta.call_name, homework: meta.homework,
-    scores: page.scores, overall: meta.overall,
+    scores: page.scores, overall: meta.overall, ...(meta.total ? { total: meta.total } : {}),
     teacher_overall_comment: page.teacher_comment || "",
     sentences,
     corrections: Object.entries(C).map(([id, c]) => ({ id, orig: c.orig, fix: c.fix, comment: c.comment })),
@@ -234,6 +234,8 @@ export function toLesson2(parts, { page, meta, teacher, zalo, week, decisions })
     flow: 2,
     student: meta.call_name, teacher, zalo, homework: meta.homework, essay_type: meta.essay_type, prompt: meta.prompt,
     word_target: meta.word_target || 250, overall: meta.overall,
+    // marked out of 100 ("Scale 100 điểm"): the page shows this instead of bands
+    ...(meta.total && meta.total.score != null ? { total: { score: meta.total.score, max: meta.total.max || 100 } } : {}),
     hello: f.hello, results: f.results,
     logic: {
       summary: lg.summary,

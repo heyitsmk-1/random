@@ -83,7 +83,24 @@ def page_info(soup):
     m = re.search(r"Writing Week \d+", soup.get_text(" "))
     if m:
         info["homework"] = m.group(0)
+    total = score100(soup)
+    if total is not None:
+        info["total"] = {"score": total, "max": 100}
     return info
+
+
+def score100(soup):
+    """The "Tổng điểm" box when the teacher marks out of 100 ("Scale 100 điểm" ticked), else None."""
+    label = soup.find(lambda t: t.name == "p" and t.get_text(strip=True) == "Tổng điểm")
+    box = label.find_next("input") if label else None
+    scale = soup.find(lambda t: t.name == "div" and t.get_text(strip=True) == "Scale 100 điểm" and not t.find("div"))
+    dot = scale.find_previous_sibling("div") if scale else None
+    picked = bool(dot and dot.select_one(".bg-primary") and "opacity: 0" not in (dot.select_one(".bg-primary").get("style") or "").replace(";", ""))
+    value = (box.get("value") or "").strip().replace(",", ".") if box else ""
+    if not picked or not re.fullmatch(r"\d+(\.\d+)?", value):
+        return None
+    n = float(value)
+    return int(n) if n == int(n) else n
 
 
 def para_tokens(p):

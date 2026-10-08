@@ -35,7 +35,8 @@ New lessons (**flow 2**: the teacher decides, Claude writes little):
    marks each idea ✓ / ~ / ✗. The teacher's CRM comments on an idea's sentences (TR/CC comments and plain
    "=> COMMENT" notes) are filled in under it, each with a tick to leave it out, plus a note box. A ✗ idea
    needs its fix type: **Đổi hướng** (a new direction), **Sửa mắt xích** (a wrong link) or **Thiếu bước**.
-   Week 1: each paraphrase topic ✓ / ✗.
+   Week 1: each paraphrase topic ✓ / ✗. Essays: **Thứ tự phần Logic cho em**, per lesson: **Khung bài trước, ý
+   sau** (default) or **Theo thứ tự bài**.
 4. **Language** (LR · GRA): per tab, up to 3 **systematic mistakes** (numbered names; "+ Thêm lỗi hệ thống")
    or "Không có lỗi hệ thống". Every correction and note from the grammar/vocab editor, in essay order, with
    chips **1 · 2 · 3** (which systematic mistake it belongs to) and where else it goes: **Danh sách** (default:
@@ -74,6 +75,11 @@ New lessons (**flow 2**: the teacher decides, Claude writes little):
    one ("/" or ","), patterns with no correction and corrections in no pattern, Đậu's voice).
 8. **Xuất**: the `.html` (built exactly like `build.py`), the `.json`, or a Netlify link (`lib/netlify.js`: every
    publish is a new unguessable `/r/<random>/` address; old pages are never removed).
+
+Logic after the checklist starts with the map of her essay ("Tổng quan bài của em"). Then, by default, the
+essay's premise (thesis → topic sentence 1 → topic sentence 2 → conclusion: the problems outside the ideas, in
+essay order) and the ideas as a section of their own ("Em phát triển ý tới đâu?", then each idea's chain and the
+problems about its sentences); with "Theo thứ tự bài", everything in essay order, the ideas where the first is.
 
 The student page of a flow-2 lesson (`"flow": 2`) has two parts, **Logic** and **Language**. The tabs show
 "TR · CC" until the results screen has counted the scores up, then "TR 7 · CC 6". An essay's prompt isn't on

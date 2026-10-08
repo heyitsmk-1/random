@@ -273,6 +273,8 @@ export function toLesson2(parts, { page, meta, teacher, zalo, week, decisions })
       }),
     } } : {}),
     ...(week.task === 1 ? { t1: { kind: week.kind.replace("task1-", ""), chart: week.chart || {} } } : {}),
+    // Logic: the essay's premise first, then the ideas (default), or everything in essay order
+    logic_order: D.logic_order === "essay" ? "essay" : "skeleton",
     // one body paragraph + paraphrases (Week 1): the page's recap shows just the paragraph
     ...(week.kind === "paragraph+paraphrase" ? { layout: "paragraph" } : {}),
     language: {

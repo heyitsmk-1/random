@@ -1501,11 +1501,13 @@ if (LG) add("LOGIC", async c => {
 // (added below with the rest of Logic, in essay order)
 /* a homework of one body paragraph plus paraphrases (Week 1): no Mở bài / Body / Kết bài */
 const PARA_HW = L.layout === "paragraph" || (!L.t1 && L.essay.paragraphs.some(p => p.sentences.some(x => /^\s*topic\s*\d/i.test(origText(x.id)))));
-const addIdeasOverview2 = () => {
+/* the ideas: the map of her essay (first in Logic: an overview before any fix) and, as a section of its
+   own, "Em phát triển ý tới đâu?" with the cards (the ✗ ones open their chain) */
+const addIdeasOverview2 = ({ map: withMap = true, cards: withCards = true } = {}) => {
   const I = L.ideas, paras = L.essay.paragraphs;
-  // the map of her essay: one row per paragraph, ✓ / ✗ from the teacher's decisions, its ideas as chips
-  add("LOGIC", async c => {
-    await c.say("Rồi bây giờ mình xem các idea của em nhé", "explaining");
+  // the map of her essay: what each part is, its ideas as chips
+  if (withMap) add("LOGIC", async c => {
+    await c.say("Trước hết mình nhìn tổng quan bài của em nha", "explaining");
     const map = h("div", { class: "map" });
     c.show(h("div", { class: "card stack" }, h("div", { class: "label" }, "Tổng quan bài của em"), map));
     if (mode === "talk") setMode("away");
@@ -1541,10 +1543,12 @@ const addIdeasOverview2 = () => {
     if (legend.length) map.parentNode.append(h("div", { class: "map-legend rise" }, legend.map(([, cl, t]) => h("span", {}, h("i", { class: cl }), t)))); fit();
   }, { name: "ideas-map" });
   // the ideas drop in one by one with the teacher's ✓ / ~ / ✗; the ✗ ones open their chain
-  add("LOGIC", async c => {
+  if (withCards) add("LOGIC", async c => {
     c.show(h("h1", { class: "h" }, "Em phát triển ý tới đâu?"));
     const st = I.overview.map(ideaStatus), cnt = x => st.filter(y => y === x).length;
     const parts = [cnt("ok") && `${cnt("ok")} ý ổn rồi`, cnt("improve") && `${cnt("improve")} ý nâng cấp thêm được`, cnt("fix") && `${cnt("fix")} ý cần sửa`].filter(Boolean);
+    await c.say("Rồi bây giờ mình xem các idea của em nhé", "explaining");
+    await c.gate();
     await c.say(`Em có ${I.overview.length} ý: ${parts.join(", ")} nè`, "magnify");
     for (const line of I.intro || []) { await c.gate(); await c.say(line, "explaining"); }
     await c.gate();
@@ -1754,22 +1758,45 @@ function markPhrase(text, phrase, cls) {
   const i = phrase ? text.toLowerCase().indexOf(phrase.toLowerCase()) : -1;
   return i < 0 ? [text] : [text.slice(0, i), h("mark", { class: cls }, text.slice(i, i + phrase.length)), text.slice(i + phrase.length)];
 }
+/* flow 2 · Logic after the checklist. The teacher picks the order per lesson (lesson.logic_order):
+   "skeleton" (default): the map of her essay, then the essay's premise (thesis → topic sentence 1 → topic
+   sentence 2 → conclusion: the problems outside the ideas, in essay order), then the ideas as a section of
+   their own (the cards, then each idea's chain and the problems about its sentences).
+   "essay": the map, then everything in essay order, the ideas where the first one is. */
 if (V2) {
   const order = Object.keys(SENT), posOf = sid => order.indexOf(sid) >= 0 ? order.indexOf(sid) : null;
-  const blocks = [];
-  // the teacher's problems and her comments moved to Logic: numbered together, in essay order
-  const units = langUnits().filter(u => u.tab === "LOGIC");
-  (LG ? LG.issues : []).forEach((it, k) => blocks.push({ pos: posOf((it.sids || [])[0]) ?? 1e6 + k, kind: "issue", it }));
-  units.forEach(u => blocks.push({ pos: posOf(u.sid) ?? 1e6, kind: "unit", u }));
-  if (L.ideas) {
-    const ps = [...L.ideas.overview.flatMap(o => o.sids || []), ...L.ideas.details.flatMap(d => d.sids || [])].map(posOf).filter(x => x != null);
-    blocks.push({ pos: ps.length ? Math.min(...ps) : 5e5, kind: "ideas" });
+  const items = [];
+  // the teacher's problems and her comments moved to Logic: numbered together, in the order shown
+  (LG ? LG.issues : []).forEach((it, k) => items.push({ pos: posOf((it.sids || [])[0]) ?? 1e6 + k, kind: "issue", it, sids: it.sids || [] }));
+  langUnits().filter(u => u.tab === "LOGIC").forEach(u => items.push({ pos: posOf(u.sid) ?? 1e6, kind: "unit", u, sids: [u.sid] }));
+  const I = L.ideas;
+  const ideaOf = x => I ? I.overview.findIndex(o => (o.sids || []).some(sid => x.sids.includes(sid))) : -1;
+  const plan = [];                                  // in the order shown
+  if (I) plan.push({ kind: "map" });
+  if (I && L.logic_order !== "essay") {
+    const premise = items.filter(x => ideaOf(x) < 0).sort((a, b) => a.pos - b.pos);
+    plan.push(...premise, { kind: "cards" });
+    I.overview.forEach((o, k) => {
+      const D = I.details.find(d => d.tag === o.tag);
+      if (D) plan.push({ kind: "detail", D });
+      plan.push(...items.filter(x => ideaOf(x) === k).sort((a, b) => a.pos - b.pos));
+    });
+    I.details.filter(d => !I.overview.some(o => o.tag === d.tag)).forEach(D => plan.push({ kind: "detail", D }));
+  } else {
+    const blocks = [...items];
+    if (I) {
+      const ps = [...I.overview.flatMap(o => o.sids || []), ...I.details.flatMap(d => d.sids || [])].map(posOf).filter(x => x != null);
+      blocks.push({ pos: ps.length ? Math.min(...ps) : 5e5, kind: "ideas" });
+    }
+    blocks.sort((a, b) => a.pos - b.pos);
+    for (const b of blocks) if (b.kind === "ideas") plan.push({ kind: "cards" }, ...I.details.map(D => ({ kind: "detail", D }))); else plan.push(b);
   }
-  blocks.sort((a, b) => a.pos - b.pos);
-  const counted = blocks.filter(b => b.kind === "issue" || (b.kind === "unit" && b.u.mode !== "praise"));
+  const counted = plan.filter(b => b.kind === "issue" || (b.kind === "unit" && b.u.mode !== "praise"));
   let first = true;
-  for (const b of blocks) {
-    if (b.kind === "ideas") { addIdeasOverview2(); L.ideas.details.forEach(addIdeaDetail); continue; }
+  for (const b of plan) {
+    if (b.kind === "map") { addIdeasOverview2({ map: true, cards: false }); continue; }
+    if (b.kind === "cards") { addIdeasOverview2({ map: false, cards: true }); continue; }
+    if (b.kind === "detail") { addIdeaDetail(b.D, I.details.indexOf(b.D)); continue; }
     const opts = first ? { name: "issues" } : {};
     first = false;
     if (b.kind === "issue") addIssue(b.it, counted.indexOf(b), counted.length, opts);

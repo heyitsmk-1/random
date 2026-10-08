@@ -1463,6 +1463,7 @@ function decisions2() {
       items: items.map(it => ({ ref: it.ref, tab: itemState(it).tab, mode: inSystemic(it) ? "systemic" : modeOf(it), ...(isUpgrade(it) ? { upgrade: true } : {}) })),
     },
     rewrite: noRewrite() ? null : S.rewriteTarget && S.rewriteTarget.sids.length ? { target: S.rewriteTarget.target, sids: S.rewriteTarget.sids } : null,
+    logic_order: D.logicOrder === "essay" ? "essay" : "skeleton",
     ...(noRewrite() ? { no_rewrite: true } : {}),
   };
 }
@@ -1522,6 +1523,12 @@ function renderLogic() {
         SETTINGS = { ...SETTINGS, checklists }; await setSettings({ checklists }); rerender();
       } }, "Bỏ mặc định đã lưu") : null),
     w.task === 1 ? h("p", { class: "small muted" }, "Số liệu sai thì ghi vào ghi chú, vd: “56% là năm 2010 không phải 2000; thiếu năm 2000 của swimming”. Claude lấy đúng số từ biểu đồ.") : null,
+    // the order the student goes through Logic in (essays only: Task 1 has no ideas section)
+    hasIdeas() ? h("div", { class: "row logic-order" }, h("b", {}, "Thứ tự phần Logic cho em:"),
+      [["skeleton", "Khung bài trước, ý sau", "Tổng quan bài → thesis → câu chủ đề 1 → câu chủ đề 2 → kết bài, rồi tới phần các ý"],
+        ["essay", "Theo thứ tự bài", "Tổng quan bài, rồi mọi chỗ theo thứ tự trong bài"]].map(([v, t, tip]) =>
+        h("label", { class: "inline", title: tip }, h("input", { type: "radio", name: "logic-order", checked: (D.logicOrder || "skeleton") === v ? true : null,
+          onchange: () => { D.logicOrder = v; touch(); } }), t))) : null,
     trcc.length ? h("details", {}, h("summary", {}, `Nhận xét của anh ở phần Lập luận và Mạch lạc (${trcc.length})`),
       h("div", { class: "crows static" }, trcc.map(t => h("div", { class: "crow" }, t.quote ? h("div", { class: "crow-text", lang: "en" }, t.quote) : null, h("div", { class: "crow-comment" }, t.comment))))) : null);
   const FIX_TYPES = [["replace", "Đổi hướng", "ý đi sai hướng: em thấy chuỗi ý mới thay cho chuỗi cũ"], ["link", "Sửa mắt xích", "một bước sai, phần trước vẫn đúng"], ["missing", "Thiếu bước", "chuỗi đúng nhưng chưa đi tới nơi, hoặc hở một bước"]];
@@ -1771,6 +1778,7 @@ function mergeLesson(old, fresh, redrafted, D) {
   const out = structuredClone(old);
   for (const k of ["corrections", "task_comments", "essay", "scores"]) out[k] = fresh[k];
   if (fresh.total) out.total = fresh.total; else delete out.total;
+  out.logic_order = fresh.logic_order;
   out.language = { ...out.language, praise: fresh.language.praise, list: fresh.language.list, items: fresh.language.items };
   // the checklist: status from the decisions; the lines stay the teacher's unless the points changed
   if (out.logic && fresh.logic) {

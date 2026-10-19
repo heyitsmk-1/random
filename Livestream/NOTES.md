@@ -282,3 +282,14 @@ What was done:
 - No code written (Rule 1).
 
 Plan for when allowed: a visual page with (1) the before / during / after class flow as a picture, (2) sketches of the student's phone screen and the teacher's dashboard for each step of Lesson 1.
+
+## 2026-10-19: Request for a PowerPoint prototype
+
+What was said:
+- "okay **CLAUDE CODE** make the prototype as a power point slide: what the teacher sees and what the student sees"
+
+What was done:
+- **Not started.** The owner wrote "CLAUDE CODE", not "CLAUDE COOK". Rule 1 needs the exact phrase, so Claude asked the owner to confirm with "CLAUDE COOK".
+- No code written (Rule 1).
+
+Ready to build once confirmed: a PowerPoint deck, one slide per Lesson 1 step, each showing **the student's phone screen** next to **the teacher's dashboard**, plus an opening big-picture slide.

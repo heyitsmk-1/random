@@ -181,3 +181,16 @@ What was done:
 
 Open questions:
 - Prototype: scripted AI or live AI (needs an API key)?
+
+## 2026-10-19: Holding off
+
+What was said:
+- Confirmed: **the consolidation page has to be filled from the class** (not by the teacher's per-student decisions).
+- On the prototype's AI: "**live AI needs an API key**". Not yet decided whether the prototype uses scripted or live AI.
+- **Hold off on cooking.** Don't build the prototype yet.
+
+What was done:
+- Logged the above. No code written (Rule 1, plus the owner's explicit "hold off").
+
+Open questions:
+- Scripted or live AI for the prototype? If live, the owner provides an API key (it should go in an environment setting, never in the repo).

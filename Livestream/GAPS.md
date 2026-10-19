@@ -21,8 +21,8 @@ Grouped by **when it has to be answered**.
 
 ## B. Lesson design
 
-6. **What's the end product for the student?** Nothing puts the pieces together. Do students finish with a **short paragraph** (topic sentence + idea + development)? The consolidation page needs a "final version" to show.
-7. **Step 3 → step 4 link:** the teacher picks one idea per side to develop. What about a student whose own idea from step 3 was different? Do they develop the teacher's idea or their own? If only the teacher's, their step 3 work goes nowhere.
+6. ~~**What's the end product for the student?**~~ **Answered 2026-10-19:** step 5, students write the whole body paragraph and the AI checks it Socratically. *(Original gap:)* Nothing puts the pieces together. Do students finish with a **short paragraph** (topic sentence + idea + development)? The consolidation page needs a "final version" to show.
+7. **Step 3 → step 4 link:** *(Now also: which idea goes into the step 5 paragraph?)* the teacher picks one idea per side to develop. What about a student whose own idea from step 3 was different? Do they develop the teacher's idea or their own? If only the teacher's, their step 3 work goes nowhere.
 8. **Closing the loop after corrections:** after the teacher teaches the most common topic-sentence mistake, do students **rewrite** their sentence? Same after step 4.
 9. **Timing:** how long is the mini lesson in total, and how long does each step get? What happens to **slow students** when the teacher moves on? Do they keep their unfinished work?
 10. **Who moves everyone to the next step?** Presumably the teacher presses "next" and every student screen changes. Not written down.

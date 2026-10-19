@@ -235,3 +235,18 @@ What was done:
 Open questions:
 - Scripted or live AI for the vision demo?
 - Should the lesson builder be part of the demo?
+
+## 2026-10-19: Lesson 1 final step
+
+What was said:
+- Answer to gap 6 (no end product): **that's the final step.** After students have been taught how to develop ideas and checked that their ideas make sense, they **write the whole body paragraph**. **AI checks their writing, Socratically.**
+
+What was done:
+- Added **Step 5: Write the whole body paragraph** to [LESSON-01-develop-ideas.md](LESSON-01-develop-ideas.md), with suggestions (check order logic → language, hint cap, teacher report) and questions.
+- Consolidation page now includes the step 5 paragraph.
+- GAPS.md: gap 6 closed.
+- No code written (Rule 1).
+
+Open questions:
+- Which idea goes in the paragraph: the teacher's from step 4 or the student's own from step 3?
+- One developed idea or more? Rough length and writing time?

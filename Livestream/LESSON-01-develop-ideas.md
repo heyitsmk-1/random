@@ -76,6 +76,25 @@ This is only how to **start** developing the idea. After that, students are free
   - circular explanations ("it makes them well-rounded because they become well-rounded");
   - examples that don't actually show the benefit.
 
+### Step 5: Write the whole body paragraph (final step)
+- **Owner's flow (2026-10-19):** after students have been taught how to develop ideas, and have checked that their ideas make sense, they **write the whole body paragraph**.
+- **AI checks their writing Socratically** (hints, not answers).
+- This is the student's **end product** for the lesson, and the "final version" on their consolidation page.
+
+*Suggestions:*
+- **What the AI checks, in order** (logic before language, like the Đậu page's Logic → Language):
+  1. Topic sentence follows the template and matches the side they picked.
+  2. The idea supports the central point (the core premise from step 4).
+  3. The development follows a path: Impact / Explain / Example, and isn't circular or just repeating the idea.
+  4. Linking between sentences.
+  5. Grammar and vocabulary, focused on the mistakes already taught in this lesson.
+- Same **~2-round hint cap**, then show what a fixed version could look like.
+- **Teacher report:** the most common problems across all paragraphs, plus a strong paragraph the teacher can show on stream.
+- **Questions for the owner:**
+  - Which idea goes in the paragraph: the one the teacher developed in step 4, or the student's own idea from step 3? (Using their own would give step 3's work a purpose.)
+  - One developed idea, or more?
+  - Rough length and writing time (e.g. ~100–150 words, ~10 minutes)?
+
 ### End: Consolidation page
 - Each student gets a personal recap page made with the **student feedback consolidation tool**: `student-page/` on the `claude/vibrant-hopper-bdqjun` branch of this repo (confirmed by owner, 2026-10-19).
 - What that tool is today (from its README and `build.py`):
@@ -83,7 +102,7 @@ This is only how to **start** developing the idea. After that, students are free
   - Its input is a **marked writing homework** from the CRM (`admin.ielts1984.vn/writing/*`), read by a Chrome extension.
   - The **teacher decides** (framework checklist ✓ / ~ / ✗, idea verdicts and fix types, up to 3 systematic mistakes, rewrite task) and **Claude writes little** (Đậu's words around those decisions).
 - **What changes for the livestream:** the teacher can't make decisions for thousands of students, so the **lesson data has to come from the class itself**: the side picked, topic sentence attempts and AI feedback, the ideas and the development path. The AI tutor fills in what the teacher normally decides. The page design and builder can be reused.
-- It would include: the side they picked, their topic sentence attempts and the final fixed version, their ideas, and the teacher's developed example.
+- It would include: the side they picked, their topic sentence attempts and the final fixed version, their ideas, the teacher's developed example, and **their body paragraph from step 5** with the AI's feedback.
 
 ## Open questions
 1. ~~Ideas for both sides, or only their side?~~ **Answered:** only the side they choose (it's a mini lesson).

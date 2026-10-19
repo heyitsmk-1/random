@@ -250,3 +250,14 @@ What was done:
 Open questions:
 - Which idea goes in the paragraph: the teacher's from step 4 or the student's own from step 3?
 - One developed idea or more? Rough length and writing time?
+
+## 2026-10-19: Core principles ("caveman mode")
+
+What was said (owner was tired and put it simply):
+- Basic idea: **teacher teaches, students respond instantly using tech**, instead of typing, which takes a long time. **Anonymity makes the barrier of entry lower.**
+- **Feedback by AI, but modelled after people:** not a big list of mistakes and "you go fix", but **slow and Socratic**.
+
+What was done:
+- Added these as **Core principles** at the top of README.md, and linked them from LESSON-01.
+- Step 5 note updated: the AI raises one issue at a time, most important first; the check order is never shown to the student as a list.
+- No code written (Rule 1).

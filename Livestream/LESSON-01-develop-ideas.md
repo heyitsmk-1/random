@@ -10,6 +10,10 @@ Draft lesson for the first prototype. Status: **being discussed. No code yet (Ru
 
 Whichever view you take, you give the **benefits** of it.
 
+## Core principles
+
+See README.md: students respond with **taps, not long typing**; responses are **anonymous**; AI feedback is **one thing at a time, Socratic**, never a big list of mistakes. Typing is only for when the writing *is* the practice (steps 2, 4, 5).
+
 ## Lesson flow
 
 The **confusion meter** (Understand / Don't understand) runs in the background for the whole lesson (confirmed by owner, 2026-10-19).
@@ -82,7 +86,7 @@ This is only how to **start** developing the idea. After that, students are free
 - This is the student's **end product** for the lesson, and the "final version" on their consolidation page.
 
 *Suggestions:*
-- **What the AI checks, in order** (logic before language, like the Đậu page's Logic → Language):
+- **What the AI checks, in order** (logic before language, like the Đậu page's Logic → Language). Per core principle 3, the student never sees this as a list: the AI raises **one issue at a time**, most important first, and only moves on once it's fixed.
   1. Topic sentence follows the template and matches the side they picked.
   2. The idea supports the central point (the core premise from step 4).
   3. The development follows a path: Impact / Explain / Example, and isn't circular or just repeating the idea.

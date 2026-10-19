@@ -16,6 +16,14 @@ Project folder for the Livestream project.
 | [NOTES.md](NOTES.md) | A dated log of everything the project owner has said or decided, so nothing gets forgotten between sessions. |
 | [CLAUDE.md](CLAUDE.md) | Instructions Claude Code loads automatically when working in this folder. Points Claude at the rules and notes. |
 
+## Core principles (owner, 2026-10-19)
+
+The project in its simplest form. Every feature should follow these.
+
+1. **Teacher teaches, students respond instantly.** Students answer with taps and quick tech interactions, not long typing, because typing takes a long time.
+2. **Anonymous.** Students' responses are anonymous to the class, which lowers the barrier to joining in.
+3. **AI feedback modelled on a real teacher.** Not a big list of mistakes and "go fix it". Slow and Socratic: one thing at a time, with guiding questions so the student fixes it themselves.
+
 ## What the project is
 
 A livestreamed **IELTS** class on the owner's website, **youpass.vn**. It may eventually cover all four skills (Listening, Reading, Writing, Speaking).

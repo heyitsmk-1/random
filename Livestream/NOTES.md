@@ -205,3 +205,33 @@ What was done:
 - Fixed stale bits: README status and first-version line; added the scripted/live AI question to the Lesson 1 open questions.
 - Suggested three possible new rules for the owner to decide on (not added).
 - No code written (Rule 1).
+
+## 2026-10-19: Answers to the gap review
+
+What was said:
+1. The prototype for the boss is to **show the owner's vision for the livestream**.
+2. **Yes**, the confusion meter is in Lesson 1.
+3. Streams will run **two or three times a week**, so **content prep needs to be faster**.
+4. Asked how to copy the `speaking-intensive` folder to give it to Claude.
+
+Claude's response:
+- Vision demo → show the whole experience end to end (student screen + teacher dashboard + simulated class + consolidation page). Scripted AI fits a vision demo well. Owner still to decide.
+- Fast content prep → proposed a **lesson builder**:
+  - The teaching framework (pick a side → topic sentence template → benefits → Impact / Explain / Example) stays the same each class. Only the **essay prompt** changes.
+  - The teacher pastes a new prompt; AI drafts the Gợi ý ideas, model topic sentences, accepted versions of X, model developments for each path, and expected mistakes.
+  - The teacher checks and edits in ~10 minutes. Same pattern as the `student-page` tool's "Claude gợi ý → Dùng gợi ý" (AI suggests, teacher approves).
+  - Mistake lists carry over between lessons (e.g. "in favor of + -ing" is the same in every class).
+  - The builder could be part of the vision demo too (it shows the teacher's side is sustainable).
+- Getting speaking-intensive to Claude, best options in order:
+  1. **Give the Claude GitHub App access** to `youpassvn/speaking-intensive` (connect GitHub at https://claude.ai/connect-github; an owner of the `youpassvn` org may need to approve the app for that repo). Then Claude attaches it directly. Nothing gets copied.
+  2. **Copy only what's needed** (the AI prompt/feedback files) into this repo, e.g. `Livestream/reference/speaking-intensive/`, via GitHub's "Add file → Upload files" on branch `claude/keen-edison-wg7nsd`.
+  3. **Paste the prompt text** into the chat.
+  - Before copying: check it's OK to copy company code into this personal repo, and leave out `.env` files, API keys, and any student data.
+
+What was done:
+- Updated GAPS.md (gaps 1 and 3 closed, 4 and 5 updated) and LESSON-01 (confusion meter confirmed).
+- No code written (Rule 1).
+
+Open questions:
+- Scripted or live AI for the vision demo?
+- Should the lesson builder be part of the demo?

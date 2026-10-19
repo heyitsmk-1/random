@@ -12,7 +12,7 @@ Whichever view you take, you give the **benefits** of it.
 
 ## Lesson flow
 
-The confusion meter (Understand / Don't understand) can run in the background for the whole lesson.
+The **confusion meter** (Understand / Don't understand) runs in the background for the whole lesson (confirmed by owner, 2026-10-19).
 
 ### Step 1: Pick a side (interaction 1)
 - Students choose which side they favour: **All subjects** or **Only subjects they're good at / interested in**.

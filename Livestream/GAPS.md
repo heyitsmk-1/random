@@ -9,11 +9,11 @@ Grouped by **when it has to be answered**.
 
 ## A. Before the prototype (the boss demo)
 
-1. **What's the demo for?** What should the boss see, and what decision do we want from them (go ahead with a pilot? budget? time?)? This decides what goes in the prototype.
+1. ~~**What's the demo for?**~~ **Answered 2026-10-19:** to **show the owner's vision for the livestream**. So the prototype should show the *whole experience* end to end, not test the tech in depth.
 2. **Scripted or live AI?** Still open. Live AI needs an API key. Whose key: the owner's or the company's? It goes in an environment setting, never in the repo.
-3. **Is the confusion meter in Lesson 1?** The lesson says it "can run in the background", but it was never confirmed. It was the original standout idea.
-4. **The Socratic tutor's behaviour isn't written down.** It's meant to be "based on" `youpassvn/speaking-intensive`, but Claude has no access to it. We need its prompt or rules (e.g. paste them here, or give the Claude GitHub App access to that repo).
-5. **No lesson content is prepared yet.** The AI and the screens need:
+3. ~~**Is the confusion meter in Lesson 1?**~~ **Answered 2026-10-19: yes.**
+4. **The Socratic tutor's behaviour isn't written down.** *(In progress 2026-10-19: owner is getting the speaking-intensive folder to Claude.)* It's meant to be "based on" `youpassvn/speaking-intensive`, but Claude has no access to it. We need its prompt or rules (e.g. paste them here, or give the Claude GitHub App access to that repo).
+5. **No lesson content is prepared yet.** *Update 2026-10-19: streams will run 2–3 times a week, so content prep has to be fast (see NOTES.md for the proposed lesson builder).* The AI and the screens need:
    - the **Gợi ý idea list** for each side;
    - **model topic sentences** for each side, and which versions of X count as correct (the "only subjects they're good at or interested in" side has a long X: how much paraphrasing is expected?);
    - the **expected mistakes** list for step 2 (Claude drafted one) and step 4;

@@ -36,6 +36,7 @@ The confusion meter (Understand / Don't understand) can run in the background fo
   - **Cap the Socratic hints at about 2 rounds**, then show a model answer, so no one gets stuck while the class moves on.
 
 ### Step 3: Core ideas (benefits)
+- It's a mini lesson, so students **only brainstorm ideas for the side they picked** (owner, 2026-10-19).
 - **Teacher explains** that the body has to give benefits.
 - Students get a **text box to type their own ideas** and a **"Gợi ý" button** with suggested ideas they can tap to choose.
 - For ideas students write themselves, AI **summarises and groups them** with similar ideas where possible.
@@ -46,14 +47,41 @@ The confusion meter (Understand / Don't understand) can run in the background fo
 
 ### Step 4: Developing an idea
 - The teacher **selects one idea for each side** and teaches how to develop it.
-- *(Owner to fill in the rest; see open questions.)*
+
+**Core premise (owner's):** *does the core idea support the central point of the paragraph yet?*
+
+Ask: **"Is this benefit enough to justify [the side]?"**
+
+| Answer | What to do |
+|---|---|
+| **Not enough** | Add more **IMPACT** (what bigger result does this benefit lead to?) |
+| **Enough** | **Explain** why/how it leads to the benefit |
+| **Can't do either** | Give **examples** |
+
+Worked example (owner's):
+- Idea: *"Studying all subjects will allow students to become more well-rounded individuals."*
+- Question: is becoming well-rounded enough to justify having to study all subjects?
+  - If not → give more impact (e.g. what being well-rounded leads to).
+  - If yes → explain *why* studying all subjects makes them well-rounded.
+  - If neither → give examples.
+
+This is only how to **start** developing the idea. After that, students are free to develop it in a different way.
+
+*Suggestions for the interaction:*
+- Each student develops the teacher's selected idea **for their side**.
+- The AI tutor asks the core question Socratically ("Is this enough to justify studying every subject?"), and the student's answer decides the path: Impact / Explain / Example.
+- The student writes 1–2 sentences down that path. The AI gives Socratic feedback with the same ~2-round cap.
+- The teacher sees **which path students chose** (e.g. 55% Impact / 30% Explain / 15% Example) and the most common problems, e.g.:
+  - "impact" that just repeats the idea in other words;
+  - circular explanations ("it makes them well-rounded because they become well-rounded");
+  - examples that don't actually show the benefit.
 
 ### End: Consolidation page
 - Each student gets a personal recap page made with the **student feedback consolidation tool** (`student-page/` on the `claude/vibrant-hopper-bdqjun` branch of this repo, *to confirm*).
 - It would include: the side they picked, their topic sentence attempts and the final fixed version, their ideas, and the teacher's developed example.
 
 ## Open questions
-1. **Ideas for both sides, or only their side?** "Discuss both views" needs a paragraph on each side, but step 1 locks in one side. Do students brainstorm for both (tagged by side), with their chosen side as the opinion?
-2. **Step 4:** what's the development framework? (E.g. idea → explain → example → result?) And do students write a developed idea too, with AI feedback?
+1. ~~Ideas for both sides, or only their side?~~ **Answered:** only the side they choose (it's a mini lesson).
+2. ~~Step 4 framework?~~ **Answered:** see the Step 4 decision table.
 3. **Consolidation tool:** is it `student-page/` on the `claude/vibrant-hopper-bdqjun` branch?
 4. **Speaking feedback tool:** Claude can't see `youpassvn/speaking-intensive` yet (see NOTES.md).

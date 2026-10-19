@@ -149,3 +149,22 @@ Proposed prototype for the boss (if the owner says CLAUDE COOK):
 - AI feedback **scripted/simulated** so the demo can't fail in front of the boss, unless the owner has an API key and wants it live.
 
 Open questions: see the bottom of LESSON-01-develop-ideas.md.
+
+## 2026-10-19: Lesson 1 answers
+
+What was said:
+- It's a **mini lesson**, so students brainstorm ideas **only for the side they choose**.
+- **Developing an idea, core premise:** does the core idea support the central point of the paragraph yet?
+  - Example: "studying all subjects will allow students to become more well-rounded individuals" → is this benefit enough to justify having to study all subjects?
+    - If **not** → give more **IMPACT**.
+    - If **yes** → **explain** why it helps them become well-rounded.
+    - If **neither** is possible → give **examples**.
+  - This is only how to *start* writing. After that, students are free to develop the idea in a different way.
+
+What was done:
+- Updated [LESSON-01-develop-ideas.md](LESSON-01-develop-ideas.md): step 3 is one side only; step 4 has the Impact / Explain / Example decision table, the worked example, and suggested interactions (AI asks the core question, the student's answer picks the path, the teacher sees the path split and common problems).
+- No code written (Rule 1).
+
+Open questions:
+- Is the consolidation tool `student-page/` on branch `claude/vibrant-hopper-bdqjun`?
+- Prototype: scripted AI or live AI (needs an API key)?

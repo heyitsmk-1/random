@@ -194,3 +194,14 @@ What was done:
 
 Open questions:
 - Scripted or live AI for the prototype? If live, the owner provides an API key (it should go in an environment setting, never in the repo).
+
+## 2026-10-19: Gap review
+
+What was said:
+- Read through everything again and find gaps in the project.
+
+What was done:
+- Re-read every document and wrote [GAPS.md](GAPS.md): 26 gaps grouped as A (before the prototype), B (lesson design), C (before going live), D (business and measurement), plus housekeeping.
+- Fixed stale bits: README status and first-version line; added the scripted/live AI question to the Lesson 1 open questions.
+- Suggested three possible new rules for the owner to decide on (not added).
+- No code written (Rule 1).

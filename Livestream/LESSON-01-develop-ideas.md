@@ -90,3 +90,5 @@ This is only how to **start** developing the idea. After that, students are free
 2. ~~Step 4 framework?~~ **Answered:** see the Step 4 decision table.
 3. ~~Consolidation tool?~~ **Answered:** `student-page/` on `claude/vibrant-hopper-bdqjun`.
 4. **Speaking feedback tool:** Claude can't see `youpassvn/speaking-intensive` yet (see NOTES.md).
+5. **Prototype AI:** scripted or live? Live needs an API key.
+6. More open items for this lesson are in [GAPS.md](GAPS.md) (sections A and B).

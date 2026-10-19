@@ -2,7 +2,7 @@
 
 Project folder for the Livestream project.
 
-**Status:** Planning. No code has been written yet. See Rule 1 in [RULES.md](RULES.md).
+**Status:** Planning Lesson 1 (prototype on hold at the owner's request). No code has been written yet. See Rule 1 in [RULES.md](RULES.md).
 
 ## Files in this folder
 
@@ -10,6 +10,7 @@ Project folder for the Livestream project.
 |------|---------------|
 | [README.md](README.md) | This overview: what the project is and where things live. |
 | [LESSON-01-develop-ideas.md](LESSON-01-develop-ideas.md) | Draft of the first lesson (Writing Task 2, developing ideas) for the prototype. |
+| [GAPS.md](GAPS.md) | Things not yet decided or covered, grouped by when they need answering. |
 | [IDEAS.md](IDEAS.md) | Brainstorm of possible features. Nothing in it is decided yet. |
 | [RULES.md](RULES.md) | The running list of rules for working on this project. New rules get added as we go. |
 | [NOTES.md](NOTES.md) | A dated log of everything the project owner has said or decided, so nothing gets forgotten between sessions. |
@@ -24,4 +25,4 @@ A livestreamed **IELTS** class on the owner's website, **youpass.vn**. It may ev
 - **Problem 2:** a talking-head livestream is boring.
 - **Goal:** build something different that solves both problems. Options are being brainstormed in [IDEAS.md](IDEAS.md).
 - **Approach:** roll out something small fast, get feedback, then build more.
-- **First version topic:** Writing Task 2 (owner's pick: it's what most students want to learn). Scope still being agreed; see [NOTES.md](NOTES.md).
+- **First version:** a Writing Task 2 mini lesson on developing ideas (owner's pick: it's what most students want to learn). See [LESSON-01-develop-ideas.md](LESSON-01-develop-ideas.md). Open items are in [GAPS.md](GAPS.md).

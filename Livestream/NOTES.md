@@ -293,3 +293,26 @@ What was done:
 - No code written (Rule 1).
 
 Ready to build once confirmed: a PowerPoint deck, one slide per Lesson 1 step, each showing **the student's phone screen** next to **the teacher's dashboard**, plus an opening big-picture slide.
+
+## 2026-10-19: CLAUDE COOK: PowerPoint prototype built
+
+What was said:
+- **CLAUDE COOK** (exact phrase), after asking for "the prototype as a power point slide: what the teacher sees and what the student sees".
+
+What was done:
+- Built [prototype/Livestream-Prototype.pptx](prototype/Livestream-Prototype.pptx) (10 slides) with [prototype/build_deck.js](prototype/build_deck.js):
+  1. Title: YouPass Live + the 3 core principles.
+  2. The big picture: before / during / after class, with the during-class loop (teacher → students → AI tutor → dashboard).
+  3. Before class: the lesson builder.
+  4–8. Steps 1–5 of Lesson 1, each with the **student's phone** next to the **teacher dashboard** (always-on confusion meter on the right; step 2 shows it in alert at 34%).
+  9. After class: the anh Đậu recap page + the teacher's "where the class got lost" timeline.
+  10. Roadmap: phases 0–3, and what's needed to start phase 1.
+- All class numbers are made up (the slides say so). Speaker notes on every slide.
+- Name "YouPass Live", the colours, and the student screen text in English are Claude's placeholders, for the owner to change.
+- Checked: file validation passed; every slide rendered and looked over.
+
+How to rebuild after edits (from this folder, with pptxgenjs installed):
+`NODE_PATH=<folder containing node_modules> node prototype/build_deck.js <pptx skill>/scripts/apply_theme.js`
+
+Open questions:
+- Owner to review the deck and say what to change.

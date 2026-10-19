@@ -2,13 +2,15 @@
 
 Project folder for the Livestream project.
 
-**Status:** Planning Lesson 1 (prototype on hold at the owner's request). No code has been written yet. See Rule 1 in [RULES.md](RULES.md).
+**Status:** Vision prototype built as a PowerPoint deck (owner said CLAUDE COOK on 2026-10-19). See [prototype/](prototype/).
 
 ## Files in this folder
 
 | File | What it's for |
 |------|---------------|
 | [README.md](README.md) | This overview: what the project is and where things live. |
+| [prototype/Livestream-Prototype.pptx](prototype/Livestream-Prototype.pptx) | **The vision prototype:** 10 slides showing what the student sees next to what the teacher sees, step by step. |
+| [prototype/build_deck.js](prototype/build_deck.js) | Script that builds the deck. Edit and re-run it to change the slides. |
 | [PLAN.md](PLAN.md) | **Start here.** The big picture on one page: the system, a class minute by minute, roadmap, decisions waiting. |
 | [LESSON-01-develop-ideas.md](LESSON-01-develop-ideas.md) | Draft of the first lesson (Writing Task 2, developing ideas) for the prototype. |
 | [GAPS.md](GAPS.md) | Things not yet decided or covered, grouped by when they need answering. |

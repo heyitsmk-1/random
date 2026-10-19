@@ -16,9 +16,10 @@ Project folder for the Livestream project.
 
 ## What the project is
 
-A livestreamed class on the owner's website, **youpass.vn**.
+A livestreamed **IELTS** class on the owner's website, **youpass.vn**. It may eventually cover all four skills (Listening, Reading, Writing, Speaking).
 
 - The class is **free and open to everyone**, so it will be very large.
 - **Problem 1:** with that many students, the owner can't manage everyone.
 - **Problem 2:** a talking-head livestream is boring.
 - **Goal:** build something different that solves both problems. Options are being brainstormed in [IDEAS.md](IDEAS.md).
+- **Approach:** roll out something small fast, get feedback, then build more.

@@ -71,3 +71,25 @@ Open questions:
 - Confusion notes: send to everyone, or only students who pressed "Don't understand"?
 - Personalised videos: auto-clipped from the teacher's live corrections, pre-recorded, or AI-generated?
 - Earlier questions about youpass.vn and streaming are **parked** (owner's instruction).
+
+## 2026-10-19: Subject and first version
+
+What was said:
+- The class is **IELTS**, potentially **all four skills** (Listening, Reading, Writing, Speaking).
+- **Roll out something fast and gauge feedback** first.
+- The owner has their own idea for what the first version should be, but wanted to hear Claude's first.
+
+Claude's proposal for the first version:
+- **Confusion meter + quick check questions, piloted on one Reading lesson.**
+  - Confusion meter: Understand / Don't understand button, live % for the teacher, alert when it crosses a level, an optional "what's confusing?" box. No AI needed for version 1.
+  - Quick check questions: multiple choice, fill in the blank, and True / False / Not Given. These are real IELTS Reading question types, so the quiz *is* the practice.
+- Why: it's the most unique idea and also the simplest to build; it tackles both problems; and Reading fits it best (native question formats, no audio timing issues, T/F/NG is a classic confusion point).
+- Left for later: AI confusion notes (can be done by hand after class at first), Socratic tutor (needed for Writing/Speaking), mistake video library.
+- How to measure feedback: % of viewers who press the button at least once, quiz participation, watch time compared to past streams, a one-question survey at the end, and whether the teacher actually used the spikes.
+
+What was done:
+- Added IELTS and the "fast rollout" approach to README.md.
+- No code written (Rule 1).
+
+Open questions:
+- What is the owner's idea for the first version?

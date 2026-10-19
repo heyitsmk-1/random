@@ -43,3 +43,31 @@ Open questions:
 - Do students log in on youpass.vn?
 - What streaming software does the owner use (OBS, StreamYard, etc.)?
 - Which ideas from IDEAS.md does the owner like?
+
+## 2026-10-19: Interactivity ideas
+
+What was said:
+- **Leave the technical side of streaming off for now.**
+- Focus on making this a **unique experience compared to everyone else through better interactivity**.
+- Owner's idea 1, **Understand vs. Don't understand:**
+  - Students have a button on their screen, e.g. "press Space to change mood", between Understand and Don't understand.
+  - The teacher sees a % of how many students don't understand.
+  - If too many stop understanding, the teacher pauses to explain until the % goes back down.
+  - Then AI gets the transcript of that moment and the question(s), and sends it as a note for students "or something like that".
+- Owner's idea 2, **easier interactivity:** a Kahoot-style interaction screen with multiple choice, or Quizizz-style fill in the blanks.
+- Owner's idea 3, **AI Socratic tutor:** integrated while students practise; the AI reports the main mistakes back to the teacher for the teacher to correct, and maybe even shows students a personalised video about a mistake they made.
+
+What was done:
+- Added the three ideas to the top of [IDEAS.md](IDEAS.md) as the main direction, with design details and suggestions for each:
+  - Confusion meter: phone button, auto-expiry/"Got it now?", check questions to back up self-report, alert threshold, optional "what's confusing?" text, confusion map and smart replay after class.
+  - Quizzes: AI writes questions from the transcript and the teacher approves them; wrong answers feed the confusion data; the timer runs on the student's screen.
+  - Socratic tutor: grouped mistake report; a **self-building mistake video library** made by auto-clipping the teacher's live corrections, as a cheaper option than generating a new video per student.
+  - How all three fit into one loop: Teach → Sense → Check → Practise → Report → Fix → Follow up.
+- No code written (Rule 1).
+
+Open questions:
+- What subject is the class? (Still unknown; it changes how the Socratic tutor and quizzes work.)
+- Should students see the confusion %, or only the teacher?
+- Confusion notes: send to everyone, or only students who pressed "Don't understand"?
+- Personalised videos: auto-clipped from the teacher's live corrections, pre-recorded, or AI-generated?
+- Earlier questions about youpass.vn and streaming are **parked** (owner's instruction).

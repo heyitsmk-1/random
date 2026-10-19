@@ -271,3 +271,14 @@ What was done:
 - Wrote [PLAN.md](PLAN.md): vision in one sentence, core principles, a diagram of the whole system (before / during / after class), the five pieces, Lesson 1 minute by minute (times are guesses, ~57 min), a 4-phase roadmap (vision demo → first real class → every week → grow), the top 7 decisions waiting, and what's parked.
 - Kept it as a Markdown document (not an HTML page), since an HTML page would be code (Rule 1).
 - No code written (Rule 1).
+
+## 2026-10-19: Wants a drawing, not text
+
+What was said:
+- PLAN.md is "a wall of text". The owner needs **something drawn out** to imagine the project.
+
+What was done:
+- Asked whether drawing pictures (which needs a little drawing code, not product code) is allowed under Rule 1. The owner gave **no preference**, so Rule 1 stays strict: **no drawings until the owner says CLAUDE COOK or explicitly says drawings are fine.**
+- No code written (Rule 1).
+
+Plan for when allowed: a visual page with (1) the before / during / after class flow as a picture, (2) sketches of the student's phone screen and the teacher's dashboard for each step of Lesson 1.

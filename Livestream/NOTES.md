@@ -93,3 +93,33 @@ What was done:
 
 Open questions:
 - What is the owner's idea for the first version?
+
+## 2026-10-19: Owner's pick for the first version: Writing Task 2
+
+What was said:
+- The owner was thinking **Writing Task 2** for the first version, because **that's usually what most students are most interested in learning about**.
+
+Claude's response:
+- Agrees: for a free class, demand is what brings people in, and that matters more than what's easiest to build.
+- Task 2 also shows off the "too many students" problem best: one teacher can't mark thousands of essays, so this is where the AI part stands out.
+- Caveat: a full essay takes ~40 minutes and full-essay AI marking/band scores are slow, costly, and not always reliable. So **break Task 2 into small pieces** that fit a live class:
+  - spot the question type (opinion / discuss both views / problem–solution / advantages–disadvantages),
+  - paraphrase the prompt,
+  - write a thesis statement,
+  - write a topic sentence,
+  - linking words / cohesive devices,
+  - generating and choosing ideas.
+- Proposed first version (draft, not confirmed):
+  1. **Confusion meter** (same as before).
+  2. **Quick check questions** on Task 2 skills, e.g. "Which is the best thesis statement?" (multiple choice), linking words (fill in the blank), "What type of question is this?".
+  3. **One short writing task with instant AI feedback:** students write *one sentence* (e.g. a thesis statement). AI gives quick feedback on the four Task 2 criteria (Task Response, Coherence & Cohesion, Lexical Resource, Grammatical Range & Accuracy), **no band score** in version 1. The teacher sees the top mistakes grouped together.
+  4. **Student answers featured on stream** (anonymous or with a nickname): a strong example and a common mistake, which the teacher reacts to live.
+- Still later: full essay marking, full Socratic tutor, mistake video library, other skills.
+
+What was done:
+- No code written (Rule 1).
+
+Open questions:
+- Does the owner agree with the draft first version above?
+- Include the one-sentence AI feedback in version 1, or only the meter + quizzes?
+- OK to feature student answers on stream? Anonymous or with nicknames?

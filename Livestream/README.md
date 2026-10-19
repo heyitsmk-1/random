@@ -23,3 +23,4 @@ A livestreamed **IELTS** class on the owner's website, **youpass.vn**. It may ev
 - **Problem 2:** a talking-head livestream is boring.
 - **Goal:** build something different that solves both problems. Options are being brainstormed in [IDEAS.md](IDEAS.md).
 - **Approach:** roll out something small fast, get feedback, then build more.
+- **First version topic:** Writing Task 2 (owner's pick: it's what most students want to learn). Scope still being agreed; see [NOTES.md](NOTES.md).

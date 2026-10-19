@@ -77,11 +77,16 @@ This is only how to **start** developing the idea. After that, students are free
   - examples that don't actually show the benefit.
 
 ### End: Consolidation page
-- Each student gets a personal recap page made with the **student feedback consolidation tool** (`student-page/` on the `claude/vibrant-hopper-bdqjun` branch of this repo, *to confirm*).
+- Each student gets a personal recap page made with the **student feedback consolidation tool**: `student-page/` on the `claude/vibrant-hopper-bdqjun` branch of this repo (confirmed by owner, 2026-10-19).
+- What that tool is today (from its README and `build.py`):
+  - It makes **anh Đậu's review page**: one self-contained HTML page per student, built from a lesson JSON file (`build.py data/<lesson>.json`).
+  - Its input is a **marked writing homework** from the CRM (`admin.ielts1984.vn/writing/*`), read by a Chrome extension.
+  - The **teacher decides** (framework checklist ✓ / ~ / ✗, idea verdicts and fix types, up to 3 systematic mistakes, rewrite task) and **Claude writes little** (Đậu's words around those decisions).
+- **What changes for the livestream:** the teacher can't make decisions for thousands of students, so the **lesson data has to come from the class itself**: the side picked, topic sentence attempts and AI feedback, the ideas and the development path. The AI tutor fills in what the teacher normally decides. The page design and builder can be reused.
 - It would include: the side they picked, their topic sentence attempts and the final fixed version, their ideas, and the teacher's developed example.
 
 ## Open questions
 1. ~~Ideas for both sides, or only their side?~~ **Answered:** only the side they choose (it's a mini lesson).
 2. ~~Step 4 framework?~~ **Answered:** see the Step 4 decision table.
-3. **Consolidation tool:** is it `student-page/` on the `claude/vibrant-hopper-bdqjun` branch?
+3. ~~Consolidation tool?~~ **Answered:** `student-page/` on `claude/vibrant-hopper-bdqjun`.
 4. **Speaking feedback tool:** Claude can't see `youpassvn/speaking-intensive` yet (see NOTES.md).

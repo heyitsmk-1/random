@@ -168,3 +168,16 @@ What was done:
 Open questions:
 - Is the consolidation tool `student-page/` on branch `claude/vibrant-hopper-bdqjun`?
 - Prototype: scripted AI or live AI (needs an API key)?
+
+## 2026-10-19: Consolidation tool confirmed
+
+What was said:
+- The student feedback consolidation tool is the one on branch **`claude/vibrant-hopper-bdqjun`** (`student-page/`).
+
+What was done:
+- Read its README and `build.py`. It builds anh Đậu's per-student review page from a lesson JSON file; today the teacher's marking decisions from the CRM fill that JSON.
+- Noted in [LESSON-01-develop-ideas.md](LESSON-01-develop-ideas.md): for the livestream, the class data and the AI tutor have to fill that JSON instead of the teacher, since the teacher can't decide for thousands of students. The page design and builder can be reused.
+- No code written (Rule 1).
+
+Open questions:
+- Prototype: scripted AI or live AI (needs an API key)?

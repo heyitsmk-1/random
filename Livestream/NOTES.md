@@ -123,3 +123,29 @@ Open questions:
 - Does the owner agree with the draft first version above?
 - Include the one-sentence AI feedback in version 1, or only the meter + quizzes?
 - OK to feature student answers on stream? Anonymous or with nicknames?
+
+## 2026-10-19: Drafting Lesson 1 for a prototype for the owner's boss
+
+What was said:
+- The owner has **~20 minutes to get a prototype up and running for their boss**.
+- Lesson: **how to develop ideas** (Writing Task 2), using the "study all subjects vs. only subjects they're good at or interested in" topic.
+- Framework: **whichever view you take, you give the benefits of it.**
+- Full flow written up in [LESSON-01-develop-ideas.md](LESSON-01-develop-ideas.md): pick a side → topic sentence with Socratic AI feedback and a common-mistake report → ideas with Gợi ý and AI grouping → teacher develops one idea per side → consolidation page.
+- An existing AI feedback tool for speaking is at **github.com/youpassvn/speaking-intensive** (private). The owner offered their login credentials.
+- The **"Student feedback consolidation"** tool is believed to be in this repo (heyitsmk-1/random).
+- The owner asked to **discuss first, then note down the good ideas**.
+
+What was done:
+- Wrote [LESSON-01-develop-ideas.md](LESSON-01-develop-ideas.md) with the owner's flow plus Claude's suggestions (marked as suggestions).
+- Tried to attach `youpassvn/speaking-intensive`: **no access**. Claude should **not** use the owner's personal login. Better options: install the Claude GitHub App on the `youpassvn` org (or give it access to that repo), or copy the relevant feedback prompt/code into this repo.
+- Found likely candidates in this repo:
+  - `student-page/` on branch `claude/vibrant-hopper-bdqjun`: probably the feedback consolidation tool (student recap pages).
+  - `speaking-pro/` on branch `claude/speaking-practice-conversation-v6sfvm`: a speaking practice prototype with prompt reference notes.
+- No code written (Rule 1).
+
+Proposed prototype for the boss (if the owner says CLAUDE COOK):
+- One web page with the **student's phone view and the teacher's dashboard side by side**.
+- A **simulated class** (a few hundred fake students), so the boss sees the side split, mistake counts and idea groups fill up live.
+- AI feedback **scripted/simulated** so the demo can't fail in front of the boss, unless the owner has an API key and wants it live.
+
+Open questions: see the bottom of LESSON-01-develop-ideas.md.

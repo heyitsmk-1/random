@@ -261,3 +261,13 @@ What was done:
 - Added these as **Core principles** at the top of README.md, and linked them from LESSON-01.
 - Step 5 note updated: the AI raises one issue at a time, most important first; the check order is never shown to the student as a list.
 - No code written (Rule 1).
+
+## 2026-10-19: Big-picture planner
+
+What was said:
+- The big picture is too big to imagine without a planner. Owner asked Claude to **draft something to go over**.
+
+What was done:
+- Wrote [PLAN.md](PLAN.md): vision in one sentence, core principles, a diagram of the whole system (before / during / after class), the five pieces, Lesson 1 minute by minute (times are guesses, ~57 min), a 4-phase roadmap (vision demo → first real class → every week → grow), the top 7 decisions waiting, and what's parked.
+- Kept it as a Markdown document (not an HTML page), since an HTML page would be code (Rule 1).
+- No code written (Rule 1).

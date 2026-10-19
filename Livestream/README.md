@@ -9,6 +9,7 @@ Project folder for the Livestream project.
 | File | What it's for |
 |------|---------------|
 | [README.md](README.md) | This overview: what the project is and where things live. |
+| [PLAN.md](PLAN.md) | **Start here.** The big picture on one page: the system, a class minute by minute, roadmap, decisions waiting. |
 | [LESSON-01-develop-ideas.md](LESSON-01-develop-ideas.md) | Draft of the first lesson (Writing Task 2, developing ideas) for the prototype. |
 | [GAPS.md](GAPS.md) | Things not yet decided or covered, grouped by when they need answering. |
 | [IDEAS.md](IDEAS.md) | Brainstorm of possible features. Nothing in it is decided yet. |

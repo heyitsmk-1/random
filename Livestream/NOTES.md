@@ -503,3 +503,20 @@ Draft confusion spots:
 Open questions:
 - OK with this flow and the spots? Should the student's pick decide the explanation in the demo?
 - Is the go-ahead phrase "CLAUDE CODE" or "CLAUDE COOK"?
+
+## 2026-10-21: Personal help vs. teacher pause: which one?
+
+What was said:
+- "Or was your idea to take the student out entirely and focus on their problem by themselves, and not for the teacher to pause and explain for the whole class? That could be good actually… what do you think?"
+
+Claude's view:
+- Personal (pull the student out): nobody waits and each student gets exactly their gap, **but** they miss what anh Khoa says meanwhile, and the teacher loses the signal (the original idea #1).
+- Teacher pause: uses anh Khoa's live strength and fixes a shared problem once, **but** it interrupts students who understood, and a student with a rare confusion gets nothing.
+- **Recommendation: both, decided by how many are confused.** This is the core idea from day one: AI looks after each student, the teacher looks after the crowd.
+  - Student presses → **anh Đậu helps right away in the panel** (short explanation of what was just said + a CCQ). The stream keeps playing next to it, so the student isn't pulled out and doesn't miss much.
+  - If the class bar crosses the threshold (e.g. 30%) → **anh Khoa pauses for everyone**: asks what's confusing, explains, checks.
+- Demo idea: a small switch "Kịch bản: ít bạn chưa hiểu / nhiều bạn chưa hiểu" so the boss sees both paths.
+
+Open questions:
+- Go with the hybrid? Add the scenario switch to the demo?
+- Is the go-ahead phrase "CLAUDE CODE" or "CLAUDE COOK"?

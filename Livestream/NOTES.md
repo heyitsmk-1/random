@@ -714,3 +714,18 @@ Claude's proposal (replaces the earlier waiting-screen idea; not coded):
     - "Studying all subjects helps students **study all subjects**." → not a benefit
     - "Students become well-rounded **because they become well-rounded**." → circular
     - "Firstly, studying all subjects helps students **becomes** more well-rounded." → become
+
+## 2026-10-21: Voicing anh Khoa
+
+What was said:
+- "It's hard to read the text and pay attention at the same time. How do we voice it?"
+
+Claude's answer:
+- **In the real livestream this solves itself:** it's anh Khoa's real voice. Captions stay as an option. So this is only a **demo** problem.
+- **Only anh Khoa needs a voice.** He's time-paced; the student can't control his speed. anh Đậu's chat is self-paced in the panel, so text is fine there.
+- Options for the demo:
+  1. **Browser's built-in voice** (free, works now): reads each line aloud and the captions follow it. Downsides: robotic, the Vietnamese voice depends on the computer, and it mangles the English phrases mixed into the Vietnamese.
+  2. **Generated voice files (ElevenLabs, multilingual model):** good quality and handles Vietnamese + English mixed in one line. The team already used this for the "Days Off" speaking prototype (`days-off/tools/tts.py` on another branch, model `eleven_multilingual_v2`). Needs an ElevenLabs API key in the environment (not in chat or the repo). ~150 lines ≈ a few MB of audio.
+  3. **anh Khoa records the script himself** (~10–15 min of reading): most authentic; Claude splits it into lines.
+  4. Cloning anh Khoa's voice with ElevenLabs: only with his explicit consent.
+- Recommendation: (1) now as a quick fix with a mute button; (2) or (3) before showing the boss.

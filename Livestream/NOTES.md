@@ -617,3 +617,20 @@ Claude's answer:
   - then the class moves on together
 - Same idea for questions: **"Hiện đáp án" (reveal answer)** is anh Khoa's button; the countdown is the default.
 - **In the student demo** (no teacher side yet): the timer plays anh Khoa pressing the button, plus a demo button under the stream, "anh Khoa bấm: Chốt", so the owner can try it any time.
+
+## 2026-10-21: Rare questions go private; questions about earlier slides are kept
+
+What was said:
+1. When a student asks a question that **not many other students have asked**, it should go to the **private tutor** too.
+2. Sometimes anh Khoa **moves on while the question was about something way back on another slide**, so **keep those questions on the "suggested page" too**.
+
+Claude's proposal (not coded; waiting for CLAUDE COOK):
+1. **Typed questions ("Chỗ khác…") are grouped by AI** across the class:
+   - Few students ask it → **anh Đậu answers privately**. (In v2 the demo had anh Khoa read a typed question on stream; that changes.)
+   - Many ask the same thing → it appears on **anh Khoa's dashboard** as one grouped question ("38 bạn hỏi: …"), and he can answer it for the class.
+2. **Questions about an earlier slide:**
+   - When pressing Chưa hiểu, the student can pick **which part** they mean: the current slide is selected by default, with the last 2–3 slides as small thumbnails. anh Đậu answers with **that** slide as context, not the current one.
+   - **Nothing gets lost:** questions not answered live are kept in a list. anh Khoa sees them as suggestions ("Câu hỏi còn chờ") for a Q&A moment or the end of class, and the student gets the answers on their recap page.
+
+Open question:
+- "Suggested page": does it mean anh Khoa's list of suggestions on his dashboard, the student's recap page, or both?

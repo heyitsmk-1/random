@@ -773,3 +773,23 @@ What was done (same link, now version 3: https://claude.ai/artifact/AbFNQCpDezdo
 - All 8 items from the list: timers + class reveal, anh Khoa's "Hiện đáp án" / "Chốt" demo buttons with a 30 s warning, rare questions answered privately, picking an earlier slide, accepted X's as canon, auto-applied fixes, early-finisher screen (Ôn nhanh + Tìm lỗi của các bạn), browser voice (Vietnamese + English). Details in [prototype/student-live/README.md](prototype/student-live/README.md).
 - Tested in a headless browser: whole lesson with an unanswered question, a class pause with a typed question, private help with the slide picker, auto-fix + resend, the waiting screen + spot-the-error, Chốt on every task, recap. No errors.
 - Not testable here: the live AI replies and the voice (the test browser has no voices). Both only work in a real browser on claude.ai.
+
+## 2026-10-21: Voice doesn't work on the owner's computer
+
+What was said:
+- "The voice doesn't work on my computer."
+
+Claude's notes (no code changed; waiting for answers + CLAUDE COOK):
+- How the page decides: it only speaks if the browser offers a **Vietnamese (vi-VN) voice**. With none it stays silent and should show "Máy này chưa có giọng tiếng Việt, mình xem phụ đề nha". It never falls back to another language's voice, because that would mangle Vietnamese.
+- Likely causes, most likely first:
+  1. **No Vietnamese voice installed** on the computer (common on Windows without the Vietnamese speech pack, and on Macs where it isn't downloaded).
+  2. **The Claude desktop app** (rather than Chrome / Edge) may not offer speech voices at all.
+  3. Less likely: the claude.ai page frame blocks speech, or the voice list loads late.
+- How to add a Vietnamese voice:
+  - Windows: Settings → Time & language → Speech → Add voices → Vietnamese (Microsoft An). Edge also has natural online voices (HoaiMy, NamMinh).
+  - Mac: System Settings → Accessibility → Spoken Content → System voice → Manage Voices → Vietnamese (Linh).
+- Proposed fix for the page: a small **voice status + "Thử giọng"** (test voice) button that says which voice it found, or why it can't speak, so the cause is visible instead of silent.
+- If browser voices stay unreliable: the earlier ElevenLabs option (pre-made audio, works on any computer, $0–$5).
+
+Open questions:
+- Which browser / app, Windows or Mac? Did the "chưa có giọng tiếng Việt" message appear?

@@ -813,3 +813,31 @@ Proposed fix (not coded; waiting for CLAUDE COOK):
 
 Open question:
 - Must students use the formula word for word, or is a correct paraphrase OK? (Owner's comment suggests paraphrases are OK.)
+
+## 2026-10-21: Quick review of the classroom experience (Claude's view)
+
+What was said:
+- "What do you think of the overall classroom experience? Do a quick review."
+
+Claude's review:
+- **Works well:**
+  - The loop teach → check → do → private coaching → recap answers both original problems.
+  - The student is never idle.
+  - "Chưa hiểu" splitting into a class pause vs. private help is the most original part.
+  - Chips + auto-applied fixes keep typing low.
+  - The recap gives a strong ending (peak-end rule).
+- **Weak spots:**
+  1. **Too much competing for attention:** captions, voice, board, meter, flashes, timers, toasts, and a panel on the other side. Students keep switching between two places.
+  2. **Quiz-heavy pace:** an ICQ plus 1–2 CCQs in every part, plus timers. It may feel like a test rather than a class.
+  3. **anh Đậu's quality is the biggest risk:** two wrong corrections found in a few tries (shortening an accepted X, swapping a correct paraphrase). Needs a test set before real students.
+  4. **The demo undersells anh Khoa:** text plus a robot voice. A real recording would carry much more energy for the boss.
+  5. **Phones:** the prototype is desktop-only, but many students will probably watch on phones. Writing a paragraph there is hard. Unchecked.
+  6. **Lonely in a big class:** apart from the numbers, there's little sense of the crowd (reactions, best answers on stream).
+  7. **No next step after the recap:** no homework or link to the next lesson (a business opportunity).
+  8. **The teacher side doesn't exist yet:** can anh Khoa teach and read a dashboard at once? Biggest unknown.
+- **Suggested priorities:**
+  1. Fix anh Đậu's rules (accept paraphrases, minimal edits) + a test set of ~30 real-style answers per writing step.
+  2. Calm the screen: fewer toasts, a quieter stream during tasks, one clear "look here" at a time.
+  3. Prototype anh Khoa's stream deck / dashboard.
+  4. Real voice for the boss demo.
+  5. Check it on a phone.

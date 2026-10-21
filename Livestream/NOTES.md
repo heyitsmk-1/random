@@ -536,3 +536,20 @@ Claude's answer:
 - **Loop back:** everything students ask is logged → the teacher sees it, and it becomes next lesson's planned confusions.
 - So planned questions aren't strictly required, but they should be the backbone; AI covers the gaps.
 - In the demo: the script lines stand in for the transcript; the "confusion spots" table (above) is the planned list; "Chỗ khác…" is answered by live AI using the recent captions.
+
+## 2026-10-21: Speech-to-text cost
+
+What was said:
+- "Speech to text is REALLY expensive, and for a one hour stream? That'd be crazy."
+
+Claude's answer:
+- The stream would be transcribed **once**, centrally, not once per student. So it's one hour of audio per class, whatever the class size.
+- Rough list prices Claude knows of (to be checked before deciding): hosted Whisper-type APIs are about **$0.04–$0.40 per hour of audio** depending on provider (Groq at the low end, OpenAI/ElevenLabs higher). At 2–3 streams a week that's cents to a few dollars a month. The real per-student cost is the **AI tutor calls**, not the transcript.
+- **But we may not need it at all for version 1.** anh Đậu can know "what anh Khoa just said" from what's already planned:
+  - the **activity / slide currently on screen** (the stream-deck button anh Khoa pressed is a free signal), plus
+  - the **teacher's notes for that slide** from prep, plus
+  - the **planned common confusions** for that moment.
+- Options, cheapest first:
+  1. **No speech-to-text:** slide + notes + planned confusions. "Chỗ khác…" answered from the slide notes. (Recommended for v1.)
+  2. **Transcribe only when needed:** keep the last ~90 s of audio and transcribe it only when students press Chưa hiểu, once per window, shared by everyone who pressed.
+  3. Full live transcript: only if 1–2 aren't good enough.

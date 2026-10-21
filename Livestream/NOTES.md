@@ -553,3 +553,15 @@ Claude's answer:
   1. **No speech-to-text:** slide + notes + planned confusions. "Chỗ khác…" answered from the slide notes. (Recommended for v1.)
   2. **Transcribe only when needed:** keep the last ~90 s of audio and transcribe it only when students press Chưa hiểu, once per window, shared by everyone who pressed.
   3. Full live transcript: only if 1–2 aren't good enough.
+
+## 2026-10-21: Transcript parked; YouTube auto-captions?
+
+What was said:
+- **For the demo we don't need a transcript.** Think about it later.
+- "If we go live on YouTube, it has auto transcript, no?"
+
+Claude's answer (from memory; to be checked when we get there):
+- YouTube can show **automatic live captions to viewers**, but language support for *live* auto-captions is limited (English is solid; Vietnamese live support needs checking).
+- **Our page probably can't read them live.** The embedded YouTube player is a separate site inside the page, so its caption text isn't readable by our code. The YouTube API's caption download is meant for finished videos the channel owns, not a live feed.
+- After the stream, YouTube's auto-captions for the recording could be downloaded by the channel owner. That's useful for recaps and next-lesson prep, not for live help.
+- Parked with the rest of the streaming tech.

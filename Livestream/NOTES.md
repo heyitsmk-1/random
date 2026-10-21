@@ -653,3 +653,19 @@ Proposed fix (not coded; waiting for CLAUDE COOK):
 
 Open question:
 - Should phe B's taught X be shorter? e.g. "focusing on the subjects they enjoy" or "focusing on their strengths and interests".
+
+## 2026-10-21: Don't make students retype a fix they already chose
+
+What was said:
+- Screenshot: anh Đậu confirmed the right X ("focusing on their strengths and interests") and then asked the student to **rewrite the whole sentence** in the box.
+- "It's writing, so it's literally just copy and paste. When students choose the right answer, just **create the sentence** and **focus** to them, yeah?"
+
+Claude's proposal (not coded; waiting for CLAUDE COOK):
+- Agreed: the learning happens when the student **chooses** the fix. Retyping is just friction (principle 1: tap, don't type).
+- When the student taps the right chip, **the page applies the fix to their text** and puts it in the writing box:
+  - the changed words are highlighted (old crossed out → new pops in, the animation from the recap page)
+  - the cursor is focused in the box
+  - anh Đậu says "Anh sửa vào ô bên dưới rồi nè, em đọc lại rồi bấm Gửi".
+- Several fixes **pile up** in the same box. At the end the student reads their corrected sentence once and presses **one button** ("Gửi bản này"), or edits it if they want.
+- Students still **type for real** where writing is the skill: their first attempt, the ideas, and the paragraph.
+- How: the AI also returns `fixed_text` (the student's text with that fix applied); the scripted fallback does a simple find-and-replace.

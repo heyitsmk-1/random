@@ -741,3 +741,25 @@ Claude's answer:
 - **ElevenLabs** (prices from memory, to be checked on their pricing page): billed by characters. The **free plan (~10,000 characters/month)** covers one full pass of the demo; the cheapest paid plan is about **$5 for one month** (~30,000 characters, and a commercial licence; the free plan is for non-commercial use with credit to ElevenLabs). So: **$0–$5 total** for the demo.
 - How it would work: the owner makes an ElevenLabs account → creates an API key → adds it in **the cloud environment's settings** (environment menu in the session title bar → Edit → Network secrets / API credentials, or as an environment variable named `ELEVENLABS_API_KEY`). **Never paste it in chat.** A new session picks it up; Claude then generates one audio file per line (about a minute) and puts them in the page.
 - Lines the AI makes up on the spot (answers to "Chỗ khác…") can't be pre-recorded; those would use the browser voice or stay as text.
+
+## 2026-10-21: Decision: browser voice for the demo
+
+What was said:
+- "Let's just use the browser voice for Vietnamese."
+
+Plan (not coded; waiting for CLAUDE COOK):
+- anh Khoa's lines are read aloud with the browser's **Vietnamese voice** (vi-VN). The caption moves on when the voice finishes, so text and voice stay in sync.
+- **English phrases** inside a line (e.g. "become more well-rounded") are read with an **English voice**, so they don't get mangled. The line is split into Vietnamese and English pieces.
+- **Mute / unmute** button on the stream. The speed buttons also change the speaking speed.
+- If the computer has no Vietnamese voice, the page says so and falls back to captions only.
+- anh Đậu stays as text (self-paced chat).
+
+Full list for the next build:
+1. Timers on anh Khoa's questions and the class poll; reveal + class result on the stream; "Em chưa trả lời" in the recap.
+2. "Chốt" (wrap up) demo button + 30 s warning; anh Đậu wraps up.
+3. Typed questions: rare → anh Đậu privately (not read on stream).
+4. Pick an earlier slide when pressing Chưa hiểu; unanswered questions kept for anh Khoa and the recap.
+5. Accepted X's as canon in anh Đậu's instructions; one issue per turn with a set order.
+6. Auto-apply a chosen fix into the writing box (old crossed out → new pops in); one "Gửi bản này" button.
+7. Waiting screen for early finishers: "Ôn nhanh" cards + "Tìm lỗi của các bạn".
+8. Browser voice for anh Khoa (Vietnamese + English).

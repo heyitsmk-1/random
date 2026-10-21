@@ -467,3 +467,39 @@ Claude's answer:
 Open questions:
 - Personal stuff: panel only, or also a personal layer on top of the video?
 - Is the go-ahead phrase "CLAUDE CODE" or "CLAUDE COOK"?
+
+## 2026-10-21: "Chưa hiểu" should be time-specific and class-level
+
+What was said:
+- Screenshot of a re-explanation. When the owner presses Chưa hiểu, **the teacher doesn't react**; it **cuts to a random scene** not related to what was just being taught.
+- In practice: the Chưa hiểu bar **goes up slowly**, the teacher sees it, thinks "what was hard there?", then **stops and asks students what they're confused about**.
+- Simulate that in the demo: press Chưa hiểu → **show the bar of other students who don't get it going up** → **depending on where we are in the lesson**, the teacher pauses and explains **that part** properly.
+
+Claude's proposal (not coded):
+- This also fixes principle 5: the teacher reacts to **the whole class**, on the shared stream. Nothing personal on the video.
+- Flow:
+  1. Student presses Chưa hiểu → the class bar ("Chưa hiểu: 6%") rises over a few seconds as "others" press too. anh Khoa finishes his sentence.
+  2. It crosses 30% → the stream flashes → anh Khoa: "Ơ, khoan đã. Anh thấy nhiều bạn chưa hiểu chỗ này."
+  3. "Mọi người chưa hiểu chỗ nào nè?" → quick tap poll in the panel (2 options about **this exact moment** + "Chỗ khác…"). Results fill in live (the demo makes the student's pick the majority).
+  4. "À, nhiều bạn chưa rõ … Anh giải thích lại nha." → explanation for that option, on a board about the same thing.
+  5. "Oke, anh check mọi người hiểu không nè" + flash → CCQ → the bar drops → "Ok, mọi người hiểu rồi, mình đi tiếp" → continue from where it stopped.
+- **During individual work** (writing tasks), the class isn't listening to anh Khoa, so Chưa hiểu goes to **anh Đậu**, personally, in the panel.
+- Needs "confusion spots" tied to moments in the lesson (draft list below), each with poll options, an explanation per option, and a CCQ.
+
+Draft confusion spots:
+| Part | Spot (the lines it covers) | Poll options |
+|---|---|---|
+| Chọn phe | Dạng đề Discuss both views | "Discuss both views là gì?" · "2 quan điểm là gì?" |
+| Chọn phe | Framework: ủng hộ bên nào nói lợi ích bên đó | "Sao không nói về bên kia?" · "Lợi ích là gì?" |
+| Câu chủ đề | Công thức câu chủ đề | "X là gì?" · "Công thức này dùng cho mọi đề à?" |
+| Câu chủ đề | of + V-ing | "Giới từ là gì?" · "Sao phải thêm -ing?" |
+| Câu chủ đề | X ngắn, không chép đề | "Rút gọn X thế nào?" · "Sao không chép đề được?" |
+| Ý chính | Ý chính = 1 lợi ích | "Lợi ích khác ý chính chỗ nào?" · "Nghĩ ra lợi ích bằng cách nào?" |
+| Phát triển ý | "Lợi ích này đủ chưa?" | "Đủ là sao?" · "Biện minh nghĩa là gì?" |
+| Phát triển ý | Impact / Explain / Example | "Impact với Explain khác gì?" · "Khi nào dùng Example?" |
+| Phát triển ý | Lỗi đi một vòng | "Sao câu đó sai?" · "Sửa nó thế nào?" |
+| Viết đoạn | 3 phần của đoạn | "Ghép 3 phần thế nào?" · "Firstly đặt ở đâu?" |
+
+Open questions:
+- OK with this flow and the spots? Should the student's pick decide the explanation in the demo?
+- Is the go-ahead phrase "CLAUDE CODE" or "CLAUDE COOK"?

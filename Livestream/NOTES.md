@@ -354,3 +354,24 @@ What was said:
 What was done:
 - README: added teacher and "built on". GAPS: gap 16 (logins) closed; gap 2 updated (no new API key needed; only the demo's scripted vs live choice is open).
 - No code written.
+
+## 2026-10-21: Feedback on the deck: YouPass style, less rigid, teacher control
+
+What was said:
+- Shared two skills: **ux-principles** and **youpass-design**. The deck's design "isn't very sleek and in line with YouPass' style", so read these.
+- The slides are "ok but a bit rigid".
+- **"In practice the teacher needs more control of the next step, not a set plan."**
+
+What was done:
+- Read both skills; wrote [reference/design-notes.md](reference/design-notes.md) (brand tokens + the UX principles that matter here). CLAUDE.md now says all design work follows it.
+- Added **core principle 4: the teacher is in control, not a script** (README).
+- Proposed a new model (waiting for the owner's OK before rebuilding the deck):
+  - The lesson builder prepares an **activity tray**, not a fixed sequence: Chọn phe (poll), Câu hỏi nhanh (MCQ / fill-in), Viết câu + AI tutor, Góp ý tưởng (ideas + Gợi ý), Phát triển ý, Viết đoạn + AI tutor, Hiểu chưa? (pulse), Lên sóng (show on stream).
+  - The plan is a **suggested order**; the teacher can launch any activity any time, skip, repeat, add time, close answers, reveal, or put a result on stream.
+  - **Improvise:** "+ Câu hỏi nhanh" drafts a quick question from the last few minutes of teaching or from the top mistake; one tap to launch.
+  - **AI suggests, the teacher decides:** e.g. "34% chưa hiểu 'in favor of + V-ing' → mở 1 câu hỏi nhanh?" [Mở] [Bỏ qua]. Never automatic.
+  - Students see a calm "waiting" screen between activities; unfinished work is saved if the teacher closes an activity.
+- Proposed deck redesign: YouPass orange/green on warm backgrounds, Nunito, pill buttons, soft shadows, Vietnamese UI text; varied layouts instead of the same template every slide; the **teacher control panel** as the hero slide.
+
+Open questions:
+- OK to rebuild the deck with this model and style?

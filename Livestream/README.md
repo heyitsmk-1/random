@@ -11,6 +11,7 @@ Project folder for the Livestream project.
 | [README.md](README.md) | This overview: what the project is and where things live. |
 | [prototype/Livestream-Prototype.pptx](prototype/Livestream-Prototype.pptx) | **The vision prototype:** 10 slides showing what the student sees next to what the teacher sees, step by step. |
 | [prototype/build_deck.js](prototype/build_deck.js) | Script that builds the deck. Edit and re-run it to change the slides. |
+| [reference/design-notes.md](reference/design-notes.md) | YouPass brand + UX principles that every design must follow. |
 | [reference/speaking-intensive-notes.md](reference/speaking-intensive-notes.md) | How the existing speaking AI tutor works and what Livestream can reuse. |
 | [PLAN.md](PLAN.md) | **Start here.** The big picture on one page: the system, a class minute by minute, roadmap, decisions waiting. |
 | [LESSON-01-develop-ideas.md](LESSON-01-develop-ideas.md) | Draft of the first lesson (Writing Task 2, developing ideas) for the prototype. |
@@ -27,6 +28,9 @@ The project in its simplest form. Every feature should follow these.
 1. **Teacher teaches, students respond instantly.** Students answer with taps and quick tech interactions, not long typing, because typing takes a long time.
 2. **Anonymous.** Students' responses are anonymous to the class, which lowers the barrier to joining in.
 3. **AI feedback modelled on a real teacher.** Not a big list of mistakes and "go fix it". Slow and Socratic: one thing at a time, with guiding questions so the student fixes it themselves.
+4. **The teacher is in control, not a script** (owner, 2026-10-21). The lesson plan is a suggestion; the teacher decides what to launch next, live.
+
+All visuals follow the YouPass brand and UX principles: see [reference/design-notes.md](reference/design-notes.md).
 
 ## What the project is
 

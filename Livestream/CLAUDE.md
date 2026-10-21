@@ -10,4 +10,5 @@ While working:
 - Document everything. This is a new project and the owner juggles several projects.
 - When the owner gives a new rule, add it to RULES.md with the next number and the date.
 - When the owner says or decides something, add it to NOTES.md under a dated entry, along with what was done and any open questions.
+- Any design work (slides, mock-ups, product UI) follows [reference/design-notes.md](reference/design-notes.md): YouPass brand and UX principles.
 - Keep README.md's file list and project description up to date.

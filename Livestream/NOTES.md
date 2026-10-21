@@ -582,3 +582,23 @@ What was done (same link: https://claude.ai/artifact/AbFNQCpDezdomNnZZMWVTF, now
 5. 11 confusion spots with 22 explanations + CCQs (listed in LESSON-01-script.md).
 - Tested in a headless browser: the whole lesson with one class pause (topic sentence) and one private help (main idea), writing box, rewrite, recap. No errors.
 - Not tested here: live AI replies (only inside claude.ai).
+
+## 2026-10-21: Timers on questions
+
+What was said:
+- "There should be a timer too, right? If students don't choose, the AI will say the answer."
+
+Claude's proposal (not coded; waiting for CLAUDE COOK):
+- **anh Khoa's questions (CCQ / ICQ) get a countdown**, like Kahoot: ~15 s for a CCQ, ~10 s for an ICQ. A ring counts down on the question card, and the stream shows "Còn 12s".
+- **When time's up:**
+  - The answer is revealed for everyone on the stream, with the class result ("72% chọn đúng"). This is shared, so it fits principle 5 and gives anh Khoa a signal.
+  - In the student's panel: right / wrong / "Em chưa trả lời", plus a one-line *why* from anh Đậu if they missed it.
+  - The recap counts "chưa trả lời" separately.
+- **Class poll** ("Mọi người chưa hiểu chỗ nào?"): ~15 s, then the majority decides.
+- **Writing tasks get a longer, visible timer** (e.g. topic sentence 3 min, ideas 2 min, develop 3 min, paragraph 8–10 min). When it ends, anh Khoa moves on; the student's draft is kept and anh Đậu can still give feedback (in the panel or recap). No "answer" is given; a model is shown instead.
+- **No timer on anh Đậu's private help or chips.** That's the student's own pace; pressure there doesn't help.
+- In the demo, timers follow the speed control.
+
+Open questions:
+- Are those timer lengths OK?
+- Should a student who missed or got it wrong automatically get anh Đậu's one-line explanation?

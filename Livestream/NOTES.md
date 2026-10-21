@@ -316,3 +316,12 @@ How to rebuild after edits (from this folder, with pptxgenjs installed):
 
 Open questions:
 - Owner to review the deck and say what to change.
+
+## 2026-10-21: How to get speaking-intensive to Claude
+
+What was said:
+- Owner asked how to clone `speaking-intensive`.
+
+What was done:
+- Gave three ways: (1) give the Claude GitHub App access so Claude attaches it directly (best, nothing copied); (2) download the ZIP from GitHub and upload only the prompt/feedback files into `Livestream/reference/speaking-intensive/` on this branch; (3) clone with git on the owner's computer and copy the files in.
+- Warned: check `heyitsmk-1/random` is **private** before copying company code into it, and leave out `.env`, API keys, `node_modules`, and student data.

@@ -729,3 +729,15 @@ Claude's answer:
   3. **anh Khoa records the script himself** (~10–15 min of reading): most authentic; Claude splits it into lines.
   4. Cloning anh Khoa's voice with ElevenLabs: only with his explicit consent.
 - Recommendation: (1) now as a quick fix with a mute button; (2) or (3) before showing the boss.
+
+## 2026-10-21: Voice cost (demo only)
+
+What was said:
+- "How do we make the voice? Does it cost money?" and "I just need it for this demo only."
+
+Claude's answer:
+- anh Khoa's lines in the demo: **~110 lines, ~6,200 characters** (counted from the page source), plus a few that change with the student's side.
+- **Browser voice: free.** Can be done right away; quality is robotic.
+- **ElevenLabs** (prices from memory, to be checked on their pricing page): billed by characters. The **free plan (~10,000 characters/month)** covers one full pass of the demo; the cheapest paid plan is about **$5 for one month** (~30,000 characters, and a commercial licence; the free plan is for non-commercial use with credit to ElevenLabs). So: **$0–$5 total** for the demo.
+- How it would work: the owner makes an ElevenLabs account → creates an API key → adds it in **the cloud environment's settings** (environment menu in the session title bar → Edit → Network secrets / API credentials, or as an environment variable named `ELEVENLABS_API_KEY`). **Never paste it in chat.** A new session picks it up; Claude then generates one audio file per line (about a minute) and puts them in the page.
+- Lines the AI makes up on the spot (answers to "Chỗ khác…") can't be pre-recorded; those would use the browser voice or stay as text.

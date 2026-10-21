@@ -570,6 +570,52 @@ canvas.confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-
 .qlist { margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
 .qlist li { list-style: none; background: var(--surface-2); border-radius: 12px; padding: 10px 12px; font-size: 14px; }
 .qlist li b { display: block; margin-bottom: 2px; }
+
+/* layout v4: quieter chrome */
+.topbar { padding-block: 2px; }
+.livepill { font-size: 13px; letter-spacing: 0; padding: 8px 14px; gap: 8px; text-transform: none; font-variant-numeric: tabular-nums; }
+.livepill b { font-weight: 800; }
+.streaminfo { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; padding: 2px 4px; }
+.streaminfo .logo { font-size: 18px; }
+.demo { border: 1.5px dashed var(--line); border-radius: 16px; background: var(--surface-2); }
+.demo > summary { cursor: pointer; padding: 9px 14px; font: 700 12.5px/1 var(--font); color: var(--text-2); list-style: none; display: flex; align-items: center; gap: 8px; }
+.demo > summary::before { content: "▸"; transition: transform .2s; }
+.demo[open] > summary::before { transform: rotate(90deg); }
+.demo > summary::-webkit-details-marker { display: none; }
+.demo .controls { padding: 0 12px 12px; }
+.demo .timeline { margin-left: 0; width: 100%; }
+.caption-bar { align-items: center; }
+.fsbtn { flex: none; border: 1.5px solid rgba(255, 255, 255, .25); background: rgba(255, 255, 255, .08); color: #F5F5F7; border-radius: 999px; padding: 8px 14px; font: 700 12.5px/1 var(--font); cursor: pointer; min-height: 38px; }
+.fsbtn:hover { background: rgba(255, 255, 255, .16); }
+.fs-tab { display: none; }
+.dau-head .off { color: var(--orange-deep); }
+
+/* full screen: the stream fills the screen, interactions float over it */
+.app.fs { max-width: none; padding: 0; --fs-pw: min(400px, 46vw); }
+.app.fs .topbar { position: fixed; top: max(14px, env(safe-area-inset-top, 0px)); left: max(16px, env(safe-area-inset-left, 0px)); right: max(16px, env(safe-area-inset-right, 0px)); z-index: 40; pointer-events: none; }
+.app.fs .topbar > * { pointer-events: auto; }
+.app.fs .main { display: block; }
+.app.fs .stream-col { position: fixed; inset: 0; z-index: 20; gap: 0; }
+.app.fs .stream { border-radius: 0; height: 100%; display: flex; flex-direction: column; padding: 0; box-shadow: none; }
+.app.fs .screen { aspect-ratio: auto; flex: 1; border-radius: 0; }
+.app.fs .board { padding-top: 7cqw; }
+.app.fs .caption-bar { padding: 10px max(16px, env(safe-area-inset-left, 0px)) max(12px, env(safe-area-inset-bottom, 0px)); min-height: 74px; }
+.app.fs .streaminfo { display: none; }
+.app.fs .demo { position: fixed; left: max(16px, env(safe-area-inset-left, 0px)); bottom: calc(86px + env(safe-area-inset-bottom, 0px)); z-index: 45; max-width: min(760px, calc(100% - 32px)); box-shadow: var(--shadow-lg); }
+.app.fs .cmeter { top: 1.6cqw; right: 50%; transform: translateX(50%); }
+.app.fs .qflash { top: 5cqw; }
+.app.fs .panel { position: fixed; z-index: 30; top: 76px; right: max(16px, env(safe-area-inset-right, 0px)); bottom: calc(92px + env(safe-area-inset-bottom, 0px)); width: var(--fs-pw); max-height: none; min-height: 0; box-shadow: var(--shadow-lg); transition: transform .35s cubic-bezier(.2, .9, .3, 1); }
+.app.fs .fs-tab { display: flex; align-items: center; justify-content: space-between; gap: 10px; border: 0; border-bottom: 1.5px solid var(--line); background: var(--surface); padding: 12px 16px; font: 800 14px/1 var(--font); cursor: pointer; color: var(--text); border-radius: 22px 22px 0 0; }
+.app.fs .fs-tab b { font: 700 12px/1 var(--font); color: var(--text-2); }
+.app.fs .panel.min { bottom: auto; transform: none; }
+.app.fs .panel.min > :not(.fs-tab) { display: none !important; }
+.app.fs .panel.min .fs-tab { border-bottom: 0; border-radius: 22px; }
+.app.fs.panel-open .board { padding-right: calc(var(--fs-pw) + 48px); }
+.app.fs.panel-open .cam { right: calc(var(--fs-pw) + 32px); }
+.app.fs.panel-open .reveal { right: calc(var(--fs-pw) + 32px); max-width: calc(100% - var(--fs-pw) - 64px); }
+@media (max-width: 1100px) { .app.fs .cmeter { top: 64px; right: auto; left: 16px; transform: none; } }
+.app.fs .fsbtn .fs-label::after { content: ""; }
+@media (max-width: 760px) { .app.fs .panel:not(.min) { top: auto; height: 60%; width: auto; left: 16px; } .app.fs.panel-open .board { padding-right: 5cqw; } }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 1ms !important; animation-iteration-count: 1 !important; transition: none !important; }
 }
@@ -577,18 +623,12 @@ canvas.confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-
 
 <div class="app" id="app">
   <header class="topbar">
-    <div class="logo"><span class="you">You</span>pass<span class="live-word">Live</span></div>
-    <div class="lesson-name"><b>Writing Task 2 · Phát triển ý</b><span>anh Khoa · Lesson 1</span></div>
+    <span class="livepill" title="Đang livestream"><i></i><b id="viewers">1,284</b> đang học</span>
     <div class="spacer"></div>
-    <span class="livepill"><i></i>LIVE</span>
-    <span class="viewers"><b id="viewers">1,284</b> bạn đang học</span>
-    <div class="mood">
-      <div class="mood-hint">Em thấy sao?<br>Phím <kbd>Space</kbd></div>
-      <div class="toggle" id="toggle" data-v="yes" role="group" aria-label="Em hiểu bài chưa?">
-        <span class="knob" aria-hidden="true"></span>
-        <button class="b-yes" id="btnYes" type="button" aria-pressed="true"><span class="face" aria-hidden="true"><i></i></span>Hiểu</button>
-        <button class="b-no" id="btnNo" type="button" aria-pressed="false"><span class="face q" aria-hidden="true"><i></i></span>Chưa hiểu</button>
-      </div>
+    <div class="toggle" id="toggle" data-v="yes" role="group" aria-label="Em hiểu bài chưa? (phím Space)">
+      <span class="knob" aria-hidden="true"></span>
+      <button class="b-yes" id="btnYes" type="button" aria-pressed="true" title="Phím Space"><span class="face" aria-hidden="true"><i></i></span>Hiểu</button>
+      <button class="b-no" id="btnNo" type="button" aria-pressed="false" title="Phím Space"><span class="face q" aria-hidden="true"><i></i></span>Chưa hiểu</button>
     </div>
   </header>
 
@@ -618,15 +658,23 @@ canvas.confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-
         </div>
         <div class="caption-bar">
           <div class="caps" aria-live="polite">
-            <div class="cap-prev" id="capPrev"></div>
             <div class="cap-now" id="capNow" title="Bấm để nghe câu tiếp"><span class="who">anh Khoa</span>Chào cả nhà, mình chuẩn bị vào lớp nha.</div>
           </div>
+          <button class="fsbtn" id="fsBtn" type="button" aria-pressed="false" title="Toàn màn hình"><span aria-hidden="true">⛶</span> <span class="fs-label">Toàn màn hình</span></button>
         </div>
       </div>
+      <div class="streaminfo">
+        <div class="logo"><span class="you">You</span>pass<span class="live-word">Live</span></div>
+        <div class="lesson-name"><b>Writing Task 2 · Phát triển ý</b><span>anh Khoa · Lesson 1</span></div>
+      </div>
+      <details class="demo" id="demo">
+      <summary>Điều khiển demo</summary>
       <div class="controls">
         <button class="ctl" id="pauseBtn" type="button" aria-pressed="false">Tạm dừng</button>
         <button class="ctl" id="skipBtn" type="button">Câu tiếp ›</button>
         <button class="ctl" id="muteBtn" type="button" aria-pressed="false">Giọng: bật</button>
+        <button class="ctl" id="voiceTest" type="button">Thử giọng</button>
+        <span class="muted" id="voiceStatus">Đang tìm giọng tiếng Việt…</span>
         <div class="speed" role="group" aria-label="Tốc độ">
           <button type="button" data-s="1" aria-pressed="true">1x</button>
           <button type="button" data-s="1.5" aria-pressed="false">1.5x</button>
@@ -644,14 +692,11 @@ canvas.confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-
         </div>
         <div class="timeline" id="timeline"></div>
       </div>
+      </details>
     </section>
 
     <aside class="panel" id="panel" aria-label="Bảng của em">
-      <div class="panel-head">
-        <h2>Bảng của em</h2>
-        <span id="sideChip"></span>
-        <span class="ai-badge" id="aiBadge" title="anh Đậu, AI trợ giảng">anh Đậu: đang kết nối</span>
-      </div>
+      <button class="fs-tab" id="fsTab" type="button" aria-expanded="true"><span>Bảng của em</span><b id="fsTabArrow">Thu gọn ›</b></button>
       <div class="panel-body" id="pbody"></div>
       <div class="composer" id="composer" hidden></div>
       <div class="overlay" id="poverlay" hidden>
@@ -1009,9 +1054,7 @@ function words(s) { return (s.trim().match(/\S+/g) || []).length; }
 function renderTimeline() {
   $("timeline").innerHTML = SECTIONS.map((s, i) => `<span class="tl ${i < S.si ? "done" : i === S.si ? "now" : ""}"><i></i>${s.title}</span>`).join("");
 }
-function setSideChip() {
-  $("sideChip").innerHTML = S.side ? `<span class="chip side-${S.side.toLowerCase()}">${esc(side().tag)} · ${esc(side().name)}</span>` : "";
-}
+function setSideChip() { /* the side now shows in the student's own cards, not in a header */ }
 /* what this student sees for themselves while the stream shows everyone the same thing */
 function mineCard() {
   if (!S.side) return "";
@@ -1028,7 +1071,7 @@ function panelIdle(msg = "Đang nghe anh Khoa giảng") {
   composer.hidden = true;
   pbody.innerHTML = `<div class="idle"><div class="wave"><i></i><i></i><i></i><i></i></div><b>${esc(msg)}</b><span>Câu hỏi và bài tập sẽ hiện ở đây.</span></div>
     ${mineCard()}
-    <div class="tip">Chưa hiểu chỗ nào? Bấm <b>Chưa hiểu</b> ở trên (hoặc phím <b>Space</b>). Không ai biết em bấm đâu.</div>`;
+    ${S.si === 0 ? `<div class="tip">Chưa hiểu chỗ nào? Bấm <b>Chưa hiểu</b> ở trên (hoặc phím <b>Space</b>). Không ai biết em bấm đâu.</div>` : ""}`;
 }
 
 /* ===================== timers (follow the speed and pause controls) ===================== */
@@ -1055,7 +1098,14 @@ function pickVoices() {
   VOICES.vi = vs.find(v => /^vi/i.test(v.lang)) || null;
   VOICES.en = vs.find(v => /^en[-_]US/i.test(v.lang)) || vs.find(v => /^en/i.test(v.lang)) || null;
 }
-if (synth) { pickVoices(); synth.onvoiceschanged = pickVoices; }
+function voiceStatus() {
+  const el = $("voiceStatus"); if (!el) return;
+  if (!synth) el.textContent = "Trình duyệt này không đọc được giọng nói.";
+  else if (VOICES.vi) el.textContent = `Giọng: ${VOICES.vi.name}${VOICES.en ? " + " + VOICES.en.name : ""}`;
+  else el.textContent = `Máy này chưa có giọng tiếng Việt (${synth.getVoices().length} giọng khác). Chỉ hiện phụ đề.`;
+}
+if (synth) { pickVoices(); synth.onvoiceschanged = () => { pickVoices(); voiceStatus(); }; }
+setTimeout(voiceStatus, 600);
 const VN_PLAIN = new Set("anh em nha cho con khi ma hay sao xong vui sinh tinh nhanh thanh canh trong theo chung lam gian an ninh hoa tranh nghe bai phe".split(" "));
 /* split a line into Vietnamese and English pieces so English phrases get an English voice */
 function voiceParts(text) {
@@ -1100,6 +1150,11 @@ function speak(text) {
     next();
   });
 }
+$("voiceTest").addEventListener("click", () => {
+  pickVoices(); voiceStatus();
+  if (!voiceOn()) { toast(S.muted ? "Giọng đang tắt." : "Máy này chưa có giọng tiếng Việt."); return; }
+  speak("Chào em, đây là giọng của anh Khoa. Become more well-rounded.");
+});
 $("muteBtn").addEventListener("click", () => {
   S.muted = !S.muted;
   if (S.muted && synth) synth.cancel();
@@ -1135,7 +1190,6 @@ function hideFlash() { clearTimeout(flash.t); $("qflash").hidden = true; }
 /* ===================== captions + speech ===================== */
 let lastCap = "";
 function pushCaption(text, speakIt = true) {
-  $("capPrev").textContent = lastCap;
   lastCap = text;
   S.capHistory.push(text); if (S.capHistory.length > 10) S.capHistory.shift();
   const ws = text.split(" ");
@@ -1277,11 +1331,10 @@ function pressNo() {
   if (S.scenario === "many" && S.mode === "explain") {
     S.pending = { kind: "class", spot };
     M.hold = true; M.target = 37;
-    toast(`Đã gửi. ${others * 12} bạn khác cũng đang bấm Chưa hiểu.`);
+    toast(`${others * 12} bạn khác cũng đang bấm Chưa hiểu.`);
     waitUntil(() => M.val >= 30).then(() => { if (S.pending && !S.classRunning) S.cut = true; });
   } else {
     M.hold = true; M.target = 9 + Math.random() * 5;
-    toast(`Đã gửi. ${others} bạn khác cũng bấm. anh Đậu giúp em nha.`);
     personalHelp(spot);
   }
 }
@@ -1400,7 +1453,7 @@ async function personalHelp(spotId) {
   S.helpRunning = true;
   openOverlay("anh Đậu giúp em", "Chỉ em thấy");
   pobody.innerHTML = `<div class="tip">Bài giảng vẫn chạy bên trái. anh Đậu giúp riêng em, chỉ em thấy.</div>
-    <div class="dau-head">${rigHTML(46, "a-wave")}<div class="who">anh Đậu<span>TA của anh Khoa · chỉ em thấy</span></div></div><div class="chat" id="helpChat"></div>`;
+    <div class="dau-head">${rigHTML(46, "a-wave")}<div class="who">anh Đậu<span>${dauSub("TA của anh Khoa · chỉ em thấy")}</span></div></div><div class="chat" id="helpChat"></div>`;
   helpChat = $("helpChat"); helpRig = pobody.querySelector(".dau-head .rig");
   // the confusion might be about an earlier slide: let the student pick which part
   const hist = S.spotHistory.slice(-3).reverse();
@@ -1611,12 +1664,8 @@ function renderSpotGame() {
 
 /* ===================== AI tutor: anh Đậu ===================== */
 let sampleFn = null, aiMode = "pending";
-function setAiBadge() {
-  const b = $("aiBadge");
-  if (aiMode === "live") { b.textContent = "anh Đậu: AI trực tiếp"; b.className = "ai-badge live"; }
-  else if (aiMode === "offline") { b.textContent = "anh Đậu: chế độ offline"; b.className = "ai-badge"; }
-  else { b.textContent = "anh Đậu: đang kết nối"; b.className = "ai-badge"; }
-}
+const dauSub = (txt) => `${txt}${aiMode === "offline" ? ' · <span class="off">bản offline</span>' : ""}`;
+function setAiBadge() { /* AI status only shows when it matters: "bản offline" under anh Đậu's name */ }
 (async () => {
   try {
     const s = window.claude && window.claude.use ? await window.claude.use("sample") : null;
@@ -1625,6 +1674,44 @@ function setAiBadge() {
   setAiBadge();
 })();
 
+/* anh Khoa sets these before class (prep): what counts, and the order anh Đậu handles errors in.
+   anh Đậu follows this order exactly; it is the teacher's call, not the AI's. */
+const TEACHER_RULES = {
+  topic: {
+    accept: [
+      "Khúc 1 và khúc 3 có thể nói cách khác nếu cùng nghĩa và đúng ngữ pháp (vd \"doing so offers many benefits\", \"because it has many advantages\"). KHÔNG đổi chúng thành công thức nếu em viết đúng.",
+      () => `X chuẩn, luôn chấp nhận: ${side().accepted.map(x => `"${x}"`).join(", ")}; cách nói khác cùng ý, ngắn gọn, đúng ngữ pháp cũng chấp nhận.`,
+      "X chỉ bị coi là chép đề khi có \"some people believe\" / \"while others think\", nói cả 2 quan điểm, hoặc dài hơn ~12 từ mà không thuộc danh sách trên."
+    ],
+    order: [
+      "Không nói rõ mình ủng hộ (thiếu \"I am personally in favor of\" hoặc cách nói tương đương)",
+      "Thiếu lý do về lợi ích (vế \"because… benefits\" hoặc tương đương)",
+      "\"in favor of\" + động từ nguyên mẫu (phải V-ing) hoặc thiếu \"of\"",
+      "X sai phe hoặc sai nghĩa",
+      "X chép đề / quá dài",
+      "Ngữ pháp khác: chia động từ (vd doing so offer → offers), số ít / số nhiều, mạo từ",
+      "Từ vựng dùng sai nghĩa"
+    ]
+  },
+  develop: {
+    accept: ["Mọi hướng phát triển hợp lý trong Impact / Explain / Example đều chấp nhận; không đòi viết giống câu mẫu."],
+    order: ["Viết tiếng Việt", "Lệch hướng đã chọn / không nối với ý chính", "Giải thích vòng tròn, hoặc \"impact\" chỉ nói lại ý", "Ví dụ không cho thấy lợi ích", "Ngữ pháp", "Từ vựng"]
+  },
+  para: {
+    accept: ["Câu chủ đề nói cách khác cùng nghĩa vẫn chấp nhận.", "Không bắt viết giống đoạn mẫu."],
+    order: ["Thiếu câu chủ đề", "Ý chính không phải lợi ích", "Phát triển ý vòng tròn / chưa đủ", "Thiếu liên kết (Firstly / This / As a result…)", "Ngữ pháp", "Từ vựng", "Quá ngắn (< 60 chữ)"]
+  }
+};
+function teacherRulesText(step) {
+  const r = TEACHER_RULES[step];
+  return `QUY TẮC CỦA ANH KHOA (đặt trước buổi học — LÀM ĐÚNG THEO, không tự đổi):
+Chấp nhận:
+${r.accept.map(a => "- " + qv(a)).join("\n")}
+THỨ TỰ XỬ LÝ LỖI (mỗi lượt CHỈ 1 lỗi: lỗi đầu tiên trong danh sách mà bài của em đang mắc):
+${r.order.map((o, i) => `${i + 1}. ${o}`).join("\n")}
+CHỈ sửa lỗi THẬT (sai ngữ pháp, sai nghĩa, thiếu phần). TUYỆT ĐỐI không đổi chữ đúng thành chữ của công thức. Nếu em viết đúng nhưng khác công thức: tối đa 1 dòng "Công thức của anh Khoa là …, em viết vậy cũng đúng", không sửa bài.`;
+}
+
 const FOCUS = {
   topic: () => `BƯỚC: Câu chủ đề (1 câu).
 FOCUS: công thức "I am personally in favor of X because it brings about many significant benefits."
@@ -1632,19 +1719,16 @@ FOCUS: công thức "I am personally in favor of X because it brings about many 
 - X CHUẨN (anh Khoa dạy hoặc tương đương — LUÔN CHẤP NHẬN, TUYỆT ĐỐI không bảo rút gọn, không "nâng cấp", không đổi): ${side().accepted.map(x => `"${x}"`).join(", ")}. Cách nói khác cùng ý, ngắn gọn, đúng ngữ pháp cũng chấp nhận.
 - X "quá dài / chép đề" CHỈ KHI: X chứa "some people believe", "while others think", hoặc nói cả 2 quan điểm, hoặc dài hơn ~12 từ mà không thuộc danh sách X chuẩn.
 - X phải khớp phe em đã chọn.
-- Khúc "because it brings about many significant benefits" giữ nguyên.
-THỨ TỰ XỬ LÝ LỖI (mỗi lượt CHỈ 1 lỗi, theo thứ tự này): (1) không theo công thức / thiếu "I am personally in favor of"; (2) thiếu khúc "because it brings about many significant benefits"; (3) "in favor of" + động từ nguyên mẫu (phải V-ing) hoặc thiếu "of"; (4) X sai phe; (5) X quá dài / chép đề (theo định nghĩa trên); (6) lỗi từ vựng / ngữ pháp khác (vd "benefit" thiếu s, "bring" thiếu s).`,
+- Khúc "because it brings about many significant benefits" là cách anh Khoa dạy; cách nói khác cùng nghĩa vẫn đúng (xem quy tắc của anh Khoa).`,
   develop: () => `BƯỚC: Phát triển ý (1–2 câu).
 Ý chính của em: "${ideaText()}"
 Câu hỏi cốt lõi: lợi ích này đã đủ để biện minh cho việc ${side().vi} chưa?
 Em chọn hướng: ${PATHS[S.path || "impact"].label.toUpperCase()} = ${PATHS[S.path || "impact"].desc}.
-FOCUS: 1–2 câu đi đúng hướng đó, nối tiếp ý chính, phục vụ quan điểm "${side().name}". Sau đó em được phát triển tiếp kiểu khác.
-THỨ TỰ XỬ LÝ LỖI (mỗi lượt 1 lỗi): (1) viết tiếng Việt; (2) đi lệch hướng đã chọn / không nối với ý chính; (3) giải thích vòng tròn (lặp lại ý, vd "${side().circular}") hoặc "impact" chỉ nói lại ý bằng từ khác; (4) ví dụ không cho thấy lợi ích; (5) lỗi từ vựng / ngữ pháp.`,
+FOCUS: 1–2 câu đi đúng hướng đó, nối tiếp ý chính, phục vụ quan điểm "${side().name}". Sau đó em được phát triển tiếp kiểu khác.`,
   para: () => `BƯỚC: Viết đoạn thân bài hoàn chỉnh (khoảng 80–120 chữ).
 FOCUS: 3 phần theo thứ tự: (1) câu chủ đề theo công thức "I am personally in favor of X because it brings about many significant benefits." (X chuẩn: ${side().accepted.map(x => `"${x}"`).join(", ")} — luôn chấp nhận) (2) "Firstly," + ý chính (một lợi ích cụ thể) (3) phát triển ý bằng Impact / Explain / Example.
 Ý chính em đã chọn: "${ideaText()}". Hướng phát triển em đã chọn: ${PATHS[S.path || "impact"].label}.
-Đoạn mẫu (chỉ để tham khảo, KHÔNG bắt em viết giống): "${side().model.join(" ")}"
-THỨ TỰ XỬ LÝ LỖI (mỗi lượt 1 lỗi): (1) thiếu câu chủ đề; (2) ý chính không phải lợi ích; (3) phát triển vòng tròn / không đủ; (4) thiếu liên kết (Firstly / This / As a result…); (5) lỗi ngữ pháp cơ bản (chia động từ, số nhiều, mạo từ); (6) quá ngắn (< 60 chữ).`
+Đoạn mẫu (chỉ để tham khảo, KHÔNG bắt em viết giống): "${side().model.join(" ")}"`
 };
 function tutorInstructions(step) {
   return `Bạn là anh Đậu — TA (trợ giảng) của anh Khoa ở YouPass, đang kèm 1-1 một học viên người Việt ngay trong lớp livestream IELTS Writing Task 2. Xưng "anh", gọi "em". Nói tiếng Việt khoảng 90%, tiếng Anh cho ví dụ và khi trích câu của em. Ấm áp, ngắn gọn, như người thật nhắn tin. KHÔNG bao giờ tự nhận là AI hay trợ lý ảo.
@@ -1654,9 +1738,11 @@ PHE EM ỦNG HỘ: ${side().name}
 
 ${FOCUS[step]()}
 
+${teacherRulesText(step)}
+
 CÁCH KÈM (Socratic, mô phỏng giáo viên thật — KHÔNG đưa một danh sách lỗi rồi bảo "em tự sửa"):
-- Mỗi lượt CHỈ xử lý MỘT lỗi: lỗi đầu tiên theo THỨ TỰ XỬ LÝ LỖI ở trên. Trích đúng chỗ đó bằng **"..."** (ngắn), hỏi MỘT câu gợi mở, và đưa chips: 2–3 phương án SỬA cụ thể (đúng 1 cái đúng) + 1 chip "Em không chắc". KHÔNG nói đáp án trước khi em thử.
-- Em chọn đúng → xác nhận 1 dòng + lý do rất ngắn, ghi note, VÀ trả về "fixed_text" = TOÀN BỘ bài hiện tại của em đã áp dụng sửa này (giữ nguyên mọi chỗ khác, kể cả lỗi chưa sửa). Rồi chuyển sang lỗi tiếp theo trong CÙNG lượt (chips mới), hoặc nếu hết lỗi thì action "write" với lời mời: "Anh sửa vào ô bên dưới rồi nè, em đọc lại rồi bấm Gửi".
+- Mỗi lượt CHỈ xử lý MỘT lỗi: lỗi đầu tiên theo THỨ TỰ XỬ LÝ LỖI của anh Khoa ở trên. Trích đúng chỗ đó bằng **"..."** (ngắn), hỏi MỘT câu gợi mở, và đưa chips: 2–3 phương án SỬA cụ thể (đúng 1 cái đúng) + 1 chip "Em không chắc". KHÔNG nói đáp án trước khi em thử.
+- Em chọn đúng → xác nhận 1 dòng + lý do rất ngắn, ghi note, VÀ trả về "fixed_text" = TOÀN BỘ bài hiện tại của em đã áp dụng sửa này. fixed_text CHỈ đổi đúng những chữ sai (sửa tối thiểu); giữ nguyên từng chữ khác, kể cả lỗi chưa sửa và cách nói khác công thức mà vẫn đúng. Rồi chuyển sang lỗi tiếp theo trong CÙNG lượt (chips mới), hoặc nếu hết lỗi thì action "write" với lời mời: "Anh sửa vào ô bên dưới rồi nè, em đọc lại rồi bấm Gửi".
 - Em chọn sai → gợi ý thêm 1 dòng, chips thu hẹp còn 2. Nếu vẫn sai hoặc chọn "Em không chắc" → nói đáp án nhẹ nhàng + lý do 1 dòng, ghi note, VẪN trả "fixed_text" đã áp dụng đáp án đúng, rồi đi tiếp. Mỗi lỗi tối đa 1 lần thử lại.
 - Học viên KHÔNG phải gõ lại cả câu: trang web tự đưa "fixed_text" vào ô viết. Đừng bảo em "viết lại cả câu".
 - Khi em gửi bản cuối (BÀI EM SỬA LẠI): khen cụ thể 1–2 dòng (nếu còn sót lỗi nhỏ thì nhắc 1 dòng, KHÔNG mở đợt sửa mới), action "done".
@@ -1716,7 +1802,7 @@ function askTutorOffline(step, turns, st) {
       return R([...head, "Anh sửa vào ô bên dưới rồi nè, em đọc lại rồi bấm Gửi."], "write", [], [{ you_wrote: "in favor + V-ing", better: "in favor of + V-ing", category: "grammar", rule: "in favor of: luôn có of" }], fixed);
     }
     if (!/in favou?r/i.test(text)) return R(["Câu của em chưa theo công thức hôm nay á.", "Câu chủ đề bắt đầu bằng **\"I am personally in favor of\"** nha.", "Em viết lại ở ô bên dưới nhé."], "write");
-    if (!/because/i.test(text) && !st.retried) {
+    if (!/because|benefit|advantage|doing so|this (brings|offers|has)/i.test(text) && !st.retried) {
       return R(["Câu của em còn thiếu khúc cuối nè.", "Anh thêm **\"because it brings about many significant benefits\"** vào ô bên dưới rồi, em đọc lại rồi bấm Gửi nha."], "write", [], [{ you_wrote: "(thiếu khúc because…)", better: "because it brings about many significant benefits", category: "structure", rule: "Câu chủ đề có đủ 3 khúc" }], text.replace(/[.\s]*$/, "") + " because it brings about many significant benefits.");
     }
     if (/in favou?r\s+\w+ing/i.test(text) && !/in favou?r of/i.test(text)) { st.await = "of"; return R(["Em xem lại chỗ **\"in favor\"** nha.", "Sau **in favor** còn thiếu một chữ nhỏ trước V-ing. Chữ gì?"], "chips", ["of", "to", "for", "Em không chắc"]); }
@@ -1777,7 +1863,7 @@ function writeTask(step, opts, ctl) {
         <div class="row"><span class="eyebrow">${esc(opts.eyebrow)}</span><span class="spacer"></span><span class="task-clock" id="pClock"></span></div><p class="qtext">${md(opts.title)}</p>
         ${opts.helper || ""}
       </div>
-      <div class="dau-head">${rigHTML(46)}<div class="who">anh Đậu<span>TA của anh Khoa · kèm riêng em</span></div></div>
+      <div class="dau-head">${rigHTML(46)}<div class="who">anh Đậu<span>${dauSub("TA của anh Khoa · kèm riêng em")}</span></div></div>
       <div class="chat" id="${id}-chat"><div class="msg dau">${md(opts.hello)}</div></div>`;
     composer.innerHTML = `<span class="hint" id="${id}-hint" hidden>anh sửa vào đây rồi, em đọc lại rồi bấm Gửi nha ↓</span>
       <textarea class="write ${step === "para" ? "tall" : ""}" id="${id}" placeholder="${esc(opts.placeholder)}" spellcheck="false"></textarea>
@@ -2085,6 +2171,38 @@ async function runSection(i) {
 async function run() {
   for (let i = 0; i < SECTIONS.length; i++) await runSection(i);
 }
+
+/* ===================== full screen: interactions float over the stream ===================== */
+const app = $("app"), panel = $("panel");
+function setFs(on) {
+  app.classList.toggle("fs", on);
+  $("fsBtn").setAttribute("aria-pressed", on);
+  $("fsBtn").querySelector(".fs-label").textContent = on ? "Thoát toàn màn hình" : "Toàn màn hình";
+  if (on) { const r = document.documentElement.requestFullscreen; if (r) document.documentElement.requestFullscreen().catch(() => {}); }
+  else if (document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(() => {});
+  syncPanel();
+}
+$("fsBtn").addEventListener("click", () => setFs(!app.classList.contains("fs")));
+document.addEventListener("fullscreenchange", () => { if (!document.fullscreenElement && app.classList.contains("fs")) setFs(false); });
+document.addEventListener("keydown", e => { if (e.key === "Escape" && app.classList.contains("fs")) setFs(false); });
+let userMin = false;
+/* in full screen the panel opens by itself when there's something to do, and folds away when idle */
+function panelBusy() { return !poverlay.hidden || !composer.hidden || !!pbody.querySelector(".card, .chat"); }
+let wasBusy = false;
+function syncPanel() {
+  const fs = app.classList.contains("fs");
+  const open = fs && (panelBusy() ? !userMin : false);
+  panel.classList.toggle("min", fs && !open);
+  app.classList.toggle("panel-open", fs && open);
+  $("fsTab").setAttribute("aria-expanded", open);
+  $("fsTabArrow").textContent = open ? "Thu gọn ›" : "Mở ‹";
+}
+$("fsTab").addEventListener("click", () => { userMin = !panel.classList.contains("min"); if (!userMin && !panelBusy()) { panel.classList.remove("min"); app.classList.add("panel-open"); $("fsTabArrow").textContent = "Thu gọn ›"; return; } syncPanel(); });
+/* something new to do re-opens the panel even if the student folded it earlier */
+const onPanelChange = () => { const busy = panelBusy(); if (busy && !wasBusy) userMin = false; wasBusy = busy; syncPanel(); };
+new MutationObserver(onPanelChange).observe(pbody, { childList: true });
+new MutationObserver(onPanelChange).observe(poverlay, { attributes: true, attributeFilter: ["hidden"] });
+new MutationObserver(onPanelChange).observe(composer, { attributes: true, attributeFilter: ["hidden"] });
 
 /* ===================== boot ===================== */
 setBoard("intro");

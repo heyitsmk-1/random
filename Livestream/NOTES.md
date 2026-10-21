@@ -841,3 +841,37 @@ Claude's review:
   3. Prototype anh Khoa's stream deck / dashboard.
   4. Real voice for the boss demo.
   5. Check it on a phone.
+
+## 2026-10-21: Version 4 of the student page (full screen, less clutter, anh Khoa's error order)
+
+What the owner said (with screenshots of the top bar and the panel header):
+- "We also need a full screen version, where students can still get interactions even when they are fully zoomed into the page."
+- On the review: (1) agreed there's too much on the page; put some away. (2) Quiz density: "in practice anh Khoa will choose what questions to use in advance, and can wing it on the fly." (No demo change needed: the demo shows one possible set.)
+- "anh Đậu's rule should be: Follow the order of importance for the errors defined by the teacher before they go live."
+- "I like the layout as is, but there's too much on the top bar. Just have the number of students in a red pill."
+- "Reposition the YouPass Live and the title somewhere else."
+- On the board panel: "Bảng của em", "Phe A · …" and "anh Đậu: AI trực tiếp" are all redundant.
+- Said "CLAUDE COOK".
+
+What was built (artifact updated in place, same link, version 4):
+- **Top bar:** only a red pill with the student count ("1,284 đang học") and the Hiểu / Chưa hiểu toggle.
+- **Logo + lesson title** moved under the stream, like a video title.
+- **Demo controls** (pause, skip, voice, speed, scenario, anh Khoa's buttons, timeline) folded into a closed "Điều khiển demo" drawer.
+- **Panel header removed.** The side shows in the student's own cards; AI status only shows when it matters ("bản offline" under anh Đậu's name).
+- **Fewer toasts**; the "Chưa hiểu" tip only shows in the intro; the previous caption line is gone (only the current line).
+- **Full screen** (button in the caption bar, Esc to exit): the stream fills the screen; the top bar, meter, flash and captions float over it; the panel floats on the right and **opens by itself** when there's a question / task / chat, folds into a "Bảng của em" tab when idle, and the student can fold it ("Thu gọn") at any time. The board and webcam move left so nothing is hidden. Tested at 1440×900 and zoomed in (800×600).
+- **Voice:** the demo drawer shows which voice the computer has ("Máy này chưa có giọng tiếng Việt…" if none) and a "Thử giọng" button.
+- **anh Đậu follows anh Khoa's rules** (`TEACHER_RULES` in the page = what anh Khoa sets before class): a list of what's accepted and the **order of errors**, one error per turn, first in anh Khoa's order. Also:
+  - correct paraphrases of the formula are accepted (e.g. "doing so offers many benefits");
+  - only real errors are corrected; correct words are never swapped for formula words;
+  - if correct but different from the formula: at most "Công thức của anh Khoa là …, em viết vậy cũng đúng", text unchanged;
+  - `fixed_text` changes only the wrong words.
+  - Topic sentence order: no clear stance → no benefit reason → "in favor of" + V-ing / missing "of" → X wrong side/meaning → X copied/too long → other grammar (e.g. doing so offer → offers) → word choice.
+
+Tested: full lesson headlessly (unanswered question, class pause + own question, private help + slide picker, every task, waiting screen, recap), full-screen states; no errors. Not testable here: live AI replies, voice.
+
+For the real product: anh Khoa fills in the accepted list and error order in the prep phase (the prep screen isn't built yet). Questions per part are also his choice before class, and he can add one on the fly.
+
+Still open:
+- Voice on the owner's computer: which browser/OS, and what the new voice line in the demo drawer says.
+- anh Đậu still needs a test set (~30 real-style answers per writing step) before real students.

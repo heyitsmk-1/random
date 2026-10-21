@@ -50,3 +50,12 @@ Not in version 2: the teacher's side, the prep phase, any transcript, real strea
 6. **Auto-applied fixes:** when a fix is chosen, anh Đậu shows "Câu của em giờ là:" with old words crossed out → new ones popping in, and puts the fixed text in the writing box. The student just reads it and presses "Gửi bản này".
 7. **Early finishers:** "Em xong rồi 🎉" + live submissions + time until anh Khoa wraps up, and two tabs: **Ôn nhanh** (tap-to-flip cards of what's been taught) and **Tìm lỗi của các bạn** (tap the mistake in a classmate's anonymous sentence; streak counter).
 8. **Voice:** anh Khoa's lines are read by the browser's Vietnamese voice, English phrases by an English voice. "Giọng: bật / tắt" button. No Vietnamese voice on the computer → captions only.
+
+## Version 4 (built 2026-10-21)
+
+- Top bar: just the red student-count pill + Hiểu / Chưa hiểu. Logo and lesson title sit under the stream.
+- Demo controls are in a closed "Điều khiển demo" drawer, with a voice check ("Thử giọng" + which voice was found).
+- Panel header removed; AI status only shows as "bản offline" under anh Đậu when offline.
+- Full screen (caption bar button, Esc to exit): the stream fills the screen, the panel floats on the right, opens itself for questions / tasks / chat, folds to a tab when idle.
+- `TEACHER_RULES`: what anh Khoa accepts + his error order for each writing step; anh Đậu fixes one error per turn in that order, accepts correct paraphrases, makes minimal edits.
+

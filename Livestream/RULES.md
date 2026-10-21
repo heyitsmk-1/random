@@ -14,3 +14,12 @@ Never write, edit, or generate any code until the project owner says, verbatim:
 - It must be that exact phrase. "Go ahead", "start coding", "looks good", and similar do not count.
 - Until then, only planning, discussion, and documentation (like these files) are allowed.
 - Added: 2026-10-07
+
+## Rule 2: Every round of coding needs a fresh go-ahead
+
+The go-ahead phrase from Rule 1 is needed **every time** before writing code, not just once. A go-ahead for one change does not carry over to the next.
+
+- After building something, go back to discussing and documenting until the owner says the phrase again.
+- A phrase that only appears inside an instruction about the rule (e.g. "always wait for CLAUDE CODE (not counting that one)") does not count.
+- Open question (2026-10-21): the owner wrote **"CLAUDE CODE"** this time. Is the phrase now CLAUDE CODE, or still CLAUDE COOK? Until answered, Claude asks rather than guesses.
+- Added: 2026-10-21

@@ -431,3 +431,19 @@ What was done:
 Open questions:
 - Owner to try it and give feedback.
 - In a real class the teacher can't pause for one student: the re-explanation would be a personal replay on the student's screen. Decide how that fits with the live stream.
+
+## 2026-10-21: First feedback on the student prototype
+
+What was said:
+1. Screenshot from the topic-sentence task: anh Đậu said "Giờ em viết lại cả câu hoàn chỉnh trong ô viết nhé…" and then **there was no place to type**.
+2. **Whenever anh Khoa asks a question**, he should say **"Oke, anh check mọi người hiểu không nè"**, and the **livestream screen should flash a notification**.
+3. "Don't code anything yet. Always wait for CLAUDE CODE verbatim (not counting that one)." → added **Rule 2** to RULES.md.
+
+What Claude found:
+- Bug 1 cause: the writing box is at the **top** of the panel, above the chat. When anh Đậu asks for a rewrite, the box is unlocked but **scrolled out of sight**, so it looks like there's nowhere to type.
+- Proposed fix: a **writing box pinned to the bottom of the panel**, like a chat app (it appears right under anh Đậu's last message whenever he asks for a rewrite, and the panel scrolls to it). The original prompt/formula stays at the top.
+- Proposed for 2: before every CCQ / ICQ, anh Khoa says "Oke, anh check mọi người hiểu không nè" (ICQ variant: "…mọi người hiểu cần làm gì không nè"); the stream shows a flashing banner "Câu hỏi mới · trả lời ở bảng bên phải →", and the panel card glows. In a personal re-explanation: "Giờ anh check em hiểu chưa nè".
+- No code changed.
+
+Open questions:
+- Is the go-ahead phrase now "CLAUDE CODE" or still "CLAUDE COOK"?

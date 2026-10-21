@@ -344,3 +344,13 @@ What was done:
 Open questions:
 - Is the livestream teacher anh Khoa (the tutor's persona is "TA of anh Khoa")?
 - Can Livestream use the company AI gateway and youpass.vn logins?
+
+## 2026-10-21: Teacher, AI and logins decided
+
+What was said:
+- **anh Khoa** is going to be the teacher. (So the tutor persona "TA of anh Khoa" fits as-is.)
+- The livestream **will use the company's AI gateway and youpass.vn logins**.
+
+What was done:
+- README: added teacher and "built on". GAPS: gap 16 (logins) closed; gap 2 updated (no new API key needed; only the demo's scripted vs live choice is open).
+- No code written.

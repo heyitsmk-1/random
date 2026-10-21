@@ -36,5 +36,7 @@ A livestreamed **IELTS** class on the owner's website, **youpass.vn**. It may ev
 - **Problem 1:** with that many students, the owner can't manage everyone.
 - **Problem 2:** a talking-head livestream is boring.
 - **Goal:** build something different that solves both problems. Options are being brainstormed in [IDEAS.md](IDEAS.md).
+- **Teacher:** anh Khoa. The AI tutor speaks as "TA of anh Khoa".
+- **Built on:** the company AI gateway and youpass.vn logins (same as speaking-intensive).
 - **Approach:** roll out something small fast, get feedback, then build more.
 - **First version:** a Writing Task 2 mini lesson on developing ideas (owner's pick: it's what most students want to learn). See [LESSON-01-develop-ideas.md](LESSON-01-develop-ideas.md). Open items are in [GAPS.md](GAPS.md).

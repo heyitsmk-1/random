@@ -23,3 +23,19 @@ The anh Đậu images are **not** in this repo (same rule as `student-page/`). T
 ```
 python3 build.py <dau-assets.json> <out.html>
 ```
+
+## Plan for version 2 (agreed in discussion 2026-10-21, waiting for the go-ahead phrase)
+
+1. **Writing box pinned to the bottom of the panel**, like a chat app. When anh Đậu asks for a rewrite, it lights up under his last message with the student's text already in it.
+2. **Question notice.** Before every CCQ / ICQ: anh Khoa says "Oke, anh check mọi người hiểu không nè" (ICQ: "…hiểu cần làm gì không nè"), the stream flashes "Câu hỏi mới · trả lời ở bảng bên phải →", and the panel card glows.
+3. **The stream is the same for everyone.** Remove personal things from the boards (the "Phe của em" tag, X filled with the student's side, "Ý của em" on top ideas). The boards show both sides, or the side anh Khoa picks. The student's own version shows in the panel.
+4. **Hybrid "Chưa hiểu", tied to the exact moment:**
+   - A class bar on the stream: "Chưa hiểu: 6%".
+   - A demo switch under the stream: **Kịch bản: ít bạn / nhiều bạn chưa hiểu**.
+   - **Few confused:** the bar rises a little and stays under 30%. **anh Đậu** opens in the panel: "Em chưa rõ chỗ nào nè?" + 2 options for that moment + "Chỗ khác…" (typed, answered by live AI from the recent captions). Short explanation + CCQ. The stream keeps playing.
+   - **Many confused:** the bar climbs past 30% → flash → anh Khoa stops: "Ơ, khoan đã. Anh thấy nhiều bạn chưa hiểu chỗ này." → poll "Mọi người chưa hiểu chỗ nào nè?" (results fill in; the student's pick wins) → he explains that point → "Oke, anh check mọi người hiểu không nè" → CCQ → the bar drops → "Ok, mình đi tiếp."
+   - **During writing tasks:** always anh Đậu, privately.
+   - The toggle goes back to Hiểu after the CCQ.
+5. **Content:** 10 confusion spots (see NOTES.md), each with 2 options, an explanation per option and a CCQ. Written into LESSON-01-script.md.
+
+Not in version 2: the teacher's side, the prep phase, any transcript, real streaming.

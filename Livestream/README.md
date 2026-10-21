@@ -14,6 +14,7 @@ Project folder for the Livestream project.
 | [reference/design-notes.md](reference/design-notes.md) | YouPass brand + UX principles that every design must follow. |
 | [reference/speaking-intensive-notes.md](reference/speaking-intensive-notes.md) | How the existing speaking AI tutor works and what Livestream can reuse. |
 | [PLAN.md](PLAN.md) | **Start here.** The big picture on one page: the system, a class minute by minute, roadmap, decisions waiting. |
+| [LESSON-01-script.md](LESSON-01-script.md) | **The full Lesson 1 script** for the student prototype: explanations, re-explanations, CCQs, ICQs, tasks, AI tutor rules. |
 | [LESSON-01-develop-ideas.md](LESSON-01-develop-ideas.md) | Draft of the first lesson (Writing Task 2, developing ideas) for the prototype. |
 | [GAPS.md](GAPS.md) | Things not yet decided or covered, grouped by when they need answering. |
 | [IDEAS.md](IDEAS.md) | Brainstorm of possible features. Nothing in it is decided yet. |

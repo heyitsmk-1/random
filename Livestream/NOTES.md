@@ -394,3 +394,21 @@ What was done:
 - Checked: the consolidation page template has the animations to reuse (strike-through, stamp, chalk, cheer, shake, sheet-up, anh Đậu talking…). Its mascot images are **not** in the repo (kept out on purpose).
 - Checked: a published claude.ai page can call Claude directly (the `sample` capability), so the prototype can give **live AI feedback with no API key**; the viewer approves it once.
 - Listed what's missing (see the reply that day). No code yet: Rule 1 needs the exact phrase.
+
+## 2026-10-21: Answers for the student prototype + lesson script
+
+What was said:
+- AI feedback: **do it live**.
+- Đậu images "not in the repo": asked Claude to message the instance working on the consolidation tool.
+- No video: **mock up a screen with text, and a webcam in the corner**.
+- **Web page, on desktop (not phone), shared as an artifact.**
+- Language: yes, but **use anh / em** (not mình / bạn).
+- Flow: yes. Paragraph uses the student's own idea: yes.
+- ICQ/CCQ: **not a CCQ before every task.** Sprinkle CCQs **where it's difficult** (e.g. teaching the topic sentence) and **always after a re-explanation**.
+- "Chưa hiểu" behaviour: agreed. Fake classmates: yes. Only the student side: yes.
+
+What was done:
+- Didn't need to message the other instance: its published anh Đậu pages already contain the mascot art (body, arms, eyes, mouths, sprout, icons). Claude can reuse those images in the prototype page. Only the art is reused, no student data. (Cloud sessions also can't reply to messages yet.)
+- Wrote **[LESSON-01-script.md](LESSON-01-script.md)**: the full lesson (6 parts) with anh Khoa's explanations, re-explanations, CCQs only on the hard parts, ICQs before tasks, Gợi ý lists, model paragraphs for both sides, recap contents, and anh Đậu's tutor rules (adapted from speaking-intensive, anh/em).
+- Decided: the AI tutor is **anh Đậu, TA của anh Khoa** (same character as the recap page).
+- No code yet: waiting for "CLAUDE COOK".

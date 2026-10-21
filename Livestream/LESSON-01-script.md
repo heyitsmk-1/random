@@ -279,3 +279,25 @@ In the style of anh Đậu's recap page (animations from `student-page/`):
 - Writing, not speaking: spelling and punctuation count, but only flag them if they matter.
 - Output JSON: `{ "lines": [...], "action": "chips|write|done", "chips": [...], "notes": [{ "you_wrote", "better", "category" }] }`. Notes feed the recap.
 - **Live:** runs on Claude through the claude.ai page (the viewer approves once). The real product will use the company AI gateway.
+
+---
+
+## Confusion spots (version 2)
+
+When a student presses **Chưa hiểu**, the prototype looks at **what anh Khoa was teaching at that moment** (each line of the script belongs to a spot). Each spot has two common confusions; each has a short explanation and a CCQ. The full text is in `prototype/student-live/index.src.html` (`SPOTS`).
+
+| Part | Spot | Common confusions |
+|---|---|---|
+| Mở đầu | intro | Đề bài nói gì? · Nút Chưa hiểu dùng sao? |
+| Chọn phe | Discuss both views | Discuss both views là gì? · 2 quan điểm là gì? |
+| Chọn phe | Ủng hộ bên nào → lợi ích bên đó | Sao không nói về bên kia? · Lợi ích là gì? |
+| Câu chủ đề | Công thức | X là gì? · Công thức này dùng cho mọi đề à? |
+| Câu chủ đề | of + V-ing | Giới từ là gì? · Sao phải thêm -ing? |
+| Câu chủ đề | X ngắn | Rút gọn X thế nào? · Sao không chép đề được? |
+| Ý chính | Ý chính = 1 lợi ích | Lợi ích khác ý chính chỗ nào? · Nghĩ ra lợi ích bằng cách nào? |
+| Phát triển ý | Lợi ích này đủ chưa? | “Đủ” là sao? · Biện minh nghĩa là gì? |
+| Phát triển ý | Impact / Explain / Example | Impact với Explain khác gì? · Khi nào dùng Example? |
+| Phát triển ý | Lỗi đi một vòng | Sao câu đó sai? · Sửa nó thế nào? |
+| Viết đoạn | 3 phần của đoạn | Ghép 3 phần thế nào? · Firstly đặt ở đâu? |
+
+Plus **"Chỗ khác…"**: the student types a question, answered by live AI from anh Khoa's recent lines.

@@ -21,5 +21,5 @@ The go-ahead phrase from Rule 1 is needed **every time** before writing code, no
 
 - After building something, go back to discussing and documenting until the owner says the phrase again.
 - A phrase that only appears inside an instruction about the rule (e.g. "always wait for CLAUDE CODE (not counting that one)") does not count.
-- Open question (2026-10-21): the owner wrote **"CLAUDE CODE"** this time. Is the phrase now CLAUDE CODE, or still CLAUDE COOK? Until answered, Claude asks rather than guesses.
+- The phrase is still **CLAUDE COOK** (confirmed by the owner using it on 2026-10-21, after asking about "CLAUDE CODE").
 - Added: 2026-10-21

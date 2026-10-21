@@ -457,6 +457,51 @@ canvas.confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-
   .cam { width: 26cqw; }
   .cap-now { font-size: 16px; }
 }
+
+/* class confusion meter on the stream (same for everyone) */
+.cmeter { position: absolute; top: 2cqw; right: 2.4cqw; z-index: 3; display: flex; align-items: center; gap: .9cqw; background: var(--surface); border-radius: 999px; padding: .7cqw 1.2cqw; box-shadow: var(--shadow-md); font: 700 1.2cqw/1 var(--font); transition: background .3s, color .3s; }
+.cm-lab { color: var(--text-2); white-space: nowrap; }
+.cm-track { position: relative; width: 11cqw; height: 1cqw; border-radius: 999px; background: var(--surface-3); }
+.cm-fill { position: absolute; inset: 0 auto 0 0; width: 5%; border-radius: 999px; background: var(--green); transition: background .3s; }
+.cm-mark { position: absolute; left: 30%; top: -.45cqw; bottom: -.45cqw; width: .2cqw; background: var(--text); opacity: .55; }
+.cm-num { min-width: 3.4cqw; text-align: right; font-variant-numeric: tabular-nums; }
+.cmeter.warn .cm-fill { background: var(--yellow); }
+.cmeter.alert { background: var(--orange); color: var(--on-accent); animation: tpulse 1s ease-in-out 3; }
+.cmeter.alert .cm-lab { color: var(--on-accent); }
+.cmeter.alert .cm-fill { background: var(--on-accent); }
+.cmeter.alert .cm-track { background: rgba(255, 255, 255, .35); }
+.cmeter.alert .cm-mark { background: var(--on-accent); }
+/* question notice flashed on the stream */
+.qflash { position: absolute; left: 50%; top: 2cqw; transform: translateX(-50%); z-index: 4; display: inline-flex; align-items: center; gap: 1cqw; background: var(--blue); color: var(--on-accent); font: 800 1.6cqw/1 var(--font); padding: 1.1cqw 2cqw; border-radius: 999px; box-shadow: var(--shadow-lg); animation: qflash .5s cubic-bezier(.3, 1.5, .5, 1) both, qpulse 1s .5s ease-in-out 3; white-space: nowrap; }
+.qflash.alert { background: var(--orange); }
+@keyframes qflash { from { opacity: 0; transform: translateX(-50%) scale(.6); } }
+@keyframes qpulse { 50% { box-shadow: 0 0 0 1.2cqw rgba(0, 122, 255, .18), var(--shadow-lg); } }
+.card.glow { animation: rise .4s cubic-bezier(.2, .9, .3, 1) both, glow 1.1s .3s ease-in-out 3; }
+@keyframes glow { 50% { box-shadow: 0 0 0 4px var(--blue-soft), 0 0 0 7px var(--blue); } }
+/* demo scenario switch */
+.scenario { display: inline-flex; align-items: center; gap: 2px; background: var(--surface); border: 1.5px dashed var(--orange-mid); border-radius: 999px; padding: 3px 3px 3px 10px; }
+.scenario span { font: 700 12px/1 var(--font); color: var(--text-2); margin-right: 4px; }
+.scenario button { border: 0; background: none; border-radius: 999px; padding: 6px 10px; font: 700 12px/1 var(--font); cursor: pointer; color: var(--text-2); }
+.scenario button[aria-pressed="true"] { background: var(--orange); color: var(--on-accent); }
+/* writing box pinned to the bottom of the panel */
+.composer { border-top: 1.5px solid var(--line); padding: 12px 16px 14px; display: flex; flex-direction: column; gap: 8px; background: var(--surface); }
+.composer textarea.write { min-height: 74px; max-height: 32vh; }
+.composer textarea.write.tall { min-height: 140px; }
+.composer.nudge textarea.write { border-color: var(--orange); box-shadow: 0 0 0 4px var(--orange-soft); }
+.composer .hint { font: 700 12.5px/1.3 var(--font); color: var(--orange-deep); }
+/* personal card in the panel */
+.mine-card { background: var(--orange-soft); border-radius: 16px; padding: 12px 14px; display: flex; flex-direction: column; gap: 4px; font-size: 13.5px; animation: rise .4s both; }
+.mine-card .lab { font: 700 11px/1 var(--font); letter-spacing: .1em; text-transform: uppercase; color: var(--orange-deep); }
+.mine-card .en { font-size: 14px; font-weight: 600; }
+/* poll results */
+.pres { display: flex; flex-direction: column; gap: 8px; }
+.pres-row { display: grid; grid-template-columns: 1fr 44px; gap: 8px; align-items: center; font-size: 13px; }
+.pres-row .tr { grid-column: 1 / -1; height: 8px; border-radius: 999px; background: var(--surface-3); overflow: hidden; }
+.pres-row .tr i { display: block; height: 100%; width: 0; background: var(--orange-mid); border-radius: 999px; transition: width 1s cubic-bezier(.2, .8, .2, 1); }
+.pres-row.top .tr i { background: var(--orange); }
+.pres-row b { text-align: right; font-variant-numeric: tabular-nums; }
+.pollb { display: flex; flex-direction: column; gap: 1.4cqw; max-width: 60cqw; }
+.pollb .bar-row { grid-template-columns: 30cqw 1fr 6cqw; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 1ms !important; animation-iteration-count: 1 !important; transition: none !important; }
 }
@@ -484,6 +529,8 @@ canvas.confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-
       <div class="stream">
         <div class="screen" id="screen">
           <div class="board in" id="board"></div>
+          <div class="cmeter" id="cmeter" aria-label="Phần trăm cả lớp chưa hiểu"><span class="cm-lab">Cả lớp chưa hiểu</span><span class="cm-track"><span class="cm-fill" id="cmFill"></span><span class="cm-mark" title="Ngưỡng 30%"></span></span><b class="cm-num" id="cmNum">5%</b></div>
+          <div class="qflash" id="qflash" hidden></div>
           <div class="cam" id="cam" aria-label="Webcam anh Khoa">
             <div class="shelf"></div><div class="plant"></div>
             <div class="person"><div class="body"></div><div class="neck"></div><div class="head"><div class="hair"></div><div class="eye l"></div><div class="eye r"></div><div class="glasses"></div><div class="mouth"></div></div></div>
@@ -515,6 +562,11 @@ canvas.confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-
           <button type="button" data-s="1.5" aria-pressed="false">1.5x</button>
           <button type="button" data-s="2" aria-pressed="false">2x</button>
         </div>
+        <div class="scenario" role="group" aria-label="Kịch bản demo">
+          <span>Kịch bản:</span>
+          <button type="button" data-sc="many" aria-pressed="true">Nhiều bạn chưa hiểu</button>
+          <button type="button" data-sc="few" aria-pressed="false">Ít bạn chưa hiểu</button>
+        </div>
         <div class="timeline" id="timeline"></div>
       </div>
     </section>
@@ -526,8 +578,9 @@ canvas.confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-
         <span class="ai-badge" id="aiBadge" title="anh Đậu, AI trợ giảng">anh Đậu: đang kết nối</span>
       </div>
       <div class="panel-body" id="pbody"></div>
+      <div class="composer" id="composer" hidden></div>
       <div class="overlay" id="poverlay" hidden>
-        <div class="panel-head"><h2>Giảng lại cho em</h2><span class="chip side-a">Chỉ em thấy</span></div>
+        <div class="panel-head"><h2 id="ovTitle">anh Đậu giúp em</h2><span class="chip side-a" id="ovChip">Chỉ em thấy</span></div>
         <div class="panel-body" id="pobody"></div>
       </div>
     </aside>
@@ -549,7 +602,7 @@ function rigHTML(size, cls = "") {
 const PROMPT = "Some people believe that children should study all subjects at school, while others think they should only study the subjects they are good at or find interesting. Discuss both views and give your own opinion.";
 const SIDES = {
   A: {
-    key: "A", tag: "Phe A", name: "Học tất cả các môn", vi: "học tất cả các môn", en: "study all subjects",
+    key: "A", tag: "Phe A", name: "Học tất cả các môn", vi: "học tất cả các môn",
     x: "studying all subjects at school",
     stem: "Studying all subjects helps students ",
     goiy: ["become more well-rounded", "build basic knowledge for daily life", "discover hidden talents", "keep future career options open"],
@@ -562,7 +615,7 @@ const SIDES = {
     pct: 62
   },
   B: {
-    key: "B", tag: "Phe B", name: "Chỉ học môn giỏi / thích", vi: "chỉ học môn mình giỏi hoặc thích", en: "only study what they are good at or like",
+    key: "B", tag: "Phe B", name: "Chỉ học môn giỏi / thích", vi: "chỉ học môn mình giỏi hoặc thích",
     x: "focusing on the subjects they are good at or interested in",
     stem: "Focusing on their favourite subjects helps students ",
     goiy: ["stay motivated", "develop their talents to a higher level", "feel less stress and pressure", "prepare early for their future career"],
@@ -585,13 +638,15 @@ const S = {
   started: false, side: null, ideas: [], idea: null, path: null,
   topicFirst: null, topicFinal: null, devFirst: null, devFinal: null, paraFirst: null, paraFinal: null,
   notes: [], confusions: [], si: 0, board: "intro", speed: 1, paused: false,
-  understand: true, confusePending: false, cut: false, reexRunning: false, reexSkip: false, mode: "explain",
+  understand: true, pending: null, cut: false, classRunning: false, helpRunning: false, mode: "explain",
+  curSpot: "intro", scenario: "many", capHistory: [], poll: null,
   done: { topic: false, para: false }
 };
 const side = () => SIDES[S.side || "A"];
 const ideaText = () => S.idea || (side().stem + side().exIdea + ".");
+const A = SIDES.A, B = SIDES.B;
 
-/* ===================== boards ===================== */
+/* ===================== boards (the stream: the same for everyone) ===================== */
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const md = s => esc(s).replace(/\*\*(.+?)\*\*/g, "<b>$1</b>").replace(/\*(.+?)\*/g, "<i>$1</i>");
 
@@ -601,55 +656,64 @@ const BOARDS = {
   views: () => `<span class="kicker">Discuss both views + your opinion</span><h2>Đề có 2 quan điểm</h2><div class="cols">
       <div class="vcard v-a"><span class="tagl">Quan điểm A</span><b>Học tất cả các môn</b><span class="en">study all subjects at school</span></div>
       <div class="vcard v-b"><span class="tagl">Quan điểm B</span><b>Chỉ học môn giỏi hoặc thích</b><span class="en">only study what they are good at or find interesting</span></div></div>`,
-  framework: () => `<span class="kicker">Framework hôm nay</span><div class="bigline">Ủng hộ bên nào<br>→ nói <em>lợi ích</em> của bên đó.</div><div class="note-chip">Hôm nay: viết 1 đoạn thân bài cho phe em ủng hộ</div>`,
-  "reex-outing": () => `<span class="kicker">Ví dụ đời thường</span><h2>Xin bố mẹ cho đi chơi cuối tuần</h2>
+  framework: () => `<span class="kicker">Framework hôm nay</span><div class="bigline">Ủng hộ bên nào<br>→ nói <em>lợi ích</em> của bên đó.</div><div class="note-chip">Hôm nay: viết 1 đoạn thân bài cho phe mình ủng hộ</div>`,
+  outing: () => `<span class="kicker">Ví dụ đời thường</span><h2>Xin bố mẹ cho đi chơi cuối tuần</h2>
       <div class="vrow good"><span class="ic">✓</span><span class="t">“Đi chơi giúp con thư giãn, tuần sau học tốt hơn.”</span></div>
       <div class="vrow bad"><span class="ic">✕</span><span class="t">“Ở nhà chán lắm!”</span></div>
       <div class="note-chip">Nói cái mình muốn có lợi gì, không chê bên kia</div>`,
   template: () => `<span class="kicker">Câu chủ đề · công thức</span><div class="formula">
       <div class="fbox f1"><small>Khúc 1</small>I am personally in favor of</div>
-      <div class="fbox f2"><small>X · quan điểm của em</small><span class="en">${S.side ? esc(side().x) : "X"}</span></div>
+      <div class="fbox f2"><small>X · quan điểm mình ủng hộ</small>X</div>
       <div class="fbox f3"><small>Khúc 3</small>because it brings about many significant benefits.</div></div>
-      <p>X ngắn gọn, đúng phe em chọn. Không chép nguyên đề.</p>`,
+      <div class="vrow" style="background:var(--orange-soft)"><span class="t"><b>Phe A:</b> X = <span class="en">${esc(A.x)}</span></span></div>
+      <div class="vrow" style="background:var(--blue-soft)"><span class="t"><b>Phe B:</b> X = <span class="en">${esc(B.x)}</span></span></div>`,
   "of-ing": () => `<span class="kicker">Chỗ hay sai số 1</span><h2>Sau <span class="en">of</span> là V-ing</h2>
       <div class="vrow bad"><span class="ic">✕</span><span class="t en">I am personally in favor of <u>study</u> all subjects…</span></div>
       <div class="vrow good"><span class="ic">✓</span><span class="t en">I am personally in favor of <u>studying</u> all subjects…</span></div>
       <div class="note-chip"><span class="en">of</span> = giới từ → động từ phía sau thêm -ing</div>`,
-  "x-short": () => `<span class="kicker">Chỗ hay sai số 2</span><h2>X ngắn, đúng phần em ủng hộ</h2>
+  "x-short": () => `<span class="kicker">Chỗ hay sai số 2</span><h2>X ngắn, đúng phần mình ủng hộ</h2>
       <div class="vrow bad"><span class="ic">✕</span><span class="t en">…in favor of children should study all subjects at school, while others think…</span></div>
-      <div class="vrow good"><span class="ic">✓</span><span class="t en">…in favor of <u>${esc(side().x)}</u>…</span></div>`,
-  "reex-template": () => `<span class="kicker">Tách công thức thành 3 khúc</span><div class="steps3">
+      <div class="vrow good"><span class="ic">✓</span><span class="t en">…in favor of <u>${esc(A.x)}</u>…</span></div>
+      <div class="vrow good"><span class="ic">✓</span><span class="t en">…in favor of <u>${esc(B.x)}</u>…</span></div>`,
+  "three-parts": () => `<span class="kicker">Tách công thức thành 3 khúc</span><div class="steps3">
       <div class="step3"><span class="n">1</span><div><span class="t en">I am personally in favor of</span><span class="s">= “Cá nhân tôi ủng hộ…”</span></div></div>
-      <div class="step3 hot"><span class="n">2</span><div><span class="t">X = <span class="en">${esc(side().x)}</span></span><span class="s">“ủng hộ <b>việc</b> học” → tiếng Anh cũng là “việc”: <i>studying</i></span></div></div>
-      <div class="step3"><span class="n">3</span><div><span class="t en">because it brings about many significant benefits.</span><span class="s">= “vì nó mang lại nhiều lợi ích.” Giữ nguyên, khỏi sửa.</span></div></div></div>`,
+      <div class="step3 hot"><span class="n">2</span><div><span class="t">X = <span class="en">studying all subjects at school</span></span><span class="s">“ủng hộ <b>việc</b> học” → tiếng Anh cũng là “việc”: <i>studying</i></span></div></div>
+      <div class="step3"><span class="n">3</span><div><span class="t en">because it brings about many significant benefits.</span><span class="s">= “vì nó mang lại nhiều lợi ích.” Giữ nguyên.</span></div></div></div>`,
+  "other-topic": () => `<span class="kicker">Đề khác, cùng công thức</span><h2>Chỉ đổi X</h2>
+      <div class="vrow good"><span class="ic">✓</span><span class="t en">I am personally in favor of <u>investing in public transport</u> because it brings about many significant benefits.</span></div>
+      <div class="vrow good"><span class="ic">✓</span><span class="t en">I am personally in favor of <u>working from home</u> because it brings about many significant benefits.</span></div>`,
   benefit: () => `<span class="kicker">Ý chính = 1 lợi ích cụ thể</span><h2>Học sinh được gì?</h2><div class="cols">
-      <div class="vcard v-a ${S.side === "A" ? "mine" : ""}"><span class="tagl">Phe A</span><b class="en">Studying all subjects helps students become more well-rounded.</b>${S.side === "A" ? '<span class="mine-tag">Phe của em</span>' : ""}</div>
-      <div class="vcard v-b ${S.side === "B" ? "mine" : ""}"><span class="tagl">Phe B</span><b class="en">Studying what they enjoy keeps students motivated.</b>${S.side === "B" ? '<span class="mine-tag">Phe của em</span>' : ""}</div></div>`,
-  "reex-benefit": () => `<span class="kicker">Mẹo kiểm tra</span><h2>Hỏi lại: “Thì sao? Học sinh được gì?”</h2>
+      <div class="vcard v-a"><span class="tagl">Phe A</span><b class="en">Studying all subjects helps students become more well-rounded.</b></div>
+      <div class="vcard v-b"><span class="tagl">Phe B</span><b class="en">Studying what they enjoy keeps students motivated.</b></div></div>`,
+  "so-what": () => `<span class="kicker">Mẹo kiểm tra</span><h2>Hỏi lại: “Thì sao? Học sinh được gì?”</h2>
       <div class="vrow bad"><span class="ic">✕</span><span class="t en">Students study all subjects.</span></div>
       <p style="margin-left:5cqw">→ Thì sao? Chưa trả lời được → <b>chưa phải lợi ích</b>.</p>
       <div class="vrow good"><span class="ic">✓</span><span class="t en">Students become more well-rounded.</span></div>
       <p style="margin-left:5cqw">→ Học sinh được gì? <b>Toàn diện hơn</b> → lợi ích.</p>`,
   "top-ideas": () => {
-    const sd = side(), max = Math.max(...sd.counts);
-    const mine = sd.goiy.findIndex(g => (S.idea || "").toLowerCase().includes(g.toLowerCase()));
-    return `<span class="kicker">Cả lớp chọn ý gì · ${esc(sd.tag)}</span><h2>Ý được chọn nhiều nhất</h2><div class="bars">${sd.goiy.map((g, i) => `
-      <div class="bar-row ${i === mine ? "me" : ""}"><span class="en">${esc(g)}${i === mine ? '<span class="me-tag">Ý của em</span>' : ""}</span><div class="track"><div class="fill" data-w="${Math.round(sd.counts[i] / max * 100)}"></div></div><span class="num">${sd.counts[i]}</span></div>`).join("")}</div>`;
+    const all = [...A.goiy.map((g, i) => ({ g, n: A.counts[i], s: "A" })), ...B.goiy.map((g, i) => ({ g, n: B.counts[i], s: "B" }))].sort((x, y) => y.n - x.n).slice(0, 5);
+    const max = all[0].n;
+    return `<span class="kicker">Cả lớp chọn ý gì</span><h2>Top ý được chọn nhiều nhất</h2><div class="bars">${all.map(r => `
+      <div class="bar-row"><span><b>${r.s}</b> · <span class="en">${esc(r.g)}</span></span><div class="track"><div class="fill" data-w="${Math.round(r.n / max * 100)}"></div></div><span class="num">${r.n}</span></div>`).join("")}</div>`;
   },
-  "develop-q": () => `<span class="kicker">Câu hỏi quan trọng nhất hôm nay</span><div class="bigline">Lợi ích này có <span class="ac">đủ</span> để biện minh cho việc ${esc(side().vi)} không?</div>`,
+  "develop-q": () => `<span class="kicker">Câu hỏi quan trọng nhất hôm nay</span><div class="bigline">Lợi ích này có <span class="ac">đủ</span> để biện minh cho quan điểm của mình không?</div><p>Ví dụ: học hết các môn thì vất vả. Lợi ích có đủ lớn để bù lại không?</p>`,
   "develop-table": (n) => `<span class="kicker">Lợi ích này đủ chưa?</span><div class="dtable ${n !== undefined ? "focus" : ""}">
       <div class="drow c-impact ${n == 0 ? "on" : ""}"><span class="cond">Chưa đủ</span><span class="arr">→</span><span class="act"><b>IMPACT</b><span>Thì sao nữa? Dẫn tới điều gì lớn hơn?</span></span></div>
       <div class="drow c-explain ${n == 1 ? "on" : ""}"><span class="cond">Đủ rồi</span><span class="arr">→</span><span class="act"><b>EXPLAIN</b><span>Tại sao? Như thế nào?</span></span></div>
       <div class="drow c-example ${n == 2 ? "on" : ""}"><span class="cond">Không làm được cả hai</span><span class="arr">→</span><span class="act"><b>EXAMPLE</b><span>Ví dụ ai, ở đâu?</span></span></div></div>`,
-  "develop-example": () => `<span class="kicker">Ví dụ · ${esc(side().tag)}</span><div class="chain">
-      <div class="cnode idea en">${esc(side().stem + side().exIdea)}.</div><span class="cdown">↓</span>
-      <div class="cnode q">Đủ để biện minh cho việc ${esc(side().vi)} chưa? → Chưa đủ</div><span class="cdown">↓</span>
-      <div class="cnode imp en">${esc(side().exImpact)}</div></div>`,
+  "develop-example": () => `<span class="kicker">Ví dụ · Phe A</span><div class="chain">
+      <div class="cnode idea en">${esc(A.stem + A.exIdea)}.</div><span class="cdown">↓</span>
+      <div class="cnode q">Đủ để biện minh cho việc ${esc(A.vi)} chưa? → Chưa đủ</div><span class="cdown">↓</span>
+      <div class="cnode imp en">${esc(A.exImpact)}</div></div>`,
   circular: () => `<span class="kicker">Lỗi hay gặp</span><h2>Giải thích đi một vòng</h2><div class="loop">
       <svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="34" fill="none" stroke="var(--red)" stroke-width="6" stroke-dasharray="170 40" stroke-linecap="round"/><path d="M78 30 L86 44 L70 44 Z" fill="var(--red)"/></svg>
-      <div class="vrow bad" style="flex:1"><span class="t en" style="text-decoration:none;color:var(--text)">${esc(side().circular)}</span></div></div>
-      <div class="note-chip">Câu sau chỉ lặp lại câu trước, không giải thích thêm gì</div>`,
-  "reex-ladder": () => `<span class="kicker">Ý chính là bậc thang đầu tiên</span><div class="ladder">
+      <div class="vrow bad" style="flex:1"><span class="t en" style="text-decoration:none;color:var(--text)">${esc(A.circular)}</span></div></div>
+      <div class="note-chip">Vế sau chỉ lặp lại vế trước, không giải thích thêm gì</div>`,
+  "circular-fix": () => `<span class="kicker">Sửa lỗi đi một vòng</span><h2>Trả lời thật cho “tại sao?”</h2>
+      <div class="vrow bad"><span class="ic">✕</span><span class="t en">…because they become well-rounded.</span></div>
+      <div class="vrow good"><span class="ic">✓</span><span class="t en">…because they learn both science and the arts.</span></div>
+      <div class="vrow good"><span class="ic">✓</span><span class="t en">…which allows them to adapt to many different jobs.</span></div>`,
+  ladder: () => `<span class="kicker">Ý chính là bậc thang đầu tiên</span><div class="ladder">
       <div class="rung r-example"><b>EXAMPLE</b><span class="qq">Ví dụ ai, ở đâu?</span><span>Cho người ta thấy tận mắt</span></div>
       <div class="rung r-explain"><b>EXPLAIN</b><span class="qq">Tại sao?</span><span>Cho thấy cái thang đứng vững</span></div>
       <div class="rung r-impact"><b>IMPACT</b><span class="qq">Thì sao nữa?</span><span>Leo lên bậc cao hơn</span></div></div>`,
@@ -657,15 +721,16 @@ const BOARDS = {
       <div class="step3"><span class="n">1</span><div><span class="t">Câu chủ đề</span><span class="s">Bước 2 · I am personally in favor of…</span></div></div>
       <div class="step3"><span class="n">2</span><div><span class="t">Firstly, + ý chính</span><span class="s">Bước 3 · một lợi ích cụ thể</span></div></div>
       <div class="step3"><span class="n">3</span><div><span class="t">Phát triển ý</span><span class="s">Bước 4 · Impact / Explain / Example</span></div></div></div><div class="note-chip">Khoảng 80–120 chữ</div>`,
-  "paragraph-model": () => { const m = side().model; return `<span class="kicker">Đoạn mẫu · ${esc(side().tag)}</span><div class="para en"><span class="p1">${esc(m[0])}</span> <span class="p2">${esc(m[1])}</span> <span class="p3">${esc(m[2])}</span></div>
-      <div class="legend"><span><i style="background:var(--orange-soft);box-shadow:inset 0 0 0 2px var(--orange)"></i>Câu chủ đề</span><span><i style="background:var(--blue-soft);box-shadow:inset 0 0 0 2px var(--blue)"></i>Ý chính</span><span><i style="background:var(--green-soft);box-shadow:inset 0 0 0 2px var(--green)"></i>Phát triển ý</span></div>`; },
-  "reex-paragraph": () => `<span class="kicker">Em đã có đủ 3 phần rồi</span><div class="steps3">
-      <div class="step3"><span class="n">1</span><div><span class="t">Câu chủ đề của em</span><span class="s en">${esc(S.topicFinal || S.topicFirst || "I am personally in favor of " + side().x + "…")}</span></div></div>
-      <div class="step3"><span class="n">2</span><div><span class="t">Firstly, + ý của em</span><span class="s en">${esc(ideaText())}</span></div></div>
-      <div class="step3"><span class="n">3</span><div><span class="t">Phát triển ý của em</span><span class="s en">${esc(S.devFinal || S.devFirst || "(bước 4)")}</span></div></div></div><div class="note-chip">Chỉ cần xếp nối nhau, thêm “Firstly,” trước ý chính</div>`,
+  "paragraph-model": () => `<span class="kicker">Đoạn mẫu · Phe A</span><div class="para en"><span class="p1">${esc(A.model[0])}</span> <span class="p2">${esc(A.model[1])}</span> <span class="p3">${esc(A.model[2])}</span></div>
+      <div class="legend"><span><i style="background:var(--orange-soft);box-shadow:inset 0 0 0 2px var(--orange)"></i>Câu chủ đề</span><span><i style="background:var(--blue-soft);box-shadow:inset 0 0 0 2px var(--blue)"></i>Ý chính</span><span><i style="background:var(--green-soft);box-shadow:inset 0 0 0 2px var(--green)"></i>Phát triển ý</span></div>`,
   "task-side": () => `<span class="kicker">Các em đang chọn phe</span><h2>Lớp mình đang nghiêng về bên nào?</h2><div class="split"><div class="sa" id="splitA" style="flex-basis:50%">A · 50%</div><div class="sb" id="splitB" style="flex-basis:50%">B · 50%</div></div><p>Kết quả cập nhật trực tiếp.</p>`,
-  task: (label) => `<span class="kicker">Các em đang làm bài</span><h2>${esc(label)}</h2><div class="counter"><span id="subCount">0</span><small>/ 1,284 bạn đã gửi</small></div><p>anh Khoa đang chờ cả lớp. Em làm ở bảng bên phải nha.</p>`,
-  outro: () => `<span class="kicker">Hết buổi</span><h1>Cảm ơn cả nhà!</h1><p class="lead">anh Đậu đã gom bài của em thành một trang tổng kết.</p>`
+  task: (label) => `<span class="kicker">Các em đang làm bài</span><h2>${esc(label)}</h2><div class="counter"><span id="subCount">0</span><small>/ 1,284 bạn đã gửi</small></div><p>anh Khoa đang chờ cả lớp. Mỗi em làm ở bảng của mình.</p>`,
+  poll: () => {
+    const p = S.poll; if (!p) return "";
+    return `<span class="kicker">anh Khoa hỏi cả lớp</span><h2>Mọi người chưa hiểu chỗ nào?</h2><div class="pollb bars">${p.rows.map((r, i) => `
+      <div class="bar-row ${i === p.top ? "me" : ""}"><span>${esc(r.label)}</span><div class="track"><div class="fill" data-w="${r.pct}"></div></div><span class="num">${r.pct}%</span></div>`).join("")}</div>`;
+  },
+  outro: () => `<span class="kicker">Hết buổi</span><h1>Cảm ơn cả nhà!</h1><p class="lead">anh Đậu đã gom bài của từng bạn thành một trang tổng kết.</p>`
 };
 
 const board = document.getElementById("board");
@@ -679,23 +744,21 @@ function setBoard(key) {
   board.innerHTML = fn(arg);
   void board.offsetWidth; board.classList.add("in");
   board.querySelectorAll(".fill[data-w]").forEach(f => requestAnimationFrame(() => requestAnimationFrame(() => f.style.width = f.dataset.w + "%")));
-  if (S.reexRunning) board.insertAdjacentHTML("afterbegin", `<span class="reex-tag">Đang giảng lại cho em</span>`);
+  if (S.classRunning) board.insertAdjacentHTML("afterbegin", `<span class="reex-tag">anh Khoa đang giảng lại cho cả lớp</span>`);
 }
 
 /* ===================== questions (CCQ / ICQ) ===================== */
 const Q = {
-  intro: { q: "Lúc nào chưa hiểu, em làm gì?", opts: ["Bấm “Chưa hiểu” ở trên", "Im lặng chờ hết buổi"], ans: 0, right: "Chuẩn. Bấm là anh giảng lại cho em liền.", wrong: "Đừng ngại nha. Bấm **Chưa hiểu** là anh giảng lại riêng cho em." },
+  intro: { q: "Lúc nào chưa hiểu, em làm gì?", opts: ["Bấm “Chưa hiểu” ở trên", "Im lặng chờ hết buổi"], ans: 0, right: "Chuẩn. Bấm là có người giúp em liền.", wrong: "Đừng ngại nha. Bấm **Chưa hiểu**, không ai biết em bấm đâu." },
   fw: { q: "Em ủng hộ bên nào thì em viết gì?", opts: ["Lợi ích của bên đó", "Tác hại của bên kia", "Cả lợi ích lẫn tác hại"], ans: 0, right: "Chuẩn rồi. Ủng hộ bên nào thì nói **bên đó tốt ở đâu**.", wrong: "Chưa đúng nè. Hôm nay mình không chê bên kia, mình chỉ nói **bên mình tốt ở đâu** thôi." },
-  fw2: () => ({ q: "Em ủng hộ “học tất cả các môn”. Em sẽ viết về…", opts: ["Học tất cả các môn có lợi gì", "Chỉ học môn mình thích có hại gì"], ans: 0, right: "Đúng rồi! Nói **cái mình ủng hộ** có lợi gì.", wrong: "Mình nói **cái mình ủng hộ** có lợi gì nha: học tất cả các môn có lợi gì." }),
   icqSide: { q: "Giờ em làm gì?", opts: ["Chọn 1 phe em ủng hộ", "Viết cả bài luôn"], ans: 0, right: "Đúng rồi, chọn phe trước nha.", wrong: "Chưa viết đâu em. Giờ chỉ **chọn 1 phe** thôi." },
   ofing: { q: "Sau “in favor of”, động từ có dạng gì?", opts: ["study", "studying", "to study"], ans: 1, right: "Đúng rồi, sau giới từ **of** là **V-ing**.", wrong: "Chưa đúng nè. **of** là giới từ, nên động từ phía sau phải thêm **-ing**: studying." },
-  xshort: () => ({ q: "X nào tốt hơn?", opts: ["children should study all subjects at school, while others think…", side().x], ans: 1, right: "Chuẩn. X chỉ cần **đúng quan điểm của em**, ngắn gọn.", wrong: "Câu này chép nguyên đề rồi á. X chỉ cần **phần em ủng hộ** thôi." }),
-  ofing2: { q: "Điền vào chỗ trống: I am personally in favor of ___ all subjects.", opts: ["studying", "study"], ans: 0, right: "Đúng rồi! “ủng hộ **việc học**” → **studying**.", wrong: "Nhớ nè: ủng hộ **việc** học → **studying**." },
+  xshort: { q: "X nào tốt hơn?", opts: ["children should study all subjects at school, while others think…", "studying all subjects at school"], ans: 1, right: "Chuẩn. X chỉ cần **đúng quan điểm mình ủng hộ**, ngắn gọn.", wrong: "Câu này chép nguyên đề rồi á. X chỉ cần **phần mình ủng hộ** thôi." },
   icqTopic: { q: "Em sẽ viết gì?", opts: ["1 câu chủ đề theo công thức", "Cả đoạn văn"], ans: 0, right: "Đúng rồi, 1 câu thôi.", wrong: "Chưa nha. Bước này chỉ **1 câu chủ đề** thôi." },
   benefit: { q: "Câu nào là một lợi ích?", opts: ["Students study all subjects at school.", "Students become more well-rounded."], ans: 1, right: "Đúng rồi. Câu này nói **học sinh được gì**.", wrong: "Câu này mới nhắc lại quan điểm thôi á. Lợi ích là **học sinh được gì**." },
   benefit2: { q: "“Students can discover talents they never knew they had.” Đây là…", opts: ["Một lợi ích", "Chỉ nhắc lại quan điểm"], ans: 0, right: "Chuẩn. Học sinh **phát hiện tài năng**, đó là lợi ích.", wrong: "Hỏi thử: học sinh được gì? → **phát hiện tài năng**. Vậy là lợi ích đó em." },
   icqIdea: { q: "Nếu em bí ý thì sao?", opts: ["Bấm Gợi ý để xem ý mẫu", "Bỏ trống phần này"], ans: 0, right: "Đúng rồi. Nhưng thử tự nghĩ trước nha.", wrong: "Đừng bỏ trống nha. Bí thì bấm **Gợi ý**." },
-  circ: () => ({ q: `“${side().circular}” Câu này có vấn đề gì?`, opts: ["Lặp lại ý, không giải thích gì", "Sai ngữ pháp"], ans: 0, right: "Chuẩn. Câu này đi một vòng rồi quay về chỗ cũ.", wrong: "Ngữ pháp thì không sai đâu em. Vấn đề là nó **lặp lại** ý, chẳng giải thích thêm gì." }),
+  circ: { q: `“${A.circular}” Câu này có vấn đề gì?`, opts: ["Lặp lại ý, không giải thích gì", "Sai ngữ pháp"], ans: 0, right: "Chuẩn. Câu này đi một vòng rồi quay về chỗ cũ.", wrong: "Ngữ pháp thì không sai đâu em. Vấn đề là nó **lặp lại** ý, chẳng giải thích thêm gì." },
   path: { q: "Lợi ích chưa đủ sức thuyết phục. Em thêm gì?", opts: ["Impact: nó dẫn tới điều gì lớn hơn", "Example: kể một ví dụ", "Viết lại ý chính bằng từ khác"], ans: 0, right: "Đúng rồi. Chưa đủ thì **đẩy nó đi xa hơn** bằng impact.", wrong: "Chưa đúng nè. Chưa đủ thì mình cần **impact**: lợi ích đó dẫn tới điều gì lớn hơn." },
   path2: { q: "“Thì sao nữa?” là câu hỏi của…", opts: ["Impact", "Explain", "Example"], ans: 0, right: "Chuẩn! Thì sao nữa → leo lên bậc cao hơn → **impact**.", wrong: "“Thì sao nữa?” là leo lên bậc cao hơn: **impact** nha." },
   icqDev: { q: "Bước đầu tiên em làm gì?", opts: ["Trả lời câu hỏi “lợi ích này đủ chưa?”", "Viết ví dụ ngay"], ans: 0, right: "Đúng rồi. Trả lời câu đó trước, rồi mới chọn hướng.", wrong: "Khoan viết ví dụ nha. Trước tiên trả lời: **lợi ích này đủ chưa?**" },
@@ -705,111 +768,132 @@ const Q = {
 };
 const qv = x => typeof x === "function" ? x() : x;
 
+/* ===================== confusion spots: what was being taught at that moment ===================== */
+const SPOTS = {
+  intro: { title: "Mở đầu", options: [
+    { label: "Đề bài nói gì?", board: "prompt", lines: ["Đề hỏi: học sinh nên học tất cả các môn, hay chỉ học môn mình giỏi hoặc thích?", "Có 2 quan điểm. Đề muốn mình bàn cả hai, rồi nêu ý kiến riêng.", "Hôm nay mình chỉ viết 1 đoạn: đoạn cho quan điểm mình ủng hộ."],
+      ccq: { q: "Đề này có mấy quan điểm?", opts: ["2", "1", "3"], ans: 0, right: "Đúng rồi, 2 quan điểm: A và B." } },
+    { label: "Nút Chưa hiểu dùng sao?", board: "prompt", lines: ["Lúc nào thấy chưa rõ thì bấm Chưa hiểu, hoặc phím Space.", "Ít bạn bấm thì anh Đậu giúp riêng từng bạn. Nhiều bạn bấm thì anh Khoa dừng lại giảng cho cả lớp.", "Không ai biết em bấm đâu."], ccq: Q.intro }] },
+  dbv: { title: "Dạng đề Discuss both views", options: [
+    { label: "Discuss both views là gì?", board: "views", lines: ["Discuss both views nghĩa là bàn về cả hai quan điểm.", "Give your own opinion là nói mình đứng về phía nào.", "Hôm nay mình tập trung vào đoạn cho phía mình ủng hộ."],
+      ccq: { q: "“Give your own opinion” nghĩa là gì?", opts: ["Nói mình ủng hộ bên nào", "Tóm tắt lại đề"], ans: 0, right: "Chuẩn. Nêu ý kiến riêng: mình ủng hộ bên nào." } },
+    { label: "2 quan điểm là gì?", board: "views", lines: ["Quan điểm A: học sinh nên học tất cả các môn.", "Quan điểm B: chỉ học môn mình giỏi hoặc thấy thú vị.", "Mỗi em chọn 1 trong 2 để ủng hộ."],
+      ccq: { q: "“Only study the subjects they are good at” là quan điểm nào?", opts: ["A", "B"], ans: 1, right: "Đúng rồi, đó là quan điểm B." } }] },
+  fw: { title: "Ủng hộ bên nào, nói lợi ích bên đó", options: [
+    { label: "Sao không nói về bên kia?", board: "outing", lines: ["Đoạn hôm nay là để thuyết phục người đọc tin bên mình.", "Cách mạnh nhất là chỉ ra bên mình tốt ở đâu.", "Giống xin bố mẹ đi chơi: nói đi chơi có lợi gì, chứ không ngồi chê ở nhà chán."], ccq: Q.fw },
+    { label: "Lợi ích là gì?", board: "benefit", lines: ["Lợi ích là điều tốt mà học sinh nhận được.", "Ví dụ: toàn diện hơn, có động lực hơn, tìm ra tài năng.", "Hỏi: học sinh được gì? Câu trả lời chính là lợi ích."], ccq: Q.benefit }] },
+  formula: { title: "Công thức câu chủ đề", options: [
+    { label: "X là gì?", board: "template", lines: ["X là quan điểm mình ủng hộ, viết ngắn gọn.", "Phe A: studying all subjects at school. Phe B: focusing on the subjects they are good at or interested in.", "Chỉ khúc X thay đổi, hai khúc còn lại giữ nguyên."],
+      ccq: { q: "Trong công thức, khúc nào em phải tự viết?", opts: ["X", "because it brings about many significant benefits"], ans: 0, right: "Đúng rồi, chỉ cần điền X." } },
+    { label: "Công thức này dùng cho mọi đề à?", board: "other-topic", lines: ["Dùng được cho mọi đề mà mình phải ủng hộ một quan điểm.", "Đề khác thì chỉ đổi X thành quan điểm của đề đó.", "Ví dụ đề về giao thông: in favor of investing in public transport."],
+      ccq: { q: "Đổi sang đề khác, em sửa khúc nào?", opts: ["Chỉ X", "Cả câu"], ans: 0, right: "Chuẩn. Chỉ đổi X thôi." } }] },
+  ofing: { title: "of + V-ing", options: [
+    { label: "Giới từ là gì?", board: "of-ing", lines: ["Giới từ là những chữ nhỏ như of, in, on, for, about.", "Nó nối với một danh từ phía sau: in favor of + một thứ gì đó.", "Nên phía sau là danh từ, hoặc động từ biến thành danh từ bằng -ing."],
+      ccq: { q: "Chữ nào là giới từ?", opts: ["of", "study", "benefit"], ans: 0, right: "Đúng rồi, of là giới từ." } },
+    { label: "Sao phải thêm -ing?", board: "three-parts", lines: ["Tiếng Việt mình nói “ủng hộ việc học”. Chữ “việc” biến “học” thành một sự việc.", "Tiếng Anh làm việc đó bằng -ing: study thành studying.", "Nên mình viết: in favor of studying."], ccq: Q.ofing }] },
+  xshort: { title: "X ngắn, không chép đề", options: [
+    { label: "Rút gọn X thế nào?", board: "x-short", lines: ["Gạch hết phần “some people believe… while others think…”.", "Giữ đúng hành động mình ủng hộ: study all subjects.", "Đổi sang -ing là xong: studying all subjects at school."], ccq: Q.xshort },
+    { label: "Sao không chép đề được?", board: "x-short", lines: ["Chép đề thì câu dài, rối, và giám khảo thấy mình không tự viết.", "Đề có cả 2 quan điểm, mà X chỉ cần phía mình ủng hộ.", "Ngắn và đúng ý là đủ."],
+      ccq: { q: "X tốt cần thế nào?", opts: ["Ngắn, đúng phía mình ủng hộ", "Dài, có cả 2 quan điểm"], ans: 0, right: "Chuẩn. Ngắn và đúng phía mình ủng hộ." } }] },
+  benefit: { title: "Ý chính = 1 lợi ích", options: [
+    { label: "Lợi ích khác ý chính chỗ nào?", board: "so-what", lines: ["Hôm nay ý chính CHÍNH LÀ một lợi ích.", "Nhắc lại quan điểm thì chưa phải ý chính.", "Ý chính phải trả lời được: học sinh được gì?"], ccq: Q.benefit },
+    { label: "Nghĩ ra lợi ích bằng cách nào?", board: "benefit", lines: ["Tưởng tượng một học sinh làm theo quan điểm đó.", "Hỏi: bạn ấy giỏi hơn ở đâu? Vui hơn? Chuẩn bị tốt hơn cho tương lai?", "Bí quá thì bấm Gợi ý ở bước tìm ý."], ccq: Q.benefit2 }] },
+  enough: { title: "Lợi ích này đủ chưa?", options: [
+    { label: "“Đủ” là sao?", board: "develop-example", lines: ["Đủ là: người đọc nghe xong thấy lợi ích này đáng để làm theo.", "Toàn diện hơn thôi thì người ta hỏi: rồi sao nữa?", "Người ta còn hỏi “rồi sao” thì là chưa đủ."],
+      ccq: { q: "Người đọc còn hỏi “rồi sao nữa?”. Lợi ích đã đủ chưa?", opts: ["Chưa đủ", "Đủ rồi"], ans: 0, right: "Đúng rồi. Còn hỏi “rồi sao” là chưa đủ." } },
+    { label: "Biện minh nghĩa là gì?", board: "develop-q", lines: ["Biện minh là đưa lý do cho thấy việc đó đáng làm.", "Học hết các môn thì vất vả, nên lợi ích phải đủ lớn để bù lại.", "Câu hỏi là: lợi ích này có đáng với cái giá đó không?"],
+      ccq: { q: "“Biện minh cho việc học tất cả các môn” nghĩa là…", opts: ["Chứng minh việc đó đáng làm", "Kể tên các môn học"], ans: 0, right: "Chuẩn. Biện minh = chứng minh việc đó đáng làm." } }] },
+  iee: { title: "Impact / Explain / Example", options: [
+    { label: "Impact với Explain khác gì?", board: "ladder", lines: ["Impact đi tới trước: lợi ích này dẫn tới điều gì lớn hơn? Thì sao nữa?", "Explain đi vào trong: vì sao, như thế nào mà có lợi ích đó?", "Impact làm ý mạnh hơn. Explain làm ý dễ tin hơn."], ccq: Q.path2 },
+    { label: "Khi nào dùng Example?", board: "develop-table:2", lines: ["Khi mình không nghĩ ra impact, cũng không giải thích được vì sao.", "Lúc đó cho một ví dụ cụ thể: ai, ở đâu, chuyện gì xảy ra.", "Ví dụ: a student who loves drawing can spend more time on art."],
+      ccq: { q: "Không nghĩ ra impact, cũng không giải thích được. Em dùng gì?", opts: ["Example", "Viết lại ý chính"], ans: 0, right: "Đúng rồi, lúc đó cho Example." } }] },
+  circular: { title: "Lỗi đi một vòng", options: [
+    { label: "Sao câu đó sai?", board: "circular", lines: ["Vế sau chỉ nói lại y chang vế trước.", "Người đọc không biết thêm điều gì mới.", "Giống hỏi “sao trời mưa?” mà trả lời “vì trời mưa”."], ccq: Q.circ },
+    { label: "Sửa nó thế nào?", board: "circular-fix", lines: ["Thay vế sau bằng câu trả lời thật cho “tại sao?”.", "Ví dụ: because they learn both science and the arts.", "Hoặc thêm impact: which allows them to adapt to many different jobs."],
+      ccq: { q: "Câu nào sửa đúng?", opts: ["…well-rounded because they learn both science and the arts.", "…well-rounded because they are well-rounded."], ans: 0, right: "Chuẩn. Vế sau có thông tin mới." } }] },
+  parts: { title: "3 phần của đoạn văn", options: [
+    { label: "Ghép 3 phần thế nào?", board: "paragraph-parts", lines: ["Câu chủ đề đứng đầu.", "Tiếp theo: Firstly, cộng ý chính.", "Cuối cùng: các câu phát triển ý, impact, explain hoặc example."], ccq: Q.parts2 },
+    { label: "Firstly đặt ở đâu?", board: "paragraph-model", lines: ["Firstly đặt ngay trước ý chính, sau câu chủ đề.", "Nó báo cho người đọc: ý thứ nhất bắt đầu ở đây.", "Ví dụ: Firstly, studying all subjects helps students…"],
+      ccq: { q: "“Firstly,” đứng trước câu nào?", opts: ["Ý chính", "Câu chủ đề"], ans: 0, right: "Đúng rồi, trước ý chính." } }] }
+};
+
 /* ===================== sections ===================== */
 const SECTIONS = [
   { id: "intro", title: "Mở đầu",
     beats: [
-      { say: "Chào cả nhà! Hôm nay anh với các em học cách phát triển ý cho Writing Task 2 nha.", board: "intro" },
+      { spot: "intro", say: "Chào cả nhà! Hôm nay anh với các em học cách phát triển ý cho Writing Task 2 nha.", board: "intro" },
       { say: "Đề hôm nay đây. Các em đọc qua một chút.", board: "prompt", extra: 2200 },
       { say: "Trong lúc học, lúc nào chưa hiểu thì bấm nút “Chưa hiểu” ở trên nha.", fx: "pulseToggle" },
-      { say: "Anh sẽ dừng lại giảng lại cho em. Không ai biết em bấm đâu, yên tâm." }
-    ],
-    reex: { beats: [{ say: "Nút “Chưa hiểu” ở góc trên nha em.", board: "prompt", fx: "pulseToggle" }, { say: "Bấm vào là bài tạm dừng, anh giảng lại riêng cho em, rồi hỏi một câu nhỏ để chắc em hiểu." }], ccq: Q.intro, hint: "Nút đó ở góc trên bên phải á.", ccq2: Q.intro } },
+      { say: "Ít bạn bấm thì anh Đậu giúp riêng. Nhiều bạn bấm thì anh dừng lại giảng cho cả lớp. Không ai biết em bấm đâu." }
+    ] },
   { id: "side", title: "Chọn phe",
     beats: [
-      { say: "Đây là dạng Discuss both views and give your own opinion.", board: "views" },
+      { spot: "dbv", say: "Đây là dạng Discuss both views and give your own opinion.", board: "views" },
       { say: "Có 2 quan điểm. A: học tất cả các môn. B: chỉ học những môn mình giỏi hoặc thích." },
-      { say: "Hôm nay mình làm phần quan trọng nhất: đoạn thân bài cho quan điểm em ủng hộ." },
-      { say: "Framework của anh rất đơn giản: em ủng hộ bên nào, thì em nói lợi ích của bên đó.", board: "framework" },
+      { spot: "fw", say: "Hôm nay mình làm phần quan trọng nhất: đoạn thân bài cho quan điểm mình ủng hộ." },
+      { say: "Framework của anh rất đơn giản: ủng hộ bên nào, thì nói lợi ích của bên đó.", board: "framework" },
       { ccq: "fw" }
     ],
-    icq: "icqSide", task: "side",
-    reex: { beats: [
-      { say: "Giống như em xin bố mẹ cho đi chơi cuối tuần á.", board: "reex-outing" },
-      { say: "Em sẽ nói đi chơi có lợi gì: được nghỉ ngơi, tuần sau học tốt hơn." },
-      { say: "Em không ngồi chê “ở nhà chán lắm”. Viết đoạn văn cũng vậy." }],
-      ccq: Q.fw, hint: "Nhớ ví dụ xin đi chơi: em nói cái mình muốn có lợi gì.", ccq2: Q.fw2 } },
+    icq: "icqSide", task: "side" },
   { id: "topic", title: "Câu chủ đề",
     beats: [
-      { say: "Câu đầu tiên của đoạn là câu chủ đề.", board: "template" },
+      { spot: "formula", say: "Câu đầu tiên của đoạn là câu chủ đề.", board: "template" },
       { say: "Anh cho các em một công thức dùng được cho mọi đề." },
-      { say: "X là quan điểm em ủng hộ, viết ngắn gọn, không chép nguyên đề." },
-      { say: () => `Phe của em thì X là: “${side().x}”.` },
-      { say: "Chú ý nè: “of” là giới từ. Sau giới từ, động từ phải thêm -ing.", board: "of-ing" },
+      { say: "X là quan điểm mình ủng hộ, viết ngắn gọn, không chép nguyên đề." },
+      { say: "Phe A thì X là “studying all subjects at school”. Phe B là “focusing on the subjects they are good at or interested in”." },
+      { spot: "ofing", say: "Chú ý nè: “of” là giới từ. Sau giới từ, động từ phải thêm -ing.", board: "of-ing" },
       { ccq: "ofing" },
-      { say: "Thêm một chỗ hay sai: X phải ngắn, đúng phần em ủng hộ thôi.", board: "x-short" },
+      { spot: "xshort", say: "Thêm một chỗ hay sai: X phải ngắn, đúng phần mình ủng hộ thôi.", board: "x-short" },
       { ccq: "xshort" }
     ],
-    icq: "icqTopic", task: "topic",
-    reex: { beats: [
-      { say: "Mình tách công thức thành 3 khúc nha.", board: "reex-template" },
-      { say: "Khúc 1, “I am personally in favor of”, nghĩa là “Cá nhân tôi ủng hộ…”." },
-      { say: "Khúc 2 là việc em ủng hộ. Tiếng Việt nói “ủng hộ việc học”, tiếng Anh cũng là “việc”: studying." },
-      { say: "Khúc 3 giữ nguyên, khỏi sửa. Vậy em chỉ cần điền khúc giữa thôi." }],
-      ccq: Q.ofing, hint: "Nhớ: ủng hộ việc học → studying.", ccq2: Q.ofing2 } },
+    icq: "icqTopic", task: "topic" },
   { id: "idea", title: "Ý chính",
     beats: [
-      { say: "Sau câu chủ đề là ý chính.", board: "benefit" },
+      { spot: "benefit", say: "Sau câu chủ đề là ý chính.", board: "benefit" },
       { say: "Mỗi ý chính là một lợi ích cụ thể cho học sinh." },
       { say: "Ví dụ phe A: học tất cả các môn giúp học sinh toàn diện hơn, become more well-rounded." },
       { say: "Phe B: học môn mình thích giúp học sinh có động lực, keeps students motivated." },
       { ccq: "benefit" }
     ],
-    icq: "icqIdea", task: "ideas",
-    reex: { beats: [
-      { say: "Mẹo nè: viết xong ý, em hỏi lại “Thì sao? Học sinh được gì?”", board: "reex-benefit" },
-      { say: "“Students study all subjects.” Thì sao? Chưa trả lời được, vậy chưa phải lợi ích." },
-      { say: "“Students become more well-rounded.” Học sinh được gì? Toàn diện hơn. Đó là lợi ích." }],
-      ccq: Q.benefit, hint: "Hỏi “học sinh được gì?” cho từng câu nha.", ccq2: Q.benefit2 } },
+    icq: "icqIdea", task: "ideas" },
   { id: "develop", title: "Phát triển ý",
     beats: [
-      { say: "Có ý chính rồi. Giờ là câu hỏi quan trọng nhất của buổi hôm nay.", board: "develop-q" },
-      { say: "Ý chính này đã đủ để ủng hộ quan điểm của em chưa?" },
-      { say: () => `Em tự hỏi: lợi ích này có đủ để biện minh cho việc ${side().vi} không?` },
-      { say: "Chưa đủ thì thêm IMPACT: lợi ích này dẫn tới điều gì lớn hơn?", board: "develop-table:0" },
+      { spot: "enough", say: "Có ý chính rồi. Giờ là câu hỏi quan trọng nhất của buổi hôm nay.", board: "develop-q" },
+      { say: "Ý chính này đã đủ để ủng hộ quan điểm của mình chưa?" },
+      { say: "Mỗi em tự hỏi: lợi ích này có đủ để biện minh cho quan điểm của mình không?" },
+      { spot: "iee", say: "Chưa đủ thì thêm IMPACT: lợi ích này dẫn tới điều gì lớn hơn?", board: "develop-table:0" },
       { say: "Đủ rồi thì EXPLAIN: giải thích vì sao, như thế nào.", board: "develop-table:1" },
       { say: "Không làm được cả hai thì cho EXAMPLE: một ví dụ cụ thể.", board: "develop-table:2" },
-      { say: () => `Ví dụ: “${side().exIdea}”. Có đủ để biện minh cho việc ${side().vi} không?`, board: "develop-example" },
+      { say: "Ví dụ phe A: “become more well-rounded”. Có đủ để biện minh cho việc học tất cả các môn không?", board: "develop-example" },
       { say: "Chưa đủ. Vậy mình thêm impact, như dòng màu cam đó." },
       { say: "Đây chỉ là cách bắt đầu thôi. Sau đó em phát triển tiếp kiểu khác cũng được." },
-      { say: "Cẩn thận một lỗi hay gặp nè.", board: "circular" },
+      { spot: "circular", say: "Cẩn thận một lỗi hay gặp nè.", board: "circular" },
       { ccq: "circ" },
-      { say: "Rồi, quay lại bảng này nha.", board: "develop-table" },
+      { spot: "iee", say: "Rồi, quay lại bảng này nha.", board: "develop-table" },
       { ccq: "path" }
     ],
-    icq: "icqDev", task: "develop",
-    reex: { beats: [
-      { say: "Tưởng tượng ý chính là bậc thang đầu tiên nha.", board: "reex-ladder" },
-      { say: "Impact là leo lên bậc cao hơn: thì sao nữa?" },
-      { say: "Explain là cho thấy cái thang đứng vững: tại sao?" },
-      { say: "Example là cho người ta thấy tận mắt: ví dụ ai, ở đâu?" },
-      { say: "Ý chưa đủ mạnh thì leo lên. Đủ mạnh mà người ta chưa tin thì giải thích. Không nghĩ ra thì cho ví dụ." }],
-      ccq: Q.path, hint: "Chưa đủ → thì sao nữa? → impact.", ccq2: Q.path2 } },
+    icq: "icqDev", task: "develop" },
   { id: "para", title: "Viết đoạn",
     beats: [
-      { say: "Giờ ghép lại thành một đoạn thân bài nha.", board: "paragraph-parts" },
+      { spot: "parts", say: "Giờ ghép lại thành một đoạn thân bài nha.", board: "paragraph-parts" },
       { say: "3 phần: câu chủ đề, ý chính mở đầu bằng Firstly, rồi phát triển ý." },
       { say: "Khoảng 80 đến 120 chữ là đẹp." },
-      { say: "Đây là đoạn mẫu cho phe của em. Mỗi màu là một phần.", board: "paragraph-model", extra: 4000 },
+      { say: "Đây là đoạn mẫu phe A. Mỗi màu là một phần. Bạn nào phe B thì xem đoạn mẫu ở bảng của mình nha.", board: "paragraph-model", extra: 4000 },
       { ccq: "parts" }
     ],
-    icq: "icqPara", task: "para",
-    reex: { beats: [
-      { say: "Em đã viết hết rồi đó! Nhìn nè.", board: "reex-paragraph" },
-      { say: "Câu chủ đề ở bước 2, ý ở bước 3, phát triển ở bước 4." },
-      { say: "Giờ chỉ xếp chúng nối nhau, thêm “Firstly,” trước ý chính." }],
-      ccq: Q.parts, hint: "Nhìn lại 3 bước em vừa làm nha.", ccq2: Q.parts2 } },
+    icq: "icqPara", task: "para" },
   { id: "recap", title: "Tổng kết",
     beats: [
       { say: "Xong rồi cả nhà! Hôm nay mình học cách phát triển một ý thành một đoạn thân bài.", board: "outro" },
-      { say: "anh Đậu đã gom bài của em lại thành một trang tổng kết. Xem nha!" }
+      { say: "anh Đậu đã gom bài của từng bạn thành một trang tổng kết. Xem nha!" }
     ], task: "recap" }
 ];
 
 /* ===================== UI helpers ===================== */
 const $ = id => document.getElementById(id);
-const pbody = $("pbody"), pobody = $("pobody"), poverlay = $("poverlay");
+const pbody = $("pbody"), pobody = $("pobody"), poverlay = $("poverlay"), composer = $("composer");
 const sleep = ms => new Promise(r => setTimeout(r, ms));
+const waitUntil = (fn, step = 120) => new Promise(r => { const t = setInterval(() => { if (fn()) { clearInterval(t); r(); } }, step); });
 let toastT;
 function toast(msg) { const t = $("toast"); t.textContent = msg; t.classList.add("on"); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("on"), 3200); }
 function words(s) { return (s.trim().match(/\S+/g) || []).length; }
@@ -820,9 +904,47 @@ function renderTimeline() {
 function setSideChip() {
   $("sideChip").innerHTML = S.side ? `<span class="chip side-${S.side.toLowerCase()}">${esc(side().tag)} · ${esc(side().name)}</span>` : "";
 }
+/* what this student sees for themselves while the stream shows everyone the same thing */
+function mineCard() {
+  if (!S.side) return "";
+  const id = SECTIONS[S.si] && SECTIONS[S.si].id, sd = side();
+  if (id === "topic") return `<div class="mine-card"><span class="lab">X của em · ${esc(sd.tag)}</span><span class="en">${esc(sd.x)}</span></div>`;
+  if (id === "idea") return `<div class="mine-card"><span class="lab">Ví dụ cho phe của em</span><span class="en">${esc(sd.stem + sd.exIdea)}.</span></div>`;
+  if (id === "develop") return `<div class="mine-card"><span class="lab">Ý của em</span><span class="en">${esc(ideaText())}</span></div>`;
+  if (id === "para") return S.side === "B"
+    ? `<div class="mine-card"><span class="lab">Đoạn mẫu phe của em · Phe B</span><span class="en" style="font-weight:500">${esc(B.model.join(" "))}</span></div>`
+    : `<div class="mine-card"><span class="lab">Phe của em</span><span>Đoạn mẫu trên màn hình là phe A, đúng phe em.</span></div>`;
+  return "";
+}
 function panelIdle(msg = "Đang nghe anh Khoa giảng") {
+  composer.hidden = true;
   pbody.innerHTML = `<div class="idle"><div class="wave"><i></i><i></i><i></i><i></i></div><b>${esc(msg)}</b><span>Câu hỏi và bài tập sẽ hiện ở đây.</span></div>
+    ${mineCard()}
     <div class="tip">Chưa hiểu chỗ nào? Bấm <b>Chưa hiểu</b> ở trên (hoặc phím <b>Space</b>). Không ai biết em bấm đâu.</div>`;
+}
+
+/* ===================== class confusion meter (same for everyone) ===================== */
+const M = { val: 5, target: 5, hold: false };
+function meterTick() {
+  M.val += (M.target - M.val) * 0.06;
+  const v = Math.max(0, Math.min(100, M.val));
+  $("cmFill").style.width = v + "%";
+  $("cmNum").textContent = Math.round(v) + "%";
+  const cm = $("cmeter");
+  cm.classList.toggle("warn", v >= 15 && v < 30);
+  cm.classList.toggle("alert", v >= 30);
+}
+setInterval(meterTick, 60);
+setInterval(() => { if (!M.hold) M.target = 3 + Math.random() * 5; }, 3000);
+
+function flash(text, kind = "q", ms = 3600) {
+  const f = $("qflash");
+  f.className = "qflash" + (kind === "alert" ? " alert" : "");
+  f.textContent = text;
+  f.hidden = false;
+  void f.offsetWidth;
+  clearTimeout(flash.t);
+  flash.t = setTimeout(() => { f.hidden = true; }, ms);
 }
 
 /* ===================== captions + timing ===================== */
@@ -830,6 +952,7 @@ let lastCap = "";
 function pushCaption(text) {
   $("capPrev").textContent = lastCap;
   lastCap = text;
+  S.capHistory.push(text); if (S.capHistory.length > 10) S.capHistory.shift();
   const ws = text.split(" ");
   $("capNow").innerHTML = `<span class="who">anh Khoa</span>` + ws.map((w, i) => `<span class="w" style="animation-delay:${Math.min(i * 45, 1400)}ms">${esc(w)} </span>`).join("");
 }
@@ -855,20 +978,28 @@ async function say(beat) {
   cam.classList.add("talking");
   await wait(durFor(text) + (beat.extra || 0));
   cam.classList.remove("talking");
-  if (S.confusePending && !S.reexRunning) await runReex();
+  if (S.pending && S.pending.kind === "class" && !S.classRunning) await classPause(S.pending.spot);
+}
+/* anh Khoa announces a question: caption + flash on the stream; the panel card glows */
+function notifyQ(text) {
+  pushCaption(text);
+  cam.classList.add("talking"); setTimeout(() => cam.classList.remove("talking"), 1800);
+  flash("Câu hỏi mới · trả lời ở bảng bên phải →");
 }
 
 /* ===================== asking a question in the panel ===================== */
-function askQ(qq, kind, target) {
+function askQ(qq, kind, target, glow) {
   const q = qv(qq);
+  const right = q.right || "Đúng rồi!";
+  const wrong = q.wrong || `Đáp án đúng là **${q.opts[q.ans]}** nha.`;
   const host = target || pbody;
   S.cut = false;
   return new Promise(resolve => {
     const box = document.createElement("div");
-    box.className = "card";
+    box.className = "card" + (glow ? " glow" : "");
     box.innerHTML = `<span class="eyebrow ${kind}">${kind === "ccq" ? "Kiểm tra nhanh" : "Trước khi làm"}</span><p class="qtext">${md(q.q)}</p>
       <div class="opts">${q.opts.map((o, i) => `<button class="opt" type="button" data-i="${i}">${esc(o)}</button>`).join("")}</div>`;
-    if (!target) host.innerHTML = "";
+    if (!target) { host.innerHTML = ""; composer.hidden = true; }
     host.appendChild(box);
     box.scrollIntoView({ block: "nearest", behavior: "smooth" });
     box.querySelector(".opt").focus({ preventScroll: true });
@@ -878,7 +1009,7 @@ function askQ(qq, kind, target) {
       if (!ok) b.classList.add("wrong");
       const fb = document.createElement("div");
       fb.className = "fb " + (ok ? "ok" : "no");
-      fb.innerHTML = `<span class="fi ${ok ? "pop" : ""}">${ok ? "✓" : "!"}</span><div><b>${ok ? "Chính xác!" : "Gần đúng rồi!"}</b> ${md(ok ? q.right : q.wrong)}</div>`;
+      fb.innerHTML = `<span class="fi ${ok ? "pop" : ""}">${ok ? "✓" : "!"}</span><div><b>${ok ? "Chính xác!" : "Gần đúng rồi!"}</b> ${md(ok ? right : wrong)}</div>`;
       box.appendChild(fb);
       const go = document.createElement("button");
       go.className = "btn btn-primary"; go.type = "button"; go.textContent = "Tiếp tục";
@@ -902,16 +1033,26 @@ function setUnderstand(v) {
 }
 function pressNo() {
   if (!S.started) { toast("Bấm “Vào lớp” trước nha."); return; }
-  if (S.reexRunning) return;
-  const sec = SECTIONS[S.si];
-  if (!sec.reex) { toast("Phần này không có gì mới, em xem trang tổng kết nha."); return; }
+  if (S.classRunning || S.helpRunning || S.pending) return;
+  if (SECTIONS[S.si] && SECTIONS[S.si].id === "recap") { toast("Hết buổi rồi, em xem trang tổng kết nha."); return; }
   setUnderstand(false);
-  S.confusePending = true;
-  toast(`anh Khoa sẽ giảng lại cho em. ${12 + Math.floor(Math.random() * 30)} bạn khác cũng vừa bấm.`);
-  if (S.mode === "explain") S.cut = true; else runReex();
+  const spot = S.curSpot || "intro";
+  const others = 8 + Math.floor(Math.random() * 20);
+  // class pause only makes sense while anh Khoa is teaching; during individual work it's always anh Đậu
+  if (S.scenario === "many" && S.mode === "explain") {
+    S.pending = { kind: "class", spot };
+    M.hold = true; M.target = 37;
+    toast(`Đã gửi. ${others * 12} bạn khác cũng đang bấm Chưa hiểu.`);
+    waitUntil(() => M.val >= 30).then(() => { if (S.pending && !S.classRunning) S.cut = true; });
+  } else {
+    M.hold = true; M.target = 9 + Math.random() * 5;
+    toast(`Đã gửi. ${others} bạn khác cũng bấm. anh Đậu giúp em nha.`);
+    personalHelp(spot);
+  }
 }
 function pressYes() {
-  if (S.reexRunning) { S.reexSkip = true; S.cut = true; return; }
+  if (S.helpRunning) { closeHelp(false, "Em bấm Hiểu"); return; }
+  if (S.classRunning) { toast("anh Khoa đang giảng lại cho cả lớp, chờ chút nha."); return; }
   setUnderstand(true);
 }
 $("btnNo").addEventListener("click", pressNo);
@@ -923,32 +1064,159 @@ document.addEventListener("keydown", e => {
   else if (e.key === "ArrowRight") { S.cut = true; }
   else if (e.key.toLowerCase() === "p") togglePause();
 });
+document.querySelectorAll(".scenario button").forEach(b => b.addEventListener("click", () => {
+  S.scenario = b.dataset.sc;
+  document.querySelectorAll(".scenario button").forEach(x => x.setAttribute("aria-pressed", x === b));
+  toast(S.scenario === "many" ? "Kịch bản: nhiều bạn chưa hiểu → anh Khoa dừng lại giảng cho cả lớp." : "Kịch bản: ít bạn chưa hiểu → anh Đậu giúp riêng em.");
+}));
 
-async function runReex() {
-  if (S.reexRunning) return;
-  const sec = SECTIONS[S.si];
-  S.confusePending = false;
-  if (!sec.reex) { setUnderstand(true); return; }
-  S.reexRunning = true; S.reexSkip = false;
-  const prevBoard = S.board, prevMode = S.mode;
-  S.mode = "explain";
-  poverlay.hidden = false;
-  pobody.innerHTML = `<div class="tip">Bài đang tạm dừng. anh Khoa giảng lại phần <b>${esc(sec.title)}</b> cho em, rồi hỏi một câu nhỏ.</div>`;
-  for (const b of sec.reex.beats) { if (S.reexSkip) break; await say(b); }
-  S.mode = "wait";
-  let ok = await askQ(sec.reex.ccq, "ccq", pobody);
-  if (!ok) {
-    pushCaption(sec.reex.hint);
-    pobody.insertAdjacentHTML("beforeend", `<div class="tip">Gợi ý: <b>${esc(sec.reex.hint)}</b></div>`);
-    ok = await askQ(sec.reex.ccq2, "ccq", pobody);
+function openOverlay(title, chip) {
+  $("ovTitle").textContent = title; $("ovChip").textContent = chip;
+  pobody.innerHTML = ""; poverlay.hidden = false;
+}
+
+/* ---- many confused: anh Khoa stops and helps the whole class ---- */
+async function classPause(spotId) {
+  const spot = SPOTS[spotId] || SPOTS.intro;
+  S.classRunning = true;
+  const prevBoard = S.board;
+  await waitUntil(() => M.val >= 30);
+  flash(`${Math.round(M.val)}% cả lớp chưa hiểu`, "alert", 3000);
+  await say({ say: "Ơ, khoan đã. Anh thấy nhiều bạn bấm chưa hiểu ở chỗ này." });
+  openOverlay("anh Khoa hỏi cả lớp", "Cả lớp cùng trả lời");
+  notifyQ("Mọi người chưa hiểu chỗ nào nè? Bấm ở bảng bên phải nha.");
+  const pick = await classPoll(spot);
+  setBoard("poll");
+  let opt;
+  if (pick.custom) {
+    await say({ say: `Có bạn hỏi: “${pick.custom}”` });
+    const ans = await answerCustom(pick.custom, spot, "class");
+    for (const l of ans) await say({ say: l });
+    opt = spot.options[S.poll.top] || spot.options[0];
+  } else {
+    opt = spot.options[pick.idx];
+    await say({ say: `À, nhiều bạn chưa rõ: “${opt.label}”. Anh giải thích lại nha.` });
   }
-  S.confusions.push({ section: sec.title, ok });
+  if (!pick.custom) for (let i = 0; i < opt.lines.length; i++) await say({ say: opt.lines[i], board: i === 0 ? opt.board : null });
+  notifyQ("Oke, anh check mọi người hiểu không nè.");
+  const ok = await askQ(opt.ccq, "ccq", pobody, true);
+  M.target = 6; M.hold = false;
   poverlay.hidden = true;
-  S.reexRunning = false;
-  S.mode = prevMode;
-  setBoard(prevBoard);
+  S.confusions.push({ section: SECTIONS[S.si].title, label: pick.custom || opt.label, ok, mode: "class" });
   setUnderstand(true);
-  toast(ok ? "Hiểu rồi! Mình học tiếp nha." : "Không sao, anh Đậu sẽ nhắc lại trong trang tổng kết.");
+  S.pending = null;
+  S.classRunning = false;
+  await say({ say: "Ok, mọi người hiểu rồi. Mình đi tiếp nha.", board: prevBoard });
+}
+function classPoll(spot) {
+  return new Promise(resolve => {
+    const card = document.createElement("div");
+    card.className = "card glow";
+    card.innerHTML = `<span class="eyebrow icq">anh Khoa hỏi · ${esc(spot.title)}</span><p class="qtext">Mọi người chưa hiểu chỗ nào nè?</p>
+      <div class="opts">${spot.options.map((o, i) => `<button class="opt" type="button" data-i="${i}">${esc(o.label)}</button>`).join("")}<button class="opt" type="button" data-i="x">Chỗ khác…</button></div>`;
+    pobody.appendChild(card);
+    card.querySelectorAll(".opt").forEach(b => b.addEventListener("click", () => {
+      card.querySelectorAll(".opt").forEach(x => x.disabled = true);
+      b.classList.add("right");
+      if (b.dataset.i === "x") {
+        const w = document.createElement("div"); w.className = "stack";
+        w.innerHTML = `<textarea class="write" id="customQ" placeholder="Em chưa hiểu chỗ nào? Gõ ngắn thôi…"></textarea><div class="row end"><button class="btn btn-primary" type="button" id="customGo">Gửi anh Khoa</button></div>`;
+        card.appendChild(w); $("customQ").focus();
+        $("customGo").addEventListener("click", () => { const t = $("customQ").value.trim(); if (!t) return; showResults(card, spot, 0, t); resolve({ custom: t }); });
+      } else { const i = +b.dataset.i; showResults(card, spot, i); setTimeout(() => resolve({ idx: i }), 1500); }
+    }));
+  });
+}
+function showResults(card, spot, top, custom) {
+  const a = 52 + Math.floor(Math.random() * 12), c = 6 + Math.floor(Math.random() * 6), bb = 100 - a - c;
+  const labels = spot.options.map(o => o.label);
+  const rows = labels.map((l, i) => ({ label: l, pct: i === top ? a : bb })).concat([{ label: "Chỗ khác", pct: c }]);
+  S.poll = { rows, top };
+  const res = document.createElement("div"); res.className = "pres";
+  res.innerHTML = `<span class="muted">Kết quả cả lớp (${(900 + Math.floor(Math.random() * 200)).toLocaleString("en-US")} bạn trả lời)</span>` + rows.map((r, i) => `<div class="pres-row ${i === top ? "top" : ""}"><span>${esc(r.label)}</span><b>${r.pct}%</b><span class="tr"><i data-w="${r.pct}"></i></span></div>`).join("");
+  card.appendChild(res);
+  requestAnimationFrame(() => requestAnimationFrame(() => res.querySelectorAll("i[data-w]").forEach(i => i.style.width = i.dataset.w + "%")));
+  if (custom) res.insertAdjacentHTML("afterbegin", `<div class="msg me" style="align-self:flex-end">${esc(custom)}</div>`);
+}
+
+/* ---- few confused (or during individual work): anh Đậu helps this student privately ---- */
+let helpChat = null, helpRig = null;
+async function personalHelp(spotId) {
+  const spot = SPOTS[spotId] || SPOTS.intro;
+  S.helpRunning = true;
+  openOverlay("anh Đậu giúp em", "Chỉ em thấy");
+  pobody.innerHTML = `<div class="tip">Bài giảng vẫn chạy bên trái. anh Đậu giúp riêng em phần <b>${esc(spot.title)}</b>.</div>
+    <div class="dau-head">${rigHTML(46, "a-wave")}<div class="who">anh Đậu<span>TA của anh Khoa · chỉ em thấy</span></div></div><div class="chat" id="helpChat"></div>`;
+  helpChat = $("helpChat"); helpRig = pobody.querySelector(".dau-head .rig");
+  await dauSay(["Em chưa rõ chỗ nào nè?"]);
+  const pick = await new Promise(resolve => {
+    const c = document.createElement("div"); c.className = "chips";
+    spot.options.forEach((o, i) => { const b = document.createElement("button"); b.type = "button"; b.textContent = o.label; b.addEventListener("click", () => { c.remove(); addMsg(helpChat, "me", esc(o.label)); resolve({ idx: i }); }); c.appendChild(b); });
+    const x = document.createElement("button"); x.type = "button"; x.textContent = "Chỗ khác…";
+    x.addEventListener("click", () => {
+      c.remove();
+      const w = document.createElement("div"); w.className = "stack";
+      w.innerHTML = `<textarea class="write" id="helpQ" placeholder="Em chưa hiểu chỗ nào? Gõ ngắn thôi…"></textarea><div class="row end"><button class="btn btn-primary" type="button" id="helpGo">Hỏi anh Đậu</button></div>`;
+      helpChat.appendChild(w); $("helpQ").focus();
+      $("helpGo").addEventListener("click", () => { const t = $("helpQ").value.trim(); if (!t) return; w.remove(); addMsg(helpChat, "me", esc(t)); resolve({ custom: t }); });
+    });
+    c.appendChild(x); helpChat.appendChild(c);
+  });
+  if (!S.helpRunning) return;
+  let opt;
+  if (pick.custom) {
+    const ans = await answerCustom(pick.custom, spot, "personal");
+    await dauSay(ans);
+    opt = spot.options[0];
+  } else {
+    opt = spot.options[pick.idx];
+    await dauSay(opt.lines);
+  }
+  if (!S.helpRunning) return;
+  await dauSay(["Giờ anh check em hiểu chưa nè."]);
+  const ok = await askQ(opt.ccq, "ccq", pobody);
+  closeHelp(ok, pick.custom || opt.label);
+}
+async function dauSay(lines) {
+  if (helpRig) helpRig.classList.add("m-talk", "e-open");
+  for (const l of lines) {
+    if (!S.helpRunning) break;
+    const t = addMsg(helpChat, "dau", `<span class="typing"><i></i><i></i><i></i></span>`);
+    await sleep(Math.min(1300, 400 + l.length * 10));
+    t.innerHTML = md(l);
+  }
+  if (helpRig) helpRig.classList.remove("m-talk", "e-open");
+}
+function closeHelp(ok, label) {
+  if (!S.helpRunning) return;
+  S.helpRunning = false;
+  poverlay.hidden = true;
+  M.hold = false;
+  S.confusions.push({ section: SECTIONS[S.si] ? SECTIONS[S.si].title : "", label, ok, mode: "personal" });
+  setUnderstand(true);
+  toast(ok ? "Hiểu rồi! Em theo kịp bài với cả lớp nha." : "Không sao, anh Đậu ghi lại trong trang tổng kết.");
+}
+/* a question nobody planned for: live AI answers from what anh Khoa just said */
+async function answerCustom(question, spot, who) {
+  const fallback = [`Câu hỏi hay! Phần này là “${spot.title}”.`, ...spot.options[0].lines.slice(0, 2)];
+  if (aiMode !== "live" || !sampleFn) return fallback;
+  const speaker = who === "class" ? "anh Khoa (giáo viên, đang livestream, nói với cả lớp: xưng anh, gọi mọi người / các em)" : "anh Đậu (TA của anh Khoa, nói riêng với 1 học viên: xưng anh, gọi em)";
+  const prompt = `Bạn là ${speaker} trong lớp livestream IELTS Writing Task 2 của YouPass. Một học viên vừa bấm "Chưa hiểu" và hỏi một câu.
+Đề: "${PROMPT}"
+Phần đang dạy: ${spot.title}
+anh Khoa vừa nói (gần nhất ở cuối): ${S.capHistory.slice(-6).map(c => `"${c}"`).join(" / ")}
+Nội dung chuẩn của phần này: ${spot.options.map(o => o.lines.join(" ")).join(" | ")}
+Câu hỏi: "${question}"
+Trả lời bằng tiếng Việt (ví dụ tiếng Anh được), ấm áp, đơn giản, đúng nội dung chuẩn, không lan man, không tự nhận là AI. Câu hỏi ngoài lề thì trả lời 1 câu rồi kéo về bài.
+Chỉ trả về JSON: {"lines": ["câu 1", "câu 2", "câu 3"]} (2–4 câu, mỗi câu tối đa ~25 từ).`;
+  try {
+    const r = await sampleFn.json(prompt, { cache: false });
+    const lines = r && Array.isArray(r.lines) ? r.lines.map(String).filter(Boolean).slice(0, 4) : null;
+    return lines && lines.length ? lines : fallback;
+  } catch (e) {
+    if (["not_granted", "sampling_disabled", "not_declared", "capability_disabled", "capability_removed"].includes(e && e.code)) { aiMode = "offline"; setAiBadge(); }
+    return fallback;
+  }
 }
 
 /* ===================== pause / skip / speed ===================== */
@@ -985,8 +1253,8 @@ function startSplit() {
   let a = 50;
   subTimer = setInterval(() => {
     a += (62 - a) * .25 + (Math.random() - .5) * 2;
-    const A = Math.round(a), B = 100 - A, ea = $("splitA"), eb = $("splitB");
-    if (ea) { ea.style.flexBasis = A + "%"; ea.textContent = `A · ${A}%`; eb.style.flexBasis = B + "%"; eb.textContent = `B · ${B}%`; }
+    const Ap = Math.round(a), Bp = 100 - Ap, ea = $("splitA"), eb = $("splitB");
+    if (ea) { ea.style.flexBasis = Ap + "%"; ea.textContent = `A · ${Ap}%`; eb.style.flexBasis = Bp + "%"; eb.textContent = `B · ${Bp}%`; }
   }, 900);
 }
 
@@ -1044,12 +1312,13 @@ CÁCH KÈM (Socratic, mô phỏng giáo viên thật — KHÔNG đưa một danh
 - Bài phải bằng tiếng Anh. Em viết tiếng Việt → nhắc nhẹ, giúp 1 câu mở đầu, action "write".
 - Em hỏi gì ngoài lề → trả lời 1 dòng rồi quay lại việc đang làm.
 - Gợi ý ý tưởng (nếu em bí) chỉ nằm trong FOCUS của bước này.
+- Ô viết của em nằm ở DƯỚI CÙNG bảng (dưới tin nhắn của anh). Khi mời em viết lại, nói "viết lại ở ô bên dưới nha".
 
 ĐỊNH DẠNG: CHỈ trả về MỘT JSON object, không gì khác:
 {"lines":["..."],"action":"chips|write|done","chips":["..."],"notes":[{"you_wrote":"...","better":"...","category":"structure|vocab|grammar","rule":"..."}]}
 - lines: 1–4 bong bóng chat ngắn (mỗi cái tối đa ~20 từ). Được dùng **đậm**.
 - action "chips": dòng cuối của lines là câu hỏi; chips có 2–4 lựa chọn ngắn (tối đa 8 từ), tự đứng được khi gửi thay em.
-- action "write": dòng cuối mời em sửa / viết lại trong ô viết.
+- action "write": dòng cuối mời em sửa / viết lại ở ô bên dưới.
 - action "done": bước này xong.
 - notes: mỗi lỗi đã được sửa trong lượt này (em không thấy notes): you_wrote = cụm em viết, better = cụm đúng, rule = quy tắc ngắn bằng tiếng Việt. [] nếu không có.`;
 }
@@ -1071,17 +1340,22 @@ function askTutorOffline(step, turns, st) {
   const last = turns[turns.length - 1].content;
   const text = st.text;
   if (step === "topic") {
-    if (st.retried && st.await !== "ing" && turns[turns.length - 1].content.startsWith("BÀI EM SỬA LẠI")) {
+    if (st.retried && st.await !== "ing" && last.startsWith("BÀI EM SỬA LẠI")) {
       const good = /in favou?r of\s+\w+ing\b/i.test(text) && /because/i.test(text);
       return good ? { lines: ["Bản sửa này chuẩn công thức rồi: đúng **in favor of + V-ing**, có đủ khúc **because…**.", "Mình đi tiếp nha!"], action: "done", chips: [], notes: [] }
         : { lines: ["Gần được rồi. Câu đúng sẽ kiểu như này nè:", `**I am personally in favor of ${side().x} because it brings about many significant benefits.**`, "Anh ghi vào trang tổng kết cho em xem lại nha."], action: "done", chips: [], notes: [{ you_wrote: text.slice(0, 70), better: `I am personally in favor of ${side().x} because…`, category: "structure", rule: "Câu chủ đề theo công thức" }] };
     }
     if (st.await === "ing") {
       st.await = null;
-      if (/studying|focusing|ing\b/i.test(last)) return { lines: ["Đúng rồi! **of** là giới từ nên động từ sau nó thêm **-ing**.", "Giờ em sửa lại câu cho hoàn chỉnh nha."], action: "write", chips: [], notes: [{ you_wrote: `in favor of ${st.verb}`, better: `in favor of ${st.verb}ing`.replace("eing", "ing"), category: "grammar", rule: "Sau giới từ of, động từ thêm -ing" }] };
-      return { lines: [`Chỗ này là **in favor of ${st.verb.endsWith("e") ? st.verb.slice(0, -1) : st.verb}ing** nha em.`, "Vì **of** là giới từ, mà sau giới từ thì động từ thêm **-ing**.", "Em sửa lại câu rồi gửi anh xem nha."], action: "write", chips: [], notes: [{ you_wrote: `in favor of ${st.verb}`, better: `in favor of ${st.verb}ing`, category: "grammar", rule: "Sau giới từ of, động từ thêm -ing" }] };
+      const ing = st.verb.endsWith("e") ? st.verb.slice(0, -1) + "ing" : st.verb + "ing";
+      const note = [{ you_wrote: `in favor of ${st.verb}`, better: `in favor of ${ing}`, category: "grammar", rule: "Sau giới từ of, động từ thêm -ing" }];
+      if (/ing\b/i.test(last)) return { lines: ["Đúng rồi! **of** là giới từ nên động từ sau nó thêm **-ing**.", "Giờ em sửa lại câu ở ô bên dưới nha."], action: "write", chips: [], notes: note };
+      return { lines: [`Chỗ này là **in favor of ${ing}** nha em.`, "Vì **of** là giới từ, mà sau giới từ thì động từ thêm **-ing**.", "Em sửa lại câu ở ô bên dưới rồi gửi anh xem nha."], action: "write", chips: [], notes: note };
     }
-    if (!/in favou?r of/i.test(text)) return { lines: ["Câu của em chưa theo công thức hôm nay á.", "Câu chủ đề bắt đầu bằng **\"I am personally in favor of\"** nha.", "Em thử viết lại theo công thức nhé."], action: "write", chips: [], notes: [] };
+    if (!/in favou?r of/i.test(text)) {
+      if (/in favou?r\s+\w+ing/i.test(text)) return { lines: ["Em xem lại chỗ **\"in favor\"** nha.", "Sau **in favor** còn thiếu một chữ nhỏ trước V-ing. Chữ gì?"], action: "chips", chips: ["of", "to", "for", "Em không chắc"], notes: [] };
+      return { lines: ["Câu của em chưa theo công thức hôm nay á.", "Câu chủ đề bắt đầu bằng **\"I am personally in favor of\"** nha.", "Em viết lại ở ô bên dưới nhé."], action: "write", chips: [], notes: [] };
+    }
     const m = text.match(/in favou?r of\s+([a-z]+)/i);
     const verb = m ? m[1].toLowerCase() : "";
     if (["study", "focus", "learn", "let", "allow", "choose", "take", "make"].includes(verb) && !st.retried) {
@@ -1089,20 +1363,20 @@ function askTutorOffline(step, turns, st) {
       return { lines: [`Em xem chữ ngay sau **"in favor of"** nha: **"${verb}"**.`, "Sau giới từ **of**, động từ có dạng gì?"], action: "chips", chips: [verb, verb.endsWith("e") ? verb.slice(0, -1) + "ing" : verb + "ing", "to " + verb, "Em không chắc"], notes: [] };
     }
     const x = (text.split(/in favou?r of/i)[1] || "").split(/because/i)[0];
-    if (words(x) > 14 && !st.retried) return { lines: ["X của em hơi dài, giống chép nguyên đề á.", `X chỉ cần phần em ủng hộ, kiểu **"${side().x}"**.`, "Em rút gọn lại nha."], action: "write", chips: [], notes: [{ you_wrote: x.trim().slice(0, 60) + "…", better: side().x, category: "structure", rule: "X ngắn gọn, không chép đề" }] };
-    if (S.side === "A" && /only|good at|interest|enjoy|favou?rite/i.test(x) || S.side === "B" && /all subjects/i.test(x)) return { lines: ["Khoan nha, X của em đang nói về **phe bên kia** á.", `Em chọn **${side().name}** mà.`, "Em sửa X cho khớp phe nhé."], action: "write", chips: [], notes: [] };
+    if (words(x) > 14 && !st.retried) return { lines: ["X của em hơi dài, giống chép nguyên đề á.", `X chỉ cần phần em ủng hộ, kiểu **"${side().x}"**.`, "Em rút gọn lại ở ô bên dưới nha."], action: "write", chips: [], notes: [{ you_wrote: x.trim().slice(0, 60) + "…", better: side().x, category: "structure", rule: "X ngắn gọn, không chép đề" }] };
+    if (S.side === "A" && /only|good at|interest|enjoy|favou?rite/i.test(x) || S.side === "B" && /all subjects/i.test(x)) return { lines: ["Khoan nha, X của em đang nói về **phe bên kia** á.", `Em chọn **${side().name}** mà.`, "Em sửa X cho khớp phe ở ô bên dưới nhé."], action: "write", chips: [], notes: [] };
     if (!/because/i.test(text)) return { lines: ["Câu của em còn thiếu khúc cuối nè.", "Thêm **\"because it brings about many significant benefits\"** vào nha."], action: "write", chips: [], notes: [] };
     return { lines: ["Câu chủ đề đúng công thức, X ngắn gọn và khớp phe em chọn.", "Ổn rồi, mình đi tiếp nha!"], action: "done", chips: [], notes: [] };
   }
   if (step === "develop") {
-    if (/[ăâđêôơưạảấầẩẫậắằẳẵặẹẻẽếềểễệỉịọỏốồổỗộớờởỡợụủứừửữựỳỵỷỹ]/i.test(text)) return { lines: ["Em viết bằng tiếng Anh nha.", "Ý em hay mà, thử chuyển sang tiếng Anh xem."], action: "write", chips: [], notes: [] };
+    if (/[ăâđêôơưạảấầẩẫậắằẳẵặẹẻẽếềểễệỉịọỏốồổỗộớờởỡợụủứừửữựỳỵỷỹ]/i.test(text)) return { lines: ["Em viết bằng tiếng Anh nha.", "Ý em hay mà, thử chuyển sang tiếng Anh ở ô bên dưới xem."], action: "write", chips: [], notes: [] };
     if (words(text) < 8 && !st.retried) return { lines: [`Em viết thêm chút nữa nha: 1–2 câu **${PATHS[S.path].vi}**.`, `Tự hỏi: **${PATHS[S.path].q}**`], action: "write", chips: [], notes: [] };
     const key = (S.idea || "").toLowerCase().replace(/^.*helps students /, "").replace(/\.$/, "").trim();
     if (key && words(key) >= 2 && text.toLowerCase().includes(key) && /because/i.test(text) && !st.retried) return { lines: ["Câu này hơi **đi một vòng** á: em nhắc lại ý chính thay vì phát triển nó.", `Thử trả lời: **${PATHS[S.path].q}**`], action: "write", chips: [], notes: [{ you_wrote: "lặp lại ý chính", better: PATHS[S.path].desc, category: "structure", rule: "Phát triển ý phải thêm thông tin mới" }] };
     return { lines: [`Câu của em đi đúng hướng **${PATHS[S.path].label}**, nối tiếp ý chính được.`, "Ổn rồi, mình ghép thành đoạn văn nha!"], action: "done", chips: [], notes: [] };
   }
   const wc = words(text);
-  if (wc < 60 && !st.retried) return { lines: [`Đoạn của em mới **${wc} chữ**, hơi ngắn nè.`, "Em thêm phần phát triển ý cho đủ khoảng 80–120 chữ nha."], action: "write", chips: [], notes: [] };
+  if (wc < 60 && !st.retried) return { lines: [`Đoạn của em mới **${wc} chữ**, hơi ngắn nè.`, "Em thêm phần phát triển ý cho đủ khoảng 80–120 chữ ở ô bên dưới nha."], action: "write", chips: [], notes: [] };
   if (!/in favou?r of/i.test(text) && !st.retried) return { lines: ["Đoạn văn cần mở đầu bằng **câu chủ đề** nha.", "Em thêm câu **I am personally in favor of…** lên đầu đoạn."], action: "write", chips: [], notes: [] };
   if (!/firstly/i.test(text) && !st.retried) return { lines: ["Đoạn có câu chủ đề rồi, tốt.", "Em thêm **\"Firstly,\"** trước ý chính để người đọc thấy ý bắt đầu ở đâu nha."], action: "write", chips: [], notes: [{ you_wrote: "(không có từ nối)", better: "Firstly, + ý chính", category: "structure", rule: "Mở đầu ý chính bằng Firstly," }] };
   return { lines: [`Đoạn của em có đủ 3 phần: câu chủ đề, ý chính, phát triển ý (${wc} chữ).`, "Xong bước cuối rồi!"], action: "done", chips: [], notes: [] };
@@ -1116,32 +1390,34 @@ function addNotes(notes) {
   }
 }
 
-/* writing task with anh Đậu */
+/* writing task with anh Đậu: prompt on top, chat in the middle, writing box pinned at the bottom */
 function writeTask(step, opts) {
   return new Promise(resolve => {
     const id = "w-" + step;
     pbody.innerHTML = `<div class="card">
         <span class="eyebrow">${esc(opts.eyebrow)}</span><p class="qtext">${md(opts.title)}</p>
         ${opts.helper || ""}
-        <textarea class="write ${step === "para" ? "tall" : ""}" id="${id}" placeholder="${esc(opts.placeholder)}" spellcheck="false"></textarea>
-        <div class="row"><span class="wc" id="${id}-wc">0 chữ</span><button class="btn btn-primary" type="button" id="${id}-send">Gửi anh Đậu</button></div>
       </div>
       <div class="dau-head">${rigHTML(46)}<div class="who">anh Đậu<span>TA của anh Khoa · kèm riêng em</span></div></div>
-      <div class="chat" id="${id}-chat"><div class="msg dau">${md(opts.hello)}</div></div>
-      <button class="linkbtn" type="button" id="${id}-skip">Bỏ qua, học tiếp</button>`;
-    const ta = $(id), wc = $(id + "-wc"), send = $(id + "-send"), chat = $(id + "-chat");
+      <div class="chat" id="${id}-chat"><div class="msg dau">${md(opts.hello)}</div></div>`;
+    composer.innerHTML = `<span class="hint" id="${id}-hint" hidden>Sửa câu của em ở đây rồi gửi lại nha ↓</span>
+      <textarea class="write ${step === "para" ? "tall" : ""}" id="${id}" placeholder="${esc(opts.placeholder)}" spellcheck="false"></textarea>
+      <div class="row"><span class="wc" id="${id}-wc">0 chữ</span><button class="linkbtn" type="button" id="${id}-skip">Bỏ qua</button><button class="btn btn-primary" type="button" id="${id}-send">Gửi anh Đậu</button></div>`;
+    composer.hidden = false; composer.classList.remove("nudge");
+    const ta = $(id), wc = $(id + "-wc"), send = $(id + "-send"), chat = $(id + "-chat"), hint = $(id + "-hint");
     const rig = pbody.querySelector(".dau-head .rig");
     ta.value = opts.prefill || "";
-    const upd = () => { const n = words(ta.value); wc.textContent = n + " chữ" + (opts.target ? ` · ${opts.target}` : ""); wc.classList.toggle("ok", !!opts.okWords && n >= opts.okWords[0] && n <= opts.okWords[1]); send.disabled = n < (opts.min || 3); };
+    const upd = () => { const n = words(ta.value); wc.textContent = n + " chữ" + (opts.target ? ` · ${opts.target}` : ""); wc.classList.toggle("ok", !!opts.okWords && n >= opts.okWords[0] && n <= opts.okWords[1]); send.disabled = busy || n < (opts.min || 3); };
+    let busy = false;
     ta.addEventListener("input", upd); upd();
     setTimeout(() => ta.focus({ preventScroll: true }), 300);
     const turns = []; const st = { text: "", retried: false, rounds: 0, await: null };
-    let first = null, stage = "first", busy = false, finished = false;
-    const finish = () => { if (finished) return; finished = true; resolve({ first, final: ta.value.trim() || first }); };
+    let first = null, finished = false;
+    const finish = () => { if (finished) return; finished = true; composer.hidden = true; resolve({ first, final: ta.value.trim() || first }); };
     $(id + "-skip").addEventListener("click", finish);
 
     async function ask() {
-      busy = true; send.disabled = true; ta.disabled = true;
+      busy = true; upd(); ta.disabled = true; composer.classList.remove("nudge"); hint.hidden = true;
       const typing = addMsg(chat, "dau", `<span class="typing"><i></i><i></i><i></i></span>`);
       if (rig) rig.classList.add("m-talk", "e-open");
       let res = null;
@@ -1160,17 +1436,20 @@ function writeTask(step, opts) {
       if (!res) res = askTutorOffline(step, turns, st);
       st.rounds++;
       if (st.rounds >= 9 && res.action !== "done") res = { ...res, action: "done", lines: [...res.lines, "Mình dừng ở đây nha, phần còn lại anh ghi vào trang tổng kết."] };
+      if (res.action === "chips" && !res.chips.length) res.action = "write";
       turns.push({ role: "assistant", content: JSON.stringify(res) });
       addNotes(res.notes);
       typing.remove();
       for (const l of res.lines) { addMsg(chat, "dau", md(l)); await sleep(Math.min(1400, 350 + l.length * 12)); }
       if (rig) rig.classList.remove("m-talk", "e-open");
       busy = false;
-      if (res.action === "chips" && res.chips.length) {
+      if (res.action === "chips") {
         const c = document.createElement("div"); c.className = "chips";
         res.chips.forEach(t => { const b = document.createElement("button"); b.type = "button"; b.textContent = t; b.addEventListener("click", () => { if (busy) return; c.remove(); addMsg(chat, "me", esc(t)); turns.push({ role: "user", content: t }); ask(); }); c.appendChild(b); });
         chat.appendChild(c); c.scrollIntoView({ block: "nearest", behavior: "smooth" });
+        upd();
       } else if (res.action === "done") {
+        composer.hidden = true;
         if (rig) { rig.classList.add("a-cheer", "m-laugh"); setTimeout(() => rig.classList.remove("a-cheer", "m-laugh"), 2200); }
         const row = document.createElement("div"); row.className = "row end";
         row.innerHTML = `<button class="btn btn-primary" type="button">Học tiếp →</button>`;
@@ -1178,7 +1457,10 @@ function writeTask(step, opts) {
         chat.appendChild(row); row.querySelector("button").focus({ preventScroll: true });
         row.scrollIntoView({ block: "nearest", behavior: "smooth" });
       } else {
-        stage = "rewrite"; ta.disabled = false; upd(); send.textContent = "Gửi bản sửa"; ta.focus({ preventScroll: true });
+        ta.disabled = false; upd(); send.textContent = "Gửi bản sửa";
+        composer.classList.add("nudge"); hint.hidden = false;
+        pbody.scrollTo({ top: pbody.scrollHeight, behavior: "smooth" });
+        ta.focus({ preventScroll: true });
       }
     }
     send.addEventListener("click", () => {
@@ -1221,9 +1503,9 @@ async function taskTopic() {
   pushCaption("Giờ các em viết câu chủ đề đi nha. Anh Đậu sẽ kèm từng bạn.");
   const r = await writeTask("topic", {
     eyebrow: "Bước 2 · Câu chủ đề", title: "Viết câu chủ đề của em",
-    helper: `<div class="formula-mini">I am personally in favor of <span class="x">X</span> because it brings about many significant benefits.</div>`,
+    helper: `<div class="formula-mini">I am personally in favor of <span class="x">X</span> because it brings about many significant benefits.<br><span class="muted">X của em: <i>${esc(side().x)}</i></span></div>`,
     placeholder: "I am personally in favor of …", min: 4,
-    hello: `Em viết câu chủ đề cho **${side().name}** nha. Xong bấm **Gửi anh Đậu**, anh xem cho.`
+    hello: `Em viết câu chủ đề cho **${side().name}** ở ô dưới cùng nha. Xong bấm **Gửi anh Đậu**, anh xem cho.`
   });
   S.topicFirst = r.first; S.topicFinal = r.final; S.done.topic = !!r.first;
   clearInterval(subTimer);
@@ -1263,8 +1545,10 @@ async function taskIdeas() {
   });
   if (!S.idea) S.idea = ideaText();
   clearInterval(subTimer);
+  const sd = side(), gi = sd.goiy.findIndex(g => S.idea.toLowerCase().includes(g.toLowerCase()));
+  pbody.innerHTML = `<div class="mine-card"><span class="lab">Ý của em</span><span class="en">${esc(S.idea)}</span><span>${gi >= 0 ? `${sd.counts[gi]} bạn khác cũng chọn ý này.` : "Ý tự nghĩ, ít bạn có giống em. Hay đó!"}</span></div>`;
   setBoard("top-ideas");
-  await say({ say: `Ý được chọn nhiều nhất lớp mình là “${side().goiy[side().counts.indexOf(Math.max(...side().counts))]}”. Hay đó!` });
+  await say({ say: "Ý được chọn nhiều nhất lớp mình là “become more well-rounded”, rồi tới “stay motivated”. Hay đó!" });
 }
 
 async function taskDevelop() {
@@ -1282,28 +1566,29 @@ async function taskDevelop() {
     pbody.querySelectorAll(".opt").forEach(b => b.addEventListener("click", () => { S.path = b.dataset.p; resolve(); }));
   });
   const p = PATHS[S.path];
-  setBoard("develop-table:" + ["impact", "explain", "example"].indexOf(S.path));
   const r = await writeTask("develop", {
     eyebrow: `Bước 4 · ${p.label}`, title: `Viết 1–2 câu **${p.vi}** cho ý của em`,
     helper: `<div class="formula-mini"><b>Ý của em:</b> <span class="en">${esc(ideaText())}</span><br><b>Tự hỏi:</b> ${esc(p.q)}</div>`,
     placeholder: S.path === "impact" ? "This allows them to …" : S.path === "explain" ? "This is because …" : "For example, …", min: 4,
-    hello: `Em chọn **${p.label}**: ${p.desc}. Viết 1–2 câu rồi gửi anh nha.`
+    hello: `Em chọn **${p.label}**: ${p.desc}. Viết 1–2 câu ở ô dưới cùng rồi gửi anh nha.`
   });
   S.devFirst = r.first; S.devFinal = r.final;
   clearInterval(subTimer);
 }
 
 async function taskPara() {
-  setBoard("paragraph-model"); startSubmitCounter(903);
-  pushCaption("Giờ ghép lại thành đoạn văn nha. Nhìn đoạn mẫu cũng được, nhưng viết bằng ý của em.");
+  setBoard("task:Viết đoạn thân bài"); startSubmitCounter(903);
+  pushCaption("Giờ ghép lại thành đoạn văn nha. Nhìn đoạn mẫu cũng được, nhưng viết bằng ý của mình.");
   let idea = ideaText().trim();
   if (!/^firstly/i.test(idea)) idea = "Firstly, " + idea.charAt(0).toLowerCase() + idea.slice(1);
   const prefill = [S.topicFinal || "", idea, S.devFinal || ""].filter(Boolean).join(" ");
+  const sd = side();
   const r = await writeTask("para", {
     eyebrow: "Bước 5 · Viết đoạn", title: "Viết đoạn thân bài hoàn chỉnh",
-    helper: `<div class="formula-mini">Câu chủ đề → <b>Firstly,</b> + ý chính → phát triển ý · khoảng 80–120 chữ. anh đã điền sẵn các phần em viết, em sửa và viết thêm nha.</div>`,
+    helper: `<div class="formula-mini">Câu chủ đề → <b>Firstly,</b> + ý chính → phát triển ý · khoảng 80–120 chữ. anh đã điền sẵn các phần em viết, em sửa và viết thêm nha.</div>
+      <details class="tip"><summary>Xem đoạn mẫu ${esc(sd.tag)}</summary><p class="en" style="margin:8px 0 0">${esc(sd.model.join(" "))}</p></details>`,
     placeholder: "I am personally in favor of …", prefill, min: 20, target: "80–120", okWords: [80, 120],
-    hello: "Em ghép và hoàn chỉnh đoạn văn rồi gửi anh nha. Anh xem lập luận trước, rồi tới từ vựng, ngữ pháp."
+    hello: "Em ghép và hoàn chỉnh đoạn văn ở ô dưới cùng rồi gửi anh nha. Anh xem lập luận trước, rồi tới từ vựng, ngữ pháp."
   });
   S.paraFirst = r.first; S.paraFinal = r.final; S.done.para = !!r.first;
   clearInterval(subTimer);
@@ -1334,7 +1619,7 @@ function showRecap() {
   const topicChanged = S.topicFirst && S.topicFinal && S.topicFirst !== S.topicFinal;
   const remember = S.notes.length ? `<ul>${S.notes.slice(0, 6).map(n => `<li><span>${n.you_wrote ? `<span class="from en">${esc(n.you_wrote)}</span> → ` : ""}<span class="to en">${esc(n.better)}</span>${n.rule ? `<br><span class="muted">${esc(n.rule)}</span>` : ""}</span></li>`).join("")}</ul>`
     : `<p class="muted">Hôm nay anh Đậu không ghi lỗi nào cần nhớ. Em giữ phong độ này nha!</p>`;
-  const conf = S.confusions.length ? `<ul class="conf-list">${S.confusions.map(c => `<li><span>${esc(c.section)}</span>${c.ok ? '<span class="pill-ok">Hiểu sau khi giảng lại</span>' : '<span class="pill-no">Cần xem lại</span>'}</li>`).join("")}</ul>`
+  const conf = S.confusions.length ? `<ul class="conf-list">${S.confusions.map(c => `<li><span>${esc(c.section)} · ${esc(c.label)}<br><span class="muted">${c.mode === "class" ? "anh Khoa giảng lại cho cả lớp" : "anh Đậu giúp riêng em"}</span></span>${c.ok ? '<span class="pill-ok">Đã hiểu</span>' : '<span class="pill-no">Cần xem lại</span>'}</li>`).join("")}</ul>`
     : `<p class="muted">Em không bấm “Chưa hiểu” lần nào. Lần sau chưa hiểu thì cứ bấm nha, không ai biết đâu.</p>`;
   const R = $("recap");
   R.innerHTML = `<div class="sheet" role="dialog" aria-label="Trang tổng kết">
@@ -1364,10 +1649,22 @@ async function runSection(i) {
   S.mode = "explain";
   panelIdle();
   for (const b of sec.beats) {
-    if (b.ccq) { S.mode = "wait"; await askQ(Q[b.ccq], "ccq"); S.mode = "explain"; panelIdle(); }
-    else await say(b);
+    if (b.ccq) {
+      S.mode = "wait";
+      notifyQ("Oke, anh check mọi người hiểu không nè.");
+      await askQ(Q[b.ccq], "ccq", null, true);
+      while (S.helpRunning) await sleep(200);
+      S.mode = "explain"; panelIdle();
+    } else {
+      if (b.spot) S.curSpot = b.spot;
+      await say(b);
+    }
   }
-  if (sec.icq) { S.mode = "wait"; await askQ(Q[sec.icq], "icq"); }
+  if (sec.icq) {
+    S.mode = "wait";
+    notifyQ("Oke, anh check mọi người hiểu cần làm gì không nè.");
+    await askQ(Q[sec.icq], "icq", null, true);
+  }
   S.mode = "wait";
   if (sec.task === "side") await taskSide();
   else if (sec.task === "topic") await taskTopic();
@@ -1375,7 +1672,7 @@ async function runSection(i) {
   else if (sec.task === "develop") await taskDevelop();
   else if (sec.task === "para") await taskPara();
   else if (sec.task === "recap") { S.si = SECTIONS.length; renderTimeline(); panelIdle("Xong buổi học"); showRecap(); return; }
-  while (S.reexRunning) await sleep(200);
+  while (S.helpRunning || S.classRunning) await sleep(200);
 }
 async function run() {
   for (let i = 0; i < SECTIONS.length; i++) await runSection(i);

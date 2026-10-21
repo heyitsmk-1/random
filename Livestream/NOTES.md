@@ -565,3 +565,20 @@ Claude's answer (from memory; to be checked when we get there):
 - **Our page probably can't read them live.** The embedded YouTube player is a separate site inside the page, so its caption text isn't readable by our code. The YouTube API's caption download is meant for finished videos the channel owns, not a live feed.
 - After the stream, YouTube's auto-captions for the recording could be downloaded by the channel owner. That's useful for recaps and next-lesson prep, not for live help.
 - Parked with the rest of the streaming tech.
+
+## 2026-10-21: CLAUDE COOK: student prototype version 2
+
+What was said:
+- **CLAUDE COOK** (so the phrase is still CLAUDE COOK; Rule 2 updated).
+
+What was done (same link: https://claude.ai/artifact/AbFNQCpDezdomNnZZMWVTF, now version 2):
+1. **Writing box pinned to the bottom of the panel.** When anh Đậu asks for a rewrite, it lights up with "Sửa câu của em ở đây rồi gửi lại nha ↓" and the panel scrolls to it.
+2. **Question notice.** Before every CCQ / ICQ anh Khoa says "Oke, anh check mọi người hiểu không nè", the stream flashes "Câu hỏi mới · trả lời ở bảng bên phải →", and the question card glows.
+3. **The stream is the same for everyone.** No more "Phe của em" / the student's X / "Ý của em" on the boards; boards show both sides or phe A as anh Khoa's example. The student's own version is in the panel (X của em, ví dụ cho phe của em, ý của em, đoạn mẫu phe B).
+4. **Time-specific, hybrid Chưa hiểu**, with a class meter on the stream ("Cả lớp chưa hiểu", 30% line) and a demo switch "Kịch bản":
+   - **Nhiều bạn chưa hiểu:** the meter climbs past 30% → flash → anh Khoa: "Ơ, khoan đã…" → class poll in the panel (results fill in, also on the stream) → explanation of the picked confusion → "Oke, anh check mọi người hiểu không nè" + CCQ → meter drops → "Ok, mình đi tiếp".
+   - **Ít bạn chưa hiểu** (and always during individual work): anh Đậu helps privately in the panel; the stream keeps going.
+   - "Chỗ khác…" → typed question, answered by live AI from anh Khoa's recent lines (offline: the spot's explanation).
+5. 11 confusion spots with 22 explanations + CCQs (listed in LESSON-01-script.md).
+- Tested in a headless browser: the whole lesson with one class pause (topic sentence) and one private help (main idea), writing box, rewrite, recap. No errors.
+- Not tested here: live AI replies (only inside claude.ai).

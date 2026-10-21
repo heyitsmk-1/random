@@ -520,3 +520,19 @@ Claude's view:
 Open questions:
 - Go with the hybrid? Add the scenario switch to the demo?
 - Is the go-ahead phrase "CLAUDE CODE" or "CLAUDE COOK"?
+
+## 2026-10-21: How does anh Đậu know what to explain?
+
+What was said:
+- "How will anh Đậu know what they don't understand? And what anh Khoa said? Does that mean there need to be planned common questions?"
+
+Claude's answer:
+- **What anh Khoa said:** a live **transcript** of the stream (speech-to-text; speaking-intensive already has a speech-to-text route) plus **what's on the board** (the lesson's slides from prep). When the student presses, anh Đậu takes the last ~60–90 seconds, matched to the point the student was watching (streams run a few seconds behind).
+- **What the student doesn't understand:** anh Đậu **doesn't guess, he asks** (Socratic, taps): "Em chưa rõ chỗ nào nè?" with 2–3 options + "Chỗ khác…" (type a question).
+- **Where the options come from, in layers:**
+  1. **Planned common confusions** for the hard moments (best: reliable, checked by the teacher, instant, cheap). The lesson builder drafts them in prep together with the lesson; many repeat across lessons (e.g. of + V-ing), so prep stays short.
+  2. **AI-made options from the transcript** for moments nobody planned.
+  3. **"Chỗ khác…"**: the student types; anh Đậu answers from the transcript + board.
+- **Loop back:** everything students ask is logged → the teacher sees it, and it becomes next lesson's planned confusions.
+- So planned questions aren't strictly required, but they should be the backbone; AI covers the gaps.
+- In the demo: the script lines stand in for the transcript; the "confusion spots" table (above) is the planned list; "Chỗ khác…" is answered by live AI using the recent captions.

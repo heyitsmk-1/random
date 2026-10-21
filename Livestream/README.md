@@ -2,7 +2,7 @@
 
 Project folder for the Livestream project.
 
-**Status:** Vision prototype built as a PowerPoint deck (owner said CLAUDE COOK on 2026-10-19). See [prototype/](prototype/).
+**Status:** Student-side prototype live: https://claude.ai/artifact/AbFNQCpDezdomNnZZMWVTF (see [prototype/student-live/](prototype/student-live/)). Earlier: a PowerPoint vision deck.
 
 ## Files in this folder
 

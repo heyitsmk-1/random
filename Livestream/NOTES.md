@@ -687,3 +687,30 @@ Claude's proposal (not coded; waiting for CLAUDE COOK):
      - after the paragraph: upgrade one word or phrase
   4. Later, maybe: **"Bài hay của các bạn"**: anonymous strong answers from classmates (shared data, so it fits principle 5).
 - Suggested for the demo: 1 + 2 + 3. Leave 4 for later.
+
+## 2026-10-21: Waiting screen = recap of the *information* + spot the error
+
+What was said:
+- "No, I mean a **recap of the information**" (what was taught, not the student's own work).
+- "Or maybe some **spot the error questions, from other students**?"
+
+Claude's proposal (replaces the earlier waiting-screen idea; not coded):
+- Top: "Em xong rồi 🎉 · chờ cả lớp chút nha" + live "842 / 1,284 bạn đã nộp". Closes by itself when anh Khoa moves on.
+- **1. "Ôn nhanh"** (quick recap of what was taught so far), as short flip cards, each with one example:
+  - Ủng hộ bên nào → nói lợi ích bên đó
+  - Công thức câu chủ đề
+  - in favor of + V-ing
+  - X ngắn, không chép đề
+  - Ý chính = 1 lợi ích ("Thì sao? Học sinh được gì?")
+  - Impact / Explain / Example
+  Built from the lesson script, so no AI cost.
+- **2. "Tìm lỗi của các bạn"** (spot the error, from classmates):
+  - Real sentences other students just wrote, **anonymous**, picked by AI from the **most common mistakes** in this step (the same notes that feed anh Khoa's dashboard).
+  - The sentence is shown as tappable words (like the tap-the-mistake exercise on the anh Đậu recap page). The student taps the wrong part → the fix pops in + a one-line rule. Streak counter; keeps going until anh Khoa moves on.
+  - Privacy: sentences only, no names, filtered by AI (no personal info or off-topic text); anh Khoa could approve them in the real product.
+  - In the demo: pre-written "classmate" sentences, e.g.
+    - "I am personally in favor of **study** all subjects because it brings about many significant benefits." → studying
+    - "I am personally in favor of **children should study all subjects at school, while others think** they should…" → X too long
+    - "Studying all subjects helps students **study all subjects**." → not a benefit
+    - "Students become well-rounded **because they become well-rounded**." → circular
+    - "Firstly, studying all subjects helps students **becomes** more well-rounded." → become

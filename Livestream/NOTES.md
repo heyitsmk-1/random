@@ -793,3 +793,23 @@ Claude's notes (no code changed; waiting for answers + CLAUDE COOK):
 
 Open questions:
 - Which browser / app, Windows or Mac? Did the "chưa có giọng tiếng Việt" message appear?
+
+## 2026-10-21: A "correction" that didn't change the meaning
+
+What was said:
+- Screenshot: the student wrote "I am personally in favor of students taking all classes at once because **doing so offer** many benefits." anh Đậu replaced it with "because **it brings about** many **significant** benefits". The owner: "the correction makes no sense? It's the same meaning?"
+
+Claude's diagnosis (Claude's own prompt bug):
+- The prompt told the AI that "because it brings about many significant benefits" must stay **word for word**. So the AI treated a correct paraphrase as a mistake and swapped it for the template.
+- That also **hid the real error**: "doing so **offer**" → "doing so **offers**" (a gerund subject takes a singular verb). The student never learned that.
+- It also missed a meaning problem: "taking all classes **at once**" means "all at the same time", which is probably not what the student meant.
+
+Proposed fix (not coded; waiting for CLAUDE COOK):
+- **Accept paraphrases** of khúc 1 and khúc 3 that keep the structure: say which side + X + a reason clause about benefits (e.g. "doing so offers many benefits", "because it has many advantages").
+- **Only correct real errors** (grammar, wrong meaning, missing part). Never swap correct words for template words.
+- If the student's version is correct but differs from anh Khoa's formula: at most one line, "Công thức của anh Khoa là …, em viết vậy cũng đúng", with **no** change to their text.
+- `fixed_text` changes **only the wrong words** (minimal edit).
+- Here, the right corrections would have been: "doing so **offers**" and asking what "at once" meant.
+
+Open question:
+- Must students use the formula word for word, or is a correct paraphrase OK? (Owner's comment suggests paraphrases are OK.)

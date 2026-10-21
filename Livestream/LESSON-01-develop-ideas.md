@@ -112,6 +112,6 @@ This is only how to **start** developing the idea. After that, students are free
 1. ~~Ideas for both sides, or only their side?~~ **Answered:** only the side they choose (it's a mini lesson).
 2. ~~Step 4 framework?~~ **Answered:** see the Step 4 decision table.
 3. ~~Consolidation tool?~~ **Answered:** `student-page/` on `claude/vibrant-hopper-bdqjun`.
-4. **Speaking feedback tool:** Claude can't see `youpassvn/speaking-intensive` yet (see NOTES.md).
+4. ~~Speaking feedback tool?~~ **Answered 2026-10-21:** see [reference/speaking-intensive-notes.md](reference/speaking-intensive-notes.md). The tutor in every step reuses its design: one issue per turn, Structure → Vocab → Grammar, chips, JSON output with hidden `notes` that feed the teacher's mistake counts.
 5. **Prototype AI:** scripted or live? Live needs an API key.
 6. More open items for this lesson are in [GAPS.md](GAPS.md) (sections A and B).

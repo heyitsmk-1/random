@@ -325,3 +325,22 @@ What was said:
 What was done:
 - Gave three ways: (1) give the Claude GitHub App access so Claude attaches it directly (best, nothing copied); (2) download the ZIP from GitHub and upload only the prompt/feedback files into `Livestream/reference/speaking-intensive/` on this branch; (3) clone with git on the owner's computer and copy the files in.
 - Warned: check `heyitsmk-1/random` is **private** before copying company code into it, and leave out `.env`, API keys, `node_modules`, and student data.
+
+## 2026-10-21: speaking-intensive received
+
+What was said:
+- The owner uploaded `speaking-intensive-main.zip`.
+
+What was done:
+- Extracted it in Claude's scratch folder (not in the repo) and read the prompts, AI setup, database and docs. Found no secrets in it.
+- Wrote [reference/speaking-intensive-notes.md](reference/speaking-intensive-notes.md): what it is, how the tutor coaches, what Livestream can reuse, what has to change. **The code itself is not copied into this repo.**
+- Key findings:
+  - The tutor already follows our principles: chips instead of typing, one issue per turn, Socratic, honest praise.
+  - Its hidden `notes` per student are exactly the data for the teacher's "most common mistake".
+  - Its **report card** (per-student memory of recurring errors) can feed the recap page and the next class.
+  - It already has **youpass.vn logins** and a **company AI gateway**, which may answer the login and API-key gaps.
+- Updated GAPS.md (gap 4 closed; gaps 2 and 16 updated), LESSON-01 and README.
+
+Open questions:
+- Is the livestream teacher anh Khoa (the tutor's persona is "TA of anh Khoa")?
+- Can Livestream use the company AI gateway and youpass.vn logins?

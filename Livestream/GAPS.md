@@ -10,9 +10,9 @@ Grouped by **when it has to be answered**.
 ## A. Before the prototype (the boss demo)
 
 1. ~~**What's the demo for?**~~ **Answered 2026-10-19:** to **show the owner's vision for the livestream**. So the prototype should show the *whole experience* end to end, not test the tech in depth.
-2. **Scripted or live AI?** Still open. Live AI needs an API key. Whose key: the owner's or the company's? It goes in an environment setting, never in the repo.
+2. **Scripted or live AI?** *(Update 2026-10-21: the company already has an AI gateway used by speaking-intensive, so a new key may not be needed.)* Still open. Live AI needs an API key. Whose key: the owner's or the company's? It goes in an environment setting, never in the repo.
 3. ~~**Is the confusion meter in Lesson 1?**~~ **Answered 2026-10-19: yes.**
-4. **The Socratic tutor's behaviour isn't written down.** *(In progress 2026-10-19: owner is getting the speaking-intensive folder to Claude.)* It's meant to be "based on" `youpassvn/speaking-intensive`, but Claude has no access to it. We need its prompt or rules (e.g. paste them here, or give the Claude GitHub App access to that repo).
+4. ~~**The Socratic tutor's behaviour isn't written down.**~~ **Answered 2026-10-21:** owner uploaded speaking-intensive; see [reference/speaking-intensive-notes.md](reference/speaking-intensive-notes.md). *(Original gap:)* It's meant to be "based on" `youpassvn/speaking-intensive`, but Claude has no access to it. We need its prompt or rules (e.g. paste them here, or give the Claude GitHub App access to that repo).
 5. **No lesson content is prepared yet.** *Update 2026-10-19: streams will run 2–3 times a week, so content prep has to be fast (see NOTES.md for the proposed lesson builder).* The AI and the screens need:
    - the **Gợi ý idea list** for each side;
    - **model topic sentences** for each side, and which versions of X count as correct (the "only subjects they're good at or interested in" side has a long X: how much paraphrasing is expected?);
@@ -34,7 +34,7 @@ Grouped by **when it has to be answered**.
 
 ## C. Before going live with real students
 
-16. **Who is each student?** The consolidation page is per student, so we need to know who's who. Do students log in on youpass.vn? (Asked earlier, parked with the streaming side, but it's not a streaming question.)
+16. **Who is each student?** *(Update 2026-10-21: speaking-intensive already has youpass.vn accounts via `youpass_id`, so this can likely be reused.)* The consolidation page is per student, so we need to know who's who. Do students log in on youpass.vn? (Asked earlier, parked with the streaming side, but it's not a streaming question.)
 17. **How does the student get their consolidation page?** A link at the end of class, an email, on their youpass.vn account? Built automatically right after class, or does someone check them first?
 18. **Phone layout:** most students will watch on a phone. The video *and* the interaction screen have to fit together, or the interaction lives on a second device.
 19. **AI cost and speed at scale:** thousands of students × several AI calls each × every class. Needs a rough cost estimate and a plan for when thousands submit in the same 30 seconds.

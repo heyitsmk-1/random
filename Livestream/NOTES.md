@@ -669,3 +669,21 @@ Claude's proposal (not coded; waiting for CLAUDE COOK):
 - Several fixes **pile up** in the same box. At the end the student reads their corrected sentence once and presses **one button** ("Gửi bản này"), or edits it if they want.
 - Students still **type for real** where writing is the skill: their first attempt, the ideas, and the paragraph.
 - How: the AI also returns `fixed_text` (the student's text with that fix applied); the scripted fallback does a simple find-and-replace.
+
+## 2026-10-21: Waiting screen for students who finish early
+
+What was said:
+- We need a demo for **when the student finishes before the class / before anh Khoa moves on**. What will that waiting screen be like? "Can it be a **recap of the lesson thus far**?"
+
+Claude's proposal (not coded; waiting for CLAUDE COOK):
+- Yes, the recap-so-far is the core of it. The screen is calm, optional, and never in the way: when anh Khoa moves on, it closes by itself and the next activity takes over.
+- Layout, top to bottom:
+  1. **Status:** "Em xong rồi 🎉 · chờ cả lớp chút nha" + a live bar "842 / 1,284 bạn đã nộp", so the student knows why they're waiting.
+  2. **"Bài của em đến giờ"**: a mini anh Đậu recap of what they've done so far: side, topic sentence before → after, their idea, "điều cần nhớ" so far, any "Chưa hiểu" moments. It fills up as the lesson goes, and turns into the full recap at the end.
+  3. **Optional "Thử thách thêm"** (bonus), tied to the step they just finished, with anh Đậu feedback:
+     - after the topic sentence: write one for the other side
+     - after ideas: think of one more benefit
+     - after developing: try a different path (Explain instead of Impact)
+     - after the paragraph: upgrade one word or phrase
+  4. Later, maybe: **"Bài hay của các bạn"**: anonymous strong answers from classmates (shared data, so it fits principle 5).
+- Suggested for the demo: 1 + 2 + 3. Leave 4 for later.

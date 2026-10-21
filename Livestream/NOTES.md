@@ -447,3 +447,23 @@ What Claude found:
 
 Open questions:
 - Is the go-ahead phrase now "CLAUDE CODE" or still "CLAUDE COOK"?
+
+## 2026-10-21: The stream can't be personal
+
+What was said:
+- Screenshot of the stream board showing a "Phe của em" tag on side B: "there is no way in a live session that we can show which side the student chose, right?"
+
+Claude's answer:
+- Right. The stream is **one video sent to everyone**, so it can't show one student's choices. Added as **core principle 5** in README.
+- What the student's page *can* do: show personal things **in the panel**, or draw a **personal layer on top of the video** (the video is shared, the layer is the student's own page).
+- Places in the prototype that break this and need changing (not coded yet):
+  - Ý chính board: "Phe của em" tag on the stream → stream shows both sides neutrally; the panel shows "Phe của em: …".
+  - Câu chủ đề board: X filled with the student's side → stream shows **both** X's (A and B); the panel shows the student's X.
+  - X ngắn board, Phát triển ý example, "lỗi đi một vòng" example, đoạn mẫu: all use the student's side → stream shows one side chosen by anh Khoa (or both); the student's own version goes in the panel.
+  - Top ideas board: "Ý của em" tag → remove from stream; the panel says where the student's idea ranks.
+  - Re-explanation: the stream can't pause for one student (noted earlier) → the re-explanation plays as a **personal layer/replay** on that student's screen while the live stream keeps going underneath.
+- No code changed.
+
+Open questions:
+- Personal stuff: panel only, or also a personal layer on top of the video?
+- Is the go-ahead phrase "CLAUDE CODE" or "CLAUDE COOK"?

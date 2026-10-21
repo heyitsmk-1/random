@@ -31,6 +31,7 @@ The project in its simplest form. Every feature should follow these.
 2. **Anonymous.** Students' responses are anonymous to the class, which lowers the barrier to joining in.
 3. **AI feedback modelled on a real teacher.** Not a big list of mistakes and "go fix it". Slow and Socratic: one thing at a time, with guiding questions so the student fixes it themselves.
 4. **The teacher is in control, not a script** (owner, 2026-10-21). The lesson plan is a suggestion; the teacher decides what to launch next, live.
+5. **The stream is the same for everyone** (owner, 2026-10-21). The video can't show anything about one student (their side, their idea, their answers). Anything personal goes on the student's own screen: the panel, or a personal layer the student's page draws on top of the video.
 
 All visuals follow the YouPass brand and UX principles: see [reference/design-notes.md](reference/design-notes.md).
 

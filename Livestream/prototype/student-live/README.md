@@ -39,3 +39,14 @@ python3 build.py <dau-assets.json> <out.html>
 5. **Content:** 10 confusion spots (see NOTES.md), each with 2 options, an explanation per option and a CCQ. Written into LESSON-01-script.md.
 
 Not in version 2: the teacher's side, the prep phase, any transcript, real streaming.
+
+## Version 3 (built 2026-10-21)
+
+1. **Timers** on anh Khoa's questions (CCQ 15 s, ICQ 10 s) and the class poll (15 s): a countdown ring on the card, "Câu hỏi · còn 12s" on the stream. When it ends: the answer + class result appear on the stream; the panel shows right / wrong / "Em chưa trả lời". If the student answers early, the demo skips ahead to 3 s.
+2. **anh Khoa's buttons** (demo, under the stream): **Hiện đáp án** ends the open question now; **Chốt** ends the open task with a 30 s warning ("anh Khoa sắp chốt"). Tasks also have a timer (demo: side 25 s, topic 2 min, ideas 1.5 min, develop 2 min, paragraph 5 min; follows the speed control). When time's up anh Đậu wraps up in one line and saves the work.
+3. **Rare typed questions go private:** "Chỗ khác…" in a class poll is answered by anh Đậu in the student's panel while anh Khoa explains what most of the class picked.
+4. **Earlier slides:** in private help the student first picks which part they mean (the current one + the 2 before). Their typed questions and answers are kept and shown on the recap ("Câu hỏi của em").
+5. **Accepted X's are canon** in anh Đậu's instructions; a fixed order of issues; one issue per turn.
+6. **Auto-applied fixes:** when a fix is chosen, anh Đậu shows "Câu của em giờ là:" with old words crossed out → new ones popping in, and puts the fixed text in the writing box. The student just reads it and presses "Gửi bản này".
+7. **Early finishers:** "Em xong rồi 🎉" + live submissions + time until anh Khoa wraps up, and two tabs: **Ôn nhanh** (tap-to-flip cards of what's been taught) and **Tìm lỗi của các bạn** (tap the mistake in a classmate's anonymous sentence; streak counter).
+8. **Voice:** anh Khoa's lines are read by the browser's Vietnamese voice, English phrases by an English voice. "Giọng: bật / tắt" button. No Vietnamese voice on the computer → captions only.

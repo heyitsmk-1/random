@@ -763,3 +763,13 @@ Full list for the next build:
 6. Auto-apply a chosen fix into the writing box (old crossed out → new pops in); one "Gửi bản này" button.
 7. Waiting screen for early finishers: "Ôn nhanh" cards + "Tìm lỗi của các bạn".
 8. Browser voice for anh Khoa (Vietnamese + English).
+
+## 2026-10-21: CLAUDE COOK: student prototype version 3
+
+What was said:
+- **CLAUDE COOK.**
+
+What was done (same link, now version 3: https://claude.ai/artifact/AbFNQCpDezdomNnZZMWVTF):
+- All 8 items from the list: timers + class reveal, anh Khoa's "Hiện đáp án" / "Chốt" demo buttons with a 30 s warning, rare questions answered privately, picking an earlier slide, accepted X's as canon, auto-applied fixes, early-finisher screen (Ôn nhanh + Tìm lỗi của các bạn), browser voice (Vietnamese + English). Details in [prototype/student-live/README.md](prototype/student-live/README.md).
+- Tested in a headless browser: whole lesson with an unanswered question, a class pause with a typed question, private help with the slide picker, auto-fix + resend, the waiting screen + spot-the-error, Chốt on every task, recap. No errors.
+- Not testable here: the live AI replies and the voice (the test browser has no voices). Both only work in a real browser on claude.ai.

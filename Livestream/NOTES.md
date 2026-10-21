@@ -412,3 +412,22 @@ What was done:
 - Wrote **[LESSON-01-script.md](LESSON-01-script.md)**: the full lesson (6 parts) with anh Khoa's explanations, re-explanations, CCQs only on the hard parts, ICQs before tasks, Gợi ý lists, model paragraphs for both sides, recap contents, and anh Đậu's tutor rules (adapted from speaking-intensive, anh/em).
 - Decided: the AI tutor is **anh Đậu, TA của anh Khoa** (same character as the recap page).
 - No code yet: waiting for "CLAUDE COOK".
+
+## 2026-10-21: CLAUDE COOK: student prototype built
+
+What was said:
+- **CLAUDE COOK** ("May the Lord bless your code, and may it not be buggy. Amen").
+
+What was done:
+- Built the student-side prototype: **https://claude.ai/artifact/AbFNQCpDezdomNnZZMWVTF** (source in [prototype/student-live/](prototype/student-live/)).
+  - Desktop layout: anh Khoa's stream (board + captions + webcam mock-up) on the left, "Bảng của em" on the right, Hiểu / Chưa hiểu toggle in the top bar (Space key).
+  - The whole Lesson 1 script from [LESSON-01-script.md](LESSON-01-script.md): explanations, CCQs on the hard parts, ICQs, re-explanations with CCQ (+ hint + second CCQ).
+  - anh Đậu tutor on the 3 writing tasks: live Claude (viewer approves once), scripted fallback otherwise.
+  - Recap page with anh Đậu's art and animations (confetti, strike-through → fix), from the consolidation page.
+  - YouPass colours, Montserrat, light and dark themes.
+- Tested: a headless browser played the whole lesson in offline mode (pick side, press Chưa hiểu, write, chips, rewrite, ideas, paragraph, recap) with no errors. Fixed 3 bugs found that way.
+- **Not tested here:** the live AI replies (they only run inside claude.ai). The page is private to the owner until shared.
+
+Open questions:
+- Owner to try it and give feedback.
+- In a real class the teacher can't pause for one student: the re-explanation would be a personal replay on the student's screen. Decide how that fits with the live stream.

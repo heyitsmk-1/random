@@ -1,0 +1,1394 @@
+<title>Lớp Phát triển ý</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400;0,500;0,600;0,700;0,800;1,500&display=swap">
+<style>
+/* Layout: a livestream classroom on desktop. Left = anh Khoa's stream (screen-share board, captions,
+   webcam in the corner). Right = the student's own panel (questions, tasks, anh Đậu the AI tutor).
+   The Hiểu / Chưa hiểu toggle lives in the top bar, always one press away. YouPass brand: orange
+   for action, green for success, warm paper backgrounds, pill-shaped controls, Montserrat. */
+:root {
+  --bg: #FFFAF6;
+  --surface: #FFFFFF;
+  --surface-2: #FFF8F2;
+  --surface-3: #FBEFE4;
+  --line: #EFE4DA;
+  --text: #1D1D1F;
+  --text-2: #8A8A8E;
+  --orange: #FF6D3A;
+  --orange-deep: #CC3A07;
+  --orange-soft: #FFF0EB;
+  --orange-mid: #FFC5B0;
+  --green: #13A62E;
+  --green-deep: #007500;
+  --green-soft: #E5F6E9;
+  --red: #FF3B30;
+  --red-deep: #990000;
+  --red-soft: #FFEBEA;
+  --blue: #007AFF;
+  --blue-deep: #0050A8;
+  --blue-soft: #E5F2FF;
+  --purple: #5856D6;
+  --purple-soft: #EEEEFB;
+  --yellow: #FFA41B;
+  --yellow-soft: #FFEDD1;
+  --frame: #1D1D1F;
+  --frame-2: #2C2C2E;
+  --on-frame: #F5F5F7;
+  --on-frame-2: #C4C4C7;
+  --on-accent: #FFFFFF;
+  --shadow-sm: 0 1px 3px rgba(29, 29, 31, .06);
+  --shadow-md: 0 4px 12px rgba(29, 29, 31, .08);
+  --shadow-lg: 0 8px 24px rgba(29, 29, 31, .10);
+  --font: "Montserrat", Arial, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #161311; --surface: #211D1A; --surface-2: #2A2420; --surface-3: #332B25; --line: #3A322C;
+    --text: #F5F5F7; --text-2: #C4C4C7;
+    --orange: #FF7A4D; --orange-deep: #FFA789; --orange-soft: #3A2418; --orange-mid: #6A3420;
+    --green: #3CC45A; --green-deep: #80D48F; --green-soft: #16301C;
+    --red: #FF6B61; --red-deep: #FFB4AE; --red-soft: #3A1E1C;
+    --blue: #5AA6FF; --blue-deep: #A9CEFF; --blue-soft: #14263A;
+    --purple: #9C9BF0; --purple-soft: #24233F; --yellow: #FFB547; --yellow-soft: #3A2D14;
+    --frame: #0E0C0B; --frame-2: #1F1C1A;
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, .3); --shadow-md: 0 4px 12px rgba(0, 0, 0, .35); --shadow-lg: 0 8px 24px rgba(0, 0, 0, .4);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #161311; --surface: #211D1A; --surface-2: #2A2420; --surface-3: #332B25; --line: #3A322C;
+  --text: #F5F5F7; --text-2: #C4C4C7;
+  --orange: #FF7A4D; --orange-deep: #FFA789; --orange-soft: #3A2418; --orange-mid: #6A3420;
+  --green: #3CC45A; --green-deep: #80D48F; --green-soft: #16301C;
+  --red: #FF6B61; --red-deep: #FFB4AE; --red-soft: #3A1E1C;
+  --blue: #5AA6FF; --blue-deep: #A9CEFF; --blue-soft: #14263A;
+  --purple: #9C9BF0; --purple-soft: #24233F; --yellow: #FFB547; --yellow-soft: #3A2D14;
+  --frame: #0E0C0B; --frame-2: #1F1C1A;
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, .3); --shadow-md: 0 4px 12px rgba(0, 0, 0, .35); --shadow-lg: 0 8px 24px rgba(0, 0, 0, .4);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 500 15px/1.5 var(--font); -webkit-font-smoothing: antialiased; }
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 3px solid var(--orange); outline-offset: 2px; border-radius: 12px; }
+:focus:not(:focus-visible) { outline: none; }
+b, strong { font-weight: 700; }
+.en { font-style: italic; }
+
+.app { min-height: 100%; display: flex; flex-direction: column; gap: 14px; padding-block: 12px 18px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); max-width: 1480px; margin: 0 auto; }
+
+/* ---------- top bar ---------- */
+.topbar { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.logo { font: 800 22px/1 var(--font); letter-spacing: -.02em; white-space: nowrap; }
+.logo .you { color: var(--orange); }
+.logo .live-word { margin-left: 6px; font-weight: 600; font-size: 14px; color: var(--text-2); letter-spacing: 0; }
+.lesson-name { display: flex; flex-direction: column; min-width: 0; padding-left: 16px; border-left: 1.5px solid var(--line); }
+.lesson-name b { font-size: 15px; line-height: 1.25; }
+.lesson-name span { font-size: 12.5px; color: var(--text-2); }
+.spacer { flex: 1; }
+.livepill { display: inline-flex; align-items: center; gap: 6px; background: var(--red); color: var(--on-accent); font: 700 12px/1 var(--font); letter-spacing: .06em; padding: 6px 10px; border-radius: 999px; }
+.livepill i { width: 7px; height: 7px; border-radius: 50%; background: var(--on-accent); animation: blink 1.4s ease-in-out infinite; }
+@keyframes blink { 50% { opacity: .3; } }
+.viewers { font-size: 13px; color: var(--text-2); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.viewers b { color: var(--text); }
+
+.mood { display: flex; align-items: center; gap: 10px; }
+.mood-hint { font-size: 12px; color: var(--text-2); text-align: right; line-height: 1.3; }
+.mood-hint kbd { font: 700 11px/1 var(--font); border: 1.5px solid var(--line); border-bottom-width: 3px; border-radius: 6px; padding: 2px 6px; background: var(--surface); color: var(--text); }
+.toggle { position: relative; display: grid; grid-template-columns: 1fr 1fr; background: var(--surface); border: 1.5px solid var(--line); border-radius: 999px; padding: 4px; box-shadow: var(--shadow-sm); }
+.toggle button { position: relative; z-index: 1; border: 0; background: none; border-radius: 999px; padding: 10px 18px; font: 700 14px/1 var(--font); cursor: pointer; color: var(--text-2); display: inline-flex; align-items: center; gap: 8px; justify-content: center; transition: color .25s; white-space: nowrap; min-height: 44px; }
+.toggle .knob { position: absolute; top: 4px; bottom: 4px; left: 4px; width: calc(50% - 4px); border-radius: 999px; background: var(--green); transition: transform .35s cubic-bezier(.3, 1.3, .5, 1), background .3s; box-shadow: 0 4px 12px rgba(19, 166, 46, .28); }
+.toggle[data-v="no"] .knob { transform: translateX(100%); background: var(--orange); box-shadow: 0 4px 12px rgba(255, 109, 58, .3); }
+.toggle[data-v="yes"] .b-yes, .toggle[data-v="no"] .b-no { color: var(--on-accent); }
+.toggle .face { width: 18px; height: 18px; border-radius: 50%; border: 2px solid currentColor; position: relative; flex: none; }
+.toggle .face::before, .toggle .face::after { content: ""; position: absolute; top: 4px; width: 3px; height: 3px; border-radius: 50%; background: currentColor; }
+.toggle .face::before { left: 3px; } .toggle .face::after { right: 3px; }
+.toggle .face i { position: absolute; left: 3.5px; right: 3.5px; bottom: 3px; height: 4px; border: 2px solid currentColor; border-top: 0; border-radius: 0 0 6px 6px; }
+.toggle .face.q i { height: 0; border-width: 2px 0 0; border-radius: 0; bottom: 4px; transform: rotate(-12deg); }
+.toggle.pulse { animation: tpulse 1.2s ease-in-out 3; }
+@keyframes tpulse { 50% { box-shadow: 0 0 0 8px var(--orange-soft), var(--shadow-sm); } }
+
+/* ---------- main grid ---------- */
+.main { display: grid; grid-template-columns: minmax(0, 1fr) 400px; gap: 18px; align-items: start; }
+@media (max-width: 1060px) { .main { grid-template-columns: minmax(0, 1fr); } }
+
+/* ---------- stream ---------- */
+.stream-col { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.stream { position: relative; background: var(--frame); border-radius: 22px; padding: 10px; box-shadow: var(--shadow-lg); }
+.screen { position: relative; aspect-ratio: 16 / 8.6; border-radius: 14px; overflow: hidden; background: var(--surface); container-type: inline-size; max-width: 100%; }
+.board { position: absolute; inset: 0; padding: 4.2cqw 26cqw 4cqw 5cqw; display: flex; flex-direction: column; justify-content: center; gap: 1.6cqw; font-size: 1.75cqw; background:
+  radial-gradient(circle at 92% 8%, var(--orange-soft) 0 9cqw, transparent 9.1cqw), var(--surface); }
+.board.wide { padding-right: 5cqw; }
+.board.in { animation: boardIn .5s cubic-bezier(.2, .9, .3, 1) both; }
+@keyframes boardIn { from { opacity: 0; transform: translateY(1.6cqw); } }
+.board .kicker { font: 700 1.15cqw/1 var(--font); letter-spacing: .14em; text-transform: uppercase; color: var(--orange); }
+.board h1 { font: 800 5.6cqw/1.02 var(--font); letter-spacing: -.03em; margin: 0; text-wrap: balance; }
+.board h2 { font: 800 2.9cqw/1.15 var(--font); letter-spacing: -.02em; margin: 0; text-wrap: balance; }
+.board p { margin: 0; color: var(--text-2); max-width: 46ch; }
+.board .lead { font-size: 2.1cqw; color: var(--text); font-weight: 600; }
+.reex-tag { position: absolute; top: 2cqw; left: 2.4cqw; z-index: 3; display: inline-flex; align-items: center; gap: .6cqw; background: var(--orange); color: var(--on-accent); font: 700 1.25cqw/1 var(--font); padding: .8cqw 1.3cqw; border-radius: 999px; box-shadow: var(--shadow-md); animation: popIn .4s cubic-bezier(.3, 1.5, .5, 1) both; }
+@keyframes popIn { from { opacity: 0; transform: scale(.7); } }
+
+/* board pieces */
+.quote { font: 600 2.15cqw/1.55 var(--font); border-left: .5cqw solid var(--orange-mid); padding: .4cqw 0 .4cqw 2cqw; max-width: 54ch; }
+.quote .q-task { display: block; margin-top: 1cqw; font-weight: 800; color: var(--orange-deep); }
+mark.va { background: linear-gradient(transparent 52%, var(--orange-mid) 52%); color: inherit; padding: 0 .2em; }
+mark.vb { background: linear-gradient(transparent 52%, var(--blue-soft) 52%); color: inherit; padding: 0 .2em; box-shadow: inset 0 -.25cqw 0 var(--blue); }
+.cols { display: grid; grid-template-columns: 1fr 1fr; gap: 2cqw; }
+.vcard { border-radius: 2cqw; padding: 2cqw 2.2cqw; display: flex; flex-direction: column; gap: .8cqw; }
+.vcard .tagl { font: 800 1.2cqw/1 var(--font); letter-spacing: .1em; text-transform: uppercase; }
+.vcard b { font-size: 2.3cqw; line-height: 1.2; }
+.vcard span { color: var(--text-2); font-size: 1.6cqw; }
+.v-a { background: var(--orange-soft); } .v-a .tagl { color: var(--orange-deep); }
+.v-b { background: var(--blue-soft); } .v-b .tagl { color: var(--blue-deep); }
+.vcard.mine { box-shadow: 0 0 0 .35cqw var(--orange); }
+.vcard.mine.v-b { box-shadow: 0 0 0 .35cqw var(--blue); }
+.mine-tag { align-self: flex-start; font: 700 1.1cqw/1 var(--font); background: var(--text); color: var(--surface); padding: .45cqw .9cqw; border-radius: 999px; }
+.bigline { font: 800 3.1cqw/1.2 var(--font); letter-spacing: -.02em; text-wrap: balance; }
+.bigline em { font-style: normal; color: var(--green); }
+.bigline .ac { color: var(--orange); }
+.formula { display: flex; flex-wrap: wrap; align-items: stretch; gap: 1cqw; }
+.fbox { border-radius: 1.4cqw; padding: 1.2cqw 1.6cqw; font: 700 2.1cqw/1.3 var(--font); display: flex; flex-direction: column; gap: .5cqw; }
+.fbox small { font: 600 1.15cqw/1.2 var(--font); letter-spacing: .06em; text-transform: uppercase; opacity: .75; }
+.f1, .f3 { background: var(--surface-3); }
+.f2 { background: var(--orange); color: var(--on-accent); box-shadow: 0 .5cqw 1.5cqw rgba(255, 109, 58, .3); }
+.f2 small { opacity: .9; }
+.vrow { display: flex; align-items: center; gap: 1.4cqw; font: 600 2.3cqw/1.3 var(--font); padding: 1.1cqw 1.6cqw; border-radius: 1.6cqw; }
+.vrow.bad { background: var(--red-soft); }
+.vrow.bad .t { text-decoration: line-through; text-decoration-color: var(--red); text-decoration-thickness: .25cqw; color: var(--text-2); }
+.vrow.good { background: var(--green-soft); }
+.vrow .ic { flex: none; width: 3.2cqw; height: 3.2cqw; border-radius: 50%; display: grid; place-items: center; font: 800 1.8cqw/1 var(--font); color: var(--on-accent); }
+.vrow.bad .ic { background: var(--red); } .vrow.good .ic { background: var(--green); }
+.vrow .t { min-width: 0; }
+.vrow u { text-decoration-color: var(--orange); text-decoration-thickness: .3cqw; text-underline-offset: .4cqw; font-weight: 800; }
+.note-chip { align-self: flex-start; display: inline-flex; align-items: center; gap: .8cqw; background: var(--yellow-soft); border-radius: 999px; padding: .8cqw 1.6cqw; font: 700 1.7cqw/1.2 var(--font); }
+.steps3 { display: flex; flex-direction: column; gap: 1.1cqw; }
+.step3 { display: grid; grid-template-columns: 4cqw 1fr; gap: 1.4cqw; align-items: center; padding: 1cqw 1.4cqw; border-radius: 1.6cqw; background: var(--surface-2); }
+.step3 .n { width: 4cqw; height: 4cqw; border-radius: 50%; display: grid; place-items: center; background: var(--surface-3); font: 800 1.9cqw/1 var(--font); }
+.step3 .t { font-size: 2.1cqw; font-weight: 700; display: block; line-height: 1.3; }
+.step3 .s { font-size: 1.6cqw; color: var(--text-2); display: block; }
+.step3.hot { background: var(--orange-soft); box-shadow: inset 0 0 0 .25cqw var(--orange); }
+.step3.hot .n { background: var(--orange); color: var(--on-accent); }
+.dtable { display: flex; flex-direction: column; gap: 1cqw; }
+.drow { display: grid; grid-template-columns: 15cqw 3cqw 1fr; align-items: center; gap: 1cqw; padding: 1.1cqw 1.5cqw; border-radius: 1.6cqw; background: var(--surface-2); transition: background .3s, opacity .3s; }
+.drow .cond { font: 700 1.8cqw/1.2 var(--font); }
+.drow .arr { color: var(--text-2); font: 800 2.2cqw/1 var(--font); }
+.drow .act b { font: 800 2.4cqw/1 var(--font); letter-spacing: .02em; display: block; }
+.drow .act span { font-size: 1.6cqw; color: var(--text-2); }
+.dtable.focus .drow { opacity: .45; }
+.dtable.focus .drow.on { opacity: 1; background: var(--orange-soft); box-shadow: inset 0 0 0 .25cqw var(--orange); }
+.c-impact b { color: var(--orange-deep); } .c-explain b { color: var(--blue-deep); } .c-example b { color: var(--green-deep); }
+.chain { display: flex; flex-direction: column; gap: .9cqw; align-items: flex-start; }
+.cnode { padding: 1.1cqw 1.6cqw; border-radius: 1.6cqw; font: 600 2.05cqw/1.35 var(--font); max-width: 100%; }
+.cnode.idea { background: var(--surface-3); }
+.cnode.q { background: var(--yellow-soft); font-weight: 700; }
+.cnode.imp { background: var(--orange); color: var(--on-accent); }
+.cdown { margin-left: 3cqw; color: var(--text-2); font: 800 2cqw/1 var(--font); }
+.loop { display: flex; align-items: center; gap: 2cqw; }
+.loop svg { width: 12cqw; height: 12cqw; flex: none; }
+.ladder { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.6cqw; align-items: end; }
+.rung { border-radius: 1.8cqw; padding: 1.6cqw; display: flex; flex-direction: column; gap: .6cqw; }
+.rung b { font: 800 2.3cqw/1 var(--font); }
+.rung .qq { font: 700 1.9cqw/1.2 var(--font); }
+.rung span { font-size: 1.5cqw; color: var(--text-2); }
+.r-explain { background: var(--blue-soft); min-height: 15cqw; } .r-explain b { color: var(--blue-deep); }
+.r-impact { background: var(--orange-soft); min-height: 21cqw; } .r-impact b { color: var(--orange-deep); }
+.r-example { background: var(--green-soft); min-height: 11cqw; } .r-example b { color: var(--green-deep); }
+.para { font: 500 1.85cqw/1.75 var(--font); max-width: 64ch; }
+.para .p1 { background: var(--orange-soft); box-shadow: 0 0 0 .3cqw var(--orange-soft); border-radius: .4cqw; }
+.para .p2 { background: var(--blue-soft); box-shadow: 0 0 0 .3cqw var(--blue-soft); border-radius: .4cqw; }
+.para .p3 { background: var(--green-soft); box-shadow: 0 0 0 .3cqw var(--green-soft); border-radius: .4cqw; }
+.legend { display: flex; gap: 1.6cqw; flex-wrap: wrap; font: 700 1.4cqw/1 var(--font); }
+.legend span { display: inline-flex; align-items: center; gap: .6cqw; }
+.legend i { width: 1.6cqw; height: 1.6cqw; border-radius: .5cqw; }
+.bars { display: flex; flex-direction: column; gap: 1.1cqw; }
+.bar-row { display: grid; grid-template-columns: 26cqw 1fr 6cqw; align-items: center; gap: 1.4cqw; font: 600 1.75cqw/1.2 var(--font); }
+.bar-row .track { height: 2.2cqw; border-radius: 999px; background: var(--surface-3); overflow: hidden; }
+.bar-row .fill { height: 100%; border-radius: 999px; background: var(--orange-mid); width: 0; transition: width 1s cubic-bezier(.2, .8, .2, 1); }
+.bar-row.me .fill { background: var(--orange); }
+.bar-row .num { font-variant-numeric: tabular-nums; color: var(--text-2); text-align: right; }
+.bar-row .me-tag { font: 700 1.1cqw/1 var(--font); background: var(--orange); color: var(--on-accent); padding: .35cqw .7cqw; border-radius: 999px; margin-left: .6cqw; vertical-align: .2cqw; }
+.counter { font: 800 7cqw/1 var(--font); letter-spacing: -.03em; font-variant-numeric: tabular-nums; color: var(--orange); }
+.counter small { font: 600 2cqw/1 var(--font); color: var(--text-2); letter-spacing: 0; margin-left: 1cqw; }
+.split { display: flex; height: 4.6cqw; border-radius: 999px; overflow: hidden; font: 800 1.8cqw/1 var(--font); color: var(--on-accent); }
+.split div { display: flex; align-items: center; padding: 0 1.6cqw; transition: flex-basis 1s cubic-bezier(.2, .8, .2, 1); white-space: nowrap; }
+.split .sa { background: var(--orange); } .split .sb { background: var(--blue); justify-content: flex-end; }
+
+/* captions + webcam */
+.caption-bar { display: flex; align-items: flex-end; gap: 12px; padding: 12px 6px 4px; min-height: 92px; }
+.caps { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.cap-prev { color: var(--on-frame-2); font-size: 13.5px; line-height: 1.4; opacity: .7; min-height: 1.4em; }
+.cap-now { color: var(--on-frame); font: 600 19px/1.4 var(--font); min-height: 2.8em; cursor: pointer; }
+.cap-now .who { color: var(--orange); font-weight: 700; margin-right: 8px; }
+.cap-now .w { opacity: 0; animation: wIn .25s forwards; }
+@keyframes wIn { to { opacity: 1; } }
+.cam { position: absolute; right: 2cqw; bottom: 2cqw; width: 21cqw; aspect-ratio: 4 / 3; border-radius: 1.6cqw; overflow: hidden; box-shadow: 0 0 0 .35cqw var(--frame), var(--shadow-lg); background: linear-gradient(170deg, #FFE7D9, #FFCDB4); z-index: 2; }
+.cam .shelf { position: absolute; left: 8%; top: 14%; width: 30%; height: 4%; border-radius: 2px; background: #E9A887; box-shadow: 0 -1.3cqw 0 -.2cqw #F3B99A; }
+.cam .shelf::before { content: ""; position: absolute; left: 10%; bottom: 100%; width: 12%; height: 1.6cqw; background: #5A88E5; border-radius: 2px 2px 0 0; box-shadow: 1.1cqw .2cqw 0 #13A62E, 2.1cqw -.1cqw 0 #FF6D3A; }
+.cam .plant { position: absolute; right: 9%; bottom: 30%; width: 9%; aspect-ratio: 1; border-radius: 50% 50% 4px 4px; background: #37C181; }
+.cam .person { position: absolute; left: 50%; bottom: 0; width: 56%; height: 86%; transform: translateX(-50%); animation: breathe 4s ease-in-out infinite; }
+@keyframes breathe { 50% { transform: translateX(-50%) translateY(-1.5%); } }
+.cam .body { position: absolute; left: 0; right: 0; bottom: 0; height: 40%; border-radius: 48% 48% 0 0; background: #FF6D3A; }
+.cam .body::after { content: ""; position: absolute; left: 50%; top: 0; width: 18%; height: 30%; transform: translateX(-50%); background: #F1C7A5; border-radius: 0 0 50% 50%; }
+.cam .neck { position: absolute; left: 50%; bottom: 36%; width: 18%; height: 12%; transform: translateX(-50%); background: #E5B48F; }
+.cam .head { position: absolute; left: 50%; bottom: 44%; width: 46%; aspect-ratio: .86; transform: translateX(-50%); border-radius: 48% 48% 46% 46%; background: #F1C7A5; }
+.cam .hair { position: absolute; left: -4%; right: -4%; top: -8%; height: 42%; border-radius: 50% 50% 30% 30%; background: #2E241F; }
+.cam .eye { position: absolute; top: 48%; width: 9%; height: 9%; border-radius: 50%; background: #2E241F; animation: camBlink 5s infinite; }
+.cam .eye.l { left: 28%; } .cam .eye.r { right: 28%; }
+@keyframes camBlink { 0%, 95%, 100% { transform: scaleY(1); } 97% { transform: scaleY(.1); } }
+.cam .glasses { position: absolute; top: 43%; left: 18%; right: 18%; height: 18%; border: .25cqw solid #2E241F; border-radius: 40%; box-shadow: none; }
+.cam .glasses::before { content: ""; position: absolute; left: 50%; top: 30%; width: 0; height: 40%; border-left: .25cqw solid #2E241F; }
+.cam .mouth { position: absolute; left: 50%; bottom: 17%; width: 24%; height: 7%; transform: translateX(-50%); border-radius: 0 0 999px 999px; background: #B5533A; transform-origin: top; }
+.cam.talking .mouth { animation: mouth .26s ease-in-out infinite alternate; }
+@keyframes mouth { from { transform: translateX(-50%) scaleY(.35); } to { transform: translateX(-50%) scaleY(1.25); } }
+.cam .name { position: absolute; left: 5%; bottom: 6%; display: inline-flex; align-items: center; gap: .6cqw; background: rgba(29, 29, 31, .72); color: #F5F5F7; font: 700 1.15cqw/1 var(--font); padding: .55cqw .9cqw; border-radius: 999px; }
+.cam .mic { display: inline-flex; gap: .2cqw; align-items: flex-end; height: 1.1cqw; }
+.cam .mic i { width: .25cqw; height: 30%; background: #80D48F; border-radius: 1px; }
+.cam.talking .mic i { animation: micb .4s ease-in-out infinite alternate; }
+.cam.talking .mic i:nth-child(2) { animation-delay: .12s; } .cam.talking .mic i:nth-child(3) { animation-delay: .24s; }
+@keyframes micb { to { height: 100%; } }
+
+.veil { position: absolute; inset: 0; z-index: 5; display: grid; place-items: center; background: rgba(29, 29, 31, .55); backdrop-filter: blur(3px); color: #F5F5F7; text-align: center; }
+.veil .inner { display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 20px; }
+.veil h2 { margin: 0; font: 800 clamp(22px, 3.2cqw, 40px)/1.1 var(--font); letter-spacing: -.02em; }
+.veil p { margin: 0; color: #C4C4C7; max-width: 44ch; font-size: clamp(13px, 1.5cqw, 17px); }
+
+/* controls under the stream */
+.controls { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.ctl { border: 1.5px solid var(--line); background: var(--surface); border-radius: 999px; padding: 8px 14px; font: 700 13px/1 var(--font); cursor: pointer; display: inline-flex; align-items: center; gap: 6px; min-height: 38px; }
+.ctl:hover { border-color: var(--orange-mid); }
+.ctl[aria-pressed="true"] { background: var(--text); color: var(--surface); border-color: var(--text); }
+.speed { display: inline-flex; gap: 2px; background: var(--surface); border: 1.5px solid var(--line); border-radius: 999px; padding: 3px; }
+.speed button { border: 0; background: none; border-radius: 999px; padding: 6px 10px; font: 700 12px/1 var(--font); cursor: pointer; color: var(--text-2); }
+.speed button[aria-pressed="true"] { background: var(--orange-soft); color: var(--orange-deep); }
+.timeline { display: flex; gap: 6px; flex-wrap: wrap; margin-left: auto; }
+.tl { display: inline-flex; align-items: center; gap: 6px; font: 600 12px/1 var(--font); color: var(--text-2); padding: 7px 11px; border-radius: 999px; background: var(--surface-2); }
+.tl i { width: 7px; height: 7px; border-radius: 50%; background: var(--line); }
+.tl.done { color: var(--green-deep); } .tl.done i { background: var(--green); }
+.tl.now { background: var(--orange-soft); color: var(--orange-deep); } .tl.now i { background: var(--orange); }
+
+/* ---------- student panel ---------- */
+.panel { position: relative; background: var(--surface); border-radius: 22px; box-shadow: var(--shadow-md); display: flex; flex-direction: column; min-height: 560px; max-height: calc(100vh - 100px); overflow: hidden; }
+@media (max-width: 1060px) { .panel { max-height: none; } }
+.panel-head { display: flex; align-items: center; gap: 10px; padding: 16px 18px 12px; border-bottom: 1.5px solid var(--line); }
+.panel-head { flex-wrap: wrap; }
+.panel-head h2 { margin: 0; font: 800 16px/1.2 var(--font); flex: 1; white-space: nowrap; }
+.chip { display: inline-flex; align-items: center; gap: 6px; border-radius: 10px; padding: 5px 10px; font: 700 12px/1.2 var(--font); }
+.chip.side-a { background: var(--orange-soft); color: var(--orange-deep); }
+.chip.side-b { background: var(--blue-soft); color: var(--blue-deep); }
+.ai-badge { font: 700 11px/1 var(--font); padding: 5px 8px; border-radius: 8px; background: var(--surface-2); color: var(--text-2); }
+.ai-badge.live { background: var(--green-soft); color: var(--green-deep); }
+.panel-body { flex: 1; min-height: 0; overflow-y: auto; padding: 16px 18px 20px; display: flex; flex-direction: column; gap: 14px; }
+.overlay { position: absolute; inset: 0; z-index: 4; background: var(--surface); display: flex; flex-direction: column; animation: sheetIn .35s cubic-bezier(.2, .9, .3, 1) both; }
+@keyframes sheetIn { from { opacity: 0; transform: translateY(24px); } }
+.overlay .panel-body { padding-top: 18px; }
+
+.idle { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px; padding: 26px 8px; color: var(--text-2); }
+.idle .wave { display: flex; gap: 4px; align-items: flex-end; height: 22px; }
+.idle .wave i { width: 5px; border-radius: 3px; background: var(--orange-mid); animation: idleWave 1s ease-in-out infinite alternate; }
+.idle .wave i:nth-child(2) { animation-delay: .15s; } .idle .wave i:nth-child(3) { animation-delay: .3s; } .idle .wave i:nth-child(4) { animation-delay: .45s; }
+@keyframes idleWave { from { height: 6px; } to { height: 22px; } }
+.idle b { color: var(--text); font-size: 15px; }
+.tip { font-size: 13px; background: var(--surface-2); border-radius: 14px; padding: 10px 12px; color: var(--text-2); }
+.tip b { color: var(--text); }
+
+.card { background: var(--surface-2); border-radius: 18px; padding: 16px; display: flex; flex-direction: column; gap: 12px; animation: rise .4s cubic-bezier(.2, .9, .3, 1) both; }
+@keyframes rise { from { opacity: 0; transform: translateY(12px); } }
+.eyebrow { font: 700 11px/1 var(--font); letter-spacing: .12em; text-transform: uppercase; color: var(--orange-deep); display: inline-flex; align-items: center; gap: 8px; }
+.eyebrow.ccq { color: var(--purple); } .eyebrow.icq { color: var(--blue-deep); }
+.qtext { font: 700 16px/1.4 var(--font); margin: 0; text-wrap: balance; }
+.opts { display: flex; flex-direction: column; gap: 8px; }
+.opt { text-align: left; border: 2px solid var(--line); background: var(--surface); border-radius: 999px; padding: 11px 18px; font: 600 14px/1.35 var(--font); cursor: pointer; transition: border-color .2s, background .2s, transform .12s; min-height: 44px; }
+.opt:hover:not(:disabled) { border-color: var(--orange); }
+.opt:active:not(:disabled) { transform: translateY(1px); }
+.opt.right { border-color: var(--green); background: var(--green-soft); }
+.opt.wrong { border-color: var(--red); background: var(--red-soft); animation: shake .4s; }
+.opt:disabled { cursor: default; }
+.opt.dim { opacity: .5; }
+@keyframes shake { 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
+.fb { border-radius: 14px; padding: 11px 13px; font-size: 14px; display: flex; gap: 10px; align-items: flex-start; animation: rise .35s both; }
+.fb.ok { background: var(--green-soft); } .fb.ok b { color: var(--green-deep); }
+.fb.no { background: var(--red-soft); } .fb.no b { color: var(--red-deep); }
+.fb .fi { flex: none; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; color: var(--on-accent); font: 800 13px/1 var(--font); }
+.fb.ok .fi { background: var(--green); } .fb.no .fi { background: var(--red); }
+.fb.ok .fi.pop { animation: celebrate .6s; }
+@keyframes celebrate { 50% { transform: scale(1.25); } }
+
+.btn { border: 0; border-radius: 999px; padding: 12px 22px; font: 700 14px/1 var(--font); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; transition: transform .15s, background .2s, opacity .2s; min-height: 44px; }
+.btn-primary { background: var(--orange); color: var(--on-accent); box-shadow: 0 4px 12px rgba(255, 109, 58, .25); }
+.btn-primary:hover:not(:disabled) { background: var(--orange-deep); transform: translateY(-1px); }
+.btn-ghost { background: var(--orange-soft); color: var(--orange-deep); }
+.btn-neutral { background: var(--surface-3); color: var(--text); }
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+.btn-lg { padding: 15px 28px; font-size: 16px; }
+.linkbtn { border: 0; background: none; color: var(--text-2); font: 600 12.5px/1 var(--font); cursor: pointer; text-decoration: underline; text-underline-offset: 3px; padding: 6px 2px; align-self: center; }
+.row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.row.end { justify-content: flex-end; }
+.muted { color: var(--text-2); font-size: 13px; }
+
+.sidepick { display: flex; flex-direction: column; gap: 10px; }
+.sidebtn { text-align: left; border: 2px solid var(--line); background: var(--surface); border-radius: 22px; padding: 16px 18px; cursor: pointer; display: flex; flex-direction: column; gap: 4px; transition: border-color .2s, transform .15s, box-shadow .2s; }
+.sidebtn:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+.sidebtn .tagl { font: 800 11px/1 var(--font); letter-spacing: .12em; text-transform: uppercase; }
+.sidebtn b { font-size: 17px; line-height: 1.3; }
+.sidebtn span { font-size: 12.5px; color: var(--text-2); font-style: italic; }
+.sidebtn.a .tagl { color: var(--orange-deep); } .sidebtn.a:hover { border-color: var(--orange); }
+.sidebtn.b .tagl { color: var(--blue-deep); } .sidebtn.b:hover { border-color: var(--blue); }
+.sidebtn.picked.a { border-color: var(--orange); background: var(--orange-soft); }
+.sidebtn.picked.b { border-color: var(--blue); background: var(--blue-soft); }
+.classnote { display: flex; align-items: center; gap: 10px; background: var(--surface-3); border-radius: 14px; padding: 10px 12px; font-size: 13.5px; }
+.classnote .dots { display: flex; }
+.classnote .dots i { width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--surface-3); margin-left: -7px; }
+.classnote .dots i:first-child { margin-left: 0; }
+
+.formula-mini { font-size: 13px; background: var(--surface); border-radius: 14px; padding: 10px 12px; line-height: 1.55; border: 1.5px dashed var(--orange-mid); }
+.formula-mini .x { background: var(--orange); color: var(--on-accent); padding: 1px 7px; border-radius: 6px; font-weight: 700; }
+textarea.write { width: 100%; min-height: 96px; resize: vertical; border: 2px solid var(--line); border-radius: 16px; padding: 12px 14px; font: 500 15px/1.6 var(--font); background: var(--surface); color: var(--text); }
+textarea.write:focus { outline: none; border-color: var(--orange); }
+textarea.write:disabled { background: var(--surface-3); color: var(--text-2); }
+textarea.write.tall { min-height: 180px; }
+.wc { font-size: 12.5px; color: var(--text-2); font-variant-numeric: tabular-nums; margin-right: auto; }
+.wc.ok { color: var(--green-deep); font-weight: 700; }
+
+.goiy { display: flex; flex-direction: column; gap: 8px; }
+.gchip { text-align: left; border: 0; border-radius: 12px; padding: 10px 12px; background: var(--yellow-soft); font: 600 13.5px/1.35 var(--font); cursor: pointer; animation: popIn .35s cubic-bezier(.3, 1.5, .5, 1) both; }
+.gchip:hover { box-shadow: inset 0 0 0 2px var(--yellow); }
+.idea-list { display: flex; flex-direction: column; gap: 8px; }
+.idea { display: flex; gap: 10px; align-items: center; border: 2px solid var(--line); border-radius: 16px; padding: 10px 12px; background: var(--surface); cursor: pointer; text-align: left; font: 600 13.5px/1.4 var(--font); animation: rise .3s both; }
+.idea .src { flex: none; font: 700 10.5px/1 var(--font); letter-spacing: .06em; text-transform: uppercase; padding: 4px 7px; border-radius: 7px; background: var(--surface-3); color: var(--text-2); }
+.idea .src.own { background: var(--green-soft); color: var(--green-deep); }
+.idea .radio { flex: none; width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--line); display: grid; place-items: center; }
+.idea[aria-pressed="true"] { border-color: var(--orange); background: var(--orange-soft); }
+.idea[aria-pressed="true"] .radio { border-color: var(--orange); }
+.idea[aria-pressed="true"] .radio::after { content: ""; width: 10px; height: 10px; border-radius: 50%; background: var(--orange); }
+.idea .tx { flex: 1; min-width: 0; }
+
+/* chat with anh Đậu */
+.chat { display: flex; flex-direction: column; gap: 8px; }
+.msg { max-width: 92%; padding: 10px 13px; border-radius: 16px; font-size: 14px; line-height: 1.5; animation: rise .3s both; overflow-wrap: anywhere; }
+.msg.dau { align-self: flex-start; background: var(--surface-2); border-top-left-radius: 6px; }
+.msg.me { align-self: flex-end; background: var(--orange); color: var(--on-accent); border-top-right-radius: 6px; }
+.msg.me.text { background: var(--surface-3); color: var(--text); font-style: italic; }
+.msg.err { background: var(--red-soft); }
+.msg b { font-weight: 700; }
+.dau-head { display: flex; align-items: center; gap: 10px; margin-top: 4px; }
+.dau-head .who { font: 700 13px/1.2 var(--font); }
+.dau-head .who span { display: block; font: 500 11.5px/1.2 var(--font); color: var(--text-2); }
+.typing { display: inline-flex; gap: 4px; padding: 4px 2px; }
+.typing i { width: 7px; height: 7px; border-radius: 50%; background: var(--text-2); opacity: .5; animation: tdot 1s infinite; }
+.typing i:nth-child(2) { animation-delay: .15s; } .typing i:nth-child(3) { animation-delay: .3s; }
+@keyframes tdot { 50% { opacity: 1; transform: translateY(-3px); } }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chips button { border: 2px solid var(--orange-mid); background: var(--surface); color: var(--orange-deep); border-radius: 999px; padding: 8px 14px; font: 700 13px/1.2 var(--font); cursor: pointer; animation: popIn .3s cubic-bezier(.3, 1.5, .5, 1) both; min-height: 38px; }
+.chips button:hover { background: var(--orange-soft); }
+
+/* anh Đậu rig (layers from the recap page) */
+.rig { position: relative; aspect-ratio: 380 / 366; flex: none; }
+.rig .l { position: absolute; inset: 0; width: 100%; height: 100%; user-select: none; -webkit-user-drag: none; }
+.rig.bob { animation: dbob 3.2s ease-in-out infinite; }
+@keyframes dbob { 50% { transform: translateY(-4%); } }
+.l-sprout { transform-origin: 49.8% 23.6%; animation: sway 2.8s ease-in-out infinite; }
+@keyframes sway { 0%, 100% { transform: rotate(-5deg); } 50% { transform: rotate(6deg); } }
+.l-arm_l { transform-origin: 21.9% 59.7%; transition: transform .45s cubic-bezier(.3, 1.4, .5, 1); }
+.l-arm_r { transform-origin: 82.1% 59.7%; transition: transform .45s cubic-bezier(.3, 1.4, .5, 1); }
+.rig.a-wave .l-arm_r { animation: wave 1s ease-in-out infinite; }
+@keyframes wave { 0%, 100% { transform: rotate(-140deg); } 50% { transform: rotate(-110deg); } }
+.rig.a-point .l-arm_r { transform: rotate(-72deg); }
+.rig.a-cheer .l-arm_l { animation: cheerL .6s ease-in-out infinite alternate; }
+.rig.a-cheer .l-arm_r { animation: cheerR .6s ease-in-out infinite alternate; }
+@keyframes cheerL { from { transform: rotate(115deg); } to { transform: rotate(135deg); } }
+@keyframes cheerR { from { transform: rotate(-115deg); } to { transform: rotate(-135deg); } }
+.rig.a-think .l-arm_r { transform: rotate(55deg); }
+.rig .l-eyes_open, .rig .l-eyes_blink, .rig .l-mouth_talk, .rig .l-mouth_laugh, .rig .l-mouth_o, .rig .l-eyes_left, .rig .l-eyes_right, .rig .l-eyes_up { display: none; }
+.rig.e-open .l-eyes_happy { display: none; } .rig.e-open .l-eyes_open { display: block; }
+.rig.m-talk .l-mouth_talk { display: block; animation: talkA .3s steps(1) infinite; }
+.rig.m-talk .l-mouth_smile { animation: talkB .3s steps(1) infinite; }
+@keyframes talkA { 50% { opacity: 0; } }
+@keyframes talkB { 0% { opacity: 0; } 50% { opacity: 1; } }
+.rig.m-laugh .l-mouth_laugh { display: block; } .rig.m-laugh .l-mouth_smile { display: none; }
+.rig-fallback { display: grid; place-items: center; border-radius: 50%; background: var(--orange); color: var(--on-accent); font-weight: 800; }
+
+/* toast */
+.toast { position: fixed; left: 50%; bottom: calc(22px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%) translateY(20px); opacity: 0; pointer-events: none; z-index: 60; background: var(--text); color: var(--surface); padding: 12px 18px; border-radius: 999px; font: 600 14px/1.3 var(--font); box-shadow: var(--shadow-lg); transition: opacity .3s, transform .35s cubic-bezier(.3, 1.3, .5, 1); max-width: calc(100% - 32px); text-align: center; }
+.toast.on { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ---------- recap ---------- */
+.recap { position: fixed; inset: 0; z-index: 50; background: rgba(29, 29, 31, .45); backdrop-filter: blur(4px); overflow-y: auto; padding-block: max(24px, env(safe-area-inset-top, 0px)) max(24px, env(safe-area-inset-bottom, 0px)); padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); animation: fade .3s both; }
+@keyframes fade { from { opacity: 0; } }
+.sheet { max-width: 920px; margin: 0 auto; background: var(--bg); border-radius: 28px; box-shadow: var(--shadow-lg); padding: 28px; display: flex; flex-direction: column; gap: 18px; animation: sheetIn .5s cubic-bezier(.2, .9, .3, 1) both; }
+.recap-hero { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+.recap-hero .rig { width: 130px; }
+.recap-hero h1 { margin: 0; font: 800 30px/1.1 var(--font); letter-spacing: -.02em; }
+.recap-hero p { margin: 6px 0 0; color: var(--text-2); }
+.stars { display: flex; gap: 14px; flex-wrap: wrap; }
+.star { display: flex; align-items: center; gap: 8px; background: var(--surface); border-radius: 14px; padding: 8px 12px 8px 8px; font: 600 13px/1.25 var(--font); box-shadow: var(--shadow-sm); }
+.star img { width: 30px; height: 30px; animation: popIn .5s cubic-bezier(.3, 1.6, .5, 1) both; }
+.star.off img { filter: grayscale(1); opacity: .3; }
+.rgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+@media (max-width: 760px) { .rgrid { grid-template-columns: 1fr; } }
+.rcard { background: var(--surface); border-radius: 20px; padding: 16px 18px; display: flex; flex-direction: column; gap: 8px; box-shadow: var(--shadow-sm); animation: rise .45s both; min-width: 0; }
+.rcard.span { grid-column: 1 / -1; }
+.rcard .lab { font: 700 11px/1 var(--font); letter-spacing: .12em; text-transform: uppercase; color: var(--text-2); }
+.rcard .big { font: 700 16px/1.4 var(--font); }
+.corr s { color: var(--red); text-decoration: none; background: linear-gradient(var(--red), var(--red)) no-repeat 0 55% / 0 2px; animation: strike .5s .5s forwards; }
+.corr ins { text-decoration: none; display: block; margin-top: 6px; background: var(--green-soft); color: var(--green-deep); border-radius: 8px; padding: 4px 8px; font-weight: 700; animation: popIn .45s 1s cubic-bezier(.3, 1.5, .5, 1) both; }
+@keyframes strike { to { background-size: 100% 2px; } }
+.notebook { font: 500 15px/2 var(--font); padding: 6px 14px; border-radius: 14px; background-color: var(--surface);
+  background-image: linear-gradient(var(--blue-soft) 1.5px, transparent 1.5px); background-size: 100% 30px; background-position: 0 28px; }
+.remember { display: flex; flex-direction: column; gap: 8px; }
+.remember li { list-style: none; display: flex; gap: 10px; align-items: flex-start; background: var(--orange-soft); border-radius: 14px; padding: 10px 12px; font-size: 14px; }
+.remember ul { margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.remember .from { color: var(--red); text-decoration: line-through; }
+.remember .to { color: var(--green-deep); font-weight: 700; }
+.conf-list { margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.conf-list li { list-style: none; display: flex; justify-content: space-between; gap: 10px; font-size: 14px; padding: 8px 12px; border-radius: 12px; background: var(--surface-2); }
+.pill-ok { color: var(--green-deep); font-weight: 700; } .pill-no { color: var(--orange-deep); font-weight: 700; }
+canvas.confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 70; }
+
+@media (max-width: 640px) {
+  .lesson-name { display: none; }
+  .mood-hint { display: none; }
+  .board { padding: 4cqw 5cqw; font-size: 2.6cqw; }
+  .cam { width: 26cqw; }
+  .cap-now { font-size: 16px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 1ms !important; animation-iteration-count: 1 !important; transition: none !important; }
+}
+</style>
+
+<div class="app" id="app">
+  <header class="topbar">
+    <div class="logo"><span class="you">You</span>pass<span class="live-word">Live</span></div>
+    <div class="lesson-name"><b>Writing Task 2 · Phát triển ý</b><span>anh Khoa · Lesson 1</span></div>
+    <div class="spacer"></div>
+    <span class="livepill"><i></i>LIVE</span>
+    <span class="viewers"><b id="viewers">1,284</b> bạn đang học</span>
+    <div class="mood">
+      <div class="mood-hint">Em thấy sao?<br>Phím <kbd>Space</kbd></div>
+      <div class="toggle" id="toggle" data-v="yes" role="group" aria-label="Em hiểu bài chưa?">
+        <span class="knob" aria-hidden="true"></span>
+        <button class="b-yes" id="btnYes" type="button" aria-pressed="true"><span class="face" aria-hidden="true"><i></i></span>Hiểu</button>
+        <button class="b-no" id="btnNo" type="button" aria-pressed="false"><span class="face q" aria-hidden="true"><i></i></span>Chưa hiểu</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="main">
+    <section class="stream-col" aria-label="Màn hình của anh Khoa">
+      <div class="stream">
+        <div class="screen" id="screen">
+          <div class="board in" id="board"></div>
+          <div class="cam" id="cam" aria-label="Webcam anh Khoa">
+            <div class="shelf"></div><div class="plant"></div>
+            <div class="person"><div class="body"></div><div class="neck"></div><div class="head"><div class="hair"></div><div class="eye l"></div><div class="eye r"></div><div class="glasses"></div><div class="mouth"></div></div></div>
+            <div class="name"><span class="mic"><i></i><i></i><i></i></span>anh Khoa</div>
+          </div>
+          <div class="veil" id="startVeil">
+            <div class="inner">
+              <h2>Lớp sắp bắt đầu</h2>
+              <p>Bản thử nghiệm: bài giảng tự chạy, em đóng vai học viên. Bấm <b>Chưa hiểu</b> lúc nào cũng được.</p>
+              <button class="btn btn-primary btn-lg" id="startBtn" type="button">Vào lớp</button>
+            </div>
+          </div>
+          <div class="veil" id="pauseVeil" hidden>
+            <div class="inner"><h2>Đã tạm dừng</h2><p>Bấm Tiếp tục để nghe anh Khoa giảng tiếp.</p></div>
+          </div>
+        </div>
+        <div class="caption-bar">
+          <div class="caps" aria-live="polite">
+            <div class="cap-prev" id="capPrev"></div>
+            <div class="cap-now" id="capNow" title="Bấm để nghe câu tiếp"><span class="who">anh Khoa</span>Chào cả nhà, mình chuẩn bị vào lớp nha.</div>
+          </div>
+        </div>
+      </div>
+      <div class="controls">
+        <button class="ctl" id="pauseBtn" type="button" aria-pressed="false">Tạm dừng</button>
+        <button class="ctl" id="skipBtn" type="button">Câu tiếp ›</button>
+        <div class="speed" role="group" aria-label="Tốc độ">
+          <button type="button" data-s="1" aria-pressed="true">1x</button>
+          <button type="button" data-s="1.5" aria-pressed="false">1.5x</button>
+          <button type="button" data-s="2" aria-pressed="false">2x</button>
+        </div>
+        <div class="timeline" id="timeline"></div>
+      </div>
+    </section>
+
+    <aside class="panel" id="panel" aria-label="Bảng của em">
+      <div class="panel-head">
+        <h2>Bảng của em</h2>
+        <span id="sideChip"></span>
+        <span class="ai-badge" id="aiBadge" title="anh Đậu, AI trợ giảng">anh Đậu: đang kết nối</span>
+      </div>
+      <div class="panel-body" id="pbody"></div>
+      <div class="overlay" id="poverlay" hidden>
+        <div class="panel-head"><h2>Giảng lại cho em</h2><span class="chip side-a">Chỉ em thấy</span></div>
+        <div class="panel-body" id="pobody"></div>
+      </div>
+    </aside>
+  </main>
+</div>
+<div class="toast" id="toast" role="status"></div>
+<div class="recap" id="recap" hidden></div>
+
+<script>
+/* ===================== assets ===================== */
+const DAU = /*__DAU_ASSETS__*/null;
+const RIG_LAYERS = ["sprout", "body", "arm_l", "arm_r", "blush", "eyes_happy", "eyes_open", "eyes_blink", "mouth_smile", "mouth_talk", "mouth_laugh"];
+function rigHTML(size, cls = "") {
+  if (!DAU || !DAU.rig_body) return `<div class="rig-fallback" style="width:${size}px;height:${size}px">Đ</div>`;
+  return `<div class="rig bob ${cls}" style="width:${size}px">${RIG_LAYERS.filter(k => DAU["rig_" + k]).map(k => `<img class="l l-${k}" src="${DAU["rig_" + k]}" alt="" draggable="false">`).join("")}</div>`;
+}
+
+/* ===================== lesson content ===================== */
+const PROMPT = "Some people believe that children should study all subjects at school, while others think they should only study the subjects they are good at or find interesting. Discuss both views and give your own opinion.";
+const SIDES = {
+  A: {
+    key: "A", tag: "Phe A", name: "Học tất cả các môn", vi: "học tất cả các môn", en: "study all subjects",
+    x: "studying all subjects at school",
+    stem: "Studying all subjects helps students ",
+    goiy: ["become more well-rounded", "build basic knowledge for daily life", "discover hidden talents", "keep future career options open"],
+    counts: [312, 198, 241, 150],
+    exIdea: "become more well-rounded", exImpact: "…which allows them to adapt to many different jobs in the future.",
+    circular: "Students become well-rounded because they become well-rounded.",
+    model: ["I am personally in favor of studying all subjects at school because it brings about many significant benefits.",
+      "Firstly, studying a wide range of subjects helps students become more well-rounded.",
+      "This allows them to adapt to many different jobs in the future, since most careers today require both numerical and communication skills. For example, an engineer who studied literature at school can write clearer reports and present ideas more convincingly."],
+    pct: 62
+  },
+  B: {
+    key: "B", tag: "Phe B", name: "Chỉ học môn giỏi / thích", vi: "chỉ học môn mình giỏi hoặc thích", en: "only study what they are good at or like",
+    x: "focusing on the subjects they are good at or interested in",
+    stem: "Focusing on their favourite subjects helps students ",
+    goiy: ["stay motivated", "develop their talents to a higher level", "feel less stress and pressure", "prepare early for their future career"],
+    counts: [287, 221, 176, 143],
+    exIdea: "stay motivated", exImpact: "…which helps them reach a much higher level in their favourite subjects.",
+    circular: "Students stay motivated because they are motivated.",
+    model: ["I am personally in favor of focusing on the subjects students are good at or interested in because it brings about many significant benefits.",
+      "Firstly, studying what they enjoy keeps students motivated.",
+      "When they are no longer forced to spend hours on subjects they find meaningless, they put more effort into their favourite ones, which helps them reach a much higher level. For instance, a student who loves drawing can spend more time on art and may later become a successful designer."],
+    pct: 38
+  }
+};
+const PATHS = {
+  impact: { label: "Impact", vi: "thêm impact", q: "Thì sao nữa?", desc: "lợi ích này dẫn tới điều gì lớn hơn" },
+  explain: { label: "Explain", vi: "giải thích", q: "Tại sao?", desc: "vì sao, như thế nào nó dẫn tới lợi ích đó" },
+  example: { label: "Example", vi: "cho ví dụ", q: "Ví dụ ai, ở đâu?", desc: "một ví dụ cụ thể cho thấy lợi ích" }
+};
+
+const S = {
+  started: false, side: null, ideas: [], idea: null, path: null,
+  topicFirst: null, topicFinal: null, devFirst: null, devFinal: null, paraFirst: null, paraFinal: null,
+  notes: [], confusions: [], si: 0, board: "intro", speed: 1, paused: false,
+  understand: true, confusePending: false, cut: false, reexRunning: false, reexSkip: false, mode: "explain",
+  done: { topic: false, para: false }
+};
+const side = () => SIDES[S.side || "A"];
+const ideaText = () => S.idea || (side().stem + side().exIdea + ".");
+
+/* ===================== boards ===================== */
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const md = s => esc(s).replace(/\*\*(.+?)\*\*/g, "<b>$1</b>").replace(/\*(.+?)\*/g, "<i>$1</i>");
+
+const BOARDS = {
+  intro: () => `<span class="kicker">Writing Task 2 · Lesson 1</span><h1>Phát triển ý</h1><p class="lead">Biến một ý chung chung thành một đoạn thân bài thuyết phục.</p><p>Hôm nay: chọn phe → câu chủ đề → ý chính → phát triển ý → viết đoạn.</p>`,
+  prompt: () => `<span class="kicker">Đề bài hôm nay</span><div class="quote">Some people believe that children should <mark class="va">study all subjects at school</mark>, while others think they should <mark class="vb">only study the subjects they are good at or find interesting</mark>. <span class="q-task">Discuss both views and give your own opinion.</span></div>`,
+  views: () => `<span class="kicker">Discuss both views + your opinion</span><h2>Đề có 2 quan điểm</h2><div class="cols">
+      <div class="vcard v-a"><span class="tagl">Quan điểm A</span><b>Học tất cả các môn</b><span class="en">study all subjects at school</span></div>
+      <div class="vcard v-b"><span class="tagl">Quan điểm B</span><b>Chỉ học môn giỏi hoặc thích</b><span class="en">only study what they are good at or find interesting</span></div></div>`,
+  framework: () => `<span class="kicker">Framework hôm nay</span><div class="bigline">Ủng hộ bên nào<br>→ nói <em>lợi ích</em> của bên đó.</div><div class="note-chip">Hôm nay: viết 1 đoạn thân bài cho phe em ủng hộ</div>`,
+  "reex-outing": () => `<span class="kicker">Ví dụ đời thường</span><h2>Xin bố mẹ cho đi chơi cuối tuần</h2>
+      <div class="vrow good"><span class="ic">✓</span><span class="t">“Đi chơi giúp con thư giãn, tuần sau học tốt hơn.”</span></div>
+      <div class="vrow bad"><span class="ic">✕</span><span class="t">“Ở nhà chán lắm!”</span></div>
+      <div class="note-chip">Nói cái mình muốn có lợi gì, không chê bên kia</div>`,
+  template: () => `<span class="kicker">Câu chủ đề · công thức</span><div class="formula">
+      <div class="fbox f1"><small>Khúc 1</small>I am personally in favor of</div>
+      <div class="fbox f2"><small>X · quan điểm của em</small><span class="en">${S.side ? esc(side().x) : "X"}</span></div>
+      <div class="fbox f3"><small>Khúc 3</small>because it brings about many significant benefits.</div></div>
+      <p>X ngắn gọn, đúng phe em chọn. Không chép nguyên đề.</p>`,
+  "of-ing": () => `<span class="kicker">Chỗ hay sai số 1</span><h2>Sau <span class="en">of</span> là V-ing</h2>
+      <div class="vrow bad"><span class="ic">✕</span><span class="t en">I am personally in favor of <u>study</u> all subjects…</span></div>
+      <div class="vrow good"><span class="ic">✓</span><span class="t en">I am personally in favor of <u>studying</u> all subjects…</span></div>
+      <div class="note-chip"><span class="en">of</span> = giới từ → động từ phía sau thêm -ing</div>`,
+  "x-short": () => `<span class="kicker">Chỗ hay sai số 2</span><h2>X ngắn, đúng phần em ủng hộ</h2>
+      <div class="vrow bad"><span class="ic">✕</span><span class="t en">…in favor of children should study all subjects at school, while others think…</span></div>
+      <div class="vrow good"><span class="ic">✓</span><span class="t en">…in favor of <u>${esc(side().x)}</u>…</span></div>`,
+  "reex-template": () => `<span class="kicker">Tách công thức thành 3 khúc</span><div class="steps3">
+      <div class="step3"><span class="n">1</span><div><span class="t en">I am personally in favor of</span><span class="s">= “Cá nhân tôi ủng hộ…”</span></div></div>
+      <div class="step3 hot"><span class="n">2</span><div><span class="t">X = <span class="en">${esc(side().x)}</span></span><span class="s">“ủng hộ <b>việc</b> học” → tiếng Anh cũng là “việc”: <i>studying</i></span></div></div>
+      <div class="step3"><span class="n">3</span><div><span class="t en">because it brings about many significant benefits.</span><span class="s">= “vì nó mang lại nhiều lợi ích.” Giữ nguyên, khỏi sửa.</span></div></div></div>`,
+  benefit: () => `<span class="kicker">Ý chính = 1 lợi ích cụ thể</span><h2>Học sinh được gì?</h2><div class="cols">
+      <div class="vcard v-a ${S.side === "A" ? "mine" : ""}"><span class="tagl">Phe A</span><b class="en">Studying all subjects helps students become more well-rounded.</b>${S.side === "A" ? '<span class="mine-tag">Phe của em</span>' : ""}</div>
+      <div class="vcard v-b ${S.side === "B" ? "mine" : ""}"><span class="tagl">Phe B</span><b class="en">Studying what they enjoy keeps students motivated.</b>${S.side === "B" ? '<span class="mine-tag">Phe của em</span>' : ""}</div></div>`,
+  "reex-benefit": () => `<span class="kicker">Mẹo kiểm tra</span><h2>Hỏi lại: “Thì sao? Học sinh được gì?”</h2>
+      <div class="vrow bad"><span class="ic">✕</span><span class="t en">Students study all subjects.</span></div>
+      <p style="margin-left:5cqw">→ Thì sao? Chưa trả lời được → <b>chưa phải lợi ích</b>.</p>
+      <div class="vrow good"><span class="ic">✓</span><span class="t en">Students become more well-rounded.</span></div>
+      <p style="margin-left:5cqw">→ Học sinh được gì? <b>Toàn diện hơn</b> → lợi ích.</p>`,
+  "top-ideas": () => {
+    const sd = side(), max = Math.max(...sd.counts);
+    const mine = sd.goiy.findIndex(g => (S.idea || "").toLowerCase().includes(g.toLowerCase()));
+    return `<span class="kicker">Cả lớp chọn ý gì · ${esc(sd.tag)}</span><h2>Ý được chọn nhiều nhất</h2><div class="bars">${sd.goiy.map((g, i) => `
+      <div class="bar-row ${i === mine ? "me" : ""}"><span class="en">${esc(g)}${i === mine ? '<span class="me-tag">Ý của em</span>' : ""}</span><div class="track"><div class="fill" data-w="${Math.round(sd.counts[i] / max * 100)}"></div></div><span class="num">${sd.counts[i]}</span></div>`).join("")}</div>`;
+  },
+  "develop-q": () => `<span class="kicker">Câu hỏi quan trọng nhất hôm nay</span><div class="bigline">Lợi ích này có <span class="ac">đủ</span> để biện minh cho việc ${esc(side().vi)} không?</div>`,
+  "develop-table": (n) => `<span class="kicker">Lợi ích này đủ chưa?</span><div class="dtable ${n !== undefined ? "focus" : ""}">
+      <div class="drow c-impact ${n == 0 ? "on" : ""}"><span class="cond">Chưa đủ</span><span class="arr">→</span><span class="act"><b>IMPACT</b><span>Thì sao nữa? Dẫn tới điều gì lớn hơn?</span></span></div>
+      <div class="drow c-explain ${n == 1 ? "on" : ""}"><span class="cond">Đủ rồi</span><span class="arr">→</span><span class="act"><b>EXPLAIN</b><span>Tại sao? Như thế nào?</span></span></div>
+      <div class="drow c-example ${n == 2 ? "on" : ""}"><span class="cond">Không làm được cả hai</span><span class="arr">→</span><span class="act"><b>EXAMPLE</b><span>Ví dụ ai, ở đâu?</span></span></div></div>`,
+  "develop-example": () => `<span class="kicker">Ví dụ · ${esc(side().tag)}</span><div class="chain">
+      <div class="cnode idea en">${esc(side().stem + side().exIdea)}.</div><span class="cdown">↓</span>
+      <div class="cnode q">Đủ để biện minh cho việc ${esc(side().vi)} chưa? → Chưa đủ</div><span class="cdown">↓</span>
+      <div class="cnode imp en">${esc(side().exImpact)}</div></div>`,
+  circular: () => `<span class="kicker">Lỗi hay gặp</span><h2>Giải thích đi một vòng</h2><div class="loop">
+      <svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="34" fill="none" stroke="var(--red)" stroke-width="6" stroke-dasharray="170 40" stroke-linecap="round"/><path d="M78 30 L86 44 L70 44 Z" fill="var(--red)"/></svg>
+      <div class="vrow bad" style="flex:1"><span class="t en" style="text-decoration:none;color:var(--text)">${esc(side().circular)}</span></div></div>
+      <div class="note-chip">Câu sau chỉ lặp lại câu trước, không giải thích thêm gì</div>`,
+  "reex-ladder": () => `<span class="kicker">Ý chính là bậc thang đầu tiên</span><div class="ladder">
+      <div class="rung r-example"><b>EXAMPLE</b><span class="qq">Ví dụ ai, ở đâu?</span><span>Cho người ta thấy tận mắt</span></div>
+      <div class="rung r-explain"><b>EXPLAIN</b><span class="qq">Tại sao?</span><span>Cho thấy cái thang đứng vững</span></div>
+      <div class="rung r-impact"><b>IMPACT</b><span class="qq">Thì sao nữa?</span><span>Leo lên bậc cao hơn</span></div></div>`,
+  "paragraph-parts": () => `<span class="kicker">Ghép lại thành đoạn thân bài</span><div class="steps3">
+      <div class="step3"><span class="n">1</span><div><span class="t">Câu chủ đề</span><span class="s">Bước 2 · I am personally in favor of…</span></div></div>
+      <div class="step3"><span class="n">2</span><div><span class="t">Firstly, + ý chính</span><span class="s">Bước 3 · một lợi ích cụ thể</span></div></div>
+      <div class="step3"><span class="n">3</span><div><span class="t">Phát triển ý</span><span class="s">Bước 4 · Impact / Explain / Example</span></div></div></div><div class="note-chip">Khoảng 80–120 chữ</div>`,
+  "paragraph-model": () => { const m = side().model; return `<span class="kicker">Đoạn mẫu · ${esc(side().tag)}</span><div class="para en"><span class="p1">${esc(m[0])}</span> <span class="p2">${esc(m[1])}</span> <span class="p3">${esc(m[2])}</span></div>
+      <div class="legend"><span><i style="background:var(--orange-soft);box-shadow:inset 0 0 0 2px var(--orange)"></i>Câu chủ đề</span><span><i style="background:var(--blue-soft);box-shadow:inset 0 0 0 2px var(--blue)"></i>Ý chính</span><span><i style="background:var(--green-soft);box-shadow:inset 0 0 0 2px var(--green)"></i>Phát triển ý</span></div>`; },
+  "reex-paragraph": () => `<span class="kicker">Em đã có đủ 3 phần rồi</span><div class="steps3">
+      <div class="step3"><span class="n">1</span><div><span class="t">Câu chủ đề của em</span><span class="s en">${esc(S.topicFinal || S.topicFirst || "I am personally in favor of " + side().x + "…")}</span></div></div>
+      <div class="step3"><span class="n">2</span><div><span class="t">Firstly, + ý của em</span><span class="s en">${esc(ideaText())}</span></div></div>
+      <div class="step3"><span class="n">3</span><div><span class="t">Phát triển ý của em</span><span class="s en">${esc(S.devFinal || S.devFirst || "(bước 4)")}</span></div></div></div><div class="note-chip">Chỉ cần xếp nối nhau, thêm “Firstly,” trước ý chính</div>`,
+  "task-side": () => `<span class="kicker">Các em đang chọn phe</span><h2>Lớp mình đang nghiêng về bên nào?</h2><div class="split"><div class="sa" id="splitA" style="flex-basis:50%">A · 50%</div><div class="sb" id="splitB" style="flex-basis:50%">B · 50%</div></div><p>Kết quả cập nhật trực tiếp.</p>`,
+  task: (label) => `<span class="kicker">Các em đang làm bài</span><h2>${esc(label)}</h2><div class="counter"><span id="subCount">0</span><small>/ 1,284 bạn đã gửi</small></div><p>anh Khoa đang chờ cả lớp. Em làm ở bảng bên phải nha.</p>`,
+  outro: () => `<span class="kicker">Hết buổi</span><h1>Cảm ơn cả nhà!</h1><p class="lead">anh Đậu đã gom bài của em thành một trang tổng kết.</p>`
+};
+
+const board = document.getElementById("board");
+function setBoard(key) {
+  if (!key) return;
+  S.board = key;
+  const [name, arg] = key.split(":");
+  const fn = BOARDS[name];
+  if (!fn) return;
+  board.className = "board";
+  board.innerHTML = fn(arg);
+  void board.offsetWidth; board.classList.add("in");
+  board.querySelectorAll(".fill[data-w]").forEach(f => requestAnimationFrame(() => requestAnimationFrame(() => f.style.width = f.dataset.w + "%")));
+  if (S.reexRunning) board.insertAdjacentHTML("afterbegin", `<span class="reex-tag">Đang giảng lại cho em</span>`);
+}
+
+/* ===================== questions (CCQ / ICQ) ===================== */
+const Q = {
+  intro: { q: "Lúc nào chưa hiểu, em làm gì?", opts: ["Bấm “Chưa hiểu” ở trên", "Im lặng chờ hết buổi"], ans: 0, right: "Chuẩn. Bấm là anh giảng lại cho em liền.", wrong: "Đừng ngại nha. Bấm **Chưa hiểu** là anh giảng lại riêng cho em." },
+  fw: { q: "Em ủng hộ bên nào thì em viết gì?", opts: ["Lợi ích của bên đó", "Tác hại của bên kia", "Cả lợi ích lẫn tác hại"], ans: 0, right: "Chuẩn rồi. Ủng hộ bên nào thì nói **bên đó tốt ở đâu**.", wrong: "Chưa đúng nè. Hôm nay mình không chê bên kia, mình chỉ nói **bên mình tốt ở đâu** thôi." },
+  fw2: () => ({ q: "Em ủng hộ “học tất cả các môn”. Em sẽ viết về…", opts: ["Học tất cả các môn có lợi gì", "Chỉ học môn mình thích có hại gì"], ans: 0, right: "Đúng rồi! Nói **cái mình ủng hộ** có lợi gì.", wrong: "Mình nói **cái mình ủng hộ** có lợi gì nha: học tất cả các môn có lợi gì." }),
+  icqSide: { q: "Giờ em làm gì?", opts: ["Chọn 1 phe em ủng hộ", "Viết cả bài luôn"], ans: 0, right: "Đúng rồi, chọn phe trước nha.", wrong: "Chưa viết đâu em. Giờ chỉ **chọn 1 phe** thôi." },
+  ofing: { q: "Sau “in favor of”, động từ có dạng gì?", opts: ["study", "studying", "to study"], ans: 1, right: "Đúng rồi, sau giới từ **of** là **V-ing**.", wrong: "Chưa đúng nè. **of** là giới từ, nên động từ phía sau phải thêm **-ing**: studying." },
+  xshort: () => ({ q: "X nào tốt hơn?", opts: ["children should study all subjects at school, while others think…", side().x], ans: 1, right: "Chuẩn. X chỉ cần **đúng quan điểm của em**, ngắn gọn.", wrong: "Câu này chép nguyên đề rồi á. X chỉ cần **phần em ủng hộ** thôi." }),
+  ofing2: { q: "Điền vào chỗ trống: I am personally in favor of ___ all subjects.", opts: ["studying", "study"], ans: 0, right: "Đúng rồi! “ủng hộ **việc học**” → **studying**.", wrong: "Nhớ nè: ủng hộ **việc** học → **studying**." },
+  icqTopic: { q: "Em sẽ viết gì?", opts: ["1 câu chủ đề theo công thức", "Cả đoạn văn"], ans: 0, right: "Đúng rồi, 1 câu thôi.", wrong: "Chưa nha. Bước này chỉ **1 câu chủ đề** thôi." },
+  benefit: { q: "Câu nào là một lợi ích?", opts: ["Students study all subjects at school.", "Students become more well-rounded."], ans: 1, right: "Đúng rồi. Câu này nói **học sinh được gì**.", wrong: "Câu này mới nhắc lại quan điểm thôi á. Lợi ích là **học sinh được gì**." },
+  benefit2: { q: "“Students can discover talents they never knew they had.” Đây là…", opts: ["Một lợi ích", "Chỉ nhắc lại quan điểm"], ans: 0, right: "Chuẩn. Học sinh **phát hiện tài năng**, đó là lợi ích.", wrong: "Hỏi thử: học sinh được gì? → **phát hiện tài năng**. Vậy là lợi ích đó em." },
+  icqIdea: { q: "Nếu em bí ý thì sao?", opts: ["Bấm Gợi ý để xem ý mẫu", "Bỏ trống phần này"], ans: 0, right: "Đúng rồi. Nhưng thử tự nghĩ trước nha.", wrong: "Đừng bỏ trống nha. Bí thì bấm **Gợi ý**." },
+  circ: () => ({ q: `“${side().circular}” Câu này có vấn đề gì?`, opts: ["Lặp lại ý, không giải thích gì", "Sai ngữ pháp"], ans: 0, right: "Chuẩn. Câu này đi một vòng rồi quay về chỗ cũ.", wrong: "Ngữ pháp thì không sai đâu em. Vấn đề là nó **lặp lại** ý, chẳng giải thích thêm gì." }),
+  path: { q: "Lợi ích chưa đủ sức thuyết phục. Em thêm gì?", opts: ["Impact: nó dẫn tới điều gì lớn hơn", "Example: kể một ví dụ", "Viết lại ý chính bằng từ khác"], ans: 0, right: "Đúng rồi. Chưa đủ thì **đẩy nó đi xa hơn** bằng impact.", wrong: "Chưa đúng nè. Chưa đủ thì mình cần **impact**: lợi ích đó dẫn tới điều gì lớn hơn." },
+  path2: { q: "“Thì sao nữa?” là câu hỏi của…", opts: ["Impact", "Explain", "Example"], ans: 0, right: "Chuẩn! Thì sao nữa → leo lên bậc cao hơn → **impact**.", wrong: "“Thì sao nữa?” là leo lên bậc cao hơn: **impact** nha." },
+  icqDev: { q: "Bước đầu tiên em làm gì?", opts: ["Trả lời câu hỏi “lợi ích này đủ chưa?”", "Viết ví dụ ngay"], ans: 0, right: "Đúng rồi. Trả lời câu đó trước, rồi mới chọn hướng.", wrong: "Khoan viết ví dụ nha. Trước tiên trả lời: **lợi ích này đủ chưa?**" },
+  parts: { q: "Đoạn thân bài hôm nay có mấy phần?", opts: ["3: câu chủ đề → ý chính → phát triển ý", "2: mở bài → kết bài"], ans: 0, right: "Chuẩn rồi. 3 phần, em đều đã viết ở các bước trước.", wrong: "Hôm nay mình chỉ viết **thân bài** thôi: câu chủ đề → ý chính → phát triển ý." },
+  parts2: { q: "Câu nào đứng đầu đoạn?", opts: ["Câu chủ đề (I am personally in favor of…)", "Ví dụ"], ans: 0, right: "Đúng rồi. Câu chủ đề luôn mở đầu.", wrong: "Câu chủ đề luôn đứng đầu nha: **I am personally in favor of…**" },
+  icqPara: { q: "Em viết bao nhiêu?", opts: ["1 đoạn, khoảng 100 chữ", "Cả bài 250 chữ"], ans: 0, right: "Đúng rồi, 1 đoạn thân bài thôi.", wrong: "Hôm nay chỉ **1 đoạn thân bài**, khoảng 100 chữ." }
+};
+const qv = x => typeof x === "function" ? x() : x;
+
+/* ===================== sections ===================== */
+const SECTIONS = [
+  { id: "intro", title: "Mở đầu",
+    beats: [
+      { say: "Chào cả nhà! Hôm nay anh với các em học cách phát triển ý cho Writing Task 2 nha.", board: "intro" },
+      { say: "Đề hôm nay đây. Các em đọc qua một chút.", board: "prompt", extra: 2200 },
+      { say: "Trong lúc học, lúc nào chưa hiểu thì bấm nút “Chưa hiểu” ở trên nha.", fx: "pulseToggle" },
+      { say: "Anh sẽ dừng lại giảng lại cho em. Không ai biết em bấm đâu, yên tâm." }
+    ],
+    reex: { beats: [{ say: "Nút “Chưa hiểu” ở góc trên nha em.", board: "prompt", fx: "pulseToggle" }, { say: "Bấm vào là bài tạm dừng, anh giảng lại riêng cho em, rồi hỏi một câu nhỏ để chắc em hiểu." }], ccq: Q.intro, hint: "Nút đó ở góc trên bên phải á.", ccq2: Q.intro } },
+  { id: "side", title: "Chọn phe",
+    beats: [
+      { say: "Đây là dạng Discuss both views and give your own opinion.", board: "views" },
+      { say: "Có 2 quan điểm. A: học tất cả các môn. B: chỉ học những môn mình giỏi hoặc thích." },
+      { say: "Hôm nay mình làm phần quan trọng nhất: đoạn thân bài cho quan điểm em ủng hộ." },
+      { say: "Framework của anh rất đơn giản: em ủng hộ bên nào, thì em nói lợi ích của bên đó.", board: "framework" },
+      { ccq: "fw" }
+    ],
+    icq: "icqSide", task: "side",
+    reex: { beats: [
+      { say: "Giống như em xin bố mẹ cho đi chơi cuối tuần á.", board: "reex-outing" },
+      { say: "Em sẽ nói đi chơi có lợi gì: được nghỉ ngơi, tuần sau học tốt hơn." },
+      { say: "Em không ngồi chê “ở nhà chán lắm”. Viết đoạn văn cũng vậy." }],
+      ccq: Q.fw, hint: "Nhớ ví dụ xin đi chơi: em nói cái mình muốn có lợi gì.", ccq2: Q.fw2 } },
+  { id: "topic", title: "Câu chủ đề",
+    beats: [
+      { say: "Câu đầu tiên của đoạn là câu chủ đề.", board: "template" },
+      { say: "Anh cho các em một công thức dùng được cho mọi đề." },
+      { say: "X là quan điểm em ủng hộ, viết ngắn gọn, không chép nguyên đề." },
+      { say: () => `Phe của em thì X là: “${side().x}”.` },
+      { say: "Chú ý nè: “of” là giới từ. Sau giới từ, động từ phải thêm -ing.", board: "of-ing" },
+      { ccq: "ofing" },
+      { say: "Thêm một chỗ hay sai: X phải ngắn, đúng phần em ủng hộ thôi.", board: "x-short" },
+      { ccq: "xshort" }
+    ],
+    icq: "icqTopic", task: "topic",
+    reex: { beats: [
+      { say: "Mình tách công thức thành 3 khúc nha.", board: "reex-template" },
+      { say: "Khúc 1, “I am personally in favor of”, nghĩa là “Cá nhân tôi ủng hộ…”." },
+      { say: "Khúc 2 là việc em ủng hộ. Tiếng Việt nói “ủng hộ việc học”, tiếng Anh cũng là “việc”: studying." },
+      { say: "Khúc 3 giữ nguyên, khỏi sửa. Vậy em chỉ cần điền khúc giữa thôi." }],
+      ccq: Q.ofing, hint: "Nhớ: ủng hộ việc học → studying.", ccq2: Q.ofing2 } },
+  { id: "idea", title: "Ý chính",
+    beats: [
+      { say: "Sau câu chủ đề là ý chính.", board: "benefit" },
+      { say: "Mỗi ý chính là một lợi ích cụ thể cho học sinh." },
+      { say: "Ví dụ phe A: học tất cả các môn giúp học sinh toàn diện hơn, become more well-rounded." },
+      { say: "Phe B: học môn mình thích giúp học sinh có động lực, keeps students motivated." },
+      { ccq: "benefit" }
+    ],
+    icq: "icqIdea", task: "ideas",
+    reex: { beats: [
+      { say: "Mẹo nè: viết xong ý, em hỏi lại “Thì sao? Học sinh được gì?”", board: "reex-benefit" },
+      { say: "“Students study all subjects.” Thì sao? Chưa trả lời được, vậy chưa phải lợi ích." },
+      { say: "“Students become more well-rounded.” Học sinh được gì? Toàn diện hơn. Đó là lợi ích." }],
+      ccq: Q.benefit, hint: "Hỏi “học sinh được gì?” cho từng câu nha.", ccq2: Q.benefit2 } },
+  { id: "develop", title: "Phát triển ý",
+    beats: [
+      { say: "Có ý chính rồi. Giờ là câu hỏi quan trọng nhất của buổi hôm nay.", board: "develop-q" },
+      { say: "Ý chính này đã đủ để ủng hộ quan điểm của em chưa?" },
+      { say: () => `Em tự hỏi: lợi ích này có đủ để biện minh cho việc ${side().vi} không?` },
+      { say: "Chưa đủ thì thêm IMPACT: lợi ích này dẫn tới điều gì lớn hơn?", board: "develop-table:0" },
+      { say: "Đủ rồi thì EXPLAIN: giải thích vì sao, như thế nào.", board: "develop-table:1" },
+      { say: "Không làm được cả hai thì cho EXAMPLE: một ví dụ cụ thể.", board: "develop-table:2" },
+      { say: () => `Ví dụ: “${side().exIdea}”. Có đủ để biện minh cho việc ${side().vi} không?`, board: "develop-example" },
+      { say: "Chưa đủ. Vậy mình thêm impact, như dòng màu cam đó." },
+      { say: "Đây chỉ là cách bắt đầu thôi. Sau đó em phát triển tiếp kiểu khác cũng được." },
+      { say: "Cẩn thận một lỗi hay gặp nè.", board: "circular" },
+      { ccq: "circ" },
+      { say: "Rồi, quay lại bảng này nha.", board: "develop-table" },
+      { ccq: "path" }
+    ],
+    icq: "icqDev", task: "develop",
+    reex: { beats: [
+      { say: "Tưởng tượng ý chính là bậc thang đầu tiên nha.", board: "reex-ladder" },
+      { say: "Impact là leo lên bậc cao hơn: thì sao nữa?" },
+      { say: "Explain là cho thấy cái thang đứng vững: tại sao?" },
+      { say: "Example là cho người ta thấy tận mắt: ví dụ ai, ở đâu?" },
+      { say: "Ý chưa đủ mạnh thì leo lên. Đủ mạnh mà người ta chưa tin thì giải thích. Không nghĩ ra thì cho ví dụ." }],
+      ccq: Q.path, hint: "Chưa đủ → thì sao nữa? → impact.", ccq2: Q.path2 } },
+  { id: "para", title: "Viết đoạn",
+    beats: [
+      { say: "Giờ ghép lại thành một đoạn thân bài nha.", board: "paragraph-parts" },
+      { say: "3 phần: câu chủ đề, ý chính mở đầu bằng Firstly, rồi phát triển ý." },
+      { say: "Khoảng 80 đến 120 chữ là đẹp." },
+      { say: "Đây là đoạn mẫu cho phe của em. Mỗi màu là một phần.", board: "paragraph-model", extra: 4000 },
+      { ccq: "parts" }
+    ],
+    icq: "icqPara", task: "para",
+    reex: { beats: [
+      { say: "Em đã viết hết rồi đó! Nhìn nè.", board: "reex-paragraph" },
+      { say: "Câu chủ đề ở bước 2, ý ở bước 3, phát triển ở bước 4." },
+      { say: "Giờ chỉ xếp chúng nối nhau, thêm “Firstly,” trước ý chính." }],
+      ccq: Q.parts, hint: "Nhìn lại 3 bước em vừa làm nha.", ccq2: Q.parts2 } },
+  { id: "recap", title: "Tổng kết",
+    beats: [
+      { say: "Xong rồi cả nhà! Hôm nay mình học cách phát triển một ý thành một đoạn thân bài.", board: "outro" },
+      { say: "anh Đậu đã gom bài của em lại thành một trang tổng kết. Xem nha!" }
+    ], task: "recap" }
+];
+
+/* ===================== UI helpers ===================== */
+const $ = id => document.getElementById(id);
+const pbody = $("pbody"), pobody = $("pobody"), poverlay = $("poverlay");
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+let toastT;
+function toast(msg) { const t = $("toast"); t.textContent = msg; t.classList.add("on"); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("on"), 3200); }
+function words(s) { return (s.trim().match(/\S+/g) || []).length; }
+
+function renderTimeline() {
+  $("timeline").innerHTML = SECTIONS.map((s, i) => `<span class="tl ${i < S.si ? "done" : i === S.si ? "now" : ""}"><i></i>${s.title}</span>`).join("");
+}
+function setSideChip() {
+  $("sideChip").innerHTML = S.side ? `<span class="chip side-${S.side.toLowerCase()}">${esc(side().tag)} · ${esc(side().name)}</span>` : "";
+}
+function panelIdle(msg = "Đang nghe anh Khoa giảng") {
+  pbody.innerHTML = `<div class="idle"><div class="wave"><i></i><i></i><i></i><i></i></div><b>${esc(msg)}</b><span>Câu hỏi và bài tập sẽ hiện ở đây.</span></div>
+    <div class="tip">Chưa hiểu chỗ nào? Bấm <b>Chưa hiểu</b> ở trên (hoặc phím <b>Space</b>). Không ai biết em bấm đâu.</div>`;
+}
+
+/* ===================== captions + timing ===================== */
+let lastCap = "";
+function pushCaption(text) {
+  $("capPrev").textContent = lastCap;
+  lastCap = text;
+  const ws = text.split(" ");
+  $("capNow").innerHTML = `<span class="who">anh Khoa</span>` + ws.map((w, i) => `<span class="w" style="animation-delay:${Math.min(i * 45, 1400)}ms">${esc(w)} </span>`).join("");
+}
+function durFor(text) { return 1500 + text.length * 48; }
+function wait(ms) {
+  return new Promise(res => {
+    let left = ms, last = performance.now();
+    const tick = now => {
+      const dt = Math.min(now - last, 200); last = now;
+      if (!S.paused) left -= dt * S.speed;
+      if (left <= 0 || S.cut) { S.cut = false; res(); return; }
+      requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  });
+}
+const cam = $("cam");
+async function say(beat) {
+  const text = typeof beat.say === "function" ? beat.say() : beat.say;
+  if (beat.board) setBoard(beat.board);
+  if (beat.fx === "pulseToggle") { const t = $("toggle"); t.classList.remove("pulse"); void t.offsetWidth; t.classList.add("pulse"); }
+  pushCaption(text);
+  cam.classList.add("talking");
+  await wait(durFor(text) + (beat.extra || 0));
+  cam.classList.remove("talking");
+  if (S.confusePending && !S.reexRunning) await runReex();
+}
+
+/* ===================== asking a question in the panel ===================== */
+function askQ(qq, kind, target) {
+  const q = qv(qq);
+  const host = target || pbody;
+  S.cut = false;
+  return new Promise(resolve => {
+    const box = document.createElement("div");
+    box.className = "card";
+    box.innerHTML = `<span class="eyebrow ${kind}">${kind === "ccq" ? "Kiểm tra nhanh" : "Trước khi làm"}</span><p class="qtext">${md(q.q)}</p>
+      <div class="opts">${q.opts.map((o, i) => `<button class="opt" type="button" data-i="${i}">${esc(o)}</button>`).join("")}</div>`;
+    if (!target) host.innerHTML = "";
+    host.appendChild(box);
+    box.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    box.querySelector(".opt").focus({ preventScroll: true });
+    box.querySelectorAll(".opt").forEach(b => b.addEventListener("click", () => {
+      const i = +b.dataset.i, ok = i === q.ans;
+      box.querySelectorAll(".opt").forEach(x => { x.disabled = true; if (+x.dataset.i === q.ans) x.classList.add("right"); else if (x !== b) x.classList.add("dim"); });
+      if (!ok) b.classList.add("wrong");
+      const fb = document.createElement("div");
+      fb.className = "fb " + (ok ? "ok" : "no");
+      fb.innerHTML = `<span class="fi ${ok ? "pop" : ""}">${ok ? "✓" : "!"}</span><div><b>${ok ? "Chính xác!" : "Gần đúng rồi!"}</b> ${md(ok ? q.right : q.wrong)}</div>`;
+      box.appendChild(fb);
+      const go = document.createElement("button");
+      go.className = "btn btn-primary"; go.type = "button"; go.textContent = "Tiếp tục";
+      const row = document.createElement("div"); row.className = "row end"; row.appendChild(go); box.appendChild(row);
+      let doneQ = false;
+      const finish = () => { if (doneQ) return; doneQ = true; row.remove(); resolve(ok); };
+      go.addEventListener("click", finish);
+      go.focus({ preventScroll: true });
+      box.scrollIntoView({ block: "nearest", behavior: "smooth" });
+      if (ok) setTimeout(finish, 2600);
+    }));
+  });
+}
+
+/* ===================== understand / don't understand ===================== */
+function setUnderstand(v) {
+  S.understand = v;
+  $("toggle").dataset.v = v ? "yes" : "no";
+  $("btnYes").setAttribute("aria-pressed", v);
+  $("btnNo").setAttribute("aria-pressed", !v);
+}
+function pressNo() {
+  if (!S.started) { toast("Bấm “Vào lớp” trước nha."); return; }
+  if (S.reexRunning) return;
+  const sec = SECTIONS[S.si];
+  if (!sec.reex) { toast("Phần này không có gì mới, em xem trang tổng kết nha."); return; }
+  setUnderstand(false);
+  S.confusePending = true;
+  toast(`anh Khoa sẽ giảng lại cho em. ${12 + Math.floor(Math.random() * 30)} bạn khác cũng vừa bấm.`);
+  if (S.mode === "explain") S.cut = true; else runReex();
+}
+function pressYes() {
+  if (S.reexRunning) { S.reexSkip = true; S.cut = true; return; }
+  setUnderstand(true);
+}
+$("btnNo").addEventListener("click", pressNo);
+$("btnYes").addEventListener("click", pressYes);
+document.addEventListener("keydown", e => {
+  const tag = (e.target.tagName || "").toLowerCase();
+  if (tag === "textarea" || tag === "input") return;
+  if (e.code === "Space") { e.preventDefault(); S.understand ? pressNo() : pressYes(); }
+  else if (e.key === "ArrowRight") { S.cut = true; }
+  else if (e.key.toLowerCase() === "p") togglePause();
+});
+
+async function runReex() {
+  if (S.reexRunning) return;
+  const sec = SECTIONS[S.si];
+  S.confusePending = false;
+  if (!sec.reex) { setUnderstand(true); return; }
+  S.reexRunning = true; S.reexSkip = false;
+  const prevBoard = S.board, prevMode = S.mode;
+  S.mode = "explain";
+  poverlay.hidden = false;
+  pobody.innerHTML = `<div class="tip">Bài đang tạm dừng. anh Khoa giảng lại phần <b>${esc(sec.title)}</b> cho em, rồi hỏi một câu nhỏ.</div>`;
+  for (const b of sec.reex.beats) { if (S.reexSkip) break; await say(b); }
+  S.mode = "wait";
+  let ok = await askQ(sec.reex.ccq, "ccq", pobody);
+  if (!ok) {
+    pushCaption(sec.reex.hint);
+    pobody.insertAdjacentHTML("beforeend", `<div class="tip">Gợi ý: <b>${esc(sec.reex.hint)}</b></div>`);
+    ok = await askQ(sec.reex.ccq2, "ccq", pobody);
+  }
+  S.confusions.push({ section: sec.title, ok });
+  poverlay.hidden = true;
+  S.reexRunning = false;
+  S.mode = prevMode;
+  setBoard(prevBoard);
+  setUnderstand(true);
+  toast(ok ? "Hiểu rồi! Mình học tiếp nha." : "Không sao, anh Đậu sẽ nhắc lại trong trang tổng kết.");
+}
+
+/* ===================== pause / skip / speed ===================== */
+function togglePause() {
+  if (!S.started) return;
+  S.paused = !S.paused;
+  $("pauseVeil").hidden = !S.paused;
+  $("pauseBtn").textContent = S.paused ? "Tiếp tục" : "Tạm dừng";
+  $("pauseBtn").setAttribute("aria-pressed", S.paused);
+}
+$("pauseBtn").addEventListener("click", togglePause);
+$("skipBtn").addEventListener("click", () => { S.cut = true; });
+$("capNow").addEventListener("click", () => { S.cut = true; });
+document.querySelectorAll(".speed button").forEach(b => b.addEventListener("click", () => {
+  S.speed = +b.dataset.s;
+  document.querySelectorAll(".speed button").forEach(x => x.setAttribute("aria-pressed", x === b));
+}));
+
+/* ===================== fake class ===================== */
+let viewers = 1284;
+setInterval(() => { viewers += Math.round((Math.random() - .45) * 6); $("viewers").textContent = viewers.toLocaleString("en-US"); }, 2500);
+let subTimer;
+function startSubmitCounter(target = 1100) {
+  clearInterval(subTimer);
+  let n = 0;
+  subTimer = setInterval(() => {
+    n = Math.min(target, n + Math.ceil(Math.random() * 38));
+    const el = $("subCount"); if (el) el.textContent = n.toLocaleString("en-US");
+    if (n >= target) clearInterval(subTimer);
+  }, 700);
+}
+function startSplit() {
+  clearInterval(subTimer);
+  let a = 50;
+  subTimer = setInterval(() => {
+    a += (62 - a) * .25 + (Math.random() - .5) * 2;
+    const A = Math.round(a), B = 100 - A, ea = $("splitA"), eb = $("splitB");
+    if (ea) { ea.style.flexBasis = A + "%"; ea.textContent = `A · ${A}%`; eb.style.flexBasis = B + "%"; eb.textContent = `B · ${B}%`; }
+  }, 900);
+}
+
+/* ===================== AI tutor: anh Đậu ===================== */
+let sampleFn = null, aiMode = "pending";
+function setAiBadge() {
+  const b = $("aiBadge");
+  if (aiMode === "live") { b.textContent = "anh Đậu: AI trực tiếp"; b.className = "ai-badge live"; }
+  else if (aiMode === "offline") { b.textContent = "anh Đậu: chế độ offline"; b.className = "ai-badge"; }
+  else { b.textContent = "anh Đậu: đang kết nối"; b.className = "ai-badge"; }
+}
+(async () => {
+  try {
+    const s = window.claude && window.claude.use ? await window.claude.use("sample") : null;
+    sampleFn = s; aiMode = s ? "live" : "offline";
+  } catch { aiMode = "offline"; }
+  setAiBadge();
+})();
+
+const FOCUS = {
+  topic: () => `BƯỚC: Câu chủ đề (1 câu).
+FOCUS: công thức "I am personally in favor of X because it brings about many significant benefits."
+- X = quan điểm em ủng hộ, ở đây là: "${side().x}" (hoặc cách nói tương đương), NGẮN GỌN, dạng V-ing hoặc cụm danh từ, KHÔNG chép nguyên đề.
+- X phải khớp phe em đã chọn (${side().name}).
+- Khúc "because it brings about many significant benefits" giữ nguyên.
+LỖI HAY GẶP: "in favor of study" (phải là V-ing: studying); chép cả đề làm X; X sai phe; thiếu "because…"; "benefit" thiếu s; "bring about" sai dạng.`,
+  develop: () => `BƯỚC: Phát triển ý (1–2 câu).
+Ý chính của em: "${ideaText()}"
+Câu hỏi cốt lõi: lợi ích này đã đủ để biện minh cho việc ${side().vi} chưa?
+Em chọn hướng: ${PATHS[S.path || "impact"].label.toUpperCase()} = ${PATHS[S.path || "impact"].desc}.
+FOCUS: 1–2 câu đi đúng hướng đó, nối tiếp ý chính, phục vụ quan điểm "${side().name}". Sau đó em được phát triển tiếp kiểu khác.
+LỖI HAY GẶP: giải thích vòng tròn (lặp lại ý, vd "${side().circular}"); "impact" chỉ nói lại ý bằng từ khác; ví dụ không cho thấy lợi ích; đi lệch khỏi hướng đã chọn; viết bằng tiếng Việt.`,
+  para: () => `BƯỚC: Viết đoạn thân bài hoàn chỉnh (khoảng 80–120 chữ).
+FOCUS: 3 phần theo thứ tự: (1) câu chủ đề theo công thức "I am personally in favor of X because it brings about many significant benefits." (2) "Firstly," + ý chính (một lợi ích cụ thể) (3) phát triển ý bằng Impact / Explain / Example.
+Ý chính em đã chọn: "${ideaText()}". Hướng phát triển em đã chọn: ${PATHS[S.path || "impact"].label}.
+Đoạn mẫu (chỉ để em tham khảo, KHÔNG bắt em viết giống): "${side().model.join(" ")}"
+LỖI HAY GẶP: thiếu câu chủ đề; ý chính không phải lợi ích; phát triển vòng tròn; thiếu liên kết (Firstly / This / As a result…); lỗi ngữ pháp cơ bản (chia động từ, số nhiều, mạo từ); quá ngắn (< 60 chữ).`
+};
+function tutorInstructions(step) {
+  return `Bạn là anh Đậu — TA (trợ giảng) của anh Khoa ở YouPass, đang kèm 1-1 một học viên người Việt ngay trong lớp livestream IELTS Writing Task 2. Xưng "anh", gọi "em". Nói tiếng Việt khoảng 90%, tiếng Anh cho ví dụ và khi trích câu của em. Ấm áp, ngắn gọn, như người thật nhắn tin. KHÔNG bao giờ tự nhận là AI hay trợ lý ảo.
+
+ĐỀ: "${PROMPT}"
+PHE EM ỦNG HỘ: ${side().name} (X gợi ý: "${side().x}")
+
+${FOCUS[step]()}
+
+CÁCH KÈM (Socratic, mô phỏng giáo viên thật — KHÔNG đưa một danh sách lỗi rồi bảo "em tự sửa"):
+- Chấm thầm theo thứ tự ưu tiên: (1) STRUCTURE — có theo đúng FOCUS chưa; (2) VOCAB — từ sai nghĩa, Vietlish, collocation lạ; (3) GRAMMAR — chia động từ, số ít/nhiều, mạo từ, giới từ, dạng từ. Chính tả / dấu câu chỉ nhắc khi làm sai nghĩa hoặc rất rõ.
+- Mỗi lượt CHỈ xử lý MỘT lỗi quan trọng nhất. Trích đúng chỗ đó bằng **"..."** (ngắn), hỏi MỘT câu gợi mở, và đưa chips: 2–3 phương án (đúng 1 cái đúng) + 1 chip "Em không chắc". KHÔNG nói đáp án trước khi em thử.
+- Em chọn đúng → xác nhận 1 dòng + lý do rất ngắn, ghi note, rồi chuyển sang lỗi quan trọng tiếp theo (nếu còn) trong CÙNG lượt đó.
+- Em chọn sai → gợi ý thêm 1 dòng, chips thu hẹp còn 2. Nếu vẫn sai hoặc chọn "Em không chắc" → nói đáp án nhẹ nhàng + lý do 1 dòng, ghi note, đi tiếp. Mỗi lỗi tối đa 1 lần thử lại.
+- Khi đã xử lý hết lỗi đáng kể: mời em viết lại bản hoàn chỉnh MỘT lần (action "write"). Sau khi em gửi bản viết lại: khen cụ thể 1–2 dòng (nếu còn sót lỗi nhỏ thì nhắc 1 dòng, KHÔNG mở đợt sửa mới), action "done".
+- Bài đạt ngay từ lần đầu → khen cụ thể cái gì tốt + action "done". Đủ là đủ: không đòi thêm ý.
+- Khen phải nói ĐÚNG CÁI GÌ tốt. CẤM "Tuyệt vời", "xuất sắc", "quá đỉnh". KHÔNG bịa lỗi. Biến thể đúng (favor/favour, Anh-Mỹ) không phải lỗi. Câu mẫu trong FOCUS là chuẩn — em dùng đúng thì xác nhận, không "nâng cấp".
+- Bài phải bằng tiếng Anh. Em viết tiếng Việt → nhắc nhẹ, giúp 1 câu mở đầu, action "write".
+- Em hỏi gì ngoài lề → trả lời 1 dòng rồi quay lại việc đang làm.
+- Gợi ý ý tưởng (nếu em bí) chỉ nằm trong FOCUS của bước này.
+
+ĐỊNH DẠNG: CHỈ trả về MỘT JSON object, không gì khác:
+{"lines":["..."],"action":"chips|write|done","chips":["..."],"notes":[{"you_wrote":"...","better":"...","category":"structure|vocab|grammar","rule":"..."}]}
+- lines: 1–4 bong bóng chat ngắn (mỗi cái tối đa ~20 từ). Được dùng **đậm**.
+- action "chips": dòng cuối của lines là câu hỏi; chips có 2–4 lựa chọn ngắn (tối đa 8 từ), tự đứng được khi gửi thay em.
+- action "write": dòng cuối mời em sửa / viết lại trong ô viết.
+- action "done": bước này xong.
+- notes: mỗi lỗi đã được sửa trong lượt này (em không thấy notes): you_wrote = cụm em viết, better = cụm đúng, rule = quy tắc ngắn bằng tiếng Việt. [] nếu không có.`;
+}
+
+async function askTutorLive(step, turns) {
+  const input = turns.map((t, i) => ({ role: t.role, content: i === 0 ? tutorInstructions(step) + "\n\n" + t.content : t.content }));
+  const r = await sampleFn.json(input, { cache: false });
+  if (!r || !Array.isArray(r.lines)) throw { code: "invalid_json" };
+  return {
+    lines: r.lines.map(String).filter(Boolean).slice(0, 5),
+    action: ["chips", "write", "done"].includes(r.action) ? r.action : "write",
+    chips: Array.isArray(r.chips) ? r.chips.map(String).slice(0, 4) : [],
+    notes: Array.isArray(r.notes) ? r.notes.filter(n => n && n.better) : []
+  };
+}
+
+/* offline tutor: a small scripted version of anh Đậu, used when live AI isn't available */
+function askTutorOffline(step, turns, st) {
+  const last = turns[turns.length - 1].content;
+  const text = st.text;
+  if (step === "topic") {
+    if (st.retried && st.await !== "ing" && turns[turns.length - 1].content.startsWith("BÀI EM SỬA LẠI")) {
+      const good = /in favou?r of\s+\w+ing\b/i.test(text) && /because/i.test(text);
+      return good ? { lines: ["Bản sửa này chuẩn công thức rồi: đúng **in favor of + V-ing**, có đủ khúc **because…**.", "Mình đi tiếp nha!"], action: "done", chips: [], notes: [] }
+        : { lines: ["Gần được rồi. Câu đúng sẽ kiểu như này nè:", `**I am personally in favor of ${side().x} because it brings about many significant benefits.**`, "Anh ghi vào trang tổng kết cho em xem lại nha."], action: "done", chips: [], notes: [{ you_wrote: text.slice(0, 70), better: `I am personally in favor of ${side().x} because…`, category: "structure", rule: "Câu chủ đề theo công thức" }] };
+    }
+    if (st.await === "ing") {
+      st.await = null;
+      if (/studying|focusing|ing\b/i.test(last)) return { lines: ["Đúng rồi! **of** là giới từ nên động từ sau nó thêm **-ing**.", "Giờ em sửa lại câu cho hoàn chỉnh nha."], action: "write", chips: [], notes: [{ you_wrote: `in favor of ${st.verb}`, better: `in favor of ${st.verb}ing`.replace("eing", "ing"), category: "grammar", rule: "Sau giới từ of, động từ thêm -ing" }] };
+      return { lines: [`Chỗ này là **in favor of ${st.verb.endsWith("e") ? st.verb.slice(0, -1) : st.verb}ing** nha em.`, "Vì **of** là giới từ, mà sau giới từ thì động từ thêm **-ing**.", "Em sửa lại câu rồi gửi anh xem nha."], action: "write", chips: [], notes: [{ you_wrote: `in favor of ${st.verb}`, better: `in favor of ${st.verb}ing`, category: "grammar", rule: "Sau giới từ of, động từ thêm -ing" }] };
+    }
+    if (!/in favou?r of/i.test(text)) return { lines: ["Câu của em chưa theo công thức hôm nay á.", "Câu chủ đề bắt đầu bằng **\"I am personally in favor of\"** nha.", "Em thử viết lại theo công thức nhé."], action: "write", chips: [], notes: [] };
+    const m = text.match(/in favou?r of\s+([a-z]+)/i);
+    const verb = m ? m[1].toLowerCase() : "";
+    if (["study", "focus", "learn", "let", "allow", "choose", "take", "make"].includes(verb) && !st.retried) {
+      st.await = "ing"; st.verb = verb;
+      return { lines: [`Em xem chữ ngay sau **"in favor of"** nha: **"${verb}"**.`, "Sau giới từ **of**, động từ có dạng gì?"], action: "chips", chips: [verb, verb.endsWith("e") ? verb.slice(0, -1) + "ing" : verb + "ing", "to " + verb, "Em không chắc"], notes: [] };
+    }
+    const x = (text.split(/in favou?r of/i)[1] || "").split(/because/i)[0];
+    if (words(x) > 14 && !st.retried) return { lines: ["X của em hơi dài, giống chép nguyên đề á.", `X chỉ cần phần em ủng hộ, kiểu **"${side().x}"**.`, "Em rút gọn lại nha."], action: "write", chips: [], notes: [{ you_wrote: x.trim().slice(0, 60) + "…", better: side().x, category: "structure", rule: "X ngắn gọn, không chép đề" }] };
+    if (S.side === "A" && /only|good at|interest|enjoy|favou?rite/i.test(x) || S.side === "B" && /all subjects/i.test(x)) return { lines: ["Khoan nha, X của em đang nói về **phe bên kia** á.", `Em chọn **${side().name}** mà.`, "Em sửa X cho khớp phe nhé."], action: "write", chips: [], notes: [] };
+    if (!/because/i.test(text)) return { lines: ["Câu của em còn thiếu khúc cuối nè.", "Thêm **\"because it brings about many significant benefits\"** vào nha."], action: "write", chips: [], notes: [] };
+    return { lines: ["Câu chủ đề đúng công thức, X ngắn gọn và khớp phe em chọn.", "Ổn rồi, mình đi tiếp nha!"], action: "done", chips: [], notes: [] };
+  }
+  if (step === "develop") {
+    if (/[ăâđêôơưạảấầẩẫậắằẳẵặẹẻẽếềểễệỉịọỏốồổỗộớờởỡợụủứừửữựỳỵỷỹ]/i.test(text)) return { lines: ["Em viết bằng tiếng Anh nha.", "Ý em hay mà, thử chuyển sang tiếng Anh xem."], action: "write", chips: [], notes: [] };
+    if (words(text) < 8 && !st.retried) return { lines: [`Em viết thêm chút nữa nha: 1–2 câu **${PATHS[S.path].vi}**.`, `Tự hỏi: **${PATHS[S.path].q}**`], action: "write", chips: [], notes: [] };
+    const key = (S.idea || "").toLowerCase().replace(/^.*helps students /, "").replace(/\.$/, "").trim();
+    if (key && words(key) >= 2 && text.toLowerCase().includes(key) && /because/i.test(text) && !st.retried) return { lines: ["Câu này hơi **đi một vòng** á: em nhắc lại ý chính thay vì phát triển nó.", `Thử trả lời: **${PATHS[S.path].q}**`], action: "write", chips: [], notes: [{ you_wrote: "lặp lại ý chính", better: PATHS[S.path].desc, category: "structure", rule: "Phát triển ý phải thêm thông tin mới" }] };
+    return { lines: [`Câu của em đi đúng hướng **${PATHS[S.path].label}**, nối tiếp ý chính được.`, "Ổn rồi, mình ghép thành đoạn văn nha!"], action: "done", chips: [], notes: [] };
+  }
+  const wc = words(text);
+  if (wc < 60 && !st.retried) return { lines: [`Đoạn của em mới **${wc} chữ**, hơi ngắn nè.`, "Em thêm phần phát triển ý cho đủ khoảng 80–120 chữ nha."], action: "write", chips: [], notes: [] };
+  if (!/in favou?r of/i.test(text) && !st.retried) return { lines: ["Đoạn văn cần mở đầu bằng **câu chủ đề** nha.", "Em thêm câu **I am personally in favor of…** lên đầu đoạn."], action: "write", chips: [], notes: [] };
+  if (!/firstly/i.test(text) && !st.retried) return { lines: ["Đoạn có câu chủ đề rồi, tốt.", "Em thêm **\"Firstly,\"** trước ý chính để người đọc thấy ý bắt đầu ở đâu nha."], action: "write", chips: [], notes: [{ you_wrote: "(không có từ nối)", better: "Firstly, + ý chính", category: "structure", rule: "Mở đầu ý chính bằng Firstly," }] };
+  return { lines: [`Đoạn của em có đủ 3 phần: câu chủ đề, ý chính, phát triển ý (${wc} chữ).`, "Xong bước cuối rồi!"], action: "done", chips: [], notes: [] };
+}
+
+function addMsg(chat, cls, html) { const d = document.createElement("div"); d.className = "msg " + cls; d.innerHTML = html; chat.appendChild(d); d.scrollIntoView({ block: "nearest", behavior: "smooth" }); return d; }
+function addNotes(notes) {
+  for (const n of notes || []) {
+    if (!n.better) continue;
+    if (!S.notes.some(o => (o.better || "").toLowerCase() === String(n.better).toLowerCase())) S.notes.push({ you_wrote: String(n.you_wrote || ""), better: String(n.better), rule: String(n.rule || ""), category: String(n.category || "") });
+  }
+}
+
+/* writing task with anh Đậu */
+function writeTask(step, opts) {
+  return new Promise(resolve => {
+    const id = "w-" + step;
+    pbody.innerHTML = `<div class="card">
+        <span class="eyebrow">${esc(opts.eyebrow)}</span><p class="qtext">${md(opts.title)}</p>
+        ${opts.helper || ""}
+        <textarea class="write ${step === "para" ? "tall" : ""}" id="${id}" placeholder="${esc(opts.placeholder)}" spellcheck="false"></textarea>
+        <div class="row"><span class="wc" id="${id}-wc">0 chữ</span><button class="btn btn-primary" type="button" id="${id}-send">Gửi anh Đậu</button></div>
+      </div>
+      <div class="dau-head">${rigHTML(46)}<div class="who">anh Đậu<span>TA của anh Khoa · kèm riêng em</span></div></div>
+      <div class="chat" id="${id}-chat"><div class="msg dau">${md(opts.hello)}</div></div>
+      <button class="linkbtn" type="button" id="${id}-skip">Bỏ qua, học tiếp</button>`;
+    const ta = $(id), wc = $(id + "-wc"), send = $(id + "-send"), chat = $(id + "-chat");
+    const rig = pbody.querySelector(".dau-head .rig");
+    ta.value = opts.prefill || "";
+    const upd = () => { const n = words(ta.value); wc.textContent = n + " chữ" + (opts.target ? ` · ${opts.target}` : ""); wc.classList.toggle("ok", !!opts.okWords && n >= opts.okWords[0] && n <= opts.okWords[1]); send.disabled = n < (opts.min || 3); };
+    ta.addEventListener("input", upd); upd();
+    setTimeout(() => ta.focus({ preventScroll: true }), 300);
+    const turns = []; const st = { text: "", retried: false, rounds: 0, await: null };
+    let first = null, stage = "first", busy = false, finished = false;
+    const finish = () => { if (finished) return; finished = true; resolve({ first, final: ta.value.trim() || first }); };
+    $(id + "-skip").addEventListener("click", finish);
+
+    async function ask() {
+      busy = true; send.disabled = true; ta.disabled = true;
+      const typing = addMsg(chat, "dau", `<span class="typing"><i></i><i></i><i></i></span>`);
+      if (rig) rig.classList.add("m-talk", "e-open");
+      let res = null;
+      try {
+        if (aiMode === "live" && sampleFn) res = await askTutorLive(step, turns);
+      } catch (e) {
+        const code = e && e.code;
+        if (["not_granted", "sampling_disabled", "not_declared", "capability_disabled", "capability_removed"].includes(code)) { aiMode = "offline"; setAiBadge(); }
+        else {
+          typing.remove(); if (rig) rig.classList.remove("m-talk", "e-open");
+          const err = addMsg(chat, "dau err", `anh Đậu đang bận một chút (${esc(code || "lỗi mạng")}). <button class="linkbtn" type="button">Thử lại</button>`);
+          err.querySelector("button").addEventListener("click", () => { err.remove(); ask(); });
+          busy = false; return;
+        }
+      }
+      if (!res) res = askTutorOffline(step, turns, st);
+      st.rounds++;
+      if (st.rounds >= 9 && res.action !== "done") res = { ...res, action: "done", lines: [...res.lines, "Mình dừng ở đây nha, phần còn lại anh ghi vào trang tổng kết."] };
+      turns.push({ role: "assistant", content: JSON.stringify(res) });
+      addNotes(res.notes);
+      typing.remove();
+      for (const l of res.lines) { addMsg(chat, "dau", md(l)); await sleep(Math.min(1400, 350 + l.length * 12)); }
+      if (rig) rig.classList.remove("m-talk", "e-open");
+      busy = false;
+      if (res.action === "chips" && res.chips.length) {
+        const c = document.createElement("div"); c.className = "chips";
+        res.chips.forEach(t => { const b = document.createElement("button"); b.type = "button"; b.textContent = t; b.addEventListener("click", () => { if (busy) return; c.remove(); addMsg(chat, "me", esc(t)); turns.push({ role: "user", content: t }); ask(); }); c.appendChild(b); });
+        chat.appendChild(c); c.scrollIntoView({ block: "nearest", behavior: "smooth" });
+      } else if (res.action === "done") {
+        if (rig) { rig.classList.add("a-cheer", "m-laugh"); setTimeout(() => rig.classList.remove("a-cheer", "m-laugh"), 2200); }
+        const row = document.createElement("div"); row.className = "row end";
+        row.innerHTML = `<button class="btn btn-primary" type="button">Học tiếp →</button>`;
+        row.querySelector("button").addEventListener("click", finish);
+        chat.appendChild(row); row.querySelector("button").focus({ preventScroll: true });
+        row.scrollIntoView({ block: "nearest", behavior: "smooth" });
+      } else {
+        stage = "rewrite"; ta.disabled = false; upd(); send.textContent = "Gửi bản sửa"; ta.focus({ preventScroll: true });
+      }
+    }
+    send.addEventListener("click", () => {
+      if (busy) return;
+      const v = ta.value.trim(); if (!v) return;
+      st.text = v;
+      if (!first) { first = v; turns.push({ role: "user", content: `BÀI CỦA EM (lần đầu):\n${v}` }); }
+      else { st.retried = true; turns.push({ role: "user", content: `BÀI EM SỬA LẠI:\n${v}` }); }
+      addMsg(chat, "me text", esc(v));
+      ask();
+    });
+  });
+}
+
+/* ===================== tasks ===================== */
+async function taskSide() {
+  setBoard("task-side"); startSplit();
+  pushCaption("Các em chọn phe đi nha. Anh đang xem cả lớp chọn gì.");
+  await new Promise(resolve => {
+    pbody.innerHTML = `<div class="card"><span class="eyebrow">Bước 1 · Chọn phe</span><p class="qtext">Em ủng hộ quan điểm nào?</p>
+      <div class="sidepick">
+        <button class="sidebtn a" type="button" data-s="A"><span class="tagl">Phe A</span><b>Học tất cả các môn</b><span>study all subjects at school</span></button>
+        <button class="sidebtn b" type="button" data-s="B"><span class="tagl">Phe B</span><b>Chỉ học môn mình giỏi hoặc thích</b><span>only study the subjects they are good at or find interesting</span></button>
+      </div></div>`;
+    pbody.querySelectorAll(".sidebtn").forEach(b => b.addEventListener("click", () => {
+      S.side = b.dataset.s; setSideChip();
+      pbody.querySelectorAll(".sidebtn").forEach(x => x.classList.toggle("picked", x === b));
+      const pct = side().pct;
+      pbody.insertAdjacentHTML("beforeend", `<div class="classnote"><span class="dots"><i style="background:var(--orange)"></i><i style="background:var(--blue)"></i><i style="background:var(--green)"></i></span><span><b>${pct}%</b> cả lớp chọn giống em.</span></div>
+        <div class="row end"><button class="btn btn-primary" type="button" id="sideGo">Xong</button></div>`);
+      pbody.querySelectorAll(".sidebtn").forEach(x => x.disabled = true);
+      $("sideGo").addEventListener("click", resolve); $("sideGo").focus({ preventScroll: true });
+    }));
+  });
+  clearInterval(subTimer);
+}
+
+async function taskTopic() {
+  setBoard("task:Viết câu chủ đề"); startSubmitCounter(1106);
+  pushCaption("Giờ các em viết câu chủ đề đi nha. Anh Đậu sẽ kèm từng bạn.");
+  const r = await writeTask("topic", {
+    eyebrow: "Bước 2 · Câu chủ đề", title: "Viết câu chủ đề của em",
+    helper: `<div class="formula-mini">I am personally in favor of <span class="x">X</span> because it brings about many significant benefits.</div>`,
+    placeholder: "I am personally in favor of …", min: 4,
+    hello: `Em viết câu chủ đề cho **${side().name}** nha. Xong bấm **Gửi anh Đậu**, anh xem cho.`
+  });
+  S.topicFirst = r.first; S.topicFinal = r.final; S.done.topic = !!r.first;
+  clearInterval(subTimer);
+}
+
+async function taskIdeas() {
+  setBoard("task:Tìm ý chính"); startSubmitCounter(1150);
+  pushCaption("Các em tự nghĩ ý trước nha. Bí quá thì bấm Gợi ý.");
+  await new Promise(resolve => {
+    const sd = side();
+    pbody.innerHTML = `<div class="card"><span class="eyebrow">Bước 3 · Ý chính</span><p class="qtext">Một lợi ích của việc ${esc(sd.vi)} là gì?</p>
+        <textarea class="write" id="ideaIn" placeholder="${esc(sd.stem)}…" spellcheck="false"></textarea>
+        <div class="row"><button class="btn btn-ghost" type="button" id="goiyBtn" disabled>Gợi ý · 20s</button><span class="spacer"></span><button class="btn btn-primary" type="button" id="ideaAdd" disabled>Thêm ý</button></div>
+        <div class="goiy" id="goiy" hidden></div></div>
+      <div class="card" id="ideaPick" hidden><span class="eyebrow">Chọn 1 ý để phát triển</span><div class="idea-list" id="ideaList"></div>
+        <div class="row end"><button class="btn btn-primary" type="button" id="ideaGo" disabled>Dùng ý này</button></div></div>`;
+    const ta = $("ideaIn"), add = $("ideaAdd"), gb = $("goiyBtn");
+    let left = 20, unlocked = false;
+    const unlock = () => { if (unlocked) return; unlocked = true; clearInterval(cd); gb.disabled = false; gb.textContent = "Gợi ý"; };
+    const cd = setInterval(() => { left--; if (left <= 0) unlock(); else gb.textContent = `Gợi ý · ${left}s`; }, 1000);
+    ta.addEventListener("input", () => { add.disabled = words(ta.value) < 3; if (words(ta.value) >= 2) unlock(); });
+    const render = () => {
+      $("ideaPick").hidden = !S.ideas.length;
+      $("ideaList").innerHTML = S.ideas.map((it, i) => `<button class="idea" type="button" data-i="${i}" aria-pressed="${it.text === S.idea}"><span class="radio"></span><span class="tx en">${esc(it.text)}</span><span class="src ${it.own ? "own" : ""}">${it.own ? "Ý của em" : "Gợi ý"}</span></button>`).join("");
+      $("ideaList").querySelectorAll(".idea").forEach(b => b.addEventListener("click", () => { S.idea = S.ideas[+b.dataset.i].text; render(); $("ideaGo").disabled = false; }));
+      $("ideaGo").disabled = !S.idea;
+    };
+    const push = (text, own) => { if (S.ideas.some(i => i.text === text)) return; S.ideas.push({ text, own }); S.idea = text; render(); $("ideaPick").scrollIntoView({ block: "nearest", behavior: "smooth" }); };
+    add.addEventListener("click", () => { let t = ta.value.trim(); if (!t) return; if (!/[.!?]$/.test(t)) t += "."; push(t, true); ta.value = ""; add.disabled = true; });
+    gb.addEventListener("click", () => {
+      const g = $("goiy"); g.hidden = false;
+      g.innerHTML = sd.goiy.map((x, i) => `<button class="gchip en" type="button" style="animation-delay:${i * 70}ms" data-t="${esc(sd.stem + x + ".")}">${esc(sd.stem)}<b>${esc(x)}</b>.</button>`).join("");
+      g.querySelectorAll(".gchip").forEach(b => b.addEventListener("click", () => push(b.dataset.t, false)));
+      gb.disabled = true;
+    });
+    $("ideaGo").addEventListener("click", () => { clearInterval(cd); resolve(); });
+  });
+  if (!S.idea) S.idea = ideaText();
+  clearInterval(subTimer);
+  setBoard("top-ideas");
+  await say({ say: `Ý được chọn nhiều nhất lớp mình là “${side().goiy[side().counts.indexOf(Math.max(...side().counts))]}”. Hay đó!` });
+}
+
+async function taskDevelop() {
+  setBoard("develop-table"); startSubmitCounter(1020);
+  pushCaption("Giờ mỗi em tự hỏi: lợi ích của mình đủ chưa? Rồi viết 1–2 câu nha.");
+  await new Promise(resolve => {
+    pbody.innerHTML = `<div class="card"><span class="eyebrow">Bước 4 · Phát triển ý</span>
+        <div class="formula-mini en">${esc(ideaText())}</div>
+        <p class="qtext">Lợi ích này đã đủ để biện minh cho việc ${esc(side().vi)} chưa?</p>
+        <div class="opts">
+          <button class="opt" type="button" data-p="impact">Chưa đủ → thêm <b>Impact</b></button>
+          <button class="opt" type="button" data-p="explain">Đủ rồi → <b>Explain</b> vì sao</button>
+          <button class="opt" type="button" data-p="example">Không chắc → cho <b>Example</b></button>
+        </div></div>`;
+    pbody.querySelectorAll(".opt").forEach(b => b.addEventListener("click", () => { S.path = b.dataset.p; resolve(); }));
+  });
+  const p = PATHS[S.path];
+  setBoard("develop-table:" + ["impact", "explain", "example"].indexOf(S.path));
+  const r = await writeTask("develop", {
+    eyebrow: `Bước 4 · ${p.label}`, title: `Viết 1–2 câu **${p.vi}** cho ý của em`,
+    helper: `<div class="formula-mini"><b>Ý của em:</b> <span class="en">${esc(ideaText())}</span><br><b>Tự hỏi:</b> ${esc(p.q)}</div>`,
+    placeholder: S.path === "impact" ? "This allows them to …" : S.path === "explain" ? "This is because …" : "For example, …", min: 4,
+    hello: `Em chọn **${p.label}**: ${p.desc}. Viết 1–2 câu rồi gửi anh nha.`
+  });
+  S.devFirst = r.first; S.devFinal = r.final;
+  clearInterval(subTimer);
+}
+
+async function taskPara() {
+  setBoard("paragraph-model"); startSubmitCounter(903);
+  pushCaption("Giờ ghép lại thành đoạn văn nha. Nhìn đoạn mẫu cũng được, nhưng viết bằng ý của em.");
+  let idea = ideaText().trim();
+  if (!/^firstly/i.test(idea)) idea = "Firstly, " + idea.charAt(0).toLowerCase() + idea.slice(1);
+  const prefill = [S.topicFinal || "", idea, S.devFinal || ""].filter(Boolean).join(" ");
+  const r = await writeTask("para", {
+    eyebrow: "Bước 5 · Viết đoạn", title: "Viết đoạn thân bài hoàn chỉnh",
+    helper: `<div class="formula-mini">Câu chủ đề → <b>Firstly,</b> + ý chính → phát triển ý · khoảng 80–120 chữ. anh đã điền sẵn các phần em viết, em sửa và viết thêm nha.</div>`,
+    placeholder: "I am personally in favor of …", prefill, min: 20, target: "80–120", okWords: [80, 120],
+    hello: "Em ghép và hoàn chỉnh đoạn văn rồi gửi anh nha. Anh xem lập luận trước, rồi tới từ vựng, ngữ pháp."
+  });
+  S.paraFirst = r.first; S.paraFinal = r.final; S.done.para = !!r.first;
+  clearInterval(subTimer);
+}
+
+/* ===================== recap ===================== */
+function confetti() {
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const c = document.createElement("canvas"); c.className = "confetti"; document.body.appendChild(c);
+  const ctx = c.getContext("2d"); const W = c.width = innerWidth, H = c.height = innerHeight;
+  const cols = ["#FF6D3A", "#13A62E", "#FFA41B", "#5A88E5", "#FF4266", "#37C181"];
+  const ps = Array.from({ length: 140 }, () => ({ x: W / 2 + (Math.random() - .5) * 200, y: H * .35, vx: (Math.random() - .5) * 14, vy: -Math.random() * 14 - 4, r: Math.random() * 6 + 4, c: cols[Math.floor(Math.random() * cols.length)], a: Math.random() * 6, va: (Math.random() - .5) * .3 }));
+  let t = 0;
+  (function f() {
+    ctx.clearRect(0, 0, W, H); t++;
+    ps.forEach(p => { p.vy += .35; p.vx *= .99; p.x += p.vx; p.y += p.vy; p.a += p.va; ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.a); ctx.fillStyle = p.c; ctx.fillRect(-p.r / 2, -p.r / 3, p.r, p.r / 1.5); ctx.restore(); });
+    if (t < 170) requestAnimationFrame(f); else c.remove();
+  })();
+}
+function showRecap() {
+  const sd = side();
+  const star = DAU && DAU.icon_star ? `<img src="${DAU.icon_star}" alt="">` : "★";
+  const stars = [
+    { on: S.confusions.length === 0 || S.confusions.every(c => c.ok), t: "Hiểu bài" },
+    { on: S.done.topic, t: "Câu chủ đề" },
+    { on: S.done.para, t: "Đoạn văn hoàn chỉnh" }
+  ];
+  const topicChanged = S.topicFirst && S.topicFinal && S.topicFirst !== S.topicFinal;
+  const remember = S.notes.length ? `<ul>${S.notes.slice(0, 6).map(n => `<li><span>${n.you_wrote ? `<span class="from en">${esc(n.you_wrote)}</span> → ` : ""}<span class="to en">${esc(n.better)}</span>${n.rule ? `<br><span class="muted">${esc(n.rule)}</span>` : ""}</span></li>`).join("")}</ul>`
+    : `<p class="muted">Hôm nay anh Đậu không ghi lỗi nào cần nhớ. Em giữ phong độ này nha!</p>`;
+  const conf = S.confusions.length ? `<ul class="conf-list">${S.confusions.map(c => `<li><span>${esc(c.section)}</span>${c.ok ? '<span class="pill-ok">Hiểu sau khi giảng lại</span>' : '<span class="pill-no">Cần xem lại</span>'}</li>`).join("")}</ul>`
+    : `<p class="muted">Em không bấm “Chưa hiểu” lần nào. Lần sau chưa hiểu thì cứ bấm nha, không ai biết đâu.</p>`;
+  const R = $("recap");
+  R.innerHTML = `<div class="sheet" role="dialog" aria-label="Trang tổng kết">
+    <div class="recap-hero">${rigHTML(130, "a-cheer m-laugh")}<div><h1>Xong buổi rồi! 🎉</h1><p>anh Đậu gom lại những gì em làm hôm nay để em xem lại.</p></div></div>
+    <div class="stars">${stars.map((s, i) => `<span class="star ${s.on ? "" : "off"}" style="animation-delay:${i * 150}ms">${star}${esc(s.t)}</span>`).join("")}</div>
+    <div class="rgrid">
+      <div class="rcard"><span class="lab">Phe em chọn</span><span class="big">${esc(sd.tag)} · ${esc(sd.name)}</span></div>
+      <div class="rcard"><span class="lab">Ý chính · cách phát triển</span><span class="big en">${esc(ideaText())}</span><span class="muted">Phát triển bằng <b>${esc(S.path ? PATHS[S.path].label : "—")}</b></span></div>
+      <div class="rcard span"><span class="lab">Câu chủ đề</span>${topicChanged ? `<div class="corr en"><s>${esc(S.topicFirst)}</s><ins>${esc(S.topicFinal)}</ins></div>` : `<span class="big en">${esc(S.topicFinal || "Em chưa viết câu chủ đề.")}</span>`}</div>
+      <div class="rcard span"><span class="lab">Đoạn văn của em ${S.paraFinal ? `· ${words(S.paraFinal)} chữ` : ""}</span><div class="notebook en">${esc(S.paraFinal || "Em chưa viết đoạn văn.")}</div></div>
+      <div class="rcard remember"><span class="lab">Điều cần nhớ</span>${remember}</div>
+      <div class="rcard"><span class="lab">Lúc em bấm “Chưa hiểu”</span>${conf}</div>
+    </div>
+    <div class="row end"><button class="btn btn-neutral" type="button" id="closeRecap">Đóng</button><button class="btn btn-primary" type="button" id="againBtn">Học lại từ đầu</button></div>
+  </div>`;
+  R.hidden = false;
+  confetti();
+  $("closeRecap").addEventListener("click", () => { R.hidden = true; });
+  $("againBtn").addEventListener("click", () => location.reload());
+  $("closeRecap").focus({ preventScroll: true });
+}
+
+/* ===================== main loop ===================== */
+async function runSection(i) {
+  S.si = i; renderTimeline();
+  const sec = SECTIONS[i];
+  S.mode = "explain";
+  panelIdle();
+  for (const b of sec.beats) {
+    if (b.ccq) { S.mode = "wait"; await askQ(Q[b.ccq], "ccq"); S.mode = "explain"; panelIdle(); }
+    else await say(b);
+  }
+  if (sec.icq) { S.mode = "wait"; await askQ(Q[sec.icq], "icq"); }
+  S.mode = "wait";
+  if (sec.task === "side") await taskSide();
+  else if (sec.task === "topic") await taskTopic();
+  else if (sec.task === "ideas") await taskIdeas();
+  else if (sec.task === "develop") await taskDevelop();
+  else if (sec.task === "para") await taskPara();
+  else if (sec.task === "recap") { S.si = SECTIONS.length; renderTimeline(); panelIdle("Xong buổi học"); showRecap(); return; }
+  while (S.reexRunning) await sleep(200);
+}
+async function run() {
+  for (let i = 0; i < SECTIONS.length; i++) await runSection(i);
+}
+
+/* ===================== boot ===================== */
+setBoard("intro");
+renderTimeline();
+panelIdle("Lớp sắp bắt đầu");
+setSideChip();
+$("startBtn").addEventListener("click", () => {
+  $("startVeil").hidden = true;
+  S.started = true;
+  run();
+});
+</script>

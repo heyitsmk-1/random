@@ -375,3 +375,22 @@ What was done:
 
 Open questions:
 - OK to rebuild the deck with this model and style?
+
+## 2026-10-21: Stream-deck model, and build the student prototype
+
+What was said:
+- **Use Montserrat** (instead of Nunito).
+- There's **still a prep phase**, but not step 1 → 2 → 3 rigidly. It's **like a stream deck**: the teacher presses a button to go into an activity. Activities can be **planned, or made new on the spot**. We'd need **some templates**.
+- The student's screen **still has the Understand / Don't understand toggle**.
+- "I can't imagine the whole thing in my head, so **let's just build**."
+- **Skip the prep for now.** Claude makes the lesson from the owner's earlier descriptions.
+- **Build the student's screen first.** For the prototype, the lesson **auto-plays** and the owner **plays the student**.
+- If the student presses **Don't understand**, the lesson **pauses and re-explains**. So write, for each step, an **explanation, a re-explanation, and ICQs / CCQs** (instruction-checking and concept-checking questions).
+- Then a **writing practice** part with **corrective feedback from the AI (speaking-intensive style)**, using the **animations and text boxes from the student consolidation page** (`student-page/`).
+- Asked: what are we missing before Claude can build?
+
+What was done:
+- design-notes.md: font is now Montserrat.
+- Checked: the consolidation page template has the animations to reuse (strike-through, stamp, chalk, cheer, shake, sheet-up, anh Đậu talking…). Its mascot images are **not** in the repo (kept out on purpose).
+- Checked: a published claude.ai page can call Claude directly (the `sample` capability), so the prototype can give **live AI feedback with no API key**; the viewer approves it once.
+- Listed what's missing (see the reply that day). No code yet: Rule 1 needs the exact phrase.

@@ -13,13 +13,13 @@ Summary of the two design skills the owner shared on 2026-10-21 (`youpass-design
   - Backgrounds: white `#FFFFFF`, or **warm `#FFFAF6` / `#FFF8F2` / `#FBEFE4`**. Greys `#F4F4F4`, `#F2F2F7`, `#E5E5EA`.
   - Tertiary for status/categories: red `#FF3B30`/`#FFEBEA` (errors only), blue `#007AFF`/`#E5F2FF`, purple `#5856D6`/`#EEEEFB`, yellow `#FFD80E`/`#FFFBE7`, cyan `#00C7BE`/`#E5F9F9`.
   - Pastels for tags/badges: blue `#5A88E5`/`#DEE7FA`, yellow `#FFA41B`/`#FFEDD1`, purple `#565FCC`/`#DDDFF5`, green `#37C181`/`#D7F3E6`.
-- **Font:** Nunito (400/600/700), fallback Arial. Hierarchy by weight.
+- **Font:** ~~Nunito~~ **Montserrat** for Livestream (owner's choice, 2026-10-21; Nunito may not be installed when presenting). Weights 400/600/700, fallback Arial. Hierarchy by weight.
 - **Shapes:** never sharp corners. Containers = generous rounding; **interactive elements = pill shape (signature)**; tags/chips = subtle rounding. Thin borders (1–2px, default `#E5E5EA`, focus orange).
 - **Shadows:** soft only (e.g. `0 4px 12px rgba(29,29,31,.08)`).
 - **Spacing:** generous, never cramped. Touch targets ≥ 44px.
 - **Feedback states:** success green `#E5F6E9` "Chính xác!"; partial orange `#FFF0EB` "Gần đúng rồi!"; error soft red `#FFEBEA`, gentle tone.
 - **Microcopy:** warm, encouraging Vietnamese. Emoji-friendly.
-- **Logo:** text fallback = "You" in orange + "pass" in `#1D1D1F`, Nunito 700.
+- **Logo:** text fallback = "You" in orange + "pass" in `#1D1D1F`, bold.
 
 ## UX principles (ux-principles) most relevant to Livestream
 

@@ -602,3 +602,18 @@ Claude's proposal (not coded; waiting for CLAUDE COOK):
 Open questions:
 - Are those timer lengths OK?
 - Should a student who missed or got it wrong automatically get anh Đậu's one-line explanation?
+
+## 2026-10-21: anh Khoa's "wrap it up" button
+
+What was said:
+- "anh Khoa will have a button that will tell anh Đậu to wrap it up, right?"
+
+Claude's answer:
+- Yes. This fits principle 4 (the teacher is in control). **The timer is only a suggestion on anh Khoa's dashboard; the button decides.**
+- **anh Khoa's dashboard** shows the time and how many students have submitted, and it suggests "Chốt?" when the timer ends or ~80% have submitted. anh Khoa presses **Chốt (wrap up)** when he's ready.
+- **What students see when he presses it:**
+  - a 30-second warning: "anh Khoa sắp chốt · còn 30s"
+  - anh Đậu finishes his current point in one line (no new issues), saves the draft, shows the model, and puts unfinished notes into the recap
+  - then the class moves on together
+- Same idea for questions: **"Hiện đáp án" (reveal answer)** is anh Khoa's button; the countdown is the default.
+- **In the student demo** (no teacher side yet): the timer plays anh Khoa pressing the button, plus a demo button under the stream, "anh Khoa bấm: Chốt", so the owner can try it any time.

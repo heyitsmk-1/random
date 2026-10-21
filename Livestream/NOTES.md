@@ -634,3 +634,22 @@ Claude's proposal (not coded; waiting for CLAUDE COOK):
 
 Open question:
 - "Suggested page": does it mean anh Khoa's list of suggestions on his dashboard, the student's recap page, or both?
+
+## 2026-10-21: Why did anh Đậu call the phe B X "too long"?
+
+What was said:
+- Screenshot: the student wrote "I am personally in favor of focusing on the subjects they are good at or interested in". anh Đậu (live AI) said it was still missing **"because…"** and that **X was too long**, and suggested replacing it with "strengths, interests". The owner asked why.
+
+Claude's diagnosis (Claude's own prompt bug):
+- **"Missing because…" was right.** The sentence has no "because it brings about many significant benefits".
+- **"X too long" was wrong.** That X is *exactly* the phe B example anh Khoa teaches on the stream. The prompt told the AI "X must be SHORT, don't copy the prompt" and listed "copying the prompt as X" as a common error, but only gave our X as a "suggestion", not as a protected answer. The phe B X (10 words) also looks a lot like the prompt's wording, so the AI treated it as copied.
+- **It also broke two of our rules:** it raised two issues in one turn (because + X), and it "upgraded" a correct answer (strengths / interests) instead of accepting the taught version.
+
+Proposed fix (not coded; waiting for CLAUDE COOK):
+- Give the AI an explicit **list of accepted X's** per side, marked as canon ("never ask to shorten or change these"), the same rule the anh Đậu recap tool already uses ("câu mẫu của anh Khoa là canon").
+- Define "too long" concretely: X includes "some people believe / while others think…" or both views, or more than ~12 words that aren't one of the accepted X's.
+- Say which issue comes first when there are several (here: the missing "because…" clause), one per turn.
+- This is what the lesson builder's "accepted versions of X" step is for.
+
+Open question:
+- Should phe B's taught X be shorter? e.g. "focusing on the subjects they enjoy" or "focusing on their strengths and interests".

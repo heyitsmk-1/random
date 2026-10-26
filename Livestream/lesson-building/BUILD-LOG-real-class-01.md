@@ -97,3 +97,5 @@ Decisions:
 Things in the filled worksheet to check later:
 - Type 3 model: the steps say "lợi >>> hại" and Body 2 = "lợi đáng kể hơn", but the model intro says "benefits… far outweighed by the associated drawbacks" and the conclusion says "the challenges… are far more significant". These contradict each other; check when we plan Type 3.
 - Typos: "use single-use plastic bags" (→ using), "candicate's", "athough", "outweight".
+- anh Khoa: the "?" marks in his filled worksheet are **leftovers from the blank template**, not doubts. **Every answer he wrote is accepted.** (Pipeline lesson: when extracting answers from a filled worksheet, ignore the template's own punctuation.)
+- Still open: item 6 "it" (plural "foods": wrong?), and whether "less Socratic" applies to writing tasks too.

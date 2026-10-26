@@ -1,6 +1,6 @@
 # Source: anh Khoa's worksheet "Writing Week 4" WITH his teaching notes
 
-Converted from the uploaded .docx ("Writing_Week_4_filled") on 2026-10-26. This is anh Khoa's own filled-in copy: answers, accepted paraphrases, essay steps, brainstorm, model sentences. "?" after an answer = anh Khoa unsure.
+Converted from the uploaded .docx ("Writing_Week_4_filled") on 2026-10-26. This is anh Khoa's own filled-in copy: answers, accepted paraphrases, essay steps, brainstorm, model sentences. The "?" after the answers are leftovers from the blank template, not doubts (anh Khoa, 2026-10-26): every answer listed is accepted.
 
 ---
 

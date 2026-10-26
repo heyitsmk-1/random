@@ -936,3 +936,26 @@ To test (owner, ~15 min): install OBS + LocalVocal, record 2 minutes of teaching
 
 Still open: the 3 questions on the teacher/student build (split screen vs two links, who drives, real YouTube video vs drawn board). Waiting for CLAUDE COOK.
 - 2026-10-26 (later): Owner is tempted to buy an NVIDIA RTX card for easier speech-to-text. Claude's advice: test LocalVocal on the 7900 XTX (Vulkan) first. Only consider an RTX card if Vulkan fails or is too slow while streaming.
+
+## 2026-10-26: Boss greenlit a real test, in an online class (not a livestream)
+
+What the owner said:
+- Teacher and student pages = **2 separate links that sync**.
+- The owner (anh Khoa) clicks the teacher side live (no auto-play).
+- "My boss has greenlit the go-ahead to test it in a real class (not a livestream), an online class."
+
+What this changes (Claude's view):
+- Real students means the pages have to work for people with **no claude.ai account**. The claude.ai artifact pages (what the demo uses) need viewers signed in to claude.ai for syncing (`db`) and for anh Đậu (`sample`, which also asks each viewer for consent). That's fine for a demo with colleagues, not for real students.
+- So the real-class version should be a **small web app the company hosts** (a natural fit for youpassvn/live-stream):
+  - students join with a class code + nickname (anonymous, no login);
+  - live sync between teacher and students;
+  - anh Đậu runs through the **company AI gateway**, with the key kept on the server, never in the page.
+- Proposed path: (1) build both pages as claude.ai links first, to show and try with colleagues; (2) move the same pages into the company-hosted app for the real class (needs the devs + repo access).
+- No YouTube delay problem in an online class (the video call is near real time).
+
+Open questions:
+1. Video call platform for the class (Zoom / Google Meet / youpass's own)?
+2. How many students, and when?
+3. Same lesson (Lesson 1, Writing Task 2 "Phát triển ý")?
+4. Can the devs host it and give access to the AI gateway, or should Claude build a stand-alone version they only deploy?
+5. Student ages: if under 18, check the company's rules on sending student writing to AI.

@@ -974,3 +974,4 @@ Claude's answer:
 Open questions (owner):
 - OK to start with option B and keep the add-on for later?
 - Will students be on laptops? (Phones: Meet + a second page on one phone is hard.)
+- 2026-10-26 (later): **Decided: floating panel (option B)** for the first real class on Google Meet. The Meet add-on stays an idea for later. Still unknown: are students on laptops? Not built yet; waiting for CLAUDE COOK.

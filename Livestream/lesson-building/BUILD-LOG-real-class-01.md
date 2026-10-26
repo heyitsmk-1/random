@@ -99,5 +99,8 @@ Things in the filled worksheet to check later:
 - Typos: "use single-use plastic bags" (→ using), "candicate's", "athough", "outweight".
 - anh Khoa: the "?" marks in his filled worksheet are **leftovers from the blank template**, not doubts. **Every answer he wrote is accepted.** (Pipeline lesson: when extracting answers from a filled worksheet, ignore the template's own punctuation.)
 - Still open: item 6 "it" (plural "foods": wrong?), and whether "less Socratic" applies to writing tasks too.
-- Item 6 ("Imported foods", plural): **"they" accepted, "it" rejected** (anh Khoa's rule: "it" is fine unless the thing is plural).
+- Item 6: ~~"they" accepted, "it" rejected~~ **Corrected by anh Khoa:** "it" and "such food" are right, because the sentence before says "some imported **food**" (uncountable, singular).
+  - Claude had misread it: the number must match **what the reference points back to in the sentence before**, not the bold phrase being replaced.
+  - This becomes anh Đậu's rule: "check the singular / plural of the thing the reference points back to".
+  - Open: is "they" wrong here (it points back to singular "food")?
 - **Feedback style setting** (per task, chosen by the teacher): **"Thẳng" (direct) = default**: all errors + why → one check question → next / re-explain. **"Socratic" = the previous version**: one error at a time, guiding questions, chips.

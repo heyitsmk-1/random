@@ -26,3 +26,20 @@ Questions asked to anh Khoa (answers go here):
 
 Time spent: …
 What was hard: …
+
+## Step 0b: anh Khoa's existing worksheet (2026-10-26)
+
+What anh Khoa did: uploaded his existing class worksheet, **Writing Week 4** (.docx), and said "ask me questions to do it".
+
+Note: the `random` repo looks **public**, so the worksheet text is **not** copied here (only a summary) until anh Khoa says it's OK.
+
+What's in it (summary):
+1. Homework revision
+2. Paraphrasing: how to avoid repeating words (a model paragraph with the same idea said 5 ways); Exercise 1: replace a repeated phrase in a second sentence (6 items); Exercise 2: translate Vietnamese passages using "this / việc này / nhờ vậy" style references (3 items, with collocations)
+3. Type 3 essay (advantages vs disadvantages): one topic, the steps to write an essay, the "40/60" essay structure, brainstorm with the "6-aspect Idea Framework"
+4. Type 4 essay (positive or negative development): one topic, brainstorm
+5. How to write a conclusion: summarise both bodies (40/60) + re-answer the question by essay type; 3 model intro + conclusion pairs
+
+Lesson-building insight: lessons **start from an existing worksheet**, not from zero. Pipeline stage 0 should be "upload the worksheet", and Claude turns it into the lesson file.
+
+Questions sent to anh Khoa: see Step 1.

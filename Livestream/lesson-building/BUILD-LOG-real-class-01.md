@@ -43,3 +43,9 @@ What's in it (summary):
 Lesson-building insight: lessons **start from an existing worksheet**, not from zero. Pipeline stage 0 should be "upload the worksheet", and Claude turns it into the lesson file.
 
 Questions sent to anh Khoa: see Step 1.
+
+## Step 1: Questions to anh Khoa (2026-10-26)
+
+- anh Khoa: "You can copy, I don't care." → the worksheet is now in [source/Writing-Week-4.md](source/Writing-Week-4.md).
+- anh Khoa is going to describe **how he usually runs this class** (by voice, it's quicker). Lesson-building insight: the fastest input is anh Khoa **talking through the class as he normally teaches it**; Claude turns that into the lesson. The pipeline should allow voice input.
+- Questions still open (from Claude's list): class length and parts; class size/band; homework revision; the "6-aspect Idea Framework"; "40/60"; essay-writing steps; accepted answers in Exercise 1; Exercise 2 in English?; error order for conclusions; the one-sentence goal.

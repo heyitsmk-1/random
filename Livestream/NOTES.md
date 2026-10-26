@@ -875,3 +875,19 @@ For the real product: anh Khoa fills in the accepted list and error order in the
 Still open:
 - Voice on the owner's computer: which browser/OS, and what the new voice line in the demo drawer says.
 - anh Đậu still needs a test set (~30 real-style answers per writing step) before real students.
+
+## 2026-10-26: The devs made a company repo
+
+What the owner said:
+- "I talked to our devs, and we have our own repo now": https://github.com/youpassvn/live-stream
+- Asked how to give Claude access.
+
+What happened:
+- Claude tried to attach it to this session: **no access** (GitHub said the repo wasn't found for this session's login).
+- How to fix it:
+  1. Connect or reconnect GitHub at https://claude.ai/connect-github.
+  2. Install the Claude GitHub App on youpassvn/live-stream (a youpassvn org owner, probably the devs, may need to do it). This is on the same page.
+  3. Tell Claude when it's done, and Claude attaches the repo.
+
+Open question:
+- Once it's attached: move this Livestream folder into the new repo, or keep it here and only put the product code there?

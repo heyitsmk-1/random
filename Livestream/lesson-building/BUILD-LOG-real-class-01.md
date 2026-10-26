@@ -49,3 +49,21 @@ Questions sent to anh Khoa: see Step 1.
 - anh Khoa: "You can copy, I don't care." → the worksheet is now in [source/Writing-Week-4.md](source/Writing-Week-4.md).
 - anh Khoa is going to describe **how he usually runs this class** (by voice, it's quicker). Lesson-building insight: the fastest input is anh Khoa **talking through the class as he normally teaches it**; Claude turns that into the lesson. The pipeline should allow voice input.
 - Questions still open (from Claude's list): class length and parts; class size/band; homework revision; the "6-aspect Idea Framework"; "40/60"; essay-writing steps; accepted answers in Exercise 1; Exercise 2 in English?; error order for conclusions; the one-sentence goal.
+
+## Step 2: anh Khoa talks through the class, part 1: Paraphrasing (2026-10-26)
+
+How: two dictation attempts failed (the mic cut out after ~10 minutes, and once only "bruh" arrived). The third attempt worked: anh Khoa dictated into the chat. **Pipeline lesson: talking through the class works, but input needs to be reliable** (record an audio file → Claude transcribes it, or dictate in short chunks).
+
+What anh Khoa said (condensed, his order):
+- **Homework revision: usually skipped.** Maybe sometimes.
+- **Paraphrasing, theory:**
+  1. Ask what paraphrasing means. Students think "synonyms". Point: synonyms are **not the only way and not reliable**.
+  2. Examples of poor paraphrasing (from the week 3 topic, free housing): "housing" → "houses" (houses don't cover what housing means); "building" → "structure" / "construction" (misses the main topic). Show poor paraphrases and ask "where does this go wrong?" → **anh Khoa: good spot for an interactive activity.**
+  3. Three ways that do work: (1) **pronouns**, (2) **reference** words: this, so, such, (3) **generalisation**: "providing free housing" → "this policy".
+  4. Stress at the end: students won't be tested on naming the method. It's about knowing the tools they have.
+- **Exercise 1 (6 items):** for each item, "how do you paraphrase the bold phrase in the next sentence?"
+  - Many right answers. **Students type their answer (no multiple choice).** **AI corrects immediately.** **The teacher sees how many students chose which words.** (anh Khoa: "just a suggestion")
+  - The key teaching moment: explaining **why a word doesn't work in a given place**. E.g. item 3 (plastic bags): "using them" is wrong because "them" could mean the other kinds of bags, not single-use ones → the moment to teach **"the former / the latter"**.
+- **Exercise 2: usually skipped.** Next: the essay question types (Type 3, Type 4), not covered yet.
+
+Claude's follow-up questions: see the chat (Step 3).

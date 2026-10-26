@@ -67,3 +67,33 @@ What anh Khoa said (condensed, his order):
 - **Exercise 2: usually skipped.** Next: the essay question types (Type 3, Type 4), not covered yet.
 
 Claude's follow-up questions: see the chat (Step 3).
+
+## Step 3: anh Khoa's answers on paraphrasing + his filled worksheet (2026-10-26)
+
+anh Khoa uploaded **his own filled-in worksheet** (answers, accepted paraphrases, essay steps, brainstorm, model sentences): [source/Writing-Week-4-filled.md](source/Writing-Week-4-filled.md).
+**Pipeline lesson: anh Khoa's filled worksheet is the prep he already does.** Claude should extract the lesson from it instead of asking him to fill in new forms.
+
+Decisions:
+- **Warm-up poll:** "what is paraphrasing?" with fixed answers; students just pick one.
+- **Bad paraphrases:** only 1–2 examples, as a warm-up (from his notes: free housing → "free houses" = synonym = risky). Students vote **right / wrong**, then anh Khoa corrects it by talking. Short.
+- **Model paragraph (free housing):** anh Khoa goes through it himself. No tool needed. His notes give the 3 methods: (1) pronouns (it / they; "red bag / blue one"), (2) reference: this / so / such + noun / do so ("such = this kind of"), (3) generalisation (this practice / this policy).
+- **"Not tested on the method names":** anh Khoa just says it. No check question.
+- **Exercise 1:**
+  - Students type; anh Đậu answers **yes / no + a quick explanation**, no back-and-forth.
+  - The teacher sees answers grouped by wording, with a **copy button** next to each, so anh Khoa can paste one onto his board himself.
+  - "The former / the latter" (and "the first / the second / the last" for 3 things) is taught at item 3 / 4.
+- **Exercise 2: skipped.** **Homework revision: skipped.**
+- **Timing: paraphrasing ≤ 25 minutes.**
+
+**Big change from the boss: tone down the Socratic method.** New default for anh Đậu:
+1. Show **all** the wrong parts at once, each with why it's wrong.
+2. One simple check question.
+3. Right → next. Wrong → re-explain.
+
+**Accepted answers, anh Khoa's view:**
+- "It" is fine (e.g. "it" = the importation) **unless the thing is plural**.
+- Writing out accepted / wrong lists for every item is **too much prep** → "we need a better way". Claude's proposal: see the chat (Step 4).
+
+Things in the filled worksheet to check later:
+- Type 3 model: the steps say "lợi >>> hại" and Body 2 = "lợi đáng kể hơn", but the model intro says "benefits… far outweighed by the associated drawbacks" and the conclusion says "the challenges… are far more significant". These contradict each other; check when we plan Type 3.
+- Typos: "use single-use plastic bags" (→ using), "candicate's", "athough", "outweight".

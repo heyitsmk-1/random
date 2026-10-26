@@ -991,3 +991,9 @@ What was done:
   - Track: page open/hidden (did they switch to Meet?), pop-out open/closed, every tap incl. on disabled / non-buttons ("tried to press"), repeated angry taps, time to answer, Chưa hiểu presses + when, hints opened, anh Đậu turns, typing time, pasting, timeouts, waiting-screen use.
   - Anonymous to the class ≠ invisible to us, but: tell students it's tracked, use nicknames / random ids only, hide what they type in any screen recording. If students are under 18 or for Vietnam's personal data rules (Decree 13/2023), check with the company first.
   - Tools: in the claude.ai test, our own event log; in the YouPass-hosted version, PostHog or Microsoft Clarity (both have free tiers, heatmaps, session replays, "rage click" detection).
+
+## 2026-10-26: Planning the real class lesson (Writing Week 4)
+
+- anh Khoa shared his Week 4 worksheet and his filled-in copy (both in [lesson-building/source/](lesson-building/source/), copying OK'd by him). The lesson is being planned step by step in [lesson-building/BUILD-LOG-real-class-01.md](lesson-building/BUILD-LOG-real-class-01.md).
+- **Boss: tone down the Socratic method.** anh Đậu now by default lists all errors + why, then one check question. README principle 3 updated.
+- Paraphrasing part ≤ 25 min; homework revision and Exercise 2 skipped.

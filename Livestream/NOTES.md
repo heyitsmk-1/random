@@ -918,3 +918,20 @@ Open questions for the owner:
 1. Demo shape: one screen split teacher | student (easiest to show the boss), or two real links that sync across computers?
 2. In the demo, who drives: anh Khoa clicking live, or auto-play like now?
 3. Video in the demo: a real YouTube video (e.g. an unlisted test stream), or keep the drawn board + webcam?
+
+## 2026-10-26: The owner IS anh Khoa; local speech-to-text on their own PC
+
+What the owner said:
+- "anh Khoa is me." (The owner is the teacher. Everything that says "anh Khoa" in these docs means the owner.)
+- They record/stream locally, so they can run a speech-to-text app on their own PC and send the text. Cost = only PC performance and internet. Setup: wired ethernet, Ryzen 7 5800X3D CPU, Radeon RX 7900 XTX GPU (24 GB, AMD).
+
+Claude's take:
+- Agreed: this solves the transcript gap (GAPS.md) for free. The paid speech-to-text cost worry no longer applies.
+- AMD GPU note: many Whisper tools need NVIDIA (CUDA). Ones that work on AMD: **whisper.cpp** with Vulkan (or HIP/ROCm).
+- Best candidate: **LocalVocal**, an OBS plugin (free, open source) that runs Whisper locally inside OBS, supports AMD via Vulkan (experimental), and can send captions into the YouTube stream. It can also save the text, which a small helper would send to our server.
+- Model: a multilingual Whisper (large-v3-turbo) handles Vietnamese + English mixed; PhoWhisper (VinAI) is better at Vietnamese but maybe worse at the English terms. Needs a test.
+- Text arrives a few seconds after anh Khoa speaks, which is fine for anh Đậu.
+
+To test (owner, ~15 min): install OBS + LocalVocal, record 2 minutes of teaching in mixed Vietnamese/English, check the accuracy and the GPU load while streaming.
+
+Still open: the 3 questions on the teacher/student build (split screen vs two links, who drives, real YouTube video vs drawn board). Waiting for CLAUDE COOK.

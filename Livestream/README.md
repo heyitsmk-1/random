@@ -31,7 +31,7 @@ The project in its simplest form. Every feature should follow these.
 1. **Teacher teaches, students respond instantly.** Students answer with taps and quick tech interactions, not long typing, because typing takes a long time.
 2. **Anonymous.** Students' responses are anonymous to the class, which lowers the barrier to joining in.
 3. **AI feedback modelled on a real teacher.** Not a big list of mistakes and "go fix it". Slow and Socratic: one thing at a time, with guiding questions so the student fixes it themselves.
-   - **Changed 2026-10-26 (boss):** tone the Socratic method down. Default now: show all the wrong parts at once, each with why it's wrong, then one simple check question (right → next, wrong → re-explain). Short tasks (e.g. paraphrase items): just yes / no + a quick explanation.
+   - **Changed 2026-10-26 (boss):** tone the Socratic method down. Default now: show all the wrong parts at once, each with why it's wrong, then one simple check question (right → next, wrong → re-explain). Short tasks (e.g. paraphrase items): just yes / no + a quick explanation. The teacher can switch any task back to the previous Socratic style (anh Khoa, 2026-10-26).
 4. **The teacher is in control, not a script** (owner, 2026-10-21). The lesson plan is a suggestion; the teacher decides what to launch next, live.
 5. **The stream is the same for everyone** (owner, 2026-10-21). The video can't show anything about one student (their side, their idea, their answers). Anything personal goes on the student's own screen: the panel, or a personal layer the student's page draws on top of the video.
 

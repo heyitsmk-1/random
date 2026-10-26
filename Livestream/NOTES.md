@@ -975,3 +975,19 @@ Open questions (owner):
 - OK to start with option B and keep the add-on for later?
 - Will students be on laptops? (Phones: Meet + a second page on one phone is hard.)
 - 2026-10-26 (later): **Decided: floating panel (option B)** for the first real class on Google Meet. The Meet add-on stays an idea for later. Still unknown: are students on laptops? Not built yet; waiting for CLAUDE COOK.
+
+## 2026-10-26: Plan the real lesson first; tracking; lesson-building pipeline
+
+What the owner said:
+- "Before we do that [build the pages], let's plan out my lesson, so there's something to actually test."
+- "Boss also advised adding trackers to everything so we know what students look at, what they tried to press and so on."
+- "We also need to build a pipeline to build a lesson, right? So document us building one just through our chat messages, so we can build the framework for lesson building in future."
+
+What was done:
+- New folder [lesson-building/](lesson-building/):
+  - `PIPELINE.md`: first guess at the stages (brief → goal → teaching point → flow → activities → script → confusion spots → anh Đậu's rules → extras → tracking plan → dry run → after class).
+  - `BUILD-LOG-real-class-01.md`: the step-by-step log of building this lesson in chat. Step 0 (brief) questions sent.
+- Tracking: noted for the build. Claude's proposal (not decided):
+  - Track: page open/hidden (did they switch to Meet?), pop-out open/closed, every tap incl. on disabled / non-buttons ("tried to press"), repeated angry taps, time to answer, Chưa hiểu presses + when, hints opened, anh Đậu turns, typing time, pasting, timeouts, waiting-screen use.
+  - Anonymous to the class ≠ invisible to us, but: tell students it's tracked, use nicknames / random ids only, hide what they type in any screen recording. If students are under 18 or for Vietnam's personal data rules (Decree 13/2023), check with the company first.
+  - Tools: in the claude.ai test, our own event log; in the YouPass-hosted version, PostHog or Microsoft Clarity (both have free tiers, heatmaps, session replays, "rage click" detection).

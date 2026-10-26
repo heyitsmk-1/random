@@ -17,6 +17,7 @@ Project folder for the Livestream project.
 | [PLAN.md](PLAN.md) | **Start here.** The big picture on one page: the system, a class minute by minute, roadmap, decisions waiting. |
 | [LESSON-01-script.md](LESSON-01-script.md) | **The full Lesson 1 script** for the student prototype: explanations, re-explanations, CCQs, ICQs, tasks, AI tutor rules. |
 | [LESSON-01-develop-ideas.md](LESSON-01-develop-ideas.md) | Draft of the first lesson (Writing Task 2, developing ideas) for the prototype. |
+| [lesson-building/](lesson-building/) | **How we build lessons.** `PIPELINE.md` = the lesson-building framework (being learned); `BUILD-LOG-real-class-01.md` = the log of building the first real-class lesson in chat. |
 | [GAPS.md](GAPS.md) | Things not yet decided or covered, grouped by when they need answering. |
 | [IDEAS.md](IDEAS.md) | Brainstorm of possible features. Nothing in it is decided yet. |
 | [RULES.md](RULES.md) | The running list of rules for working on this project. New rules get added as we go. |

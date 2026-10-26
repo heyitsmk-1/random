@@ -891,3 +891,4 @@ What happened:
 
 Open question:
 - Once it's attached: move this Livestream folder into the new repo, or keep it here and only put the product code there?
+- 2026-10-26 (later): Owner connected GitHub. The Claude GitHub App is installed only on the personal account **heyitsmk-1**, not on the **youpassvn** organization, so the repo still can't be attached. Next step: "Install on another account" → youpassvn → select live-stream (a youpassvn org owner may need to approve).

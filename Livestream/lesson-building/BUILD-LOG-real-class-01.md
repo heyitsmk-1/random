@@ -116,3 +116,7 @@ Things in the filled worksheet to check later:
     - Disagree / negative = the disadvantages outweigh the advantages.
   - So the 40/60 framework (small side in Body 1, bigger side in Body 2) works for all of them, which matches his notes: "To what extent → lập luận 40/60 → dùng cho tất cả các dạng câu hỏi yêu cầu opinion".
   - Pipeline lesson: dictation into chat keeps failing. Use audio files or short chunks.
+- **Confirmed (anh Khoa, full message, 2026-10-26):** the Type 3 / Type 4 part of Week 4 is **a revision of Week 3**.
+  - Week 3 taught "To what extent" and the core idea: **"To what extent", "positive or negative" and "advantages outweigh disadvantages" are basically the same question**. They all ask about the advantages and disadvantages of a trend or action.
+  - Agree / positive trend = the advantages outweigh the disadvantages.
+  - So in Week 4, students already know the idea, and this part is practice + revision. (More coming from anh Khoa.)

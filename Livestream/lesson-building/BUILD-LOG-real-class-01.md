@@ -106,3 +106,13 @@ Things in the filled worksheet to check later:
 - **Feedback style setting** (per task, chosen by the teacher): **"Thẳng" (direct) = default**: all errors + why → one check question → next / re-explain. **"Socratic" = the previous version**: one error at a time, guiding questions, chips.
 - Item 6, "they": anh Khoa would **let it pass but explain why** ("food" is uncountable → "it" is more accurate).
   - This adds a third verdict for anh Đậu, besides ✓ and ✗: **"✓ but…"** = accepted, with a short note on the better choice.
+
+## Step 4: Type 3 / Type 4 (2026-10-26, dictated; parts garbled)
+
+- Another dictation was lost. The next one arrived partly garbled; Claude's reading:
+  - **Type 3 (advantages vs disadvantages), Type 4 (positive vs negative) and "To what extent (agree)" are the same underlying question:** what are the advantages and the disadvantages?
+    - Agree = the advantages outweigh the disadvantages.
+    - Positive development = the advantages outweigh the disadvantages.
+    - Disagree / negative = the disadvantages outweigh the advantages.
+  - So the 40/60 framework (small side in Body 1, bigger side in Body 2) works for all of them, which matches his notes: "To what extent → lập luận 40/60 → dùng cho tất cả các dạng câu hỏi yêu cầu opinion".
+  - Pipeline lesson: dictation into chat keeps failing. Use audio files or short chunks.

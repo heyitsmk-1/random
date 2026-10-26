@@ -959,3 +959,18 @@ Open questions:
 3. Same lesson (Lesson 1, Writing Task 2 "Phát triển ý")?
 4. Can the devs host it and give access to the AI gateway, or should Claude build a stand-alone version they only deploy?
 5. Student ages: if under 18, check the company's rules on sending student writing to AI.
+
+## 2026-10-26: Class runs on Google Meet; can our page mirror Meet?
+
+What the owner said:
+- "Google Meet. Can our page mirror their Google Meet screen so they can still study like normally but with an extra panel?"
+
+Claude's answer:
+- **No real mirroring:** Google doesn't let other websites embed Meet. (A page *can* capture a Meet tab as a screen share and show it, but each student must pick the tab every time, the sound doubles, and it's heavy. Not recommended.)
+- **Option A, a Meet add-on (the true "extra panel inside Meet"):** Google's Meet add-ons put our panel in Meet's own side panel. Students click "Install and join" once with their Google account. Downsides: needs the devs, a Google Cloud project and a Workspace Marketplace listing (Google review takes time), desktop only, and admins/hosts can block add-ons. Good for later.
+- **Option B, floating panel (recommended for the first real class):** students keep Meet open; our student page has a "Meet mode" with just the panel, and a **pop-out button** that floats the panel on top of Meet (Chrome/Edge "picture-in-picture" for pages). Fast to build, no Google approval.
+- Teacher side for Meet: the teacher page has controls + a separate **"Bảng" (board) tab** that anh Khoa shares in Meet (slide, class results, timers), so the whole class sees the same screen.
+
+Open questions (owner):
+- OK to start with option B and keep the add-on for later?
+- Will students be on laptops? (Phones: Meet + a second page on one phone is hard.)

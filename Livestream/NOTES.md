@@ -935,3 +935,4 @@ Claude's take:
 To test (owner, ~15 min): install OBS + LocalVocal, record 2 minutes of teaching in mixed Vietnamese/English, check the accuracy and the GPU load while streaming.
 
 Still open: the 3 questions on the teacher/student build (split screen vs two links, who drives, real YouTube video vs drawn board). Waiting for CLAUDE COOK.
+- 2026-10-26 (later): Owner is tempted to buy an NVIDIA RTX card for easier speech-to-text. Claude's advice: test LocalVocal on the 7900 XTX (Vulkan) first. Only consider an RTX card if Vulkan fails or is too slow while streaming.

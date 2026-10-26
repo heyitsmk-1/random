@@ -894,3 +894,27 @@ Open question:
 - 2026-10-26 (later): Owner connected GitHub. The Claude GitHub App is installed only on the personal account **heyitsmk-1**, not on the **youpassvn** organization, so the repo still can't be attached. Next step: "Install on another account" → youpassvn → select live-stream (a youpassvn org owner may need to approve).
 - 2026-10-26 (later): Confirmed the owner's account (heyitsmk-1) is **not a member** of the youpassvn organization. It was added to live-stream as an outside collaborator (it has admin on the repo, which is why Settings shows). So the owner can't install the Claude GitHub App on youpassvn. **A youpassvn org owner (a dev) must install it** for live-stream: https://github.com/apps/claude/installations/select_target → youpassvn → Only select repositories → live-stream → Install. Until then, work stays in heyitsmk-1/random on branch claude/keen-edison-wg7nsd.
 - 2026-10-26 (later): Owner asked "can I clone it and give it to you?" The repo is empty, so a clone gives Claude nothing. Instead, Claude made a zip of this whole Livestream folder (`live-stream-files.zip`, not committed) for the owner to upload to youpassvn/live-stream through GitHub's "uploading an existing file" page. Claude still can't push there until a youpassvn owner installs the Claude GitHub App.
+
+## 2026-10-26: Platform decided (YouTube); next build = teacher + student pages
+
+What the owner said:
+- "In the meantime, can we get building the teacher vs. student pages?"
+- "We've decided on where we're gonna be livestreaming from: YouTube. That should give us closed captions, but I don't think we can access them, right?"
+
+Claude's answer on captions:
+- Correct, our page **can't read YouTube's captions** while live. The YouTube player only lets a page change caption font size, not read the text. Live captions only go *into* YouTube, not out.
+- Vietnamese live auto-captions: YouTube announced them in 2021 (13 languages incl. Vietnamese). Not confirmed they're still on today; check in YouTube Studio.
+- Free way to get the text: the **teacher page** listens to anh Khoa's mic with the browser's own speech recognition (Chrome, vi-VN). One computer, not per student, so **free**, unlike the paid STT we parked. Accuracy on mixed Vietnamese/English is unknown and needs testing. It's a nice-to-have: the plan still works without it (anh Đậu knows the slide + anh Khoa's notes + planned confusions).
+- Bonus: that same text could be sent *into* YouTube as captions.
+
+New gap found: **YouTube delay.** The video reaches students ~2–30 s late (depends on latency setting), but our questions arrive instantly. A question could pop up before students hear anh Khoa ask it. Fix options: "Ultra-low latency" in YouTube Studio (~2–5 s), and/or the student page holds each question for a few seconds. To decide.
+
+Proposed build (not started; needs CLAUDE COOK):
+- **Teacher page:** stream deck of activity tiles (check question, poll, pick a side, writing task, Chốt / wrap up, re-explain), class confusion meter + where it spiked, live answer chart, anh Đậu's grouped student questions, timer controls, lesson outline on the side (freeform, not a script).
+- **Student page:** version 4, but the stream area becomes the YouTube player; everything else stays.
+- The two pages talk to each other. For the demo, a crowd of fake students fills in the numbers.
+
+Open questions for the owner:
+1. Demo shape: one screen split teacher | student (easiest to show the boss), or two real links that sync across computers?
+2. In the demo, who drives: anh Khoa clicking live, or auto-play like now?
+3. Video in the demo: a real YouTube video (e.g. an unlisted test stream), or keep the drawn board + webcam?

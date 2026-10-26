@@ -104,3 +104,5 @@ Things in the filled worksheet to check later:
   - This becomes anh Đậu's rule: "check the singular / plural of the thing the reference points back to".
   - Open: is "they" wrong here (it points back to singular "food")?
 - **Feedback style setting** (per task, chosen by the teacher): **"Thẳng" (direct) = default**: all errors + why → one check question → next / re-explain. **"Socratic" = the previous version**: one error at a time, guiding questions, chips.
+- Item 6, "they": anh Khoa would **let it pass but explain why** ("food" is uncountable → "it" is more accurate).
+  - This adds a third verdict for anh Đậu, besides ✓ and ✗: **"✓ but…"** = accepted, with a short note on the better choice.

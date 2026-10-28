@@ -120,3 +120,8 @@ Things in the filled worksheet to check later:
   - Week 3 taught "To what extent" and the core idea: **"To what extent", "positive or negative" and "advantages outweigh disadvantages" are basically the same question**. They all ask about the advantages and disadvantages of a trend or action.
   - Agree / positive trend = the advantages outweigh the disadvantages.
   - So in Week 4, students already know the idea, and this part is practice + revision. (More coming from anh Khoa.)
+
+## Step 5: Write up the plan (2026-10-28)
+- anh Khoa: "Can you write up the plans for lesson 4 as well?" → [../LESSON-W4-plan.md](../LESSON-W4-plan.md).
+- Part 1 is written from his decisions. Parts 2–3 are drafted by Claude from his filled worksheet (marked draft), with open questions at the end.
+- Pipeline lesson: **a draft from the filled worksheet + targeted questions** is faster than asking anh Khoa to walk through everything. He only corrects.

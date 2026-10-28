@@ -1002,3 +1002,4 @@ What was done:
   - Claude gave Windows steps (ssh-keygen ed25519 → ssh-agent → add the .pub key in GitHub Settings → SSH and GPG keys → test → clone live-stream → push).
   - Note: this lets the **owner's PC** push. It does **not** give the Claude cloud session access. Options for Claude: the owner pushes Claude's files (zip / copy), or runs Claude Code on his own PC, or the Claude GitHub App gets installed on youpassvn later.
 - 2026-10-28: Owner will move the project to his PC: "just gimme the zip and I'll send it to the local instance." Claude wrote HANDOFF.md (status + next steps for the local Claude) and sent a fresh zip + the anh Đậu image file (`dau-assets.json`) separately, private repo only.
+- 2026-10-28: Owner asked for the Week 4 lesson plan written up → `LESSON-W4-plan.md` (Part 1 decided, Parts 2–3 drafted from his worksheet, open questions listed).

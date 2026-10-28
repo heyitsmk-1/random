@@ -27,7 +27,7 @@ For the Claude Code instance running on anh Khoa's PC. Read this, then `CLAUDE.m
   - **Tracking on everything** (boss): see NOTES.md 2026-10-26 for the event list and privacy notes.
   - Real students don't have claude.ai accounts → the real class needs a **YouPass-hosted** version (class code + nickname, company AI gateway, key on the server).
   - **anh Đậu feedback style:** default **"direct"** (all errors + why → one check question → next / re-explain); "Socratic" = optional per task. Verdicts: ✓ / ✓ but… / ✗.
-- **In progress: planning the real-class lesson (Writing Week 4)**, see `lesson-building/`:
+- **In progress: planning the real-class lesson (Writing Week 4)**: the plan is in `LESSON-W4-plan.md`; how it was built is in `lesson-building/`:
   - **Paraphrasing part: fully planned** (≤ 25 min).
   - **Type 3 / Type 4 part:** started (it's a Week 3 revision: To what extent / positive-negative / adv-disadv = the same question). Waiting for anh Khoa's next part.
   - Still open: the 6-aspect Idea Framework; the contradiction in his Type 3 model (steps say advantages win, model intro/conclusion say disadvantages win); the conclusion task; total class length + timing; the one-sentence goal.

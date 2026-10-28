@@ -17,7 +17,8 @@ For the Claude Code instance running on anh Khoa's PC. Read this, then `CLAUDE.m
   - Source: `prototype/student-live/index.src.html`.
   - Build: `python3 build.py <dau-assets.json> <out.html>`.
   - `dau-assets.json` (the anh Đậu mascot images) is **not** in the docs. anh Khoa has it as a separate file; put it in the repo only if it stays private.
-  - The artifact link can only be updated from the original cloud session. A new publish makes a new link.
+  - **Keep the same link:** a new session can update this artifact by passing its URL (the Artifact tool `url`) after reading it first. Without the URL, a publish makes a new link.
+  - Headless test scripts (Playwright walkthrough + full-screen checks) were in the cloud session's scratch folder, not in this repo. Ask for them if needed.
 - **Decided, not built yet:**
   - **Teacher page + student page as 2 separate links that sync**; anh Khoa clicks the teacher side live.
   - First real test = **an online class on Google Meet** (boss approved).

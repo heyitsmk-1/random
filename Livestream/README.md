@@ -8,6 +8,7 @@ Project folder for the Livestream project.
 
 | File | What it's for |
 |------|---------------|
+| [HANDOFF.md](HANDOFF.md) | **Read first after the move** to youpassvn/live-stream: current status and next steps. |
 | [README.md](README.md) | This overview: what the project is and where things live. |
 | [prototype/student-live/](prototype/student-live/) | **The student prototype** (web page, version 3): voiced auto-playing lesson, timed questions, Chốt, class/private help, live AI tutor, early-finisher review, recap. |
 | [prototype/Livestream-Prototype.pptx](prototype/Livestream-Prototype.pptx) | **The vision prototype:** 10 slides showing what the student sees next to what the teacher sees, step by step. |

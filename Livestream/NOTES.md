@@ -998,3 +998,6 @@ What was done:
 - **Boss: tone down the Socratic method.** anh Đậu now by default lists all errors + why, then one check question. README principle 3 updated.
 - Paraphrasing part ≤ 25 min; homework revision and Exercise 2 skipped.
 - 2026-10-28: Owner asked "can you access the GitHub yet?" Still **no**: add_repo is refused, and live-stream doesn't appear in the repos Claude can see. So the Claude GitHub App is still not installed on youpassvn (or installed without live-stream). Check: repo → Settings → Integrations → GitHub Apps should list "Claude".
+- 2026-10-28: The dev's instruction (relayed): "em nhờ claude hướng dẫn tạo ssh key rồi gắn lên github để có thể push code từ máy cá nhân lên nè" (ask Claude how to make an SSH key and add it to GitHub, so you can push code from your own computer).
+  - Claude gave Windows steps (ssh-keygen ed25519 → ssh-agent → add the .pub key in GitHub Settings → SSH and GPG keys → test → clone live-stream → push).
+  - Note: this lets the **owner's PC** push. It does **not** give the Claude cloud session access. Options for Claude: the owner pushes Claude's files (zip / copy), or runs Claude Code on his own PC, or the Claude GitHub App gets installed on youpassvn later.

@@ -997,3 +997,4 @@ What was done:
 - anh Khoa shared his Week 4 worksheet and his filled-in copy (both in [lesson-building/source/](lesson-building/source/), copying OK'd by him). The lesson is being planned step by step in [lesson-building/BUILD-LOG-real-class-01.md](lesson-building/BUILD-LOG-real-class-01.md).
 - **Boss: tone down the Socratic method.** anh Đậu now by default lists all errors + why, then one check question. README principle 3 updated.
 - Paraphrasing part ≤ 25 min; homework revision and Exercise 2 skipped.
+- 2026-10-28: Owner asked "can you access the GitHub yet?" Still **no**: add_repo is refused, and live-stream doesn't appear in the repos Claude can see. So the Claude GitHub App is still not installed on youpassvn (or installed without live-stream). Check: repo → Settings → Integrations → GitHub Apps should list "Claude".
